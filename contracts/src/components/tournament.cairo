@@ -34,8 +34,8 @@ trait ITournament<TState> {
         settings_id: u32
     ) -> u64;
     fn enter_tournament(
-        ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
-    );
+        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u256>
+    ) -> u256;
     fn start_tournament(
         ref self: TState, tournament_id: u64, start_all: bool, start_count: Option<u64>,
     );
@@ -111,6 +111,8 @@ pub mod tournament_component {
         pub const SUBMISSION_PERIOD_TOO_SHORT: felt252 = 'submission period too short';
         pub const SUBMISSION_PERIOD_TOO_LONG: felt252 = 'submission period too long';
         pub const NOT_TOKEN_OWNER: felt252 = 'not token owner';
+        pub const GAME_NOT_REGISTERED: felt252 = 'game not registered';
+        pub const GAME_SETTINGS_NOT_FOUND: felt252 = 'game settings not found';
         //
         // Register Tokens
         //
@@ -228,7 +230,7 @@ pub mod tournament_component {
             // TODO: add assert
             // TODO: add src5 check - game, game metadata, erc721
             // TODO: get name from src5
-            // assert(store.get_game(game).is_none(), Errors::GAME_ALREADY_REGISTERED);
+            assert(store.get_game(game).is_none(), Errors::GAME_ALREADY_REGISTERED);
             // check SRC5 token is registered
             // let token_dispatcher = ISRC5Dispatcher { contract_address: game };
             // assert(token_dispatcher.total_supply() > 0, Errors::GAME_ALREADY_REGISTERED);
@@ -260,6 +262,8 @@ pub mod tournament_component {
         /// @param winners_count A u8 representing the number of winners.
         /// @param gated_type A Option<GatedType> representing the gated type of the tournament.
         /// @param entry_premium A Option<Premium> representing the entry premium of the tournament.
+        /// @param game A ContractAddress representing the game to be played in the tournament.
+        /// @param settings_id A u32 representing the settings id to be used for the tournament.
         fn create_tournament(
             ref self: ComponentState<TContractState>,
             name: felt252,
@@ -304,8 +308,9 @@ pub mod tournament_component {
                 ._assert_premium_token_registered_and_distribution_valid(
                     store, entry_premium.clone(), winners_count
                 );
-            // TODO: assert game exists
-            // TODO: assert settings exists
+            self._assert_qualifying_token_registered(store, qualifying_token_id);
+            self._assert_game_exists(store, game);
+            self._assert_settings_exists(store, game, settings_id);
             // TODO: return a token 
 
             // create a new tournament
@@ -534,7 +539,7 @@ pub mod tournament_component {
                     break;
                 }
                 let game_id = *game_ids.at(game_index);
-                self._assert_game_exists(store, tournament_id, game_id);
+                self._assert_game_token_exists(store, tournament_id, game_id);
 
                 let score = game_dispatcher.get_score(game_id.try_into().unwrap());
                 self._assert_score_valid(score);
@@ -972,6 +977,21 @@ pub mod tournament_component {
             }
         }
 
+        fn _assert_game_exists(
+            self: @ComponentState<TContractState>, store: Store, game: ContractAddress
+        ) {
+            let game = store.get_game(game);
+            assert(!game.game.is_zero(), Errors::GAME_NOT_REGISTERED);
+        }
+
+        fn _assert_settings_exists(
+            self: @ComponentState<TContractState>, store: Store, game: ContractAddress, settings_id: u32
+        ) {
+            let mut game_dispatcher = IGameDispatcher { contract_address: game };
+            let settings_exist = game_dispatcher.get_settings_details(settings_id).exists;
+            assert(settings_exist, Errors::GAME_SETTINGS_NOT_FOUND);
+        }
+
         fn _assert_premium_token_registered(
             self: @ComponentState<TContractState>, store: Store, token: ContractAddress
         ) {
@@ -1008,7 +1028,7 @@ pub mod tournament_component {
             );
         }
 
-        fn _assert_game_exists(
+        fn _assert_game_token_exists(
             self: @ComponentState<TContractState>,
             store: Store,
             tournament_id: u64,
