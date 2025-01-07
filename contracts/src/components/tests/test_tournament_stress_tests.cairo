@@ -64,7 +64,11 @@ fn test_submit_multiple_scores_stress_test() {
             .world
             .write_model_test(
                 @TournamentGame {
-                    tournament_id: tournament_id, game_id: i + 1, score: 0, exists: true, submitted: false
+                    tournament_id: tournament_id,
+                    game_id: i + 1,
+                    score: 0,
+                    exists: true,
+                    submitted: false
                 }
             );
         i += 1;

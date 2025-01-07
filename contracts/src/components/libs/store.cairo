@@ -3,13 +3,13 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    Game, TournamentTotals, Tournament, TournamentEntries, TournamentPrize, TournamentScores, Token,
-    TournamentEntriesAddress, TournamentEntryAddresses, TournamentStartsAddress, TournamentGame,
-    TournamentConfig
+    RegisteredGame, TournamentTotals, Tournament, TournamentEntries, TournamentPrize,
+    TournamentScores, Token, TournamentToken, TournamentConfig
 };
 
 use tournaments::components::models::game::{
-    Score, Settings, SettingsDetails, GameSettings, GameCount, SettingsCount
+    GameDetails, GameMetadata, Score, Settings, SettingsDetails, GameSettings, GameCount,
+    SettingsCount
 };
 
 #[derive(Copy, Drop)]
@@ -31,7 +31,7 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn get_game(ref self: Store, game: ContractAddress) -> Game {
+    fn get_registered_game(ref self: Store, game: ContractAddress) -> RegisteredGame {
         (self.world.read_model(game))
     }
 
@@ -51,27 +51,8 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_address_entries(
-        self: Store, tournament_id: u64, account: ContractAddress
-    ) -> TournamentEntriesAddress {
-        (self.world.read_model((tournament_id, account),))
-    }
-
-    #[inline(always)]
-    fn get_tournament_entry_addresses(self: Store, tournament_id: u64) -> TournamentEntryAddresses {
-        (self.world.read_model(tournament_id))
-    }
-
-    #[inline(always)]
-    fn get_tournament_starts(
-        self: Store, tournament_id: u64, address: ContractAddress
-    ) -> TournamentStartsAddress {
-        (self.world.read_model((tournament_id, address),))
-    }
-
-    #[inline(always)]
-    fn get_tournament_game(self: Store, tournament_id: u64, game_id: felt252) -> TournamentGame {
-        (self.world.read_model((tournament_id, game_id),))
+    fn get_tournament_token(self: Store, token_id: u128) -> TournamentToken {
+        (self.world.read_model(token_id))
     }
 
     #[inline(always)]
@@ -97,7 +78,17 @@ pub impl StoreImpl of StoreTrait {
     // Game
 
     #[inline(always)]
-    fn get_game_score(ref self: Store, game_id: felt252) -> Score {
+    fn get_game(ref self: Store, game: ContractAddress) -> GameDetails {
+        (self.world.read_model(game))
+    }
+
+    #[inline(always)]
+    fn get_game_metadata(ref self: Store, game: ContractAddress) -> GameMetadata {
+        (self.world.read_model(game))
+    }
+
+    #[inline(always)]
+    fn get_game_score(ref self: Store, game_id: u128) -> Score {
         (self.world.read_model(game_id))
     }
 
@@ -117,7 +108,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_game_settings(ref self: Store, game_id: felt252) -> GameSettings {
+    fn get_game_settings(ref self: Store, game_id: u128) -> GameSettings {
         (self.world.read_model(game_id))
     }
 
@@ -134,7 +125,7 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn set_game(ref self: Store, game: @Game) {
+    fn set_registered_game(ref self: Store, game: @RegisteredGame) {
         self.world.write_model(game);
     }
 
@@ -154,22 +145,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_address_entries(ref self: Store, model: @TournamentEntriesAddress) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_tournament_entry_addresses(ref self: Store, model: @TournamentEntryAddresses) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_address_starts(ref self: Store, model: @TournamentStartsAddress) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_tournament_game(ref self: Store, model: @TournamentGame) {
+    fn set_tournament_token(ref self: Store, model: @TournamentToken) {
         self.world.write_model(model);
     }
 
@@ -194,6 +170,16 @@ pub impl StoreImpl of StoreTrait {
     }
 
     // Game
+
+    #[inline(always)]
+    fn set_game(ref self: Store, game: @GameDetails) {
+        self.world.write_model(game);
+    }
+
+    #[inline(always)]
+    fn set_game_metadata(ref self: Store, game: @GameMetadata) {
+        self.world.write_model(game);
+    }
 
     #[inline(always)]
     fn set_game_score(ref self: Store, model: @Score) {
