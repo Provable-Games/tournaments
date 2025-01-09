@@ -429,8 +429,8 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
 
-            let mut tournament = store.get_tournament(tournament_id);
-            self._assert_tournament_active(tournament);
+            let tournament = store.get_tournament(tournament_id);
+            self._assert_tournament_active(@tournament);
             let game_id = self._start_game(tournament, tournament_token_id);
 
             let mut token = store.get_tournament_token(tournament_token_id.low);
@@ -552,7 +552,7 @@ pub mod tournament_component {
             let mut tournament = store.get_tournament(prize.tournament_id);
 
             self._assert_tournament_finalized(tournament.state);
-            self._assert_tournament_settled(tournament);
+            self._assert_tournament_settled(@tournament);
             self._assert_prize_exists(prize.token);
             self._assert_prize_not_claimed(prize.claimed);
 
@@ -589,7 +589,7 @@ pub mod tournament_component {
             let mut tournament = store.get_tournament(prize.tournament_id);
 
             self._assert_tournament_finalized(tournament.state);
-            self._assert_tournament_settled(tournament);
+            self._assert_tournament_settled(@tournament);
             self._assert_prize_exists(prize.token);
             self._assert_prize_not_claimed(prize.claimed);
 
@@ -782,10 +782,9 @@ pub mod tournament_component {
         }
 
         fn _is_tournament_active(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) -> bool {
-            tournament.start_time <= get_block_timestamp()
-                && tournament.end_time > get_block_timestamp()
+            *tournament.start_time <= get_block_timestamp() && *tournament.end_time > get_block_timestamp()
         }
 
         fn _is_token_registered(
@@ -1042,7 +1041,7 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_active(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             let is_active = self._is_tournament_active(tournament);
             assert(is_active, Errors::TOURNAMENT_NOT_ACTIVE);
@@ -1202,10 +1201,10 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_settled(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             assert(
-                tournament.end_time + tournament.submission_period <= get_block_timestamp(),
+                *tournament.end_time + *tournament.submission_period <= get_block_timestamp(),
                 Errors::TOURNAMENT_NOT_SETTLED
             );
         }
