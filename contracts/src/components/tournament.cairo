@@ -434,7 +434,7 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
 
             let tournament = store.get_tournament(tournament_id);
-            self._assert_tournament_active(tournament);
+            self._assert_tournament_active(@tournament);
             let game_id = self._start_game(tournament, tournament_token_id);
 
             let mut token = store.get_tournament_token(tournament_token_id.low);
@@ -551,12 +551,12 @@ pub mod tournament_component {
             let tournament = store.get_tournament(prize.tournament_id);
 
             self._assert_tournament_finalized(tournament.finalized);
-            self._assert_tournament_settled(tournament);
+            self._assert_tournament_settled(@tournament);
             self._assert_prize_exists(prize.token);
             self._assert_prize_not_claimed(prize.claimed);
 
             let top_score_ids = store.get_tournament_scores(prize.tournament_id).top_score_ids;
-            self._assert_payout_is_top_score(prize.payout_position, top_score_ids);
+            self._assert_payout_is_top_score(prize.payout_position, top_score_ids.span());
 
             let payout_token_id = *top_score_ids.at(prize.payout_position.into() - 1);
             let payout_game_id = store.get_tournament_token(payout_token_id).game_id;
@@ -583,7 +583,7 @@ pub mod tournament_component {
             let tournament = store.get_tournament(prize.tournament_id);
 
             self._assert_tournament_finalized(tournament.finalized);
-            self._assert_tournament_settled(tournament);
+            self._assert_tournament_settled(@tournament);
             self._assert_prize_exists(prize.token);
             self._assert_prize_not_claimed(prize.claimed);
 
@@ -771,10 +771,9 @@ pub mod tournament_component {
         }
 
         fn _is_tournament_active(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) -> bool {
-            tournament.start_time <= get_block_timestamp()
-                && tournament.end_time > get_block_timestamp()
+            *tournament.start_time <= get_block_timestamp() && *tournament.end_time > get_block_timestamp()
         }
 
         fn _is_token_registered(
@@ -1031,7 +1030,7 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_active(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             let is_active = self._is_tournament_active(tournament);
             assert(is_active, Errors::TOURNAMENT_NOT_ACTIVE);
@@ -1090,7 +1089,7 @@ pub mod tournament_component {
         }
 
         fn _assert_payout_is_top_score(
-            self: @ComponentState<TContractState>, payout_position: u8, top_score_ids: Array<u128>
+            self: @ComponentState<TContractState>, payout_position: u8, top_score_ids: Span<u128>
         ) {
             assert(
                 payout_position.into() <= top_score_ids.len(), Errors::PAYOUT_POSITION_NOT_TOP_SCORE
@@ -1160,7 +1159,7 @@ pub mod tournament_component {
                                 }
                                 let tournament = store.get_tournament(*tournament_ids.at(loop_index));
                                 self
-                                    ._assert_tournament_settled(tournament);
+                                    ._assert_tournament_settled(@tournament);
                                 loop_index += 1;
                             }
                         },
@@ -1172,10 +1171,10 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_settled(
-            self: @ComponentState<TContractState>, tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             assert(
-                tournament.end_time + tournament.submission_period <= get_block_timestamp(),
+                *tournament.end_time + *tournament.submission_period <= get_block_timestamp(),
                 Errors::TOURNAMENT_NOT_SETTLED
             );
         }
