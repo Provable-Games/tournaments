@@ -230,7 +230,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token = store.get_token(token);
-            self._is_token_registered(token)
+            self._is_token_registered(@token)
         }
 
         // TODO: add for V2 (use Ekubo tokens)
@@ -461,8 +461,8 @@ pub mod tournament_component {
             let mut tournament = store.get_tournament(tournament_id);
 
             self._assert_tournament_finalized(tournament.finalized);
-            self._assert_scores_count_valid(ref tournament, token_ids.len());
-            self._assert_tournament_not_settled(ref tournament);
+            self._assert_scores_count_valid(@tournament, token_ids.len());
+            self._assert_tournament_not_settled(@tournament);
 
             let mut game_dispatcher = IGameDispatcher { contract_address: tournament.game_address };
 
@@ -619,9 +619,9 @@ pub mod tournament_component {
             self._assert_tournament_not_ended(tournament.end_time);
 
             let token_model = store.get_token(token);
-            self._assert_prize_token_registered(token_model);
+            self._assert_prize_token_registered(@token_model);
 
-            self._assert_prize_position_less_than_winners_count(tournament, position);
+            self._assert_prize_position_less_than_winners_count(@tournament, position);
 
             self._deposit_prize(tournament_id, token, token_data_type, position);
 
@@ -709,7 +709,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert(!self._is_token_registered(token_model), Errors::TOKEN_ALREADY_REGISTERED);
+            assert(!self._is_token_registered(@token_model), Errors::TOKEN_ALREADY_REGISTERED);
             store
                 .set_token(
                     @Token {
@@ -739,7 +739,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert(!self._is_token_registered(token_model), Errors::TOKEN_ALREADY_REGISTERED);
+            assert(!self._is_token_registered(@token_model), Errors::TOKEN_ALREADY_REGISTERED);
             store
                 .set_token(
                     @Token {
@@ -777,9 +777,9 @@ pub mod tournament_component {
         }
 
         fn _is_token_registered(
-            self: @ComponentState<TContractState>, token: Token
+            self: @ComponentState<TContractState>, token: @Token
         ) -> bool {
-            token.is_registered
+            *token.is_registered
         }
 
         fn _is_top_score(
@@ -920,7 +920,7 @@ pub mod tournament_component {
             match premium {
                 Option::Some(token) => {
                     let token_model = store.get_token(token.token);
-                    self._assert_premium_token_registered(token_model);
+                    self._assert_premium_token_registered(@token_model);
                     self
                         ._assert_premium_token_distribution_length_not_too_long(
                             token.token_distribution.len(), winners_count.into()
@@ -975,7 +975,7 @@ pub mod tournament_component {
         }
 
         fn _assert_premium_token_registered(
-            self: @ComponentState<TContractState>, token: Token
+            self: @ComponentState<TContractState>, token: @Token
         ) {
             assert(self._is_token_registered(token), Errors::PREMIUM_TOKEN_NOT_REGISTERED);
         }
@@ -993,7 +993,7 @@ pub mod tournament_component {
         }
 
         fn _assert_prize_token_registered(
-            self: @ComponentState<TContractState>, token: Token
+            self: @ComponentState<TContractState>, token: @Token
         ) {
             assert(self._is_token_registered(token), Errors::PRIZE_TOKEN_NOT_REGISTERED);
         }
@@ -1066,18 +1066,19 @@ pub mod tournament_component {
 
         fn _assert_scores_count_valid(
             self: @ComponentState<TContractState>,
-            ref tournament: TournamentModel,
+            tournament: @TournamentModel,
             scores_count: u32
         ) {
+            let winners_count = *tournament.winners_count;
             assert(
-                scores_count <= tournament.winners_count.into(), Errors::INVALID_SCORES_SUBMISSION
+                scores_count <= winners_count.into(), Errors::INVALID_SCORES_SUBMISSION
             );
         }
 
         fn _assert_prize_position_less_than_winners_count(
-            self: @ComponentState<TContractState>, tournament: TournamentModel, position: u8
+            self: @ComponentState<TContractState>, tournament: @TournamentModel, position: u8
         ) {
-            assert(position <= tournament.winners_count, Errors::PRIZE_POSITION_TOO_LARGE);
+            assert(position <= *tournament.winners_count, Errors::PRIZE_POSITION_TOO_LARGE);
         }
 
         fn _assert_prize_exists(self: @ComponentState<TContractState>, token: ContractAddress) {
@@ -1147,7 +1148,7 @@ pub mod tournament_component {
                         GatedType::token(token) => {
                             let token_model = store.get_token(token);
                             assert(
-                                self._is_token_registered(token_model),
+                                self._is_token_registered(@token_model),
                                 Errors::GATED_TOKEN_NOT_REGISTERED
                             )
                         },
@@ -1180,10 +1181,10 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_not_settled(
-            self: @ComponentState<TContractState>, ref tournament: TournamentModel
+            self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             assert(
-                tournament.end_time + tournament.submission_period > get_block_timestamp(),
+                *tournament.end_time + *tournament.submission_period > get_block_timestamp(),
                 Errors::TOURNAMENT_ALREADY_SETTLED
             );
         }
