@@ -2,8 +2,8 @@ use starknet::ContractAddress;
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TournamentType {
-    winners: Span<u64>,
-    participants: Span<u64>,
+    winners: Span<u128>,
+    participants: Span<u128>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
@@ -28,7 +28,7 @@ pub struct Premium {
 pub enum GatedType {
     token: ContractAddress,
     // TODO: add enum between winners and participants
-    tournament: Span<u128>,
+    tournament: TournamentType,
     address: Span<ContractAddress>,
 }
 
@@ -36,6 +36,15 @@ pub enum GatedType {
 pub enum TokenDataType {
     erc20: ERC20Data,
     erc721: ERC721Data,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum TournamentState {
+    PreRegistration,
+    Registration,
+    Active,
+    Finalized,
+    Submitted,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
@@ -67,8 +76,7 @@ pub struct Tournament {
     pub entry_premium: Option<Premium>,
     pub game_address: ContractAddress,
     pub settings_id: u32,
-    pub finalized: bool,
-    pub distribute_called: bool,
+    pub state: TournamentState,
 }
 
 #[dojo::model]
@@ -92,11 +100,11 @@ pub struct TournamentEntries {
 }
 
 #[dojo::model]
-#[derive(Drop, Serde)]
+#[derive(Copy, Drop, Serde)]
 pub struct TournamentScores {
     #[key]
     pub tournament_id: u128,
-    pub top_score_ids: Array<u128>,
+    pub top_score_ids: Span<u128>,
 }
 
 #[dojo::model]
