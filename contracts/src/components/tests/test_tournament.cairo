@@ -1647,926 +1647,854 @@ fn test_distribute_prizes_with_prizes() {
     assert(contracts.erc721.owner_of(1) == OWNER(), 'Invalid owner');
 }
 
-// #[test]
-// #[should_panic(expected: ('prize already claimed', 'ENTRYPOINT_FAILED'))]
-// fn test_distribute_prizes_prize_already_claimed() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::None, // zero gated type
-//             Option::None, // zero entry premium,
-//             contracts.game.contract_address,
-//             1
-//         );
-//     // register_tokens_for_test(tournament, erc20, erc721);
-
-//     contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
-//     contracts.erc721.approve(contracts.tournament.contract_address, 1);
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc20.contract_address,
-//             TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
-//             1
-//         );
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc721.contract_address,
-//             TokenDataType::erc721(ERC721Data { token_id: 1 }),
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     contracts.game.end_game(1, 1);
-
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2]);
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2]);
-// }
-
-// #[test]
-// fn test_distribute_prizes_with_gated_tokens_criteria() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-//     // register_tokens_for_test(tournament, erc20, erc721);
-
-//     let gated_type = GatedType::token(
-//         GatedToken {
-//             token: contracts.erc721.contract_address,
-//             entry_type: GatedEntryType::criteria(
-//                 array![EntryCriteria { token_id: 1, entry_count: 2 }].span()
-//             ),
-//         }
-//     );
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::Some(gated_type), // zero gated type
-//             Option::None, // zero entry premium
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     let tournament_data = contracts.tournament.tournament(tournament_id);
-//     assert(
-//         tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
-//     );
-//     let gated_submission_type = GatedSubmissionType::token_id(1);
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::Some(gated_submission_type));
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     // check tournament entries
-//     assert(contracts.tournament.tournament_entries(tournament_id) == 2, 'Invalid entries');
-//     // check owner now has game token
-//     assert(contracts.game.owner_of(1) == OWNER(), 'Invalid owner');
-//     assert(contracts.game.owner_of(2) == OWNER(), 'Invalid owner');
+#[test]
+#[should_panic(expected: ('prize already claimed', 'ENTRYPOINT_FAILED'))]
+fn test_distribute_prizes_prize_already_claimed() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium,
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
+    contracts.erc721.approve(contracts.tournament.contract_address, 1);
+    let first_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc20.contract_address,
+            TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
+            1
+        );
 
-//     testing::set_block_timestamp(TEST_END_TIME().into());
+    let second_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc721.contract_address,
+            TokenDataType::erc721(ERC721Data { token_id: 1 }),
+            1
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    contracts.tournament.start_game(entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(1, 1);
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+    contracts.tournament.distribute_prize(first_prize_key);
+    contracts.tournament.distribute_prize(first_prize_key);
+}
 
-//     contracts.game.end_game(1, 1);
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-// }
+#[test]
+fn test_distribute_prizes_with_gated_tokens_criteria() {
+    let contracts = setup();
 
-// #[test]
-// fn test_distribute_prizes_with_gated_tokens_uniform() {
-//     let contracts = setup();
+    utils::impersonate(OWNER());
 
-//     utils::impersonate(OWNER());
-//     // register_tokens_for_test(tournament, erc20, erc721);
+    create_settings_details(contracts.game);
 
-//     let gated_type = GatedType::token(
-//         GatedToken {
-//             token: contracts.erc721.contract_address, entry_type: GatedEntryType::uniform(3),
-//         }
-//     );
+    let gated_type = GatedType::token(contracts.erc721.contract_address);
 
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::Some(gated_type), // zero gated type
-//             Option::None, // zero entry premium
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     let tournament_data = contracts.tournament.tournament(tournament_id);
-//     assert(
-//         tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
-//     );
-//     let gated_submission_type = GatedSubmissionType::token_id(1);
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::Some(gated_type), // zero gated type
+            Option::None, // zero entry premium
+            contracts.game.contract_address,
+            1
+        );
 
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
 
-//     contracts.tournament.enter_tournament(tournament_id, Option::Some(gated_submission_type));
+    let tournament_data = contracts.tournament.tournament(tournament_id);
+    assert(
+        tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
+    );
 
-//     testing::set_block_timestamp(TEST_START_TIME().into());
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::Some(1));
 
-//     // check tournament entries
-//     assert(contracts.tournament.tournament_entries(tournament_id) == 3, 'Invalid entries');
-//     // check owner now has game token
-//     assert(contracts.game.owner_of(1) == OWNER(), 'Invalid owner');
-//     assert(contracts.game.owner_of(2) == OWNER(), 'Invalid owner');
-//     assert(contracts.game.owner_of(3) == OWNER(), 'Invalid owner');
+    testing::set_block_timestamp(TEST_START_TIME().into());
 
-//     testing::set_block_timestamp(TEST_END_TIME().into());
+    contracts.tournament.start_game(entry_token_id);
 
-//     contracts.game.end_game(1, 1);
+    // check tournament entries
+    assert(contracts.tournament.tournament_entries(tournament_id) == 1, 'Invalid entries');
+    // check owner now has game token
+    assert(contracts.game.owner_of(1) == OWNER(), 'Invalid owner');
 
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-// }
+    testing::set_block_timestamp(TEST_END_TIME().into());
 
-// #[test]
-// fn test_distribute_prizes_with_gated_tournaments() {
-//     let contracts = setup();
+    contracts.game.end_game(1, 1);
 
-//     utils::impersonate(OWNER());
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::None, // zero gated type
-//             Option::None, // zero entry premium
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     contracts.game.end_game(1, 1);
-
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-
-//     // define a new tournament that has a gated type of the first tournament
-//     let gated_type = GatedType::tournament(array![1].span());
-
-//     let current_time = get_block_timestamp();
+    contracts.tournament.finalize_tournament(tournament_id);
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+}
 
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             current_time,
-//             current_time + MIN_REGISTRATION_PERIOD.into(),
-//             current_time + MIN_REGISTRATION_PERIOD.into(),
-//             current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::Some(gated_type), // zero gated type
-//             Option::None, // zero entry premium
-//             contracts.game.contract_address,
-//             1
-//         );
+#[test]
+fn test_distribute_prizes_with_gated_tokens_uniform() {
+    let contracts = setup();
 
-//     let tournament_data = contracts.tournament.tournament(tournament_id);
-//     assert(
-//         tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
-//     );
-//     // submit game id 1
-//     let gated_submission_type = GatedSubmissionType::game_id(array![1].span());
+    utils::impersonate(OWNER());
 
-//     testing::set_block_timestamp(current_time);
+    create_settings_details(contracts.game);
 
-//     contracts.tournament.enter_tournament(tournament_id, Option::Some(gated_submission_type));
+    let gated_type = GatedType::token(contracts.erc721.contract_address);
 
-//     testing::set_block_timestamp(current_time + MIN_REGISTRATION_PERIOD.into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(
-//         current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into()
-//     );
-
-//     contracts.game.end_game(2, 1);
-
-//     contracts.tournament.submit_scores(tournament_id, array![2]);
-// }
-
-// #[test]
-// fn test_distribute_prizes_with_premiums() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-//     // register_tokens_for_test(tournament, erc20, erc721);
-
-//     let entry_premium = Premium {
-//         token: contracts.erc20.contract_address,
-//         token_amount: 1,
-//         token_distribution: array![100].span(),
-//         creator_fee: 0,
-//     };
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::None, // zero gated type
-//             Option::Some(entry_premium), // zero entry premium
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     let tournament_data = contracts.tournament.tournament(tournament_id);
-//     assert(
-//         tournament_data.entry_premium == Option::Some(entry_premium), 'Invalid entry
-//     premium'
-//     );
-
-//     // handle approval for the premium
-//     contracts.erc20.approve(contracts.tournament.contract_address, 1);
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // check owner now has 1 less premium token
-//     assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE - 1, 'Invalid balance');
-
-//     // check tournament now has premium funds
-//     assert(
-//         contracts.erc20.balance_of(contracts.tournament.contract_address) == 1, 'Invalid balance'
-//     );
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     contracts.game.end_game(1, 1);
-
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-//     contracts.tournament.distribute_prizes(tournament_id, array![1]);
-
-//     // check owner now has all premium funds back
-//     assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
-// }
-
-// #[test]
-// fn test_distribute_prizes_with_premium_creator_fee() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     // Create premium with 10% creator fee and 90% to winner
-//     let entry_premium = Premium {
-//         token: contracts.erc20.contract_address,
-//         token_amount: 100, // 100 tokens per entry
-//         token_distribution: array![100].span(), // 100% to winner
-//         creator_fee: 10, // 10% creator fee
-//     };
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1, // single top score
-//             Option::None, // zero gated type
-//             Option::Some(entry_premium), // premium with creator fee
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     // Enter tournament with two players
-//     utils::impersonate(OWNER());
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     let player2 = starknet::contract_address_const::<0x456>();
-//     utils::impersonate(player2);
-//     contracts.erc20.mint(player2, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     let creator_initial_balance = contracts.erc20.balance_of(OWNER());
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     utils::impersonate(OWNER());
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player2);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     // Set scores (player2 wins)
-//     contracts.game.end_game(1, 1);
-//     contracts.game.end_game(2, 1);
-
-//     utils::impersonate(OWNER());
-//     contracts.tournament.submit_scores(tournament_id, array![2]);
-
-//     // Verify creator fee distribution (10% of 200 total = 20)
-//     assert(
-//         contracts.erc20.balance_of(OWNER()) == creator_initial_balance + 20, 'Invalid creator
-//         fee'
-//     );
-
-//     // Check initial balances
-//     let winner_initial_balance = contracts.erc20.balance_of(player2);
-
-//     // Distribute rewards
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-//     contracts.tournament.distribute_prizes(tournament_id, array![1]);
-
-//     // Verify winner prize distribution (90% of 200 total = 180)
-//     assert(
-//         contracts.erc20.balance_of(player2) == winner_initial_balance + 180,
-//         'Invalid winner distribution'
-//     );
-// }
-
-// #[test]
-// fn test_distribute_prizes_with_premium_multiple_winners() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     // Create premium with 10% creator fee and split remaining 90% between top 3:
-//     // 1st: 50%, 2nd: 30%, 3rd: 20%
-//     let entry_premium = Premium {
-//         token: contracts.erc20.contract_address,
-//         token_amount: 100, // 100 tokens per entry
-//         token_distribution: array![50, 30, 20].span(), // Distribution percentages
-//         creator_fee: 10, // 10% creator fee
-//     };
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             3, // three top scores
-//             Option::None, // zero gated type
-//             Option::Some(entry_premium), // premium with distribution
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     // Create and enter with 4 players
-//     let player2 = starknet::contract_address_const::<0x456>();
-//     let player3 = starknet::contract_address_const::<0x789>();
-//     let player4 = starknet::contract_address_const::<0x101>();
-
-//     // Owner enters
-//     utils::impersonate(OWNER());
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // Player 2 enters
-//     utils::impersonate(player2);
-//     contracts.erc20.mint(player2, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // Player 3 enters
-//     utils::impersonate(player3);
-//     contracts.erc20.mint(player3, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // Player 4 enters
-//     utils::impersonate(player4);
-//     contracts.erc20.mint(player4, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     let third_initial = contracts.erc20.balance_of(OWNER());
-
-//     // Start games for all players
-//     utils::impersonate(OWNER());
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player2);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player3);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player4);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     contracts.game.end_game(2, 100); // player2's game
-//     contracts.game.end_game(3, 75); // player3's game
-//     contracts.game.end_game(1, 50); // owner's game
-//     contracts.game.end_game(4, 25); // player4's game
-
-//     // Submit scores
-//     utils::impersonate(player2);
-//     contracts.tournament.submit_scores(tournament_id, array![2, 3, 1]);
-
-//     // Store initial balances
-//     let first_initial = contracts.erc20.balance_of(player2);
-//     let second_initial = contracts.erc20.balance_of(player3);
-
-//     // Distribute rewards
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-//     // 3 premium prizes
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2, 3]);
-
-//     // Total pool = 4 players * 100 tokens = 400 tokens
-//     // Creator fee = 10% of 400 = 40 tokens
-//     // Remaining pool = 360 tokens
-//     // 1st place (50%) = 180 tokens
-//     // 2nd place (30%) = 108 tokens
-//     // 3rd place (20%) = 72 tokens
-
-//     // Verify winner distributions
-//     assert(
-//         contracts.erc20.balance_of(player2) == first_initial + 180, 'Invalid first distribution'
-//     );
-//     assert(
-//         contracts.erc20.balance_of(player3) == second_initial + 108, 'Invalid second
-//         distribution'
-//     );
-//     assert(
-//         contracts.erc20.balance_of(OWNER()) == third_initial + 72 + 40, 'Invalid third
-//         distribution'
-//     );
-// }
-
-// #[test]
-// fn test_tournament_with_no_submissions() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     // Create tournament with prizes and premium
-//     let entry_premium = Premium {
-//         token: contracts.erc20.contract_address,
-//         token_amount: 100,
-//         token_distribution: array![100].span(), // 100% to winner
-//         creator_fee: 10, // 10% creator fee
-//     };
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             3, // Track top 3 scores
-//             Option::None,
-//             Option::Some(entry_premium),
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     // Add some prizes
-//     contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
-//     contracts.erc721.approve(contracts.tournament.contract_address, 1);
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc20.contract_address,
-//             TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
-//             1
-//         );
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc721.contract_address,
-//             TokenDataType::erc721(ERC721Data { token_id: 1 }),
-//             1
-//         );
-
-//     // Create multiple players
-//     let player2 = starknet::contract_address_const::<0x456>();
-//     let player3 = starknet::contract_address_const::<0x789>();
-
-//     // Enter tournament with all players
-//     contracts.erc20.mint(OWNER(), 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     utils::impersonate(player2);
-//     contracts.erc20.mint(player2, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     utils::impersonate(player3);
-//     contracts.erc20.mint(player3, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // Store initial balances
-//     let creator_initial = contracts.erc20.balance_of(OWNER());
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     utils::impersonate(OWNER());
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player2);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     utils::impersonate(player3);
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     // Move to after tournament and submission period without any score submissions
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-
-//     // Distribute rewards
-//     utils::impersonate(OWNER());
-//     // 2 deposited prizes and 1 tournament premium prize
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2, 3]);
-
-//     // Verify final state
-//     let final_scores = contracts.tournament.top_scores(tournament_id);
-//     assert(final_scores.len() == 0, 'Should have no scores');
-
-//     // Verify first caller gets all prizes
-//     // creator also gets the prize balance back (STARTING BALANCE)
-//     assert(
-//         contracts.erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
-//         'Invalid owner refund'
-//     );
-//     assert(contracts.erc20.balance_of(player2) == 0, 'Invalid player2 refund');
-//     assert(contracts.erc20.balance_of(player3) == 0, 'Invalid player3 refund');
-
-//     // Verify prize returns to tournament creator
-//     assert(contracts.erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
-// }
-
-// #[test]
-// fn test_tournament_with_no_starts() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     // Create tournament with prizes and premium
-//     let entry_premium = Premium {
-//         token: contracts.erc20.contract_address,
-//         token_amount: 100,
-//         token_distribution: array![100].span(), // 100% to winner
-//         creator_fee: 10, // 10% creator fee
-//     };
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             3, // Track top 3 scores
-//             Option::None,
-//             Option::Some(entry_premium),
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     // Add some prizes
-//     contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
-//     contracts.erc721.approve(contracts.tournament.contract_address, 1);
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc20.contract_address,
-//             TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
-//             1
-//         );
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc721.contract_address,
-//             TokenDataType::erc721(ERC721Data { token_id: 1 }),
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     // Create multiple players
-//     let player2 = starknet::contract_address_const::<0x456>();
-//     let player3 = starknet::contract_address_const::<0x789>();
-
-//     // Enter tournament with all players
-//     contracts.erc20.mint(OWNER(), 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     utils::impersonate(player2);
-//     contracts.erc20.mint(player2, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     utils::impersonate(player3);
-//     contracts.erc20.mint(player3, 100);
-//     contracts.erc20.approve(contracts.tournament.contract_address, 100);
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     // Store initial balances
-//     let creator_initial = contracts.erc20.balance_of(OWNER());
-
-//     // Move to after tournament and submission period without any score submissions
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-
-//     // Distribute rewards
-//     utils::impersonate(OWNER());
-//     // 2 deposited prizes and 1 tournament premium prize
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2, 3]);
-
-//     // Verify final state
-//     let final_scores = contracts.tournament.top_scores(tournament_id);
-//     assert(final_scores.len() == 0, 'Should have no scores');
-
-//     // Verify first caller gets all prizes
-//     // creator also gets the prize balance back (STARTING BALANCE)
-//     assert(
-//         contracts.erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
-//         'Invalid owner refund'
-//     );
-//     assert(contracts.erc20.balance_of(player2) == 0, 'Invalid player2 refund');
-//     assert(contracts.erc20.balance_of(player3) == 0, 'Invalid player3 refund');
-
-//     // Verify prize returns to tournament creator
-//     assert(contracts.erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
-// }
-
-// #[test]
-// fn test_distribute_prizes_season() {
-//     let contracts = setup();
-
-//     utils::impersonate(OWNER());
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1,
-//             Option::None,
-//             Option::None,
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
-//     contracts.erc721.approve(contracts.tournament.contract_address, 1);
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc20.contract_address,
-//             TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
-//             1
-//         );
-//     contracts
-//         .tournament
-//         .add_prize(
-//             tournament_id,
-//             contracts.erc721.contract_address,
-//             TokenDataType::erc721(ERC721Data { token_id: 1 }),
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     testing::set_block_timestamp(TEST_END_TIME().into());
-
-//     contracts.game.end_game(1, 1);
-
-//     contracts.tournament.submit_scores(tournament_id, array![1]);
-
-//     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
-//     contracts.tournament.distribute_prizes(tournament_id, array![1, 2]);
-
-//     // check balances of owner after claiming prizes
-//     assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
-//     assert(contracts.erc721.owner_of(1) == OWNER(), 'Invalid owner');
-// }
-
-// //
-// // Test register game
-// //
-
-// #[test]
-// fn test_register_game() {
-//     let contracts = setup();
-
-//     contracts.tournament.register_game(GAME(), GAME_NAME());
-
-//     let game_name = contracts.tournament.game(GAME()).name;
-//     assert(game_name == GAME_NAME(), 'Invalid game name');
-// }
-
-// #[test]
-// fn test_create_tournament_with_settings() {
-//     let contracts = setup();
-
-//     contracts.tournament.register_game(GAME(), GAME_NAME());
-
-//     contracts
-//         .game
-//         .add_settings(
-//             'Settings',
-//             "Description",
-//             array!['Max Health', 'Strength', 'Speed'].span(),
-//             array![100, 10, 10].span()
-//         );
-
-//     contracts.game.new_game(1, OWNER());
-
-//     contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1,
-//             Option::None,
-//             Option::None,
-//             GAME(),
-//             1
-//         );
-
-//     let game_name = contracts.tournament.game(GAME()).name;
-//     assert(game_name == GAME_NAME(), 'Invalid game name');
-
-//     let setting_1 = contracts.game.get_setting(1, 'Max Health');
-//     let setting_2 = contracts.game.get_setting(1, 'Strength');
-//     let setting_3 = contracts.game.get_setting(1, 'Speed');
-
-//     assert(setting_1 == 100, 'Invalid setting 1');
-//     assert(setting_2 == 10, 'Invalid setting 2');
-//     assert(setting_3 == 10, 'Invalid setting 3');
-
-//     let settings_id = contracts.game.get_settings_id(1);
-//     assert(settings_id == 1, 'Invalid settings id');
-
-//     let settings_details = contracts.game.get_settings_details(1);
-//     assert(settings_details.name == 'Settings', 'Invalid settings name');
-//     assert(settings_details.description == "Description", 'Invalid settings description');
-//     assert(settings_details.exists == true, 'Invalid settings exists');
-// }
-
-// #[test]
-// fn test_start_tournament_with_settings() {
-//     let contracts = setup();
-
-//     contracts.tournament.register_game(GAME(), GAME_NAME());
-
-//     contracts
-//         .game
-//         .add_settings(
-//             'Settings',
-//             "Description",
-//             array!['Max Health', 'Strength', 'Speed'].span(),
-//             array![100, 10, 10].span()
-//         );
-
-//     let tournament_id = contracts
-//         .tournament
-//         .create_tournament(
-//             TOURNAMENT_NAME(),
-//             TOURNAMENT_DESCRIPTION(),
-//             TEST_REGISTRATION_START_TIME().into(),
-//             TEST_REGISTRATION_END_TIME().into(),
-//             TEST_START_TIME().into(),
-//             TEST_END_TIME().into(),
-//             MIN_SUBMISSION_PERIOD.into(),
-//             1,
-//             Option::None,
-//             Option::None,
-//             contracts.game.contract_address,
-//             1
-//         );
-
-//     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
-
-//     contracts.tournament.enter_tournament(tournament_id, Option::None);
-
-//     testing::set_block_timestamp(TEST_START_TIME().into());
-
-//     contracts.tournament.start_tournament(tournament_id, false, Option::None);
-
-//     let settings_id = contracts.game.get_settings_id(1);
-//     assert(settings_id == 1, 'Invalid settings id');
-// }
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::Some(gated_type), // zero gated type
+            Option::None, // zero entry premium
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    let tournament_data = contracts.tournament.tournament(tournament_id);
+    assert(
+        tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
+    );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::Some(1));
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    contracts.tournament.start_game(entry_token_id);
+
+    // check tournament entries
+    assert(contracts.tournament.tournament_entries(tournament_id) == 1, 'Invalid entries');
+    // check owner now has game token
+    assert(contracts.game.owner_of(1) == OWNER(), 'Invalid owner');
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(1, 1);
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+}
+
+#[test]
+fn test_distribute_prizes_with_gated_tournaments() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::None, // zero entry premium
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    contracts.tournament.start_game(entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(1, 1);
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    // define a new tournament that has a gated type of the first tournament
+    let gated_type = GatedType::tournament(TournamentType::winners(array![tournament_id].span()));
+
+    let current_time = get_block_timestamp();
+
+    let second_creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            current_time,
+            current_time + MIN_REGISTRATION_PERIOD.into(),
+            current_time + MIN_REGISTRATION_PERIOD.into(),
+            current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::Some(gated_type), // zero gated type
+            Option::None, // zero entry premium
+            contracts.game.contract_address,
+            1
+        );
+
+    let second_tournament_id = contracts.tournament.tournament_token(second_creator_token_id).tournament_id;
+
+    let tournament_data = contracts.tournament.tournament(second_tournament_id);
+    assert(
+        tournament_data.gated_type == Option::Some(gated_type), 'Invalid tournament gated token'
+    );
+
+    testing::set_block_timestamp(current_time);
+
+    let second_entry_token_id = contracts.tournament.enter_tournament(second_tournament_id, Option::Some(entry_token_id));
+
+    testing::set_block_timestamp(current_time + MIN_REGISTRATION_PERIOD.into());
+
+    contracts.tournament.start_game(second_entry_token_id);
+
+    testing::set_block_timestamp(
+        current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into()
+    );
+
+    contracts.game.end_game(2, 1);
+
+    contracts.tournament.finalize_tournament(second_tournament_id);
+
+    contracts.tournament.submit_scores(second_tournament_id, array![second_entry_token_id]);
+}
+
+#[test]
+fn test_distribute_prizes_with_premiums() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    let entry_premium = Premium {
+        token: contracts.erc20.contract_address,
+        token_amount: 1,
+        token_distribution: array![100].span(),
+        creator_fee: 0,
+    };
+
+    let creator_token_id  = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::Some(entry_premium), // zero entry premium
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    let tournament_data = contracts.tournament.tournament(tournament_id);
+    assert(
+        tournament_data.entry_premium == Option::Some(entry_premium), 'Invalid entry premium'
+    );
+
+    // handle approval for the premium
+    contracts.erc20.approve(contracts.tournament.contract_address, 1);
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // check owner now has 1 less premium token
+    assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE - 1, 'Invalid balance');
+
+    // check tournament now has premium funds
+    assert(
+        contracts.erc20.balance_of(contracts.tournament.contract_address) == 1, 'Invalid balance'
+    );
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    contracts.tournament.start_game(entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(1, 1);
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+    contracts.tournament.distribute_prize(1);
+
+    // check owner now has all premium funds back
+    assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
+}
+
+#[test]
+fn test_distribute_prizes_with_premium_creator_fee() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    // Create premium with 10% creator fee and 90% to winner
+    let entry_premium = Premium {
+        token: contracts.erc20.contract_address,
+        token_amount: 100, // 100 tokens per entry
+        token_distribution: array![100].span(), // 100% to winner
+        creator_fee: 10, // 10% creator fee
+    };
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1, // single top score
+            Option::None, // zero gated type
+            Option::Some(entry_premium), // premium with creator fee
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter tournament with two players
+    utils::impersonate(OWNER());
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let first_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    let player2 = starknet::contract_address_const::<0x456>();
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let second_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    let creator_initial_balance = contracts.erc20.balance_of(OWNER());
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    utils::impersonate(OWNER());
+    contracts.tournament.start_game(first_entry_token_id);
+
+    utils::impersonate(player2);
+    contracts.tournament.start_game(second_entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // Set scores (player2 wins)
+    contracts.game.end_game(1, 1);
+    contracts.game.end_game(2, 1);
+
+    utils::impersonate(OWNER());
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![second_entry_token_id]);
+
+    // Verify creator fee distribution (10% of 200 total = 20)
+    assert(
+        contracts.erc20.balance_of(OWNER()) == creator_initial_balance + 20, 'Invalid creator fee'
+    );
+
+    // Check initial balances
+    let winner_initial_balance = contracts.erc20.balance_of(player2);
+
+    // Distribute rewards
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+    contracts.tournament.distribute_prize(1);
+
+    // Verify winner prize distribution (90% of 200 total = 180)
+    assert(
+        contracts.erc20.balance_of(player2) == winner_initial_balance + 180,
+        'Invalid winner distribution'
+    );
+}
+
+#[test]
+fn test_distribute_prizes_with_premium_multiple_winners() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    // Create premium with 10% creator fee and split remaining 90% between top 3:
+    // 1st: 50%, 2nd: 30%, 3rd: 20%
+    let entry_premium = Premium {
+        token: contracts.erc20.contract_address,
+        token_amount: 100, // 100 tokens per entry
+        token_distribution: array![50, 30, 20].span(), // Distribution percentages
+        creator_fee: 10, // 10% creator fee
+    };
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            3, // three top scores
+            Option::None, // zero gated type
+            Option::Some(entry_premium), // premium with distribution
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Create and enter with 4 players
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+    let player4 = starknet::contract_address_const::<0x101>();
+
+    // Owner enters
+    utils::impersonate(OWNER());
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let first_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // Player 2 enters
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let second_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // Player 3 enters
+    utils::impersonate(player3);
+    contracts.erc20.mint(player3, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let third_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // Player 4 enters
+    utils::impersonate(player4);
+    contracts.erc20.mint(player4, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let fourth_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    let third_initial = contracts.erc20.balance_of(OWNER());
+
+    // Start games for all players
+    utils::impersonate(OWNER());
+    contracts.tournament.start_game(first_entry_token_id);
+
+    utils::impersonate(player2);
+    contracts.tournament.start_game(second_entry_token_id);
+
+    utils::impersonate(player3);
+    contracts.tournament.start_game(third_entry_token_id);
+
+    utils::impersonate(player4);
+    contracts.tournament.start_game(fourth_entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(2, 100); // player2's game
+    contracts.game.end_game(3, 75); // player3's game
+    contracts.game.end_game(1, 50); // owner's game
+    contracts.game.end_game(4, 25); // player4's game
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    // Submit scores
+    utils::impersonate(player2);
+    contracts.tournament.submit_scores(tournament_id, array![second_entry_token_id, third_entry_token_id, first_entry_token_id]);
+
+    // Store initial balances
+    let first_initial = contracts.erc20.balance_of(player2);
+    let second_initial = contracts.erc20.balance_of(player3);
+
+    // Distribute rewards
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+    // 3 premium prizes
+    contracts.tournament.distribute_prize(1);
+    contracts.tournament.distribute_prize(2);
+    contracts.tournament.distribute_prize(3);
+
+    // Total pool = 4 players * 100 tokens = 400 tokens
+    // Creator fee = 10% of 400 = 40 tokens
+    // Remaining pool = 360 tokens
+    // 1st place (50%) = 180 tokens
+    // 2nd place (30%) = 108 tokens
+    // 3rd place (20%) = 72 tokens
+
+    // Verify winner distributions
+    assert(
+        contracts.erc20.balance_of(player2) == first_initial + 180, 'Invalid first distribution'
+    );
+    assert(
+        contracts.erc20.balance_of(player3) == second_initial + 108, 'Invalid second distribution'
+    );
+    assert(
+        contracts.erc20.balance_of(OWNER()) == third_initial + 72 + 40, 'Invalid third distribution'
+    );
+}
+
+#[test]
+fn test_tournament_with_no_submissions() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    // Create tournament with prizes and premium
+    let entry_premium = Premium {
+        token: contracts.erc20.contract_address,
+        token_amount: 100,
+        token_distribution: array![100].span(), // 100% to winner
+        creator_fee: 10, // 10% creator fee
+    };
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            3, // Track top 3 scores
+            Option::None,
+            Option::Some(entry_premium),
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Add some prizes
+    contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
+    contracts.erc721.approve(contracts.tournament.contract_address, 1);
+    let first_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc20.contract_address,
+            TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
+            1
+        );
+    let second_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc721.contract_address,
+            TokenDataType::erc721(ERC721Data { token_id: 1 }),
+            1
+        );
+
+    // Create multiple players
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+
+    // Enter tournament with all players
+    contracts.erc20.mint(OWNER(), 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let first_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let second_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player3);
+    contracts.erc20.mint(player3, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let third_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // Store initial balances
+    let creator_initial = contracts.erc20.balance_of(OWNER());
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    utils::impersonate(OWNER());
+    contracts.tournament.start_game(first_entry_token_id);
+
+    utils::impersonate(player2);
+    contracts.tournament.start_game(second_entry_token_id);
+
+    utils::impersonate(player3);
+    contracts.tournament.start_game(third_entry_token_id);
+
+    // Move to after tournament and submission period without any score submissions
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    // Distribute rewards
+    utils::impersonate(OWNER());
+    // 2 deposited prizes and 1 tournament premium prize
+    contracts.tournament.distribute_unclaimable_prize(first_prize_key);
+    contracts.tournament.distribute_unclaimable_prize(second_prize_key);
+    contracts.tournament.distribute_unclaimable_prize(3);
+
+    // Verify first caller gets all prizes
+    // creator also gets the prize balance back (STARTING BALANCE)
+    assert(
+        contracts.erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
+        'Invalid owner refund'
+    );
+    assert(contracts.erc20.balance_of(player2) == 0, 'Invalid player2 refund');
+    assert(contracts.erc20.balance_of(player3) == 0, 'Invalid player3 refund');
+
+    // Verify prize returns to tournament creator
+    assert(contracts.erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
+}
+
+#[test]
+fn test_tournament_with_no_starts() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    // Create tournament with prizes and premium
+    let entry_premium = Premium {
+        token: contracts.erc20.contract_address,
+        token_amount: 100,
+        token_distribution: array![100].span(), // 100% to winner
+        creator_fee: 10, // 10% creator fee
+    };
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_REGISTRATION_START_TIME().into(),
+            TEST_REGISTRATION_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            3, // Track top 3 scores
+            Option::None,
+            Option::Some(entry_premium),
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    // Add some prizes
+    contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
+    contracts.erc721.approve(contracts.tournament.contract_address, 1);
+    let first_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc20.contract_address,
+            TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
+            1
+        );
+
+    let second_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc721.contract_address,
+            TokenDataType::erc721(ERC721Data { token_id: 1 }),
+            1
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Create multiple players
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+
+    // Enter tournament with all players
+    contracts.erc20.mint(OWNER(), 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let first_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let second_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    utils::impersonate(player3);
+    contracts.erc20.mint(player3, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let third_entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    // Store initial balances
+    let creator_initial = contracts.erc20.balance_of(OWNER());
+
+    // Move to after tournament and submission period without any score submissions
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    // Distribute rewards
+    utils::impersonate(OWNER());
+    // 2 deposited prizes and 1 tournament premium prize
+    contracts.tournament.distribute_unclaimable_prize(first_prize_key);
+    contracts.tournament.distribute_unclaimable_prize(second_prize_key);
+    contracts.tournament.distribute_unclaimable_prize(3);
+
+    // Verify first caller gets all prizes
+    // creator also gets the prize balance back (STARTING BALANCE)
+    assert(
+        contracts.erc20.balance_of(OWNER()) == creator_initial + 300 + STARTING_BALANCE,
+        'Invalid owner refund'
+    );
+    assert(contracts.erc20.balance_of(player2) == 0, 'Invalid player2 refund');
+    assert(contracts.erc20.balance_of(player3) == 0, 'Invalid player3 refund');
+
+    // Verify prize returns to tournament creator
+    assert(contracts.erc721.owner_of(1) == OWNER(), 'Prize should return to caller');
+}
+
+#[test]
+fn test_distribute_prizes_season() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    create_settings_details(contracts.game);
+
+    let creator_token_id = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            TEST_START_TIME().into(),
+            TEST_END_TIME().into(),
+            MIN_SUBMISSION_PERIOD.into(),
+            1,
+            Option::None,
+            Option::None,
+            contracts.game.contract_address,
+            1
+        );
+
+    let tournament_id = contracts.tournament.tournament_token(creator_token_id).tournament_id;
+
+    contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
+    contracts.erc721.approve(contracts.tournament.contract_address, 1);
+    let first_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc20.contract_address,
+            TokenDataType::erc20(ERC20Data { token_amount: STARTING_BALANCE.low }),
+            1
+        );
+    let second_prize_key = contracts
+        .tournament
+        .add_prize(
+            tournament_id,
+            contracts.erc721.contract_address,
+            TokenDataType::erc721(ERC721Data { token_id: 1 }),
+            1
+        );
+
+    testing::set_block_timestamp(TEST_START_TIME().into());
+
+    let entry_token_id = contracts.tournament.enter_tournament(tournament_id, Option::None);
+
+    contracts.tournament.start_game(entry_token_id);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(1, 1);
+
+    contracts.tournament.finalize_tournament(tournament_id);
+
+    contracts.tournament.submit_scores(tournament_id, array![entry_token_id]);
+
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+    contracts.tournament.distribute_prize(first_prize_key);
+    contracts.tournament.distribute_prize(second_prize_key);
+
+    // check balances of owner after claiming prizes
+    assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE, 'Invalid balance');
+    assert(contracts.erc721.owner_of(1) == OWNER(), 'Invalid owner');
+}
 
 
