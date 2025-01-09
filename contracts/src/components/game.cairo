@@ -4,22 +4,11 @@ use tournaments::components::models::game::SettingsDetails;
 #[starknet::interface]
 trait IGame<TState> {
     fn get_score(self: @TState, game_id: u256) -> u64;
-    fn get_setting(self: @TState, settings_id: u32, key: felt252) -> u64;
     fn get_settings_id(self: @TState, game_id: u256) -> u32;
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
     fn settings_exists(self: @TState, settings_id: u32) -> bool;
 
     fn new_game(ref self: TState, settings_id: u32, to: ContractAddress) -> u256;
-    fn add_settings(
-        ref self: TState,
-        name: felt252,
-        description: ByteArray,
-        setting_keys: Span<felt252>,
-        setting_values: Span<u64>
-    );
-
-    // ISRC5
-    fn supports_interface(self: @TState, interface_id: felt252) -> bool;
 }
 
 ///
@@ -29,14 +18,11 @@ trait IGame<TState> {
 pub mod game_component {
     use super::IGame;
 
-    use core::num::traits::Zero;
-
-    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use starknet::{ContractAddress, get_contract_address};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use tournaments::components::models::game::{
-        GameDetails, GameMetadata, Score, GameCount, Settings, SettingsDetails, GameSettings,
-        SettingsCount
+        GameDetails, GameMetadata, Score, GameCount, SettingsDetails, GameSettings
     };
     use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID};
     use tournaments::components::libs::store::{Store, StoreTrait};
@@ -80,16 +66,6 @@ pub mod game_component {
             store.get_game_score(game_id.low).score
         }
 
-        fn get_setting(
-            self: @ComponentState<TContractState>, settings_id: u32, key: felt252
-        ) -> u64 {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS()
-            );
-            let mut store: Store = StoreTrait::new(world);
-            store.get_settings_key(settings_id, key).value
-        }
-
         fn get_settings_id(self: @ComponentState<TContractState>, game_id: u256) -> u32 {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS()
@@ -124,72 +100,23 @@ pub mod game_component {
             );
             let mut store: Store = StoreTrait::new(world);
 
+            assert(self.settings_exists(settings_id), 'Settings do not exist');
+
             let game_count = self.get_game_count();
             let game_id = game_count + 1;
 
             let mut erc721 = get_dep_component_mut!(ref self, ERC721);
-            if !to.is_zero() {
-                erc721.mint(to, game_id);
-            } else {
-                erc721.mint(get_caller_address(), game_id);
-            }
+            erc721.mint(to, game_id);
 
-            store.set_game_count(@GameCount { contract: get_contract_address(), count: game_id.low });
-            store.set_game_settings(@GameSettings { game_id: game_id.low, settings_id: settings_id });
+            store
+                .set_game_count(
+                    @GameCount { contract: get_contract_address(), count: game_id.low }
+                );
+            store
+                .set_game_settings(
+                    @GameSettings { game_id: game_id.low, settings_id: settings_id }
+                );
             game_id
-        }
-
-        fn add_settings(
-            ref self: ComponentState<TContractState>,
-            name: felt252,
-            description: ByteArray,
-            setting_keys: Span<felt252>,
-            setting_values: Span<u64>
-        ) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS()
-            );
-            let mut store: Store = StoreTrait::new(world);
-            assert(setting_keys.len() == setting_values.len(), 'setting lengths incorrect');
-            let settings_count = store.get_settings_count(get_contract_address()).count;
-            let mut loop_index = 0;
-            loop {
-                if (loop_index == setting_keys.len()) {
-                    break;
-                }
-                store
-                    .set_settings_key(
-                        @Settings {
-                            id: settings_count.into() + 1,
-                            key: *setting_keys.at(loop_index),
-                            value: *setting_values.at(loop_index)
-                        }
-                    );
-                loop_index += 1;
-            };
-            store
-                .set_settings_details(
-                    @SettingsDetails {
-                        id: settings_count.into() + 1,
-                        name: name,
-                        description: description,
-                        exists: true
-                    }
-                );
-            store
-                .set_settings_count(
-                    @SettingsCount {
-                        contract: get_contract_address(), count: settings_count.into() + 1
-                    }
-                );
-        }
-
-        // ISRC5
-        fn supports_interface(
-            self: @ComponentState<TContractState>, interface_id: felt252,
-        ) -> bool {
-            let src5 = get_dep_component!(self, SRC5);
-            src5.supports_interface(interface_id)
         }
     }
 
@@ -246,6 +173,22 @@ pub mod game_component {
             );
             let mut store: Store = StoreTrait::new(world);
             store.set_game_score(@Score { game_id: game_id.low, score: score });
+        }
+
+        fn set_settings(
+            ref self: ComponentState<TContractState>,
+            settings_id: u32,
+            name: felt252,
+            description: ByteArray
+        ) {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), DEFAULT_NS()
+            );
+            let mut store: Store = StoreTrait::new(world);
+            store
+                .set_settings_details(
+                    @SettingsDetails { id: settings_id, name, description, exists: true }
+                );
         }
     }
 }

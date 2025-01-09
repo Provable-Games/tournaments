@@ -1,3 +1,5 @@
+use starknet::ContractAddress;
+
 use tournaments::components::constants::MIN_SUBMISSION_PERIOD;
 use tournaments::tests::{
     constants::{
@@ -6,16 +8,17 @@ use tournaments::tests::{
     },
 };
 use tournaments::components::tests::interfaces::{
-    IERC20MockDispatcher, IERC20MockDispatcherTrait, IERC721MockDispatcher,
-    IERC721MockDispatcherTrait, ITournamentMockDispatcher, ITournamentMockDispatcherTrait, Token
+    IERC721MockDispatcher, IERC721MockDispatcherTrait, ITournamentMockDispatcher,
+    ITournamentMockDispatcherTrait
 };
-use tournaments::components::models::tournament::{ERC20Data, ERC721Data, TokenDataType};
 
 //
 // Test Helpers
 //
 
-pub fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
+pub fn create_basic_tournament(
+    tournament: ITournamentMockDispatcher, game: ContractAddress
+) -> u64 {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
@@ -28,29 +31,30 @@ pub fn create_basic_tournament(tournament: ITournamentMockDispatcher) -> u64 {
             1, // single top score
             Option::None, // zero gated type
             Option::None, // zero entry premium,
-            GAME(),
+            game,
             1
         )
 }
+// pub fn register_tokens_for_test(
+//     tournament: ITournamentMockDispatcher,
+//     erc20: IERC20MockDispatcher,
+//     erc721: IERC721MockDispatcher,
+// ) {
+//     let tokens = array![
+//         Token {
+//             token: erc20.contract_address,
+//             token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 })
+//         },
+//         Token {
+//             token: erc721.contract_address,
+//             token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 })
+//         },
+//     ];
 
-pub fn register_tokens_for_test(
-    tournament: ITournamentMockDispatcher,
-    erc20: IERC20MockDispatcher,
-    erc721: IERC721MockDispatcher,
-) {
-    let tokens = array![
-        Token {
-            token: erc20.contract_address,
-            token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 })
-        },
-        Token {
-            token: erc721.contract_address,
-            token_data_type: TokenDataType::erc721(ERC721Data { token_id: 1 })
-        },
-    ];
+//     erc20.approve(tournament.contract_address, 1);
+//     erc721.approve(tournament.contract_address, 1);
 
-    erc20.approve(tournament.contract_address, 1);
-    erc721.approve(tournament.contract_address, 1);
+//     tournament.register_tokens(tokens);
+// }
 
-    tournament.register_tokens(tokens);
-}
+

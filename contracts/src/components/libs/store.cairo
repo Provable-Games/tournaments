@@ -3,13 +3,12 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    RegisteredGame, TournamentTotals, Tournament, TournamentEntries, TournamentPrize,
-    TournamentScores, Token, TournamentToken, TournamentConfig
+    TournamentTotals, Tournament, TournamentEntries, TournamentPrize, TournamentScores, Token,
+    TournamentToken, TournamentConfig
 };
 
 use tournaments::components::models::game::{
-    GameDetails, GameMetadata, Score, Settings, SettingsDetails, GameSettings, GameCount,
-    SettingsCount
+    GameDetails, GameMetadata, Score, SettingsDetails, GameSettings, GameCount,
 };
 
 #[derive(Copy, Drop)]
@@ -31,22 +30,17 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn get_registered_game(ref self: Store, game: ContractAddress) -> RegisteredGame {
-        (self.world.read_model(game))
-    }
-
-    #[inline(always)]
     fn get_tournament_totals(self: Store, contract: ContractAddress) -> TournamentTotals {
         (self.world.read_model(contract))
     }
 
     #[inline(always)]
-    fn get_tournament(self: Store, tournament_id: u64) -> Tournament {
+    fn get_tournament(self: Store, tournament_id: u128) -> Tournament {
         (self.world.read_model(tournament_id))
     }
 
     #[inline(always)]
-    fn get_total_entries(self: Store, tournament_id: u64) -> TournamentEntries {
+    fn get_total_entries(self: Store, tournament_id: u128) -> TournamentEntries {
         (self.world.read_model(tournament_id))
     }
 
@@ -56,13 +50,13 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_tournament_scores(self: Store, tournament_id: u64) -> TournamentScores {
+    fn get_tournament_scores(self: Store, tournament_id: u128) -> TournamentScores {
         (self.world.read_model(tournament_id))
     }
 
     #[inline(always)]
-    fn get_prize(self: Store, tournament_id: u64, prize_key: u64) -> TournamentPrize {
-        (self.world.read_model((tournament_id, prize_key),))
+    fn get_prize(self: Store, prize_key: u128) -> TournamentPrize {
+        (self.world.read_model((prize_key)))
     }
 
     #[inline(always)]
@@ -98,11 +92,6 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_settings_key(ref self: Store, settings_id: u32, key: felt252) -> Settings {
-        (self.world.read_model((settings_id, key),))
-    }
-
-    #[inline(always)]
     fn get_settings_details(ref self: Store, settings_id: u32) -> SettingsDetails {
         (self.world.read_model(settings_id))
     }
@@ -112,22 +101,11 @@ pub impl StoreImpl of StoreTrait {
         (self.world.read_model(game_id))
     }
 
-    #[inline(always)]
-    fn get_settings_count(ref self: Store, contract: ContractAddress) -> SettingsCount {
-        (self.world.read_model(contract))
-    }
-
-
     //
     // Setters
     //
 
     // Tournament
-
-    #[inline(always)]
-    fn set_registered_game(ref self: Store, game: @RegisteredGame) {
-        self.world.write_model(game);
-    }
 
     #[inline(always)]
     fn set_tournament_totals(ref self: Store, model: @TournamentTotals) {
@@ -192,22 +170,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_settings_key(ref self: Store, model: @Settings) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
     fn set_settings_details(ref self: Store, model: @SettingsDetails) {
         self.world.write_model(model);
     }
 
     #[inline(always)]
     fn set_game_settings(ref self: Store, model: @GameSettings) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_settings_count(ref self: Store, model: @SettingsCount) {
         self.world.write_model(model);
     }
 }

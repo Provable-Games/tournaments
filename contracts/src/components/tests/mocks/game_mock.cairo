@@ -1,7 +1,7 @@
 #[starknet::interface]
 trait IGameMock<TContractState> {
-    fn start_game(ref self: TContractState, game_id: felt252);
-    fn end_game(ref self: TContractState, game_id: felt252, score: u64);
+    fn start_game(ref self: TContractState, game_id: u256);
+    fn end_game(ref self: TContractState, game_id: u256, score: u64);
 }
 
 #[starknet::interface]
@@ -64,29 +64,57 @@ mod game_mock {
     fn BASE_URI() -> ByteArray {
         ("https://game.io")
     }
+
+    fn GAME_NAME() -> felt252 {
+        ('Game')
+    }
+    fn GAME_DESCRIPTION() -> ByteArray {
+        ("Game description")
+    }
+    fn GAME_DEVELOPER() -> felt252 {
+        ('Game developer')
+    }
+    fn GAME_PUBLISHER() -> felt252 {
+        ('Game publisher')
+    }
+    fn GAME_GENRE() -> felt252 {
+        ('Game genre')
+    }
+    fn GAME_IMAGE() -> ByteArray {
+        ("https://game.io/image.png")
+    }
     //*******************************
 
     #[abi(embed_v0)]
     impl GameMockImpl of super::IGameMock<ContractState> {
-        fn start_game(ref self: ContractState, game_id: felt252) {
+        fn start_game(ref self: ContractState, game_id: u256) {
             let mut world = self.world(DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
 
-            store.set_game_score(@Score { game_id: game_id.into(), score: 0, });
+            store.set_game_score(@Score { game_id: game_id.low, score: 0, });
         }
 
-        fn end_game(ref self: ContractState, game_id: felt252, score: u64) {
+        fn end_game(ref self: ContractState, game_id: u256, score: u64) {
             let mut world = self.world(DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
-            store.set_game_score(@Score { game_id: game_id.into(), score: score, });
+            store.set_game_score(@Score { game_id: game_id.low, score: score, });
         }
     }
 
     #[abi(embed_v0)]
     impl GameInitializerImpl of super::IGameMockInit<ContractState> {
-        fn initializer(ref self: ContractState,) {
+        fn initializer(ref self: ContractState) {
             self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI(),);
-            self.game.initializer();
+            self
+                .game
+                .initializer(
+                    GAME_NAME(),
+                    GAME_DESCRIPTION(),
+                    GAME_DEVELOPER(),
+                    GAME_PUBLISHER(),
+                    GAME_GENRE(),
+                    GAME_IMAGE()
+                );
         }
     }
 }

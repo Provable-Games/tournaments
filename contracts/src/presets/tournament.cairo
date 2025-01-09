@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Game, Tournament as TournamentModel, Premium, TokenDataType, GatedType, GatedSubmissionType
+    Tournament as TournamentModel, Premium, TokenDataType, GatedType
 };
 
 #[starknet::interface]
@@ -9,7 +9,6 @@ pub trait ITournament<TState> {
     // IWorldProvider
     fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
-    fn game(self: @TState, game: ContractAddress) -> Game;
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
@@ -17,7 +16,6 @@ pub trait ITournament<TState> {
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
-    fn register_game(ref self: TState, game: ContractAddress, name: felt252);
     fn create_tournament(
         ref self: TState,
         name: felt252,
@@ -30,23 +28,17 @@ pub trait ITournament<TState> {
         winners_count: u8,
         gated_type: Option<GatedType>,
         entry_premium: Option<Premium>,
-        game: ContractAddress,
+        game_address: ContractAddress,
         settings_id: u32
     ) -> u64;
     fn enter_tournament(
-        ref self: TState, tournament_id: u64, gated_submission_type: Option<GatedSubmissionType>
-    );
-    fn start_tournament(
-        ref self: TState,
-        tournament_id: u64,
-        start_all: bool,
-        start_count: Option<u64>,
-        golden_token_free_game_ids: Span<u256>,
-        blobert_free_game_ids: Span<u256>,
-        weapon: u8,
-        name: felt252,
-    );
-    fn submit_scores(ref self: TState, tournament_id: u64, game_ids: Array<felt252>);
+        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u256>
+    ) -> u256;
+    fn start_game(ref self: TState, tournament_id: u64, tournament_token_id: u256);
+    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u256>);
+    fn finalize_tournament(ref self: TState, tournament_id: u64);
+    fn claim_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
+    fn claim_unclaimed_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
     fn add_prize(
         ref self: TState,
         tournament_id: u64,
@@ -54,19 +46,35 @@ pub trait ITournament<TState> {
         token_data_type: TokenDataType,
         position: u8
     );
-    fn distribute_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
+
+    fn initializer(
+        ref self: TState,
+        name: ByteArray,
+        symbol: ByteArray,
+        base_uri: ByteArray,
+        safe_mode: bool,
+        test_mode: bool,
+        test_erc20: ContractAddress,
+        test_erc721: ContractAddress,
+    );
 }
 
 #[dojo::contract]
 pub mod Tournament {
     use starknet::{contract_address_const};
     use tournaments::components::tournament::tournament_component;
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
+    component!(path: ERC721Component, storage: erc721, event: ERC721Event);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
     #[abi(embed_v0)]
     impl TournamentComponentImpl =
         tournament_component::TournamentImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
 
     impl TournamentComponentInternalImpl = tournament_component::InternalImpl<ContractState>;
 
@@ -74,12 +82,21 @@ pub mod Tournament {
     struct Storage {
         #[substorage(v0)]
         tournament: tournament_component::Storage,
+        #[substorage(v0)]
+        erc721: ERC721Component::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        #[flat]
         TournamentEvent: tournament_component::Event,
+        #[flat]
+        ERC721Event: ERC721Component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
     }
 
     fn dojo_init(

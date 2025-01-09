@@ -51,27 +51,9 @@ pub struct SettingsDetails {
 }
 
 #[dojo::model]
-#[derive(Drop, Serde)]
-pub struct Settings {
-    #[key]
-    pub id: u32,
-    #[key]
-    pub key: felt252,
-    pub value: u64,
-}
-
-#[dojo::model]
 #[derive(Copy, Drop, Serde)]
 pub struct GameSettings {
     #[key]
     pub game_id: u128,
     pub settings_id: u32,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct SettingsCount {
-    #[key]
-    pub contract: ContractAddress,
-    pub count: u16,
 }
