@@ -1080,7 +1080,7 @@ pub mod tournament_component {
         fn _assert_tournament_finalized(
             self: @ComponentState<TContractState>, state: TournamentState
         ) {
-            assert(state == TournamentState::Finalized, Errors::TOURNAMENT_NOT_FINALIZED);
+            assert(state == TournamentState::Finalized || state == TournamentState::Submitted, Errors::TOURNAMENT_NOT_FINALIZED);
         }
 
         fn _assert_tournament_not_finalized(
