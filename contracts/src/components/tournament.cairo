@@ -429,9 +429,9 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
 
-            let tournament = store.get_tournament(tournament_id);
+            let mut tournament = store.get_tournament(tournament_id);
             self._assert_tournament_active(@tournament);
-            let game_id = self._start_game(tournament, tournament_token_id);
+            let game_id = self._start_game(@tournament, tournament_token_id);
 
             let mut token = store.get_tournament_token(tournament_token_id.low);
 
@@ -1175,7 +1175,7 @@ pub mod tournament_component {
                                         }
                                         let tournament = store.get_tournament(*tournament_ids.at(loop_index));
                                         self
-                                            ._assert_tournament_settled(tournament);
+                                            ._assert_tournament_settled(@tournament);
                                         loop_index += 1;
                                     }
                                 },
@@ -1187,7 +1187,7 @@ pub mod tournament_component {
                                         }
                                         let tournament = store.get_tournament(*tournament_ids.at(loop_index));
                                         self
-                                            ._assert_tournament_settled(tournament);
+                                            ._assert_tournament_settled(@tournament);
                                         loop_index += 1;
                                     }
                                 },
@@ -1467,13 +1467,13 @@ pub mod tournament_component {
 
         fn _start_game(
             ref self: ComponentState<TContractState>,
-            tournament: TournamentModel,
+            tournament: @TournamentModel,
             tournament_token_id: u256
         ) -> u256 {
-            let game_dispatcher = IGameDispatcher { contract_address: tournament.game_address };
-            let owner = IERC721Dispatcher { contract_address: tournament.game_address }
+            let game_dispatcher = IGameDispatcher { contract_address: *tournament.game_address };
+            let owner = IERC721Dispatcher { contract_address: *tournament.game_address }
                 .owner_of(tournament_token_id);
-            let game_id = game_dispatcher.new_game(tournament.settings_id, owner);
+            let game_id = game_dispatcher.new_game(*tournament.settings_id, owner);
             game_id
         }
 
