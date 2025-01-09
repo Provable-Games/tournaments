@@ -64,7 +64,7 @@ pub trait ITournamentMock<TState> {
         token: ContractAddress,
         token_data_type: TokenDataType,
         position: u8
-    );
+    ) -> u128;
 
     fn initializer(
         ref self: TState,

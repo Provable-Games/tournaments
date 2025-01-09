@@ -45,7 +45,7 @@ trait ITournament<TState> {
         token: ContractAddress,
         token_data_type: TokenDataType,
         position: u8
-    );
+    ) -> u128;
 }
 
 ///
@@ -154,6 +154,7 @@ pub mod tournament_component {
         pub const TOURNAMENT_NOT_ENDED: felt252 = 'tournament not ended';
         pub const TOURNAMENT_ALREADY_SETTLED: felt252 = 'tournament already settled';
         pub const NOT_GAME_OWNER: felt252 = 'not game owner';
+        pub const GAME_ALREADY_STARTED: felt252 = 'game already started';
         pub const GAME_NOT_STARTED: felt252 = 'game not started';
         pub const GAME_NOT_SUBMITTED: felt252 = 'game not submitted';
         pub const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
@@ -435,6 +436,7 @@ pub mod tournament_component {
             let mut token = store.get_tournament_token(tournament_token_id.low);
             let mut tournament = store.get_tournament(token.tournament_id);
             self._assert_tournament_active(@tournament);
+            self._assert_game_not_started(token.state);
 
             let game_id = self._start_game(@tournament, tournament_token_id);
 
@@ -507,7 +509,7 @@ pub mod tournament_component {
                 let token_id = *token_ids.at(token_index);
                 let token = store.get_tournament_token(token_id.low);
 
-                self._assert_token_started(token.state);
+                self._assert_game_started(token.state);
 
                 let score = game_dispatcher.get_score(token.game_id.into());
                 self._assert_score_valid(score);
@@ -516,7 +518,7 @@ pub mod tournament_component {
                     ._update_tournament_scores(
                         store,
                         tournament_id,
-                        token.game_id.into(),
+                        token_id,
                         score,
                         ref new_score_ids,
                         token_index
@@ -623,7 +625,7 @@ pub mod tournament_component {
             token: ContractAddress,
             token_data_type: TokenDataType,
             position: u8
-        ) {
+        ) -> u128 {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS()
             );
@@ -646,14 +648,15 @@ pub mod tournament_component {
             store
                 .set_prize(
                     @TournamentPrize {
-                        tournament_id,
                         prize_key: totals.prize_count.into(),
+                        tournament_id,
                         token: token,
                         token_data_type: token_data_type,
                         payout_position: position,
                         claimed: false
                     }
                 );
+            totals.prize_count
         }
     }
 
@@ -1019,7 +1022,7 @@ pub mod tournament_component {
             );
         }
 
-        fn _assert_token_started(
+        fn _assert_game_started(
             self: @ComponentState<TContractState>, state: Option<TournamentGameState>
         ) {
             match state {
@@ -1031,6 +1034,17 @@ pub mod tournament_component {
                     );
                 },
                 Option::None => { assert(false, Errors::GAME_NOT_STARTED); },
+            }
+        }
+
+        fn _assert_game_not_started(
+            self: @ComponentState<TContractState>, state: Option<TournamentGameState>
+        ) {
+            match state {
+                Option::Some(state) => {
+                    assert(state == TournamentGameState::Registered, Errors::GAME_ALREADY_STARTED);
+                },
+                Option::None => {},
             }
         }
 
@@ -1285,14 +1299,15 @@ pub mod tournament_component {
                                 let game_dispatcher = IGameDispatcher {
                                     contract_address: tournament.game_address
                                 };
-                                let owner = self._get_owner(tournament.game_address, token_id);
+                                let token = store.get_tournament_token(token_id.low);
+                                let game_id = token.game_id.into();
+                                let owner = self._get_owner(tournament.game_address, game_id);
 
                                 if owner == get_caller_address() {
-                                    let state = store.get_tournament_token(token_id.low).state;
-                                    match state {
+                                    match token.state {
                                         Option::Some(state) => {
                                             if state == TournamentGameState::Submitted {
-                                                let score = game_dispatcher.get_score(token_id);
+                                                let score = game_dispatcher.get_score(game_id);
                                                 self
                                                     ._is_top_score(
                                                         store, *tournament_ids.at(loop_index), score
@@ -1558,7 +1573,7 @@ pub mod tournament_component {
             ref self: ComponentState<TContractState>,
             store: Store,
             tournament_id: u128,
-            game_id: u256,
+            tournament_token_id: u256,
             score: u64,
             ref new_score_ids: Array<u128>,
             game_index: u32
@@ -1572,7 +1587,7 @@ pub mod tournament_component {
             let mut new_score: u64 = 0;
 
             if num_scores == 0 {
-                new_score_id = game_id.try_into().unwrap();
+                new_score_id = tournament_token_id.try_into().unwrap();
                 new_score = score;
             } else {
                 if (game_index < num_scores) {
@@ -1580,14 +1595,14 @@ pub mod tournament_component {
                     let top_score = self
                         .get_score_from_id(store, tournament_id, top_score_id.try_into().unwrap());
                     if (score > top_score) {
-                        new_score_id = game_id.try_into().unwrap();
+                        new_score_id = tournament_token_id.try_into().unwrap();
                         new_score = score;
                     } else {
                         new_score_id = top_score_id;
                         new_score = top_score;
                     }
                 } else {
-                    new_score_id = game_id.try_into().unwrap();
+                    new_score_id = tournament_token_id.try_into().unwrap();
                     new_score = score;
                 }
             }
