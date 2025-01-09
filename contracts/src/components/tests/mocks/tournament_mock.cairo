@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, Premium, TokenDataType, GatedType
+    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TournamentToken
 };
 
 #[starknet::interface]
@@ -28,10 +28,10 @@ pub trait ITournamentMock<TState> {
     ) -> bool;
 
     // ITournament
-    fn total_tournaments(self: @TState) -> u64;
-    fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
-    fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
+    fn total_tournaments(self: @TState) -> u128;
+    fn tournament(self: @TState, tournament_id: u128) -> TournamentModel;
+    fn tournament_token(self: @TState, token_id: u256) -> TournamentToken;
+    fn tournament_entries(self: @TState, tournament_id: u128) -> u64;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
@@ -49,18 +49,18 @@ pub trait ITournamentMock<TState> {
         entry_premium: Option<Premium>,
         game_address: ContractAddress,
         settings_id: u32
-    ) -> u64;
-    fn enter_tournament(
-        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u256>
     ) -> u256;
-    fn start_game(ref self: TState, tournament_id: u64, tournament_token_id: u256);
-    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u256>);
-    fn finalize_tournament(ref self: TState, tournament_id: u64);
-    fn claim_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
-    fn claim_unclaimed_prizes(ref self: TState, tournament_id: u64, prize_keys: Array<u64>);
+    fn enter_tournament(
+        ref self: TState, tournament_id: u128, qualifying_token_id: Option<u256>
+    ) -> u256;
+    fn start_game(ref self: TState, tournament_token_id: u256);
+    fn submit_scores(ref self: TState, tournament_id: u128, token_ids: Array<u256>);
+    fn finalize_tournament(ref self: TState, tournament_id: u128);
+    fn distribute_prize(ref self: TState, prize_key: u128);
+    fn distribute_unclaimable_prize(ref self: TState, prize_key: u128);
     fn add_prize(
         ref self: TState,
-        tournament_id: u64,
+        tournament_id: u128,
         token: ContractAddress,
         token_data_type: TokenDataType,
         position: u8

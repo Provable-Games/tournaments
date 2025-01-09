@@ -2,6 +2,7 @@
 trait IGameMock<TContractState> {
     fn start_game(ref self: TContractState, game_id: u256);
     fn end_game(ref self: TContractState, game_id: u256, score: u64);
+    fn set_settings(ref self: TContractState, settings_id: u32, name: felt252, description: ByteArray, exists: bool);
 }
 
 #[starknet::interface]
@@ -17,7 +18,7 @@ mod game_mock {
 
     use tournaments::components::interfaces::{WorldImpl};
     use tournaments::components::libs::store::{Store, StoreTrait};
-    use tournaments::components::models::game::Score;
+    use tournaments::components::models::game::{Score, SettingsDetails};
 
     use tournaments::components::constants::{DEFAULT_NS};
 
@@ -98,6 +99,18 @@ mod game_mock {
             let mut world = self.world(DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
             store.set_game_score(@Score { game_id: game_id.low, score: score, });
+        }
+
+        fn set_settings(
+            ref self: ContractState,
+            settings_id: u32,
+            name: felt252,
+            description: ByteArray,
+            exists: bool
+        ) {
+            let mut world = self.world(DEFAULT_NS());
+            let mut store: Store = StoreTrait::new(world);
+            store.set_settings_details(@SettingsDetails { id: settings_id, name, description, exists });
         }
     }
 

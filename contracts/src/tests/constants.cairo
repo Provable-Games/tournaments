@@ -74,6 +74,14 @@ pub fn TOURNAMENT_DESCRIPTION() -> ByteArray {
     ("Genesis Tournament")
 }
 
+pub fn SETTINGS_NAME() -> felt252 {
+    ('Test Settings')
+}
+
+pub fn SETTINGS_DESCRIPTION() -> ByteArray {
+    ("Test Settings")
+}
+
 pub const STARTING_BALANCE: u256 = 1000000000000000000000;
 
 pub fn TEST_REGISTRATION_START_TIME() -> u32 {

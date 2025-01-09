@@ -112,9 +112,9 @@ pub struct TournamentScores {
 pub struct TournamentTotals {
     #[key]
     pub contract: ContractAddress,
-    pub tournaments: u128,
-    pub prizes: u128,
-    pub tokens: u128,
+    pub tournament_count: u128,
+    pub prize_count: u128,
+    pub token_count: u128,
 }
 
 #[dojo::model]

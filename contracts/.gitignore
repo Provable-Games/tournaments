@@ -1,0 +1,3 @@
+bindings/
+target/
+scripts/deploy_mainnet.sh
