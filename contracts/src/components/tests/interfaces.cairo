@@ -243,7 +243,9 @@ pub trait IGameMock<TState> {
     // GameMock
     fn start_game(ref self: TState, game_id: u256);
     fn end_game(ref self: TState, game_id: u256, score: u64);
-    fn set_settings(ref self: TState, settings_id: u32, name: felt252, description: ByteArray, exists: bool);
+    fn set_settings(
+        ref self: TState, settings_id: u32, name: felt252, description: ByteArray, exists: bool
+    );
 
     fn initializer(ref self: TState,);
 }

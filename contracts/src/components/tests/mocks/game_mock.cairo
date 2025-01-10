@@ -2,7 +2,13 @@
 trait IGameMock<TContractState> {
     fn start_game(ref self: TContractState, game_id: u256);
     fn end_game(ref self: TContractState, game_id: u256, score: u64);
-    fn set_settings(ref self: TContractState, settings_id: u32, name: felt252, description: ByteArray, exists: bool);
+    fn set_settings(
+        ref self: TContractState,
+        settings_id: u32,
+        name: felt252,
+        description: ByteArray,
+        exists: bool
+    );
 }
 
 #[starknet::interface]
@@ -110,7 +116,10 @@ mod game_mock {
         ) {
             let mut world = self.world(DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
-            store.set_settings_details(@SettingsDetails { id: settings_id, name, description, exists });
+            store
+                .set_settings_details(
+                    @SettingsDetails { id: settings_id, name, description, exists }
+                );
         }
     }
 

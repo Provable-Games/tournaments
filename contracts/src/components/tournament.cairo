@@ -102,7 +102,6 @@ pub mod tournament_component {
         //
         // Register Tokens
         //
-        pub const TOKEN_ALREADY_REGISTERED: felt252 = 'token already registered';
         pub const INVALID_TOKEN_ALLOWANCES: felt252 = 'invalid token allowances';
         pub const INVALID_TOKEN_BALANCES: felt252 = 'invalid token balances';
         pub const TOKEN_SUPPLY_TOO_LARGE: felt252 = 'token supply too large';
@@ -111,15 +110,6 @@ pub mod tournament_component {
         //
         // Create Tournament
         //
-        pub const START_TIME_NOT_IN_FUTURE: felt252 = 'start time not in future';
-        pub const REGISTRATION_PERIOD_TOO_SHORT: felt252 = 'registration period too short';
-        pub const REGISTRATION_PERIOD_TOO_LONG: felt252 = 'registration period too long';
-        pub const REGISTRATION_START_TOO_LATE: felt252 = 'registration start too late';
-        pub const REGISTRATION_END_TOO_LATE: felt252 = 'registration end too late';
-        pub const TOURNAMENT_TOO_SHORT: felt252 = 'tournament too short';
-        pub const TOURNAMENT_TOO_LONG: felt252 = 'tournament too long';
-        pub const ZERO_WINNERS_COUNT: felt252 = 'zero winners count';
-        pub const NO_QUALIFYING_NFT: felt252 = 'no qualifying nft';
         pub const GATED_TOKEN_NOT_REGISTERED: felt252 = 'gated token not registered';
         pub const PREMIUM_TOKEN_NOT_REGISTERED: felt252 = 'premium token not registered';
         pub const PREMIUM_DISTRIBUTIONS_TOO_LONG: felt252 = 'premium distributions too long';
@@ -425,9 +415,7 @@ pub mod tournament_component {
         /// @dev Requires the player starting to have already entered.
         /// @param self A reference to the ContractState object.
         /// @param tournament_token_id A u256 representing the unique ID of the tournament token.
-        fn start_game(
-            ref self: ComponentState<TContractState>, tournament_token_id: u256
-        ) {
+        fn start_game(ref self: ComponentState<TContractState>, tournament_token_id: u256) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS()
             );
@@ -516,12 +504,7 @@ pub mod tournament_component {
 
                 self
                     ._update_tournament_scores(
-                        store,
-                        tournament_id,
-                        token_id,
-                        score,
-                        ref new_score_ids,
-                        token_index
+                        store, tournament_id, token_id, score, ref new_score_ids, token_index
                     );
 
                 store
@@ -726,7 +709,9 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert(!self._is_token_registered(@token_model), Errors::TOKEN_ALREADY_REGISTERED);
+            assert!(
+                !self._is_token_registered(@token_model), "Tournament: Token address already registered"
+            );
             store
                 .set_token(
                     @Token {
@@ -756,7 +741,9 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert(!self._is_token_registered(@token_model), Errors::TOKEN_ALREADY_REGISTERED);
+            assert!(
+                !self._is_token_registered(@token_model), "Tournament: Token address already registered"
+            );
             store
                 .set_token(
                     @Token {
@@ -821,10 +808,11 @@ pub mod tournament_component {
         fn _assert_future_start_time(
             self: @ComponentState<TContractState>, registration_start_time: u64, start_time: u64
         ) {
-            assert(
-                registration_start_time >= get_block_timestamp(), Errors::START_TIME_NOT_IN_FUTURE
+            assert!(
+                registration_start_time >= get_block_timestamp(),
+                "Tournament: Registration time {} is not in the future.", registration_start_time
             );
-            assert(start_time >= get_block_timestamp(), Errors::START_TIME_NOT_IN_FUTURE);
+            assert!(start_time >= get_block_timestamp(), "Tournament: Start time {} is not in the future.", start_time);
         }
 
         fn _assert_bigger_than_min_registration_period(
@@ -839,9 +827,9 @@ pub mod tournament_component {
             } else {
                 MIN_REGISTRATION_PERIOD
             };
-            assert(
+            assert!(
                 registration_end_time - registration_start_time >= min_registration_period.into(),
-                Errors::REGISTRATION_PERIOD_TOO_SHORT
+                "Tournament: Registration period of {} too short", registration_end_time - registration_start_time
             );
         }
 
@@ -850,9 +838,9 @@ pub mod tournament_component {
             registration_start_time: u64,
             registration_end_time: u64
         ) {
-            assert(
+            assert!(
                 registration_end_time - registration_start_time < MAX_REGISTRATION_PERIOD.into(),
-                Errors::REGISTRATION_PERIOD_TOO_LONG
+                "Tournament: Registration period of {} too long", registration_end_time - registration_start_time
             );
         }
 
@@ -861,9 +849,9 @@ pub mod tournament_component {
             registration_start_time: u64,
             tournament_start_time: u64
         ) {
-            assert(
+            assert!(
                 registration_start_time <= tournament_start_time,
-                Errors::REGISTRATION_START_TOO_LATE
+                "Tournament: Registration start time {} is not before tournament start time {}", registration_start_time, tournament_start_time
             );
         }
 
@@ -872,7 +860,10 @@ pub mod tournament_component {
             registration_end_time: u64,
             tournament_end_time: u64
         ) {
-            assert(registration_end_time <= tournament_end_time, Errors::REGISTRATION_END_TOO_LATE);
+            assert!(
+                registration_end_time <= tournament_end_time,
+                "Tournament: Registration end time {} is not before tournament end time {}", registration_end_time, tournament_end_time
+            );
         }
 
         fn _assert_tournament_length_not_too_short(
@@ -884,16 +875,18 @@ pub mod tournament_component {
             } else {
                 MIN_TOURNAMENT_LENGTH
             };
-            assert(
-                end_time - start_time >= min_tournament_length.into(), Errors::TOURNAMENT_TOO_SHORT
+            assert!(
+                end_time - start_time >= min_tournament_length.into(),
+                "Tournament: Tournament period of {} too short", end_time - start_time
             );
         }
 
         fn _assert_tournament_length_not_too_long(
             self: @ComponentState<TContractState>, end_time: u64, start_time: u64
         ) {
-            assert(
-                end_time - start_time <= MAX_TOURNAMENT_LENGTH.into(), Errors::TOURNAMENT_TOO_LONG
+            assert!(
+                end_time - start_time <= MAX_TOURNAMENT_LENGTH.into(),
+                "Tournament: Tournament period of {} too long", end_time - start_time
             );
         }
 
@@ -924,7 +917,7 @@ pub mod tournament_component {
         fn _assert_winners_count_greater_than_zero(
             self: @ComponentState<TContractState>, winners_count: u8
         ) {
-            assert(winners_count > 0, Errors::ZERO_WINNERS_COUNT);
+            assert!(winners_count > 0, "Tournament: Winners count must be greater than zero");
         }
 
         fn _assert_premium_token_registered_and_distribution_valid(
@@ -1080,7 +1073,10 @@ pub mod tournament_component {
         fn _assert_tournament_finalized(
             self: @ComponentState<TContractState>, state: TournamentState
         ) {
-            assert(state == TournamentState::Finalized || state == TournamentState::Submitted, Errors::TOURNAMENT_NOT_FINALIZED);
+            assert(
+                state == TournamentState::Finalized || state == TournamentState::Submitted,
+                Errors::TOURNAMENT_NOT_FINALIZED
+            );
         }
 
         fn _assert_tournament_not_finalized(
@@ -1145,7 +1141,7 @@ pub mod tournament_component {
             account: ContractAddress
         ) {
             let owner = self._get_owner(token, token_id);
-            assert(owner == account, Errors::NO_QUALIFYING_NFT);
+            assert!(owner == account, "Tournament: Caller does not own qualifying token id {}", token_id);
         }
 
         fn _assert_game_token_owner(

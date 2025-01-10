@@ -4,12 +4,12 @@ use tournaments::components::constants::MIN_SUBMISSION_PERIOD;
 use tournaments::tests::{
     constants::{
         TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_REGISTRATION_START_TIME,
-        TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, 
-        SETTINGS_NAME, SETTINGS_DESCRIPTION
+        TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, SETTINGS_NAME,
+        SETTINGS_DESCRIPTION
     },
 };
 use tournaments::components::tests::interfaces::{
-    IERC721MockDispatcher, IERC721MockDispatcherTrait, ITournamentMockDispatcher,
+    ITournamentMockDispatcher,
     ITournamentMockDispatcherTrait, IGameMockDispatcher, IGameMockDispatcherTrait
 };
 
@@ -37,9 +37,7 @@ pub fn create_basic_tournament(
         )
 }
 
-pub fn create_settings_details(
-    game: IGameMockDispatcher
-) {
+pub fn create_settings_details(game: IGameMockDispatcher) {
     game.set_settings(1, SETTINGS_NAME(), SETTINGS_DESCRIPTION(), true);
 }
 // pub fn register_tokens_for_test(
