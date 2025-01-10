@@ -208,11 +208,12 @@ pub mod tournament_component {
                 self.get_contract().world_dispatcher(), DEFAULT_NS()
             );
             let mut store: Store = StoreTrait::new(world);
+            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
 
             self._assert_future_start_time(registration_start_time, start_time);
             self
                 ._assert_bigger_than_min_registration_period(
-                    store, registration_start_time, registration_end_time
+                    test_mode, registration_start_time, registration_end_time
                 );
             self
                 ._assert_less_than_max_registration_period(
@@ -223,9 +224,9 @@ pub mod tournament_component {
                     registration_start_time, start_time
                 );
             self._assert_registration_end_not_after_tournament_end(registration_end_time, end_time);
-            self._assert_tournament_length_not_too_short(store, end_time, start_time);
+            self._assert_tournament_length_not_too_short(test_mode, end_time, start_time);
             self._assert_tournament_length_not_too_long(end_time, start_time);
-            self._assert_submission_period_larger_than_minimum(store, submission_period);
+            self._assert_submission_period_larger_than_minimum(test_mode, submission_period);
             self._assert_submission_period_less_than_maximum(submission_period);
             self._assert_winners_count_greater_than_zero(winners_count);
             self._assert_gated_type_validates(store, gated_type);
@@ -239,7 +240,7 @@ pub mod tournament_component {
             self._assert_game_supports_game_metadata_interface(src5_dispatcher, game_address);
             self._assert_game_supports_erc721_interface(src5_dispatcher, game_address);
 
-            self._assert_settings_exists(store, game_address, settings_id);
+            self._assert_settings_exists(game_address, settings_id);
 
             let mut totals = store.get_tournament_totals(get_contract_address());
             totals.token_count += 1;
@@ -757,11 +758,10 @@ pub mod tournament_component {
 
         fn _assert_bigger_than_min_registration_period(
             self: @ComponentState<TContractState>,
-            store: Store,
+            test_mode: bool,
             registration_start_time: u64,
             registration_end_time: u64
         ) {
-            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
             let min_registration_period = if test_mode {
                 TEST_MIN_REGISTRATION_PERIOD
             } else {
@@ -807,9 +807,8 @@ pub mod tournament_component {
         }
 
         fn _assert_tournament_length_not_too_short(
-            self: @ComponentState<TContractState>, store: Store, end_time: u64, start_time: u64
+            self: @ComponentState<TContractState>, test_mode: bool, end_time: u64, start_time: u64
         ) {
-            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
             let min_tournament_length = if test_mode {
                 TEST_MIN_TOURNAMENT_LENGTH
             } else {
@@ -831,9 +830,8 @@ pub mod tournament_component {
         }
 
         fn _assert_submission_period_larger_than_minimum(
-            self: @ComponentState<TContractState>, store: Store, submission_period: u64
+            self: @ComponentState<TContractState>, test_mode: bool, submission_period: u64
         ) {
-            let test_mode = store.get_tournament_config(get_contract_address()).test_mode;
             let min_submission_period = if test_mode {
                 TEST_MIN_SUBMISSION_PERIOD
             } else {
@@ -923,7 +921,6 @@ pub mod tournament_component {
 
         fn _assert_settings_exists(
             self: @ComponentState<TContractState>,
-            store: Store,
             game: ContractAddress,
             settings_id: u32
         ) {
