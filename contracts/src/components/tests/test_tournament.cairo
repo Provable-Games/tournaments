@@ -272,7 +272,7 @@ fn test_create_tournament_start_time_too_close() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Registration period of 1 too short", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Registration period of 1 lower than minimum 3600", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_registration_period_too_short() {
     let contracts = setup();
 
@@ -297,7 +297,7 @@ fn test_create_tournament_registration_period_too_short() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Registration period of 2592000 too long", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Registration period of 2592000 higher than maximum 2592000", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_registration_period_too_long() {
     let contracts = setup();
 
@@ -347,7 +347,7 @@ fn test_create_tournament_end_time_too_close() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Tournament period of 15555600 too long", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Tournament period of 15555600 higher than maximum 15552000", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_end_time_too_far() {
     let contracts = setup();
 
@@ -372,7 +372,7 @@ fn test_create_tournament_end_time_too_far() {
 }
 
 #[test]
-#[should_panic(expected: ('submission period too short', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Submission period of 86399 lower than the minimum 86400", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_submission_period_too_short() {
     let contracts = setup();
 
@@ -397,7 +397,7 @@ fn test_create_tournament_submission_period_too_short() {
 }
 
 #[test]
-#[should_panic(expected: ('submission period too long', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Submission period of 1209601 higher than the maximum 1209600", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_submission_period_too_long() {
     let contracts = setup();
 
@@ -485,7 +485,7 @@ fn test_create_tournament_with_prizes() {
 // // }
 
 #[test]
-#[should_panic(expected: ('prize position too large', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Prize position 2 is greater than the winners count 1", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_with_prizes_position_too_large() {
     let contracts = setup();
 
@@ -520,7 +520,7 @@ fn test_create_tournament_with_prizes_position_too_large() {
 }
 
 #[test]
-#[should_panic(expected: ('premium distributions too long', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Premium distribution list is 2 longer than the winners count 1", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_with_premiums_too_long() {
     let contracts = setup();
 
@@ -554,7 +554,7 @@ fn test_create_tournament_with_premiums_too_long() {
 }
 
 #[test]
-#[should_panic(expected: ('premium distributions not 100%', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Premium distribution sum is not 100%", 'ENTRYPOINT_FAILED'))]
 fn test_create_tournament_with_premiums_not_100() {
     let contracts = setup();
 
@@ -588,7 +588,7 @@ fn test_create_tournament_with_premiums_not_100() {
 }
 
 #[test]
-#[should_panic(expected: ('tournament not settled', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Tournament id 1 is not settled", 'ENTRYPOINT_FAILED'))]
 fn test_create_gated_tournament_with_unsettled_tournament() {
     let contracts = setup();
 
@@ -1126,7 +1126,7 @@ fn test_start_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ('game already started', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Game on token id 2 is already started", 'ENTRYPOINT_FAILED'))]
 fn test_start_tournament_game_already_started() {
     let contracts = setup();
 
@@ -1443,7 +1443,7 @@ fn test_submit_scores_earliest_submission_wins() {
 }
 
 #[test]
-#[should_panic(expected: ('tournament already settled', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Tournament id 1 is already settled", 'ENTRYPOINT_FAILED'))]
 fn test_submit_scores_after_submission_period() {
     let contracts = setup();
 
@@ -1494,7 +1494,7 @@ fn test_submit_scores_after_submission_period() {
 }
 
 #[test]
-#[should_panic(expected: ('tournament not ended', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Tournament id 1 has not ended", 'ENTRYPOINT_FAILED'))]
 fn test_submit_scores_before_tournament_ends() {
     let contracts = setup();
 
@@ -1692,7 +1692,7 @@ fn test_distribute_prizes_with_prizes() {
 }
 
 #[test]
-#[should_panic(expected: ('prize already claimed', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Prize key 1 has already been claimed", 'ENTRYPOINT_FAILED'))]
 fn test_distribute_prizes_prize_already_claimed() {
     let contracts = setup();
 

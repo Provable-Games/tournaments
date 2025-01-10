@@ -14,8 +14,7 @@ trait ITournament<TState> {
     fn tournament_token(self: @TState, token_id: u256) -> TournamentToken;
     fn tournament_entries(self: @TState, tournament_id: u128) -> u64;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
-    // TODO: add for V2 (only ERC721 tokens)
-    // fn register_tokens(ref self: TState, tokens: Array<Token>);
+    fn register_token(ref self: TState, token: ContractAddress, token_data: TokenDataType);
     fn create_tournament(
         ref self: TState,
         name: felt252,
@@ -59,10 +58,9 @@ pub mod tournament_component {
     use core::num::traits::Zero;
 
     use tournaments::components::constants::{
-        MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH,
+        TWO_POW_128,MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH,
         MAX_TOURNAMENT_LENGTH, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
-        TEST_MIN_REGISTRATION_PERIOD, TEST_MIN_SUBMISSION_PERIOD, TEST_MIN_TOURNAMENT_LENGTH,
-        GAME_EXPIRATION_PERIOD, DEFAULT_NS
+        TEST_MIN_REGISTRATION_PERIOD, TEST_MIN_SUBMISSION_PERIOD, TEST_MIN_TOURNAMENT_LENGTH, DEFAULT_NS
     };
     use tournaments::components::interfaces::{
         IGameDispatcher, IGameDispatcherTrait, IGAME_ID, IGAME_METADATA_ID
@@ -83,9 +81,9 @@ pub mod tournament_component {
     use openzeppelin_introspection::{
         src5::SRC5Component, interface::{ISRC5Dispatcher, ISRC5DispatcherTrait}
     };
-    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait, IERC20MetadataDispatcher, IERC20MetadataDispatcherTrait};
     use openzeppelin_token::erc721::interface::{
-        IERC721Dispatcher, IERC721DispatcherTrait, IERC721_ID
+        IERC721Dispatcher, IERC721DispatcherTrait, IERC721MetadataDispatcher, IERC721MetadataDispatcherTrait, IERC721_ID
     };
     use openzeppelin_token::erc721::{
         ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl},
@@ -97,80 +95,6 @@ pub mod tournament_component {
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {}
-
-    mod Errors {
-        //
-        // Register Tokens
-        //
-        pub const INVALID_TOKEN_ALLOWANCES: felt252 = 'invalid token allowances';
-        pub const INVALID_TOKEN_BALANCES: felt252 = 'invalid token balances';
-        pub const TOKEN_SUPPLY_TOO_LARGE: felt252 = 'token supply too large';
-        pub const INVALID_TOKEN_APPROVALS: felt252 = 'invalid token approvals';
-        pub const INVALID_TOKEN_OWNER: felt252 = 'invalid token owner';
-        //
-        // Create Tournament
-        //
-        pub const GATED_TOKEN_NOT_REGISTERED: felt252 = 'gated token not registered';
-        pub const PREMIUM_TOKEN_NOT_REGISTERED: felt252 = 'premium token not registered';
-        pub const PREMIUM_DISTRIBUTIONS_TOO_LONG: felt252 = 'premium distributions too long';
-        pub const PREMIUM_DISTRIBUTIONS_NOT_100: felt252 = 'premium distributions not 100%';
-        pub const SUBMISSION_PERIOD_TOO_SHORT: felt252 = 'submission period too short';
-        pub const SUBMISSION_PERIOD_TOO_LONG: felt252 = 'submission period too long';
-        pub const NOT_TOKEN_OWNER: felt252 = 'not token owner';
-        pub const IGAME_NOT_SUPPORTED: felt252 = 'IGame not supported';
-        pub const IGAME_METADATA_NOT_SUPPORTED: felt252 = 'IGameMetadata not supported';
-        pub const IERC721_NOT_SUPPORTED: felt252 = 'IERC721 not supported';
-        pub const GAME_SETTINGS_NOT_FOUND: felt252 = 'game settings not found';
-        //
-        // Enter Tournament
-        //
-        pub const NOT_WITHIN_REGISTRATION_PERIOD: felt252 = 'not within registration period';
-        pub const GAME_DOES_NOT_QUALIFY: felt252 = 'game does not qualify';
-        pub const GAME_DID_NOT_PARTICIPATE: felt252 = 'game did not participate';
-        pub const NO_QUALIFYING_TOKEN_SUPPLIED: felt252 = 'no qualifying token supplied';
-        pub const ADDRESS_DOES_NOT_QUALIFY: felt252 = 'address does not qualify';
-        //
-        // Start Tournament
-        //
-        pub const TOURNAMENT_NOT_ACTIVE: felt252 = 'tournament not active';
-        pub const ALL_ENTRIES_STARTED: felt252 = 'all entries started';
-        pub const ADDRESS_ENTRIES_STARTED: felt252 = 'address entries started';
-        pub const START_COUNT_TOO_LARGE: felt252 = 'start count too large';
-        pub const TOURNAMENT_PERIOD_TOO_LONG: felt252 = 'period too long to start all';
-        //
-        // Submit Scores
-        //
-        pub const TOURNAMENT_NOT_FINALIZED: felt252 = 'tournament not finalized';
-        pub const TOURNAMENT_NOT_ENDED: felt252 = 'tournament not ended';
-        pub const TOURNAMENT_ALREADY_SETTLED: felt252 = 'tournament already settled';
-        pub const NOT_GAME_OWNER: felt252 = 'not game owner';
-        pub const GAME_ALREADY_STARTED: felt252 = 'game already started';
-        pub const GAME_NOT_STARTED: felt252 = 'game not started';
-        pub const GAME_NOT_SUBMITTED: felt252 = 'game not submitted';
-        pub const INVALID_SCORES_SUBMISSION: felt252 = 'invalid scores submission';
-        pub const INVALID_SCORE: felt252 = 'invalid score';
-        //
-        // Finalize Tournament
-        //
-        pub const TOURNAMENT_ALREADY_FINALIZED: felt252 = 'tournament already finalized';
-        //
-        // Add Prize
-        //
-        pub const TOURNAMENT_ENDED: felt252 = 'tournament ended';
-        pub const PRIZE_POSITION_TOO_LARGE: felt252 = 'prize position too large';
-        pub const PRIZE_TOKEN_NOT_REGISTERED: felt252 = 'prize token not registered';
-        pub const INVALID_TOKEN_AMOUNT: felt252 = 'invalid token amount';
-        //
-        // Distribute Prizes
-        //
-        pub const TOURNAMENT_NOT_SETTLED: felt252 = 'tournament not settled';
-        pub const DISTRIBUTE_ALREADY_CALLED: felt252 = 'distribute already called';
-        pub const NO_PRIZE_KEYS: felt252 = 'no prize keys provided';
-        pub const PRIZE_DOES_NOT_EXIST: felt252 = 'prize does not exist';
-        pub const PRIZE_ALREADY_CLAIMED: felt252 = 'prize already claimed';
-        pub const PAYOUT_POSITION_NOT_TOP_SCORE: felt252 = 'payout position not top score';
-        pub const PAYOUT_POSITION_TOP_SCORE: felt252 = 'payout position is top score';
-    }
 
     #[embeddable_as(TournamentImpl)]
     impl Tournament<
@@ -226,14 +150,26 @@ pub mod tournament_component {
             self._is_token_registered(@token)
         }
 
-        // TODO: add for V2 (use Ekubo tokens)
-        // fn register_tokens(ref self: ComponentState<TContractState>, tokens: Array<Token>) {
-        //     let mut world = WorldTrait::storage(
-        //         self.get_contract().world_dispatcher(), @"tournament"
-        //     );
-        //     let mut store: Store = StoreTrait::new(world);
-        //     self._register_tokens(ref store, tokens);
-        // }
+        // TODO: remove safe mode block for V2 (use Ekubo tokens)
+        fn register_token(ref self: ComponentState<TContractState>, token: ContractAddress, token_data: TokenDataType) {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @"tournament"
+            );
+            let mut store: Store = StoreTrait::new(world);
+            let safe_mode = store.get_tournament_config(get_contract_address()).safe_mode;
+            let token_model = store.get_token(token);
+            assert!(!safe_mode, "Tournament: Cannot register token as safe mode is enabled");
+            self._assert_token_registered(token_model);
+            let (name, symbol) = self._register_token(token, token_data);
+            let token_model = Token {
+                token: token,
+                name,
+                symbol,
+                token_data_type: token_data,
+                is_registered: true
+            };
+            store.set_token(@token_model);
+        }
 
         /// @title Create tournament
         /// @notice Allows a player to create a tournament.
@@ -299,9 +235,9 @@ pub mod tournament_component {
                 );
 
             let src5_dispatcher = ISRC5Dispatcher { contract_address: game_address };
-            self._assert_game_supports_game_interface(src5_dispatcher);
-            self._assert_game_supports_game_metadata_interface(src5_dispatcher);
-            self._assert_game_supports_erc721_interface(src5_dispatcher);
+            self._assert_game_supports_game_interface(src5_dispatcher, game_address);
+            self._assert_game_supports_game_metadata_interface(src5_dispatcher, game_address);
+            self._assert_game_supports_erc721_interface(src5_dispatcher, game_address);
 
             self._assert_settings_exists(store, game_address, settings_id);
 
@@ -424,7 +360,7 @@ pub mod tournament_component {
             let mut token = store.get_tournament_token(tournament_token_id.low);
             let mut tournament = store.get_tournament(token.tournament_id);
             self._assert_tournament_active(@tournament);
-            self._assert_game_not_started(token.state);
+            self._assert_game_not_started(token.state, tournament_token_id.low);
 
             let game_id = self._start_game(@tournament, tournament_token_id);
 
@@ -451,9 +387,9 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
 
-            self._assert_tournament_not_finalized(tournament.state);
+            self._assert_tournament_not_finalized(tournament.state, tournament_id);
 
-            self._assert_tournament_ended(tournament.end_time);
+            self._assert_tournament_ended(tournament.end_time, tournament_id);
 
             let mut totals = store.get_tournament_totals(get_contract_address());
 
@@ -480,7 +416,7 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
 
-            self._assert_tournament_finalized(tournament.state);
+            self._assert_tournament_finalized(tournament.state, tournament_id);
             self._assert_scores_count_valid(@tournament, token_ids.len());
             self._assert_tournament_not_settled(@tournament);
 
@@ -497,10 +433,10 @@ pub mod tournament_component {
                 let token_id = *token_ids.at(token_index);
                 let token = store.get_tournament_token(token_id.low);
 
-                self._assert_game_started(token.state);
+                self._assert_game_started(token.state, token_id.low);
 
                 let score = game_dispatcher.get_score(token.game_id.into());
-                self._assert_score_valid(score);
+                self._assert_score_valid(score, token_id.low);
 
                 self
                     ._update_tournament_scores(
@@ -539,10 +475,10 @@ pub mod tournament_component {
             let mut prize = store.get_prize(prize_key);
             let mut tournament = store.get_tournament(prize.tournament_id);
 
-            self._assert_tournament_finalized(tournament.state);
+            self._assert_tournament_finalized(tournament.state, prize.tournament_id);
             self._assert_tournament_settled(@tournament);
-            self._assert_prize_exists(prize.token);
-            self._assert_prize_not_claimed(prize.claimed);
+            self._assert_prize_exists(prize.token, prize_key);
+            self._assert_prize_not_claimed(prize.claimed, prize_key);
 
             let top_score_ids = store.get_tournament_scores(prize.tournament_id).top_score_ids;
             self._assert_payout_is_top_score(prize.payout_position, top_score_ids.clone());
@@ -576,10 +512,10 @@ pub mod tournament_component {
             let mut prize = store.get_prize(prize_key);
             let mut tournament = store.get_tournament(prize.tournament_id);
 
-            self._assert_tournament_finalized(tournament.state);
+            self._assert_tournament_finalized(tournament.state, prize.tournament_id);
             self._assert_tournament_settled(@tournament);
-            self._assert_prize_exists(prize.token);
-            self._assert_prize_not_claimed(prize.claimed);
+            self._assert_prize_exists(prize.token, prize_key);
+            self._assert_prize_not_claimed(prize.claimed, prize_key);
 
             let top_score_ids = store.get_tournament_scores(prize.tournament_id).top_score_ids;
             self._assert_payout_is_not_top_score(prize.payout_position, top_score_ids);
@@ -615,10 +551,10 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
 
-            self._assert_tournament_not_ended(tournament.end_time);
+            self._assert_tournament_not_ended(tournament.end_time, tournament_id);
 
             let token_model = store.get_token(token);
-            self._assert_prize_token_registered(@token_model);
+            self._assert_prize_token_registered(token_model);
 
             self._assert_prize_position_less_than_winners_count(@tournament, position);
 
@@ -709,9 +645,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert!(
-                !self._is_token_registered(@token_model), "Tournament: Token address already registered"
-            );
+            self._assert_token_registered(token_model);
             store
                 .set_token(
                     @Token {
@@ -741,9 +675,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(token);
-            assert!(
-                !self._is_token_registered(@token_model), "Tournament: Token address already registered"
-            );
+            self._assert_token_registered(token_model);
             store
                 .set_token(
                     @Token {
@@ -805,6 +737,14 @@ pub mod tournament_component {
         // ASSERTIONS
         //
 
+        fn _assert_token_registered(self: @ComponentState<TContractState>, token: Token) {
+            let token_address: felt252 = token.token.into();
+            assert!(
+                !self._is_token_registered(@token),
+                "Tournament: Token address {} is already registered", token_address
+            );
+        }
+
         fn _assert_future_start_time(
             self: @ComponentState<TContractState>, registration_start_time: u64, start_time: u64
         ) {
@@ -829,7 +769,7 @@ pub mod tournament_component {
             };
             assert!(
                 registration_end_time - registration_start_time >= min_registration_period.into(),
-                "Tournament: Registration period of {} too short", registration_end_time - registration_start_time
+                "Tournament: Registration period of {} lower than minimum {}", registration_end_time - registration_start_time, min_registration_period
             );
         }
 
@@ -840,7 +780,7 @@ pub mod tournament_component {
         ) {
             assert!(
                 registration_end_time - registration_start_time < MAX_REGISTRATION_PERIOD.into(),
-                "Tournament: Registration period of {} too long", registration_end_time - registration_start_time
+                "Tournament: Registration period of {} higher than maximum {}", registration_end_time - registration_start_time, MAX_REGISTRATION_PERIOD
             );
         }
 
@@ -877,7 +817,7 @@ pub mod tournament_component {
             };
             assert!(
                 end_time - start_time >= min_tournament_length.into(),
-                "Tournament: Tournament period of {} too short", end_time - start_time
+                "Tournament: Tournament period of {} lower than minimum {}", end_time - start_time, min_tournament_length
             );
         }
 
@@ -886,7 +826,7 @@ pub mod tournament_component {
         ) {
             assert!(
                 end_time - start_time <= MAX_TOURNAMENT_LENGTH.into(),
-                "Tournament: Tournament period of {} too long", end_time - start_time
+                "Tournament: Tournament period of {} higher than maximum {}", end_time - start_time, MAX_TOURNAMENT_LENGTH
             );
         }
 
@@ -899,18 +839,18 @@ pub mod tournament_component {
             } else {
                 MIN_SUBMISSION_PERIOD
             };
-            assert(
+            assert!(
                 submission_period >= min_submission_period.into(),
-                Errors::SUBMISSION_PERIOD_TOO_SHORT
+                "Tournament: Submission period of {} lower than the minimum {}", submission_period, min_submission_period
             );
         }
 
         fn _assert_submission_period_less_than_maximum(
             self: @ComponentState<TContractState>, submission_period: u64
         ) {
-            assert(
+            assert!(
                 submission_period <= MAX_SUBMISSION_PERIOD.into(),
-                Errors::SUBMISSION_PERIOD_TOO_LONG
+                "Tournament: Submission period of {} higher than the maximum {}", submission_period, MAX_SUBMISSION_PERIOD
             );
         }
 
@@ -929,7 +869,7 @@ pub mod tournament_component {
             match premium {
                 Option::Some(token) => {
                     let token_model = store.get_token(token.token);
-                    self._assert_premium_token_registered(@token_model);
+                    self._assert_premium_token_registered(token_model);
                     self
                         ._assert_premium_token_distribution_length_not_too_long(
                             token.token_distribution.len(), winners_count.into()
@@ -952,24 +892,33 @@ pub mod tournament_component {
         }
 
         fn _assert_game_supports_game_interface(
-            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher
+            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher, game_address: ContractAddress
         ) {
-            assert(src5_dispatcher.supports_interface(IGAME_ID), Errors::IGAME_NOT_SUPPORTED);
+            let game_address: felt252 = game_address.into();
+            assert!(
+                src5_dispatcher.supports_interface(IGAME_ID),
+                "Tournament: Game address {} does not support IGame interface", game_address
+            );
         }
 
         fn _assert_game_supports_game_metadata_interface(
-            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher
+            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher, game_address: ContractAddress
         ) {
-            assert(
+            let game_address: felt252 = game_address.into();
+            assert!(
                 src5_dispatcher.supports_interface(IGAME_METADATA_ID),
-                Errors::IGAME_METADATA_NOT_SUPPORTED
+                "Tournament: Game address {} does not support IGameMetadata interface", game_address
             );
         }
 
         fn _assert_game_supports_erc721_interface(
-            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher
+            self: @ComponentState<TContractState>, src5_dispatcher: ISRC5Dispatcher, game_address: ContractAddress
         ) {
-            assert(src5_dispatcher.supports_interface(IERC721_ID), Errors::IERC721_NOT_SUPPORTED);
+            let game_address: felt252 = game_address.into();
+            assert!(
+                src5_dispatcher.supports_interface(IERC721_ID),
+                "Tournament: Game address {} does not support IERC721 interface", game_address
+            );
         }
 
         fn _assert_settings_exists(
@@ -980,27 +929,33 @@ pub mod tournament_component {
         ) {
             let mut game_dispatcher = IGameDispatcher { contract_address: game };
             let settings_exist = game_dispatcher.get_settings_details(settings_id).exists;
-            assert(settings_exist, Errors::GAME_SETTINGS_NOT_FOUND);
+            let game_address: felt252 = game.into();
+            assert!(settings_exist, "Tournament: Settings id {} is not found on game address {}", settings_id, game_address);
         }
 
-        fn _assert_premium_token_registered(self: @ComponentState<TContractState>, token: @Token) {
-            assert(self._is_token_registered(token), Errors::PREMIUM_TOKEN_NOT_REGISTERED);
+        fn _assert_premium_token_registered(self: @ComponentState<TContractState>, token: Token) {
+            let token_address: felt252 = token.token.into();
+            assert!(self._is_token_registered(@token), "Tournament: Premium token address {} is not registered", token_address);
         }
 
         fn _assert_premium_token_distribution_length_not_too_long(
             self: @ComponentState<TContractState>, distribution_length: u32, winners_count: u32
         ) {
-            assert(distribution_length <= winners_count, Errors::PREMIUM_DISTRIBUTIONS_TOO_LONG);
+            assert!(
+                distribution_length <= winners_count,
+                "Tournament: Premium distribution list is {} longer than the winners count {}", distribution_length, winners_count
+            );
         }
 
         fn _assert_premium_token_distribution_sum_is_100(
             self: @ComponentState<TContractState>, sum: u8
         ) {
-            assert(sum == 100, Errors::PREMIUM_DISTRIBUTIONS_NOT_100);
+            assert!(sum == 100, "Tournament: Premium distribution sum is not 100%");
         }
 
-        fn _assert_prize_token_registered(self: @ComponentState<TContractState>, token: @Token) {
-            assert(self._is_token_registered(token), Errors::PRIZE_TOKEN_NOT_REGISTERED);
+        fn _assert_prize_token_registered(self: @ComponentState<TContractState>, token: Token) {
+            let token_address: felt252 = token.token.into();
+            assert!(self._is_token_registered(@token), "Tournament: Prize token address {} is not registered", token_address);
         }
 
         fn _assert_within_registration_period(
@@ -1008,83 +963,73 @@ pub mod tournament_component {
             registration_start_time: u64,
             registration_end_time: u64
         ) {
-            assert(
+            assert!(
                 registration_start_time <= get_block_timestamp()
                     && registration_end_time >= get_block_timestamp(),
-                Errors::NOT_WITHIN_REGISTRATION_PERIOD
+                "Tournament: Entry time is not within the registration period {} to {}", registration_start_time, registration_end_time
             );
         }
 
         fn _assert_game_started(
-            self: @ComponentState<TContractState>, state: Option<TournamentGameState>
+            self: @ComponentState<TContractState>, state: Option<TournamentGameState>, token_id: u128
         ) {
             match state {
                 Option::Some(state) => {
-                    assert(
+                    assert!(
                         state == TournamentGameState::Started
                             || state == TournamentGameState::Submitted,
-                        Errors::GAME_NOT_STARTED
+                        "Tournament: Game on token id {} is not started", token_id
                     );
                 },
-                Option::None => { assert(false, Errors::GAME_NOT_STARTED); },
+                Option::None => { assert!(false, "Tournament: Game is not started"); },
             }
         }
 
         fn _assert_game_not_started(
-            self: @ComponentState<TContractState>, state: Option<TournamentGameState>
+            self: @ComponentState<TContractState>, state: Option<TournamentGameState>, token_id: u128
         ) {
             match state {
                 Option::Some(state) => {
-                    assert(state == TournamentGameState::Registered, Errors::GAME_ALREADY_STARTED);
+                    assert!(state == TournamentGameState::Registered, "Tournament: Game on token id {} is already started", token_id);
                 },
                 Option::None => {},
             }
         }
 
-        fn _assert_score_valid(self: @ComponentState<TContractState>, score: u64) {
-            assert(score > 0, Errors::INVALID_SCORE);
+        fn _assert_score_valid(self: @ComponentState<TContractState>, score: u64, token_id: u128) {
+            assert!(score > 0, "Tournament: Score on token id {} must be greater than 0", token_id);
         }
 
         fn _assert_tournament_active(
             self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
             let is_active = self._is_tournament_active(tournament);
-            assert(is_active, Errors::TOURNAMENT_NOT_ACTIVE);
+            assert!(is_active, "Tournament: Tournament id {} is not active", tournament.tournament_id);
         }
 
-        fn _assert_tournament_ended(self: @ComponentState<TContractState>, end_time: u64) {
-            assert(end_time <= get_block_timestamp(), Errors::TOURNAMENT_NOT_ENDED);
+        fn _assert_tournament_ended(self: @ComponentState<TContractState>, end_time: u64, tournament_id: u128) {
+            assert!(end_time <= get_block_timestamp(), "Tournament: Tournament id {} has not ended", tournament_id);
         }
 
-        fn _assert_tournament_not_ended(self: @ComponentState<TContractState>, end_time: u64) {
-            assert(end_time > get_block_timestamp(), Errors::TOURNAMENT_ENDED);
-        }
-
-        fn _assert_tournament_period_within_max(
-            self: @ComponentState<TContractState>, store: Store, tournament_id: u128
-        ) {
-            let tournament = store.get_tournament(tournament_id);
-            assert(
-                tournament.end_time - tournament.start_time < GAME_EXPIRATION_PERIOD.into(),
-                Errors::TOURNAMENT_PERIOD_TOO_LONG
-            );
+        fn _assert_tournament_not_ended(self: @ComponentState<TContractState>, end_time: u64, tournament_id: u128) {
+            assert!(end_time > get_block_timestamp(), "Tournament: Tournament id {} has already ended", tournament_id);
         }
 
         fn _assert_tournament_finalized(
-            self: @ComponentState<TContractState>, state: TournamentState
+            self: @ComponentState<TContractState>, state: TournamentState, tournament_id: u128
         ) {
-            assert(
+            assert!(
                 state == TournamentState::Finalized || state == TournamentState::Submitted,
-                Errors::TOURNAMENT_NOT_FINALIZED
+                "Tournament: Tournament id {} is not finalized", tournament_id
             );
         }
 
         fn _assert_tournament_not_finalized(
-            self: @ComponentState<TContractState>, state: TournamentState
+            self: @ComponentState<TContractState>, state: TournamentState, tournament_id: u128
         ) {
-            assert(
+            assert!(
                 state != TournamentState::Finalized && state != TournamentState::Submitted,
-                Errors::TOURNAMENT_ALREADY_FINALIZED
+                "Tournament: Tournament id {} is already finalized", tournament_id
             );
         }
 
@@ -1092,35 +1037,39 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>, tournament: @TournamentModel, scores_count: u32
         ) {
             let winners_count = *tournament.winners_count;
-            assert(scores_count <= winners_count.into(), Errors::INVALID_SCORES_SUBMISSION);
+            assert!(scores_count <= winners_count.into(), "Tournament: The length of scores submissions {} is greater than the winners count {}", scores_count, winners_count);
         }
 
         fn _assert_prize_position_less_than_winners_count(
             self: @ComponentState<TContractState>, tournament: @TournamentModel, position: u8
         ) {
-            assert(position <= *tournament.winners_count, Errors::PRIZE_POSITION_TOO_LARGE);
+            assert!(position <= *tournament.winners_count, "Tournament: Prize position {} is greater than the winners count {}", position, *tournament.winners_count);
         }
 
-        fn _assert_prize_exists(self: @ComponentState<TContractState>, token: ContractAddress) {
-            assert(!token.is_zero(), Errors::PRIZE_DOES_NOT_EXIST);
+        fn _assert_prize_exists(self: @ComponentState<TContractState>, token: ContractAddress, prize_key: u128) {
+            assert!(!token.is_zero(), "Tournament: Prize key {} does not exist", prize_key);
         }
 
-        fn _assert_prize_not_claimed(self: @ComponentState<TContractState>, claimed: bool) {
-            assert(!claimed, Errors::PRIZE_ALREADY_CLAIMED);
+        fn _assert_prize_not_claimed(self: @ComponentState<TContractState>, claimed: bool, prize_key: u128) {
+            assert!(!claimed, "Tournament: Prize key {} has already been claimed", prize_key);
         }
 
         fn _assert_payout_is_top_score(
             self: @ComponentState<TContractState>, payout_position: u8, top_score_ids: Span<u128>
         ) {
-            assert(
-                payout_position.into() <= top_score_ids.len(), Errors::PAYOUT_POSITION_NOT_TOP_SCORE
+            assert!(
+                payout_position.into() <= top_score_ids.len(),
+                "Tournament: Prize payout position {} is not a top score", payout_position
             );
         }
 
         fn _assert_payout_is_not_top_score(
             self: @ComponentState<TContractState>, payout_position: u8, top_score_ids: Span<u128>
         ) {
-            assert(payout_position.into() > top_score_ids.len(), Errors::PAYOUT_POSITION_TOP_SCORE);
+            assert!(
+                payout_position.into() > top_score_ids.len(),
+                "Tournament: Prize payout position {} is a top score", payout_position
+            );
         }
 
 
@@ -1131,7 +1080,7 @@ pub mod tournament_component {
             account: ContractAddress
         ) {
             let owner = self._get_owner(token, token_id);
-            assert(owner == account, Errors::NOT_TOKEN_OWNER);
+            assert!(owner == account, "Tournament: Caller does not own token id {}", token_id);
         }
 
         fn _assert_gated_token_owner(
@@ -1144,21 +1093,6 @@ pub mod tournament_component {
             assert!(owner == account, "Tournament: Caller does not own qualifying token id {}", token_id);
         }
 
-        fn _assert_game_token_owner(
-            self: @ComponentState<TContractState>,
-            tournament_id: u128,
-            game_id: u256,
-            account: ContractAddress
-        ) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS()
-            );
-            let mut store: Store = StoreTrait::new(world);
-            let tournament = store.get_tournament(tournament_id);
-            let owner = self._get_owner(tournament.game_address, game_id);
-            assert(owner == account, Errors::NOT_GAME_OWNER);
-        }
-
         fn _assert_gated_type_validates(
             self: @ComponentState<TContractState>, store: Store, gated_type: Option<GatedType>
         ) {
@@ -1167,9 +1101,10 @@ pub mod tournament_component {
                     match gated_type {
                         GatedType::token(token) => {
                             let token_model = store.get_token(token);
-                            assert(
+                            let token_address: felt252 = token.into();
+                            assert!(
                                 self._is_token_registered(@token_model),
-                                Errors::GATED_TOKEN_NOT_REGISTERED
+                                "Tournament: Gated token address {} is not registered", token_address
                             )
                         },
                         GatedType::tournament(tournament_type) => {
@@ -1210,25 +1145,19 @@ pub mod tournament_component {
         fn _assert_tournament_settled(
             self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
-            assert(
+            assert!(
                 *tournament.end_time + *tournament.submission_period <= get_block_timestamp(),
-                Errors::TOURNAMENT_NOT_SETTLED
+                "Tournament: Tournament id {} is not settled", tournament.tournament_id
             );
         }
 
         fn _assert_tournament_not_settled(
             self: @ComponentState<TContractState>, tournament: @TournamentModel
         ) {
-            assert(
+            assert!(
                 *tournament.end_time + *tournament.submission_period > get_block_timestamp(),
-                Errors::TOURNAMENT_ALREADY_SETTLED
+                "Tournament: Tournament id {} is already settled", tournament.tournament_id
             );
-        }
-
-        fn _assert_prize_keys_not_empty(
-            self: @ComponentState<TContractState>, prize_keys: Span<u64>
-        ) {
-            assert(prize_keys.len() > 0, Errors::NO_PRIZE_KEYS);
         }
 
         fn _assert_qualifies_gating(
@@ -1269,7 +1198,7 @@ pub mod tournament_component {
                 Option::Some(token_id) => {
                     self._assert_gated_token_owner(gated_token, token_id, address);
                 },
-                Option::None => { assert(false, Errors::NO_QUALIFYING_TOKEN_SUPPLIED); }
+                Option::None => { assert!(false, "Tournament: No qualifying token id supplied"); }
             }
         }
 
@@ -1316,7 +1245,7 @@ pub mod tournament_component {
                                 }
                                 loop_index += 1;
                             };
-                            assert(qualified, Errors::GAME_DOES_NOT_QUALIFY);
+                            assert!(qualified, "Tournament: Submitted tournament token id {} is not a top score in any gated tournament", token_id);
                         },
                         TournamentType::participants(tournament_ids) => {
                             let mut loop_index = 0;
@@ -1342,11 +1271,11 @@ pub mod tournament_component {
                                 }
                                 loop_index += 1;
                             };
-                            assert(participated, Errors::GAME_DID_NOT_PARTICIPATE);
+                            assert!(participated, "Tournament: Submitted tournament token id {} did not participate in any gated tournament", token_id);
                         },
                     }
                 },
-                Option::None => { assert(false, Errors::NO_QUALIFYING_TOKEN_SUPPLIED); }
+                Option::None => { assert!(false, "Tournament: No qualifying token id supplied"); }
             }
         }
 
@@ -1368,7 +1297,7 @@ pub mod tournament_component {
                 }
                 loop_index += 1;
             };
-            assert(found, Errors::ADDRESS_DOES_NOT_QUALIFY);
+            assert!(found, "Tournament: Caller is not whitelisted for the address gated tournament");
         }
 
         //
@@ -1376,102 +1305,76 @@ pub mod tournament_component {
         //
 
         // TODO: add for V2 (only ERC721 tokens)
-        // fn _register_tokens(
-        //     ref self: ComponentState<TContractState>, ref store: Store, tokens: Array<Token>
-        // ) {
-        //     let num_tokens = tokens.len();
-        //     let mut token_index = 0;
-        //     let safe_mode = store.get_tournament_config(get_contract_address()).safe_mode;
-        //     loop {
-        //         if token_index == num_tokens {
-        //             break;
-        //         }
-        //         let token = *tokens.at(token_index);
+        fn _register_token(
+            ref self: ComponentState<TContractState>, token: ContractAddress, token_data: TokenDataType
+        ) -> (ByteArray, ByteArray) {
 
-        // assert(
-        //     !self._is_token_registered(ref store, token.token),
-        //     Errors::TOKEN_ALREADY_REGISTERED
-        // );
+            let mut name = "";
+            let mut symbol = "";
 
-        //         let mut name = "";
-        //         let mut symbol = "";
-
-        //         match token.token_data_type.into() {
-        //             TokenDataType::erc20(_) => {
-        //                 let token_dispatcher = IERC20Dispatcher { contract_address: token.token
-        //                 };
-        //                 let token_dispatcher_metadata = IERC20MetadataDispatcher {
-        //                     contract_address: token.token
-        //                 };
-        //                 name = token_dispatcher_metadata.name();
-        //                 symbol = token_dispatcher_metadata.symbol();
-        //                 // check that the contract is approved for the minimal amount
-        //                 let allowance = token_dispatcher
-        //                     .allowance(get_caller_address(), get_contract_address());
-        //                 assert(allowance == 1, Errors::INVALID_TOKEN_ALLOWANCES);
-        //                 // take a reading of the current balance (incase contract has assets
-        //                 // already)
-        //                 let current_balance =
-        //                 token_dispatcher.balance_of(get_contract_address());
-        //                 // trnsfer a minimal amount to the contract
-        //                 token_dispatcher
-        //                     .transfer_from(get_caller_address(), get_contract_address(), 1);
-        //                 // take a reading of the new balance
-        //                 let new_balance = token_dispatcher.balance_of(get_contract_address());
-        //                 assert(new_balance == current_balance + 1,
-        //                 Errors::INVALID_TOKEN_BALANCES);
-        //                 // transfer back the minimal amount
-        //                 token_dispatcher.transfer(get_caller_address(), 1);
-        //                 // check the total supply is legitimate
-        //                 let total_supply = token_dispatcher.total_supply();
-        //                 assert(total_supply < TWO_POW_128.into(),
-        //                 Errors::TOKEN_SUPPLY_TOO_LARGE);
-        //             },
-        //             TokenDataType::erc721(token_data_type) => {
-        //                 let token_dispatcher = IERC721Dispatcher { contract_address: token.token
-        //                 };
-        //                 let token_dispatcher_metadata = IERC721MetadataDispatcher {
-        //                     contract_address: token.token
-        //                 };
-        //                 name = token_dispatcher_metadata.name();
-        //                 symbol = token_dispatcher_metadata.symbol();
-        //                 // check that the contract is approved for the specific id
-        //                 let approved = token_dispatcher
-        //                     .get_approved(token_data_type.token_id.into());
-        //                 assert(approved == get_contract_address(),
-        //                 Errors::INVALID_TOKEN_APPROVALS);
-        //                 // transfer a specific id to the contract
-        //                 token_dispatcher
-        //                     .transfer_from(
-        //                         get_caller_address(),
-        //                         get_contract_address(),
-        //                         token_data_type.token_id.into()
-        //                     );
-        //                 // check the balance of the contract
-        //                 let balance = token_dispatcher.balance_of(get_contract_address());
-        //                 assert(balance == 1, Errors::INVALID_TOKEN_BALANCES);
-        //                 let owner = token_dispatcher.owner_of(token_data_type.token_id.into());
-        //                 assert(owner == get_contract_address(), Errors::INVALID_TOKEN_OWNER);
-        //                 // transfer back the token
-        //                 token_dispatcher
-        //                     .transfer_from(
-        //                         get_contract_address(),
-        //                         get_caller_address(),
-        //                         token_data_type.token_id.into()
-        //                     );
-        //             },
-        //         }
-        //         let token_model = TokenModel {
-        //             token: token.token,
-        //             name,
-        //             symbol,
-        //             token_data_type: token.token_data_type,
-        //             is_registered: true
-        //         };
-        //         store.set_token(@token_model);
-        //         token_index += 1;
-        //     }
-        // }
+            match token_data {
+                TokenDataType::erc20(_) => {
+                    let token_dispatcher = IERC20Dispatcher { contract_address: token};
+                    let token_dispatcher_metadata = IERC20MetadataDispatcher {
+                        contract_address: token
+                    };
+                    name = token_dispatcher_metadata.name();
+                    symbol = token_dispatcher_metadata.symbol();
+                    // check that the contract is approved for the minimal amount
+                    let allowance = token_dispatcher
+                        .allowance(get_caller_address(), get_contract_address());
+                    let token_address: felt252 = token.into();
+                    assert!(allowance == 1, "Tournament: Token address {} has invalid allowance", token_address);
+                    // take a reading of the current balance (incase contract has assets
+                    // already)
+                    let current_balance = token_dispatcher.balance_of(get_contract_address());
+                    // trnsfer a minimal amount to the contract
+                    token_dispatcher
+                        .transfer_from(get_caller_address(), get_contract_address(), 1);
+                    // take a reading of the new balance
+                    let new_balance = token_dispatcher.balance_of(get_contract_address());
+                    assert!(new_balance == current_balance + 1, "Tournament: Token address {} has invalid balance", token_address);
+                    // transfer back the minimal amount
+                    token_dispatcher.transfer(get_caller_address(), 1);
+                    // check the total supply is legitimate
+                    let total_supply = token_dispatcher.total_supply();
+                    assert!(total_supply < TWO_POW_128.into(), "Tournament: Token address {} has a total supply that is too large", token_address);
+                },
+                TokenDataType::erc721(token_data_type) => {
+                    let token_dispatcher = IERC721Dispatcher { contract_address: token };
+                    let token_dispatcher_metadata = IERC721MetadataDispatcher {
+                        contract_address: token
+                    };
+                    name = token_dispatcher_metadata.name();
+                    symbol = token_dispatcher_metadata.symbol();
+                    // check that the contract is approved for the specific id
+                    let approved = token_dispatcher
+                        .get_approved(token_data_type.token_id.into());
+                    let token_address: felt252 = token.into();
+                    assert!(approved == get_contract_address(), "Tournament: Token address {} has invalid approval", token_address);
+                    // transfer a specific id to the contract
+                    token_dispatcher
+                        .transfer_from(
+                            get_caller_address(),
+                            get_contract_address(),
+                            token_data_type.token_id.into()
+                        );
+                    // check the balance of the contract
+                    let balance = token_dispatcher.balance_of(get_contract_address());
+                    assert!(balance == 1, "Tournament: Token address {} has invalid balance", token_address);
+                    let owner = token_dispatcher.owner_of(token_data_type.token_id.into());
+                    assert!(owner == get_contract_address(), "Tournament: Token address {} has invalid owner", token_address);
+                    // transfer back the token
+                    token_dispatcher
+                        .transfer_from(
+                            get_contract_address(),
+                            get_caller_address(),
+                            token_data_type.token_id.into()
+                        );
+                },
+            }
+            (name, symbol)
+        }
 
         fn _start_game(
             ref self: ComponentState<TContractState>,
@@ -1615,7 +1518,7 @@ pub mod tournament_component {
             match token_data_type {
                 TokenDataType::erc20(token_data) => {
                     let token_dispatcher = IERC20Dispatcher { contract_address: token };
-                    assert(token_data.token_amount > 0, Errors::INVALID_TOKEN_AMOUNT);
+                    assert!(token_data.token_amount > 0, "Tournament: ERC20 prize token amount must be greater than 0");
                     token_dispatcher
                         .transfer_from(
                             get_caller_address(),
@@ -1663,7 +1566,7 @@ pub mod tournament_component {
             match prize.token_data_type {
                 TokenDataType::erc20(token_data) => {
                     let token_dispatcher = IERC20Dispatcher { contract_address: prize.token };
-                    assert(token_data.token_amount > 0, Errors::INVALID_TOKEN_AMOUNT);
+                    assert!(token_data.token_amount > 0, "Tournament: ERC20 prize token amount must be greater than 0");
                     token_dispatcher.transfer(address, token_data.token_amount.into());
                 },
                 TokenDataType::erc721(token_data) => {

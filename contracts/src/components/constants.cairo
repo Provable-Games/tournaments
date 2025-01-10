@@ -2,6 +2,8 @@
 // Tournament time constraints
 //
 
+pub const TWO_POW_128: u128 = 100000000000000000000000000000000;
+
 // PRODUCTION VALUES
 pub const MIN_REGISTRATION_PERIOD: u32 = 3600; // 1 hour
 pub const MAX_REGISTRATION_PERIOD: u32 = 2592000; // 1 month
