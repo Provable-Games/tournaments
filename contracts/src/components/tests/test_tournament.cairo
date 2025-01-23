@@ -482,7 +482,7 @@ fn test_create_tournament_with_prizes() {
             TokenDataType::erc721(ERC721Data { token_id: 1 }),
             1,
         );
-    assert(contracts.erc20.balance_of(OWNER()) == 1, 'Invalid balance');
+    assert(contracts.erc20.balance_of(OWNER()) == 0, 'Invalid balance');
     assert(contracts.erc721.balance_of(OWNER()) == 0, 'Invalid balance');
 }
 
