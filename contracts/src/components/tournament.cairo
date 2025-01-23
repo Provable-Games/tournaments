@@ -1308,8 +1308,9 @@ pub mod tournament_component {
 
         // TODO: Instead of looping through all qualifying tournaments, the caller should pass in
         // the tournament ID they are qualifying with.
-        // This will simplify this code to an assertion that the tournament ID is part of the set ofqualifying
-        // tournament IDs and an assertion that the caller owns the qualifying token id.
+        // This will simplify this code to an assertion that the tournament ID is part of the set
+        // ofqualifying tournament IDs and an assertion that the caller owns the qualifying token
+        // id.
         fn _assert_has_qualified_in_tournaments(
             self: @ComponentState<TContractState>,
             store: Store,
@@ -1566,7 +1567,7 @@ pub mod tournament_component {
         }
 
         /// @dev Convert the entry premium into prizes.
-        /// @param tournament_id The tournament id. 
+        /// @param tournament_id The tournament id.
         fn _convert_premiums_into_prizes(
             ref self: ComponentState<TContractState>, ref store: Store, tournament_id: u64,
         ) {
