@@ -5,12 +5,12 @@ use tournaments::tests::{
     constants::{
         TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_REGISTRATION_START_TIME,
         TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, SETTINGS_NAME,
-        SETTINGS_DESCRIPTION
+        SETTINGS_DESCRIPTION,
     },
 };
 use tournaments::components::tests::interfaces::{
-    ITournamentMockDispatcher,
-    ITournamentMockDispatcherTrait, IGameMockDispatcher, IGameMockDispatcherTrait
+    ITournamentMockDispatcher, ITournamentMockDispatcherTrait, IGameMockDispatcher,
+    IGameMockDispatcherTrait,
 };
 
 //
@@ -18,8 +18,8 @@ use tournaments::components::tests::interfaces::{
 //
 
 pub fn create_basic_tournament(
-    tournament: ITournamentMockDispatcher, game: ContractAddress
-) -> u256 {
+    tournament: ITournamentMockDispatcher, game: ContractAddress,
+) -> (u64, u64) {
     tournament
         .create_tournament(
             TOURNAMENT_NAME(),
@@ -33,7 +33,7 @@ pub fn create_basic_tournament(
             Option::None, // zero gated type
             Option::None, // zero entry premium,
             game,
-            1
+            1,
         )
 }
 

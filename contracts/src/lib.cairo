@@ -4,6 +4,7 @@ mod components {
     mod game;
     mod libs {
         pub mod store;
+        pub mod game_store;
         pub mod utils;
     }
     pub mod models {

@@ -2,8 +2,8 @@ use starknet::ContractAddress;
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TournamentType {
-    winners: Span<u128>,
-    participants: Span<u128>,
+    winners: Span<u64>,
+    participants: Span<u64>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
@@ -18,7 +18,7 @@ pub struct ERC721Data {
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub struct Premium {
-    pub token: ContractAddress,
+    pub token_address: ContractAddress,
     pub token_amount: u128,
     pub token_distribution: Span<u8>,
     pub creator_fee: u8,
@@ -44,14 +44,14 @@ pub enum TournamentState {
     Registration,
     Active,
     Finalized,
-    Submitted,
+    ScoreSubmitted,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum TournamentGameState {
+pub enum GameState {
     Registered,
     Started,
-    Submitted,
+    ScoreSubmitted,
 }
 
 ///
@@ -62,78 +62,93 @@ pub enum TournamentGameState {
 #[derive(Drop, Serde)]
 pub struct Tournament {
     #[key]
-    pub tournament_id: u128,
+    pub tournament_id: u64,
     pub name: felt252,
     pub description: ByteArray,
     pub creator: ContractAddress,
     pub registration_start_time: u64,
     pub registration_end_time: u64,
     pub start_time: u64,
+    pub settings_id: u32,
     pub end_time: u64,
     pub submission_period: u64,
     pub winners_count: u8,
+    pub state: TournamentState,
     pub gated_type: Option<GatedType>,
     pub entry_premium: Option<Premium>,
     pub game_address: ContractAddress,
-    pub settings_id: u32,
-    pub state: TournamentState,
 }
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
-pub struct TournamentToken {
+pub struct TokenMetadata {
     #[key]
-    pub token_id: u128,
-    pub tournament_id: u128,
-    pub game_id: u128,
-    pub score: u64,
-    pub state: Option<TournamentGameState>,
-    pub registration_number: u64
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct TournamentEntries {
-    #[key]
-    pub tournament_id: u128,
-    pub entry_count: u64,
+    pub token_id: u64,
+    pub tournament_id: u64,
+    pub game_token_id: u64,
+    pub entry_number: u32,
+    pub state: Option<GameState>,
 }
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
 pub struct TournamentScores {
     #[key]
-    pub tournament_id: u128,
-    pub top_score_ids: Span<u128>,
+    pub tournament_id: u64,
+    pub top_score_token_ids: Span<u64>,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct PlatformMetrics {
+    #[key]
+    pub key: felt252,
+    pub total_tournaments: u64,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct TournamentTokenMetrics {
+    #[key]
+    pub key: felt252,
+    pub total_supply: u64,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct PrizeMetrics {
+    #[key]
+    pub key: felt252,
+    pub total_prizes: u64,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct EntryCount {
+    #[key]
+    pub tournament_id: u64,
+    pub count: u32,
 }
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
-pub struct TournamentTotals {
+pub struct Prize {
     #[key]
-    pub contract: ContractAddress,
-    pub tournament_count: u128,
-    pub prize_count: u128,
-    pub token_count: u128,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct TournamentPrize {
-    #[key]
-    pub prize_key: u128,
-    pub tournament_id: u128,
+    pub prize_id: u64,
+    pub tournament_id: u64,
+    pub payout_position: u8,
+    pub claimed: bool,
     pub token: ContractAddress,
     pub token_data_type: TokenDataType,
-    pub payout_position: u8,
-    pub claimed: bool
 }
 
+
+//TODO: Remove name and symbol from the model
 #[dojo::model]
 #[derive(Drop, Serde)]
 pub struct Token {
     #[key]
-    pub token: ContractAddress,
+    pub address: ContractAddress,
     pub name: ByteArray,
     pub symbol: ByteArray,
     pub token_data_type: TokenDataType,
@@ -144,7 +159,7 @@ pub struct Token {
 #[derive(Copy, Drop, Serde)]
 pub struct TournamentConfig {
     #[key]
-    pub contract: ContractAddress,
+    pub key: felt252,
     pub safe_mode: bool,
     pub test_mode: bool,
 }

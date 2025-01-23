@@ -5,18 +5,11 @@ use starknet::ContractAddress;
 ///
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct GameDetails {
-    #[key]
-    pub game_address: ContractAddress,
-    pub name: felt252,
-}
-
-#[dojo::model]
 #[derive(Drop, Serde)]
 pub struct GameMetadata {
     #[key]
     pub game_address: ContractAddress,
+    pub name: felt252,
     pub description: ByteArray,
     pub developer: felt252,
     pub publisher: felt252,
@@ -25,19 +18,11 @@ pub struct GameMetadata {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct Score {
-    #[key]
-    pub game_id: u128,
-    pub score: u64,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
 pub struct GameCount {
     #[key]
-    pub contract: ContractAddress,
-    pub count: u128,
+    pub key: felt252,
+    pub count: u64,
 }
 
 #[dojo::model]
@@ -51,9 +36,17 @@ pub struct SettingsDetails {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
 pub struct GameSettings {
     #[key]
-    pub game_id: u128,
+    pub game_token_id: u64,
     pub settings_id: u32,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct Score {
+    #[key]
+    pub game_id: u64,
+    pub score: u64,
 }

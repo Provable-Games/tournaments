@@ -3,8 +3,8 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    TournamentTotals, Tournament, TournamentEntries, TournamentPrize, TournamentScores, Token,
-    TournamentToken, TournamentConfig
+    Tournament, EntryCount, Prize, TournamentScores, Token, TokenMetadata, TournamentConfig,
+    PlatformMetrics, PrizeMetrics, TournamentTokenMetrics,
 };
 
 #[derive(Copy, Drop)]
@@ -26,7 +26,19 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn get_tournament_totals(self: Store, contract: ContractAddress) -> TournamentTotals {
+    fn get_platform_metrics(self: Store, contract: ContractAddress) -> PlatformMetrics {
+        (self.world.read_model(contract))
+    }
+
+    #[inline(always)]
+    fn get_prize_metrics(self: Store, contract: ContractAddress) -> PrizeMetrics {
+        (self.world.read_model(contract))
+    }
+
+    #[inline(always)]
+    fn get_tournament_token_metrics(
+        self: Store, contract: ContractAddress,
+    ) -> TournamentTokenMetrics {
         (self.world.read_model(contract))
     }
 
@@ -36,12 +48,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_total_entries(self: Store, tournament_id: u64) -> TournamentEntries {
+    fn get_tournament_entry_count(self: Store, tournament_id: u64) -> EntryCount {
         (self.world.read_model(tournament_id))
     }
 
     #[inline(always)]
-    fn get_tournament_token(self: Store, token_id: u128) -> TournamentToken {
+    fn get_token_metadata(self: Store, token_id: u128) -> TokenMetadata {
         (self.world.read_model(token_id))
     }
 
@@ -51,8 +63,8 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_prize(self: Store, prize_key: u64) -> TournamentPrize {
-        (self.world.read_model(prize_key))
+    fn get_prize(self: Store, prize_id: u64) -> Prize {
+        (self.world.read_model(prize_id))
     }
 
     #[inline(always)]
@@ -72,7 +84,7 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn set_tournament_totals(ref self: Store, model: @TournamentTotals) {
+    fn set_platform_metrics(ref self: Store, model: @PlatformMetrics) {
         self.world.write_model(model);
     }
 
@@ -82,12 +94,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_total_entries(ref self: Store, model: @TournamentEntries) {
+    fn set_tournament_entry_count(ref self: Store, model: @EntryCount) {
         self.world.write_model(model);
     }
 
     #[inline(always)]
-    fn set_tournament_token(ref self: Store, model: @TournamentToken) {
+    fn set_token_metadata(ref self: Store, model: @TokenMetadata) {
         self.world.write_model(model);
     }
 
@@ -97,7 +109,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_prize(ref self: Store, model: @TournamentPrize) {
+    fn set_prize(ref self: Store, model: @Prize) {
         self.world.write_model(model);
     }
 

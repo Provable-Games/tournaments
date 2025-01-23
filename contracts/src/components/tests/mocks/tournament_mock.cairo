@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TournamentToken
+    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TokenMetadata,
 };
 
 #[starknet::interface]
@@ -10,28 +10,28 @@ pub trait ITournamentMock<TState> {
     fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     // IERC721
-    fn balance_of(self: @TState, account: ContractAddress) -> u256;
-    fn owner_of(self: @TState, token_id: u256) -> ContractAddress;
+    fn balance_of(self: @TState, account: ContractAddress) -> u64;
+    fn owner_of(self: @TState, token_id: u64) -> ContractAddress;
     fn safe_transfer_from(
         ref self: TState,
         from: ContractAddress,
         to: ContractAddress,
-        token_id: u256,
-        data: Span<felt252>
+        token_id: u64,
+        data: Span<felt252>,
     );
-    fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
-    fn approve(ref self: TState, to: ContractAddress, token_id: u256);
+    fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u64);
+    fn approve(ref self: TState, to: ContractAddress, token_id: u64);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);
-    fn get_approved(self: @TState, token_id: u256) -> ContractAddress;
+    fn get_approved(self: @TState, token_id: u64) -> ContractAddress;
     fn is_approved_for_all(
-        self: @TState, owner: ContractAddress, operator: ContractAddress
+        self: @TState, owner: ContractAddress, operator: ContractAddress,
     ) -> bool;
 
     // ITournament
-    fn total_tournaments(self: @TState) -> u128;
-    fn tournament(self: @TState, tournament_id: u128) -> TournamentModel;
-    fn tournament_token(self: @TState, token_id: u256) -> TournamentToken;
-    fn tournament_entries(self: @TState, tournament_id: u128) -> u64;
+    fn total_tournaments(self: @TState) -> u64;
+    fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
+    fn tournament_token(self: @TState, token_id: u64) -> TokenMetadata;
+    fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
@@ -48,23 +48,23 @@ pub trait ITournamentMock<TState> {
         gated_type: Option<GatedType>,
         entry_premium: Option<Premium>,
         game_address: ContractAddress,
-        settings_id: u32
-    ) -> u256;
+        settings_id: u32,
+    ) -> u64;
     fn enter_tournament(
-        ref self: TState, tournament_id: u128, qualifying_token_id: Option<u256>
-    ) -> u256;
-    fn start_game(ref self: TState, tournament_token_id: u256);
-    fn submit_scores(ref self: TState, tournament_id: u128, token_ids: Array<u256>);
-    fn finalize_tournament(ref self: TState, tournament_id: u128);
-    fn distribute_prize(ref self: TState, prize_key: u128);
-    fn distribute_unclaimable_prize(ref self: TState, prize_key: u128);
+        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u64>,
+    ) -> (u64, TokenMetadata);
+    fn start_game(ref self: TState, tournament_token_id: u64);
+    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
+    fn finalize_tournament(ref self: TState, tournament_id: u64);
+    fn distribute_prize(ref self: TState, prize_id: u64);
+    fn distribute_unclaimable_prize(ref self: TState, prize_id: u64);
     fn add_prize(
         ref self: TState,
-        tournament_id: u128,
+        tournament_id: u64,
         token: ContractAddress,
         token_data_type: TokenDataType,
-        position: u8
-    ) -> u128;
+        position: u8,
+    ) -> u64;
 
     fn initializer(
         ref self: TState,

@@ -1,5 +1,5 @@
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TournamentToken
+    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TokenMetadata,
 };
 use tournaments::components::models::game::SettingsDetails;
 
@@ -29,7 +29,7 @@ pub trait IERC20Mock<TState> {
     fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(ref self: TState, recipient: ContractAddress, amount: u256) -> bool;
     fn transfer_from(
-        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) -> bool;
     fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
     // IERC20Metadata
@@ -40,7 +40,7 @@ pub trait IERC20Mock<TState> {
     fn totalSupply(self: @TState) -> u256;
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
     fn transferFrom(
-        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) -> bool;
 
     // IERCPublic
@@ -62,14 +62,14 @@ pub trait IERC721Mock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         token_id: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
     fn approve(ref self: TState, to: ContractAddress, token_id: u256);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);
     fn get_approved(self: @TState, token_id: u256) -> ContractAddress;
     fn is_approved_for_all(
-        self: @TState, owner: ContractAddress, operator: ContractAddress
+        self: @TState, owner: ContractAddress, operator: ContractAddress,
     ) -> bool;
     // IERC721CamelOnly
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
@@ -79,7 +79,7 @@ pub trait IERC721Mock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         tokenId: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transferFrom(ref self: TState, from: ContractAddress, to: ContractAddress, tokenId: u256);
     fn setApprovalForAll(ref self: TState, operator: ContractAddress, approved: bool);
@@ -109,14 +109,14 @@ pub trait ITournamentMock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         token_id: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
     fn approve(ref self: TState, to: ContractAddress, token_id: u256);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);
     fn get_approved(self: @TState, token_id: u256) -> ContractAddress;
     fn is_approved_for_all(
-        self: @TState, owner: ContractAddress, operator: ContractAddress
+        self: @TState, owner: ContractAddress, operator: ContractAddress,
     ) -> bool;
     // IERC721CamelOnly
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
@@ -126,7 +126,7 @@ pub trait ITournamentMock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         tokenId: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transferFrom(ref self: TState, from: ContractAddress, to: ContractAddress, tokenId: u256);
     fn setApprovalForAll(ref self: TState, operator: ContractAddress, approved: bool);
@@ -140,10 +140,10 @@ pub trait ITournamentMock<TState> {
     fn tokenURI(self: @TState, tokenId: u256) -> ByteArray;
 
     // ITournament
-    fn total_tournaments(self: @TState) -> u128;
-    fn tournament(self: @TState, tournament_id: u128) -> TournamentModel;
-    fn tournament_token(self: @TState, token_id: u256) -> TournamentToken;
-    fn tournament_entries(self: @TState, tournament_id: u128) -> u64;
+    fn total_tournaments(self: @TState) -> u64;
+    fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
+    fn tournament_token(self: @TState, token_id: u64) -> TokenMetadata;
+    fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
@@ -160,23 +160,23 @@ pub trait ITournamentMock<TState> {
         gated_type: Option<GatedType>,
         entry_premium: Option<Premium>,
         game_address: ContractAddress,
-        settings_id: u32
-    ) -> u256;
+        settings_id: u32,
+    ) -> (u64, u64);
     fn enter_tournament(
-        ref self: TState, tournament_id: u128, qualifying_token_id: Option<u256>
-    ) -> u256;
-    fn start_game(ref self: TState, tournament_token_id: u256);
-    fn submit_scores(ref self: TState, tournament_id: u128, token_ids: Array<u256>);
-    fn finalize_tournament(ref self: TState, tournament_id: u128);
-    fn distribute_prize(ref self: TState, prize_key: u128);
-    fn distribute_unclaimable_prize(ref self: TState, prize_key: u128);
+        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u256>,
+    ) -> (u64, TokenMetadata);
+    fn start_game(ref self: TState, tournament_token_id: u64);
+    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
+    fn finalize_tournament(ref self: TState, tournament_id: u64);
+    fn distribute_prize(ref self: TState, prize_id: u64);
+    fn distribute_unclaimable_prize(ref self: TState, prize_id: u64);
     fn add_prize(
         ref self: TState,
-        tournament_id: u128,
+        tournament_id: u64,
         token: ContractAddress,
         token_data_type: TokenDataType,
-        position: u8
-    ) -> u128;
+        position: u8,
+    ) -> u64;
     fn initializer(
         ref self: TState,
         name: ByteArray,
@@ -204,14 +204,14 @@ pub trait IGameMock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         token_id: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
     fn approve(ref self: TState, to: ContractAddress, token_id: u256);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);
     fn get_approved(self: @TState, token_id: u256) -> ContractAddress;
     fn is_approved_for_all(
-        self: @TState, owner: ContractAddress, operator: ContractAddress
+        self: @TState, owner: ContractAddress, operator: ContractAddress,
     ) -> bool;
     // IERC721CamelOnly
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
@@ -221,7 +221,7 @@ pub trait IGameMock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         tokenId: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transferFrom(ref self: TState, from: ContractAddress, to: ContractAddress, tokenId: u256);
     fn setApprovalForAll(ref self: TState, operator: ContractAddress, approved: bool);
@@ -235,19 +235,18 @@ pub trait IGameMock<TState> {
     fn tokenURI(self: @TState, tokenId: u256) -> ByteArray;
 
     // IGame
-    fn get_score(self: @TState, game_id: u256) -> u64;
-    fn get_settings_id(self: @TState, game_id: u256) -> u32;
+    fn get_settings_id(self: @TState, game_id: u64) -> u32;
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
     fn settings_exists(self: @TState, settings_id: u32) -> bool;
-    fn new_game(ref self: TState, settings_id: u32, to: ContractAddress) -> u256;
+    fn new_game(ref self: TState, settings_id: u32, to: ContractAddress) -> u64;
     // GameMock
-    fn start_game(ref self: TState, game_id: u256);
-    fn end_game(ref self: TState, game_id: u256, score: u64);
+    fn start_game(ref self: TState, game_id: u64);
+    fn end_game(ref self: TState, game_id: u64, score: u64);
     fn set_settings(
-        ref self: TState, settings_id: u32, name: felt252, description: ByteArray, exists: bool
+        ref self: TState, settings_id: u32, name: felt252, description: ByteArray, exists: bool,
     );
 
-    fn initializer(ref self: TState,);
+    fn initializer(ref self: TState);
 }
 
 #[generate_trait]

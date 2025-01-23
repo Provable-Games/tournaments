@@ -7,7 +7,7 @@ use starknet::{ContractAddress, contract_address_const};
 /// # Returns
 /// * `T` - The result of base raised to the power of exp.
 pub fn pow<T, +Sub<T>, +Mul<T>, +Div<T>, +Rem<T>, +PartialEq<T>, +Into<u8, T>, +Drop<T>, +Copy<T>>(
-    base: T, exp: T
+    base: T, exp: T,
 ) -> T {
     if exp == 0_u8.into() {
         1_u8.into()

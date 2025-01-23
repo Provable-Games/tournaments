@@ -7,10 +7,10 @@ pub fn impersonate(address: ContractAddress) {
 }
 
 pub fn deploy(
-    contract_class_hash: felt252, salt: felt252, calldata: Array<felt252>
+    contract_class_hash: felt252, salt: felt252, calldata: Array<felt252>,
 ) -> ContractAddress {
     let (address, _) = deploy_syscall(
-        contract_class_hash.try_into().unwrap(), salt, calldata.span(), false
+        contract_class_hash.try_into().unwrap(), salt, calldata.span(), false,
     )
         .unwrap();
     address
@@ -20,7 +20,7 @@ pub fn deploy(
 /// and checks there's no more data left on the event, preventing unaccounted params.
 /// Indexed event members are currently not supported, so they are ignored.
 pub fn pop_log<T, impl TDrop: Drop<T>, impl TEvent: starknet::Event<T>>(
-    address: ContractAddress
+    address: ContractAddress,
 ) -> Option<T> {
     let (mut keys, mut data) = testing::pop_log_raw(address)?;
     let ret = starknet::Event::deserialize(ref keys, ref data);

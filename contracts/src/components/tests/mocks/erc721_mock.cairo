@@ -16,14 +16,14 @@ pub trait IERC721Mock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         token_id: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
     fn approve(ref self: TState, to: ContractAddress, token_id: u256);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);
     fn get_approved(self: @TState, token_id: u256) -> ContractAddress;
     fn is_approved_for_all(
-        self: @TState, owner: ContractAddress, operator: ContractAddress
+        self: @TState, owner: ContractAddress, operator: ContractAddress,
     ) -> bool;
     // IERC721CamelOnly
     fn balanceOf(self: @TState, account: ContractAddress) -> u256;
@@ -33,7 +33,7 @@ pub trait IERC721Mock<TState> {
         from: ContractAddress,
         to: ContractAddress,
         tokenId: u256,
-        data: Span<felt252>
+        data: Span<felt252>,
     );
     fn transferFrom(ref self: TState, from: ContractAddress, to: ContractAddress, tokenId: u256);
     fn setApprovalForAll(ref self: TState, operator: ContractAddress, approved: bool);
@@ -100,8 +100,8 @@ pub mod erc721_mock {
     }
     //*******************************
 
-    fn dojo_init(ref self: ContractState,) {
-        self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI(),);
+    fn dojo_init(ref self: ContractState) {
+        self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI());
     }
 
 
