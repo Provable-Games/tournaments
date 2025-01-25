@@ -40,18 +40,10 @@ pub enum TokenDataType {
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TournamentState {
-    PreRegistration,
     Registration,
-    Active,
+    Live,
+    Submission,
     Finalized,
-    ScoreSubmitted,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum GameState {
-    Registered,
-    Started,
-    ScoreSubmitted,
 }
 
 ///
@@ -80,14 +72,13 @@ pub struct Tournament {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct TokenMetadata {
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct Registration {
     #[key]
-    pub token_id: u64,
-    pub tournament_id: u64,
     pub game_token_id: u64,
+    pub tournament_id: u64,
     pub entry_number: u32,
-    pub state: Option<GameState>,
+    pub submitted_score: bool,
 }
 
 #[dojo::model]

@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, GatedType, Premium, TokenDataType, TokenMetadata,
+    Tournament as TournamentModel, GatedType, Premium, TokenDataType, Registration,
 };
 
 ///
@@ -9,12 +9,6 @@ use tournaments::components::models::tournament::{
 
 #[starknet::interface]
 trait ITournament<TState> {
-    fn total_tournaments(self: @TState) -> u64;
-    fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn tournament_token(self: @TState, token_id: u64) -> TokenMetadata;
-    fn tournament_entries(self: @TState, tournament_id: u64) -> u32;
-    fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
-    fn register_token(ref self: TState, address: ContractAddress, token_data: TokenDataType);
     fn create_tournament(
         ref self: TState,
         name: felt252,
@@ -31,11 +25,13 @@ trait ITournament<TState> {
         settings_id: u32,
     ) -> (u64, u64);
     fn enter_tournament(
-        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u256>,
-    ) -> (u64, TokenMetadata);
-    fn start_game(ref self: TState, tournament_token_id: u64);
+        ref self: TState,
+        tournament_id: u64,
+        name: felt252,
+        player_address: ContractAddress,
+        qualifying_token_id: Option<u256>,
+    ) -> (u64, u32);
     fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
-    fn finalize_tournament(ref self: TState, tournament_id: u64);
     fn distribute_prize(ref self: TState, prize_id: u64);
     fn distribute_unclaimable_prize(ref self: TState, prize_id: u64);
     fn add_prize(
@@ -45,6 +41,12 @@ trait ITournament<TState> {
         token_data_type: TokenDataType,
         position: u8,
     ) -> u64;
+    fn total_tournaments(self: @TState) -> u64;
+    fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
+    fn get_registration(self: @TState, token_id: u64) -> Registration;
+    fn tournament_entries(self: @TState, tournament_id: u64) -> u32;
+    fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
+    fn register_token(ref self: TState, address: ContractAddress, token_data: TokenDataType);
 }
 
 ///
@@ -67,9 +69,9 @@ pub mod tournament_component {
         IGameDispatcher, IGameDispatcherTrait, IGAME_ID, IGAME_METADATA_ID,
     };
     use tournaments::components::models::tournament::{
-        Tournament as TournamentModel, TokenMetadata, TournamentState, GameState, TournamentScores,
-        Prize, Token, TournamentConfig, TokenDataType, GatedType, TournamentType, Premium,
-        ERC20Data, ERC721Data,
+        Tournament as TournamentModel, Registration, TournamentState, TournamentScores, Prize,
+        Token, TournamentConfig, TokenDataType, GatedType, TournamentType, Premium, ERC20Data,
+        ERC721Data,
     };
     use tournaments::components::interfaces::{WorldTrait, WorldImpl};
     use tournaments::components::libs::store::{Store, StoreTrait};
@@ -127,12 +129,12 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             store.get_tournament(tournament_id)
         }
-        fn tournament_token(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
+        fn get_registration(self: @ComponentState<TContractState>, token_id: u64) -> Registration {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
-            store.get_token_metadata(token_id)
+            store.get_registration(token_id)
         }
         fn tournament_entries(self: @ComponentState<TContractState>, tournament_id: u64) -> u32 {
             let mut world = WorldTrait::storage(
@@ -247,44 +249,41 @@ pub mod tournament_component {
             // increment and get the next tournament id
             let tournament_id = store.increment_and_get_tournament_count();
 
-            // create and store tournament
-            store
-                .set_tournament(
-                    @TournamentModel {
-                        tournament_id,
-                        name,
-                        description,
-                        creator: get_caller_address(),
-                        registration_start_time,
-                        registration_end_time,
-                        start_time,
-                        end_time,
-                        submission_period,
-                        winners_count,
-                        gated_type,
-                        entry_premium,
-                        game_address,
-                        settings_id,
-                        state: TournamentState::PreRegistration,
-                    },
-                );
+            // create tournament
+            let tournament = TournamentModel {
+                tournament_id,
+                name,
+                description,
+                creator: get_caller_address(),
+                registration_start_time,
+                registration_end_time,
+                start_time,
+                end_time,
+                submission_period,
+                winners_count,
+                gated_type,
+                entry_premium,
+                game_address,
+                settings_id,
+                state: TournamentState::Registration,
+            };
 
-            // mint a tournament token to the creator
-            let token_id = self._mint_tournament_token(ref store);
+            // save it
+            store.set_tournament(@tournament);
 
-            // and associate it with the tournament as entry #0
-            store
-                .set_token_metadata(
-                    @TokenMetadata {
-                        token_id,
-                        tournament_id,
-                        game_token_id: 0,
-                        state: Option::None,
-                        entry_number: 0,
-                    },
-                );
+            // mint a game token to the creator as entry #0 to provide simply way to issue creator
+            // rewards
+            let game_token_id = self
+                ._mint_and_distribute_game(@tournament, name, get_caller_address());
 
-            (tournament_id, token_id)
+            // save token metadata
+            let registration = Registration {
+                game_token_id, tournament_id, entry_number: 0, submitted_score: false,
+            };
+            store.set_registration(@registration);
+
+            // return tournament id and game token id of the creator
+            (tournament_id, game_token_id)
         }
 
         /// @title Enter tournament
@@ -292,13 +291,17 @@ pub mod tournament_component {
         /// @dev Requires a tournament to have already been created.
         /// @param self A reference to the ContractState object.
         /// @param tournament_id A u64 representing the unique ID of the tournament.
+        /// @param name A felt252 representing the name of the tournament.
+        /// @param player_address A ContractAddress which the game token will be minted to.
         /// @param qualifying_token_id A Option<u256> representing the token id
-        /// @return A tuple containing the tournament token id and the tournament token metadata.
+        /// @return A tuple containing the tournament token id and the entry number.
         fn enter_tournament(
             ref self: ComponentState<TContractState>,
             tournament_id: u64,
+            name: felt252,
+            player_address: ContractAddress,
             qualifying_token_id: Option<u256>,
-        ) -> (u64, TokenMetadata) {
+        ) -> (u64, u32) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
             );
@@ -309,93 +312,25 @@ pub mod tournament_component {
                     tournament.registration_start_time, tournament.registration_end_time,
                 );
 
-            self
-                ._assert_token_satisfies_gate(
-                    store, tournament.gated_type, qualifying_token_id, get_caller_address(),
-                );
+            self._assert_token_satisfies_gate(store, tournament.gated_type, qualifying_token_id);
 
+            // handle entry fee
             self._pay_premiums(tournament.entry_premium);
 
-            // mint tournament token for the entrant
-            let token_id = self._mint_tournament_token(ref store);
+            // mint game and send to player
+            let game_token_id = self._mint_and_distribute_game(@tournament, name, player_address);
 
             // increment and get entry count for the tournament
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
 
             // attach metadata to the tournament token and save it
-            let token_metadata = TokenMetadata {
-                token_id,
-                tournament_id,
-                game_token_id: 0,
-                entry_number,
-                state: Option::Some(GameState::Registered),
+            let registration = Registration {
+                game_token_id, tournament_id, entry_number, submitted_score: false,
             };
-            store.set_token_metadata(@token_metadata);
+            store.set_registration(@registration);
 
-            // if tournament is still in pre-registration, update to registration
-            if (tournament.state == TournamentState::PreRegistration) {
-                tournament.state = TournamentState::Registration;
-                store.set_tournament(@tournament);
-            }
-
-            // return tournament token id and metadata
-            (token_id, token_metadata)
-        }
-
-        /// @title Start tournament
-        /// @notice Allows a player to start a tournament for a particular tournament id.
-        /// @dev Requires the player starting to have already entered.
-        /// @param self A reference to the ContractState object.
-        /// @param tournament_token_id A u64 representing the unique ID of the tournament token.
-        fn start_game(ref self: ComponentState<TContractState>, tournament_token_id: u64) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
-            );
-            let mut store: Store = StoreTrait::new(world);
-
-            let mut token_metadata = store.get_token_metadata(tournament_token_id);
-            let mut tournament = store.get_tournament(token_metadata.tournament_id);
-            self._assert_tournament_active(@tournament);
-            self._assert_game_not_started(@token_metadata);
-
-            // mint a new game token to the owner of the tournament token
-            let game_token_id = self._mint_and_distribute_game(@tournament, tournament_token_id);
-
-            // update the token metadata with the new game token id
-            token_metadata.game_token_id = game_token_id;
-
-            // update the token metadata with the new game state
-            token_metadata.state = Option::Some(GameState::Started);
-
-            // save updated token metadata
-            store.set_token_metadata(@token_metadata);
-
-            // update tournament state if not already active
-            if tournament.state != TournamentState::Active {
-                tournament.state = TournamentState::Active;
-                store.set_tournament(@tournament);
-            }
-        }
-
-        /// @title Finalize tournament
-        /// @notice Allows anyone to finalize a tournament for a particular tournament
-        /// id.
-        /// @param self A reference to the ContractState object.
-        /// @param tournament_id A u64 representing the unique ID of the tournament.
-        fn finalize_tournament(ref self: ComponentState<TContractState>, tournament_id: u64) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
-            );
-            let mut store: Store = StoreTrait::new(world);
-            let mut tournament = store.get_tournament(tournament_id);
-
-            self._assert_tournament_not_finalized(tournament.state, tournament_id);
-            self._assert_tournament_ended(tournament.end_time, tournament_id);
-
-            self._convert_premiums_into_prizes(ref store, tournament_id);
-
-            tournament.state = TournamentState::Finalized;
-            store.set_tournament(@tournament);
+            // return tournament token id and entry number
+            (game_token_id, entry_number)
         }
 
         /// @title Submit scores
@@ -404,6 +339,11 @@ pub mod tournament_component {
         /// @param self A reference to the ContractState object.
         /// @param tournament_id A u64 representing the unique ID of the tournament.
         /// @param token_ids An array of u64 representing the token ids to submit.
+        /// TODO: Change this to accept a single token id with the expected position in the top
+        /// scores
+        /// TODO: Provide a view function for `get_placement_for_token_id` that returns the
+        /// position of the token id in the top scores.
+        /// TODO: Prevent entry 0 (creator) from submitting a score
         fn submit_scores(
             ref self: ComponentState<TContractState>, tournament_id: u64, token_ids: Array<u64>,
         ) {
@@ -413,7 +353,19 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
 
-            self._assert_tournament_finalized(tournament.state, tournament_id);
+            // Scores can only be submitted after the tournament has ended.
+            self._assert_tournament_ended(tournament.end_time, tournament_id);
+
+            // If this is the first score getting submitted, state will still be in registration.
+            if (tournament.state != TournamentState::Submission) {
+                // so we set State to submission.
+                tournament.state = TournamentState::Submission;
+                store.set_tournament(@tournament);
+
+                // and convert entry premiums into prizes.
+                self._convert_premiums_into_prizes(ref store, tournament_id);
+            }
+
             self._assert_scores_count_valid(@tournament, token_ids.len());
             self._assert_tournament_not_settled(@tournament);
 
@@ -428,12 +380,15 @@ pub mod tournament_component {
                     break;
                 }
                 let token_id = *token_ids.at(token_index);
-                let mut token_metadata = store.get_token_metadata(token_id);
 
-                self._assert_game_started(token_metadata.state, token_id);
+                // get token metadata from game contract
+                let token_metadata = game_dispatcher.token_metadata(token_id);
 
-                let score = game_dispatcher.get_score(token_metadata.game_token_id);
-                self._assert_score_valid(score, token_id);
+                // assert game has ended
+                self._assert_game_ended(token_id, token_metadata.expires_at);
+
+                // get score from game contract
+                let score = game_dispatcher.get_score(token_id);
 
                 top_score_token_ids
                     .append(
@@ -442,12 +397,6 @@ pub mod tournament_component {
                                 store, tournament_id, token_id, score, token_index,
                             ),
                     );
-
-                // set tournament token state to ScoreSubmitted
-                token_metadata.state = Option::Some(GameState::ScoreSubmitted);
-
-                // save updated token metadata
-                store.set_token_metadata(@token_metadata);
 
                 // increment token index
                 token_index += 1;
@@ -474,8 +423,15 @@ pub mod tournament_component {
             let mut prize = store.get_prize(prize_id);
             let mut tournament = store.get_tournament(prize.tournament_id);
 
-            self._assert_tournament_finalized(tournament.state, prize.tournament_id);
+            // assert submission period has ended
             self._assert_tournament_settled(@tournament);
+
+            // If the tournament is not in the finalized state, set it to finalized.
+            if (tournament.state != TournamentState::Finalized) {
+                tournament.state = TournamentState::Finalized;
+                store.set_tournament(@tournament);
+            }
+
             self._assert_prize_exists(prize.token, prize_id);
             self._assert_prize_not_claimed(prize.claimed, prize_id);
 
@@ -485,7 +441,7 @@ pub mod tournament_component {
             self._assert_payout_is_top_score(prize.payout_position, top_score_token_ids.clone());
 
             let payout_token_id = *top_score_token_ids.at(prize.payout_position.into() - 1);
-            let payout_game_id = store.get_token_metadata(payout_token_id).game_token_id;
+            let payout_game_id = store.get_registration(payout_token_id).game_token_id;
             let payout_position_address = self
                 ._get_owner(tournament.game_address, payout_game_id.into());
 
@@ -493,11 +449,6 @@ pub mod tournament_component {
 
             prize.claimed = true;
             store.set_prize(@prize);
-
-            if (tournament.state != TournamentState::ScoreSubmitted) {
-                tournament.state = TournamentState::ScoreSubmitted;
-                store.set_tournament(@tournament);
-            }
         }
 
         /// @title Distribute unclaimable prize
@@ -513,7 +464,6 @@ pub mod tournament_component {
             let mut prize = store.get_prize(prize_id);
             let mut tournament = store.get_tournament(prize.tournament_id);
 
-            self._assert_tournament_finalized(tournament.state, prize.tournament_id);
             self._assert_tournament_settled(@tournament);
             self._assert_prize_exists(prize.token, prize_id);
             self._assert_prize_not_claimed(prize.claimed, prize_id);
@@ -527,11 +477,6 @@ pub mod tournament_component {
 
             prize.claimed = true;
             store.set_prize(@prize);
-
-            if (tournament.state != TournamentState::ScoreSubmitted) {
-                tournament.state = TournamentState::ScoreSubmitted;
-                store.set_tournament(@tournament);
-            }
         }
 
         /// @title Add prize
@@ -710,6 +655,9 @@ pub mod tournament_component {
             *token.is_registered
         }
 
+        // @dev instead of iterating over all scores, we just check if the submitted score is
+        // greater than the last place score this works as long as we know the score was submitted
+        // before the tournament ended
         fn _is_top_score(
             self: @ComponentState<TContractState>, store: Store, tournament_id: u64, score: u64,
         ) -> bool {
@@ -1007,38 +955,15 @@ pub mod tournament_component {
             );
         }
 
-        fn _assert_game_started(
-            self: @ComponentState<TContractState>, state: Option<GameState>, token_id: u64,
+        fn _assert_game_ended(
+            self: @ComponentState<TContractState>, token_id: u64, expires_at: u64,
         ) {
-            match state {
-                Option::Some(state) => {
-                    assert!(
-                        state == GameState::Started || state == GameState::ScoreSubmitted,
-                        "Tournament: Game on token id {} is not started",
-                        token_id,
-                    );
-                },
-                Option::None => { assert!(false, "Tournament: Game is not started"); },
-            }
-        }
-
-        fn _assert_game_not_started(
-            self: @ComponentState<TContractState>, token_metadata: @TokenMetadata,
-        ) {
-            match token_metadata.state {
-                Option::Some(state) => {
-                    assert!(
-                        *state == GameState::Registered,
-                        "Tournament: Game on token id {} is already started",
-                        token_metadata.token_id,
-                    );
-                },
-                Option::None => {},
-            }
-        }
-
-        fn _assert_score_valid(self: @ComponentState<TContractState>, score: u64, token_id: u64) {
-            assert!(score > 0, "Tournament: Score on token id {} must be greater than 0", token_id);
+            assert!(
+                get_block_timestamp() >= expires_at,
+                "Tournament: Game on token id {} is still live. Expires at {}",
+                token_id,
+                expires_at,
+            );
         }
 
         fn _assert_tournament_active(
@@ -1070,21 +995,11 @@ pub mod tournament_component {
             );
         }
 
-        fn _assert_tournament_finalized(
-            self: @ComponentState<TContractState>, state: TournamentState, tournament_id: u64,
-        ) {
-            assert!(
-                state == TournamentState::Finalized || state == TournamentState::ScoreSubmitted,
-                "Tournament: Tournament id {} is not finalized",
-                tournament_id,
-            );
-        }
-
         fn _assert_tournament_not_finalized(
             self: @ComponentState<TContractState>, state: TournamentState, tournament_id: u64,
         ) {
             assert!(
-                state != TournamentState::Finalized && state != TournamentState::ScoreSubmitted,
+                state != TournamentState::Finalized,
                 "Tournament: Tournament id {} is already finalized",
                 tournament_id,
             );
@@ -1161,14 +1076,11 @@ pub mod tournament_component {
         }
 
         fn _assert_gated_token_owner(
-            self: @ComponentState<TContractState>,
-            token: ContractAddress,
-            token_id: u256,
-            account: ContractAddress,
+            self: @ComponentState<TContractState>, token: ContractAddress, token_id: u256,
         ) {
             let owner = self._get_owner(token, token_id);
             assert!(
-                owner == account,
+                owner == get_caller_address(),
                 "Tournament: Caller does not own qualifying token id {}",
                 token_id,
             );
@@ -1228,7 +1140,7 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>, tournament: @TournamentModel,
         ) {
             assert!(
-                *tournament.end_time + *tournament.submission_period <= get_block_timestamp(),
+                get_block_timestamp() >= *tournament.end_time + *tournament.submission_period,
                 "Tournament: Tournament id {} is not settled",
                 tournament.tournament_id,
             );
@@ -1249,7 +1161,6 @@ pub mod tournament_component {
             store: Store,
             gated_type: Option<GatedType>,
             qualifying_token_id: Option<u256>,
-            address: ContractAddress,
         ) {
             match gated_type {
                 Option::Some(gated_type) => {
@@ -1258,10 +1169,7 @@ pub mod tournament_component {
                         GatedType::token(token_address) => {
                             match qualifying_token_id {
                                 Option::Some(token_id) => {
-                                    self
-                                        ._assert_gated_token_owner(
-                                            token_address, token_id, address,
-                                        );
+                                    self._assert_gated_token_owner(token_address, token_id);
                                 },
                                 Option::None => {
                                     assert!(
@@ -1277,10 +1185,7 @@ pub mod tournament_component {
                                 Option::Some(token_id) => {
                                     self
                                         ._assert_has_qualified_in_tournaments(
-                                            store,
-                                            tournament_type,
-                                            token_id.try_into().unwrap(),
-                                            address,
+                                            store, tournament_type, token_id.try_into().unwrap(),
                                         );
                                 },
                                 Option::None => {
@@ -1289,7 +1194,7 @@ pub mod tournament_component {
                             }
                         },
                         GatedType::address(qualifying_addresses) => {
-                            self._assert_qualifying_address(address, qualifying_addresses);
+                            self._assert_qualifying_address(qualifying_addresses);
                         },
                     }
                 },
@@ -1297,26 +1202,18 @@ pub mod tournament_component {
             };
         }
 
-        fn _assert_has_qualifying_nft(
-            self: @ComponentState<TContractState>,
-            token_address: ContractAddress,
-            token_id: u256,
-            address: ContractAddress,
-        ) {
-            self._assert_gated_token_owner(token_address, token_id, address);
-        }
-
         // TODO: Instead of looping through all qualifying tournaments, the caller should pass in
         // the tournament ID they are qualifying with.
         // This will simplify this code to an assertion that the tournament ID is part of the set
         // ofqualifying tournament IDs and an assertion that the caller owns the qualifying token
         // id.
+        // TODO: Need to prevent the same game token from being used to qualify into the same
+        // tournament
         fn _assert_has_qualified_in_tournaments(
             self: @ComponentState<TContractState>,
             store: Store,
             tournament_type: TournamentType,
             token_id: u64,
-            address: ContractAddress,
         ) {
             match tournament_type {
                 TournamentType::winners(tournament_ids) => {
@@ -1331,30 +1228,23 @@ pub mod tournament_component {
                         let game_dispatcher = IGameDispatcher {
                             contract_address: tournament.game_address,
                         };
-                        let token = store.get_token_metadata(token_id);
-                        let game_id = token.game_token_id;
-                        let owner = self._get_owner(tournament.game_address, game_id.into());
 
+                        let owner = self._get_owner(tournament.game_address, token_id.into());
                         if owner == get_caller_address() {
-                            match token.state {
-                                Option::Some(state) => {
-                                    if state == GameState::ScoreSubmitted {
-                                        let score = game_dispatcher.get_score(game_id);
-                                        self
-                                            ._is_top_score(
-                                                store, *tournament_ids.at(loop_index), score,
-                                            );
-                                        qualified = true;
-                                    }
-                                },
-                                Option::None => {},
+                            // assert the provided token was registered for the tournament
+                            let registration = store.get_registration(token_id);
+                            if registration.tournament_id == tournament.tournament_id {
+                                let score = game_dispatcher.get_score(token_id);
+                                self._is_top_score(store, *tournament_ids.at(loop_index), score);
+                                qualified = true;
                             }
                         }
+
                         loop_index += 1;
                     };
                     assert!(
                         qualified,
-                        "Tournament: ScoreSubmitted tournament token id {} is not a top score in any gated tournament",
+                        "Tournament: game token id {} is not a top score in a qualifying tournament",
                         token_id,
                     );
                 },
@@ -1368,22 +1258,16 @@ pub mod tournament_component {
                         let tournament = store.get_tournament(*tournament_ids.at(loop_index));
                         let owner = self._get_owner(tournament.game_address, token_id.into());
 
+                        // if the caller owners the provided game token
                         if owner == get_caller_address() {
-                            let state = store.get_token_metadata(token_id).state;
-                            match state {
-                                Option::Some(state) => {
-                                    if state == GameState::ScoreSubmitted {
-                                        participated = true;
-                                    }
-                                },
-                                Option::None => {},
-                            }
+                            participated = true;
+                            break;
                         }
                         loop_index += 1;
                     };
                     assert!(
                         participated,
-                        "Tournament: ScoreSubmitted tournament token id {} did not participate in any gated tournament",
+                        "Tournament: game token id {} did not participate in a qualifying tournament",
                         token_id,
                     );
                 },
@@ -1391,9 +1275,7 @@ pub mod tournament_component {
         }
 
         fn _assert_qualifying_address(
-            self: @ComponentState<TContractState>,
-            address: ContractAddress,
-            qualifying_addresses: Span<ContractAddress>,
+            self: @ComponentState<TContractState>, qualifying_addresses: Span<ContractAddress>,
         ) {
             let mut found = false;
             let mut loop_index = 0;
@@ -1402,15 +1284,13 @@ pub mod tournament_component {
                     break;
                 }
                 let qualifying_address = *qualifying_addresses.at(loop_index);
-                if qualifying_address == address {
+                if qualifying_address == get_caller_address() {
                     found = true;
                     break;
                 }
                 loop_index += 1;
             };
-            assert!(
-                found, "Tournament: Caller is not whitelisted for the address gated tournament",
-            );
+            assert!(found, "Tournament: Caller is not in allowlist");
         }
 
         //
@@ -1514,22 +1394,24 @@ pub mod tournament_component {
 
         /// @dev Mint a new game token and distribute it to the owner of the tournament token.
         /// @param tournament The tournament model.
-        /// @param tournament_token_id The tournament token id.
+        /// @param name The name of the player to mint the game token to.
+        /// @param player_address The address of the player to mint the game token to.
         /// @return The game token id.
         fn _mint_and_distribute_game(
             ref self: ComponentState<TContractState>,
             tournament: @TournamentModel,
-            tournament_token_id: u64,
+            player_name: felt252,
+            player_address: ContractAddress,
         ) -> u64 {
-            // get the owner of the tournament token
-            let owner = IERC721Dispatcher { contract_address: get_contract_address() }
-                .owner_of(tournament_token_id.into());
-
-            // mint a new game token to the owner
             let game_dispatcher = IGameDispatcher { contract_address: *tournament.game_address };
-            let game_token_id = game_dispatcher.new_game(*tournament.settings_id, owner);
-
-            // return the token id of the new game
+            let game_token_id = game_dispatcher
+                .new_game(
+                    player_name,
+                    *tournament.settings_id,
+                    *tournament.start_time,
+                    *tournament.end_time,
+                    player_address,
+                );
             game_token_id
         }
 
@@ -1548,22 +1430,6 @@ pub mod tournament_component {
                 },
                 Option::None => {},
             };
-        }
-
-        fn _mint_tournament_token(
-            ref self: ComponentState<TContractState>, ref store: Store,
-        ) -> u64 {
-            // get erc721 component
-            let mut erc721 = get_dep_component_mut!(ref self, ERC721);
-
-            // increment and get next token id
-            let token_id = store.increment_and_get_token_supply();
-
-            // mint tournament token
-            erc721.mint(get_caller_address(), token_id.into());
-
-            // return tournament token id
-            token_id
         }
 
         /// @dev Convert the entry premium into prizes.
@@ -1631,7 +1497,7 @@ pub mod tournament_component {
             ref self: ComponentState<TContractState>,
             store: Store,
             tournament_id: u64,
-            tournament_token_id: u64,
+            game_token_id: u64,
             score: u64,
             game_index: u32,
         ) -> u64 {
@@ -1646,7 +1512,7 @@ pub mod tournament_component {
             let mut new_score: u64 = 0;
 
             if num_scores == 0 {
-                new_score_id = tournament_token_id.try_into().unwrap();
+                new_score_id = game_token_id.try_into().unwrap();
                 new_score = score;
             } else {
                 if (game_index < num_scores) {
@@ -1656,14 +1522,14 @@ pub mod tournament_component {
                             store, tournament_id, top_score_id.try_into().unwrap(),
                         );
                     if (score > top_score) {
-                        new_score_id = tournament_token_id.try_into().unwrap();
+                        new_score_id = game_token_id.try_into().unwrap();
                         new_score = score;
                     } else {
                         new_score_id = top_score_id;
                         new_score = top_score;
                     }
                 } else {
-                    new_score_id = tournament_token_id.try_into().unwrap();
+                    new_score_id = game_token_id.try_into().unwrap();
                     new_score = score;
                 }
             }

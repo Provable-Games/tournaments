@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, Premium, TokenDataType, GatedType, TokenMetadata,
+    Tournament as TournamentModel, Premium, TokenDataType, GatedType, Registration,
 };
 
 #[starknet::interface]
@@ -30,7 +30,7 @@ pub trait ITournamentMock<TState> {
     // ITournament
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn tournament_token(self: @TState, token_id: u64) -> TokenMetadata;
+    fn get_registration(self: @TState, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
@@ -51,11 +51,14 @@ pub trait ITournamentMock<TState> {
         settings_id: u32,
     ) -> u64;
     fn enter_tournament(
-        ref self: TState, tournament_id: u64, qualifying_token_id: Option<u64>,
-    ) -> (u64, TokenMetadata);
+        ref self: TState,
+        tournament_id: u64,
+        name: felt252,
+        player_address: ContractAddress,
+        qualifying_token_id: Option<u64>,
+    ) -> (u64, u32);
     fn start_game(ref self: TState, tournament_token_id: u64);
     fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
-    fn finalize_tournament(ref self: TState, tournament_id: u64);
     fn distribute_prize(ref self: TState, prize_id: u64);
     fn distribute_unclaimable_prize(ref self: TState, prize_id: u64);
     fn add_prize(

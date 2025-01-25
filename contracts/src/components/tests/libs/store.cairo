@@ -3,7 +3,7 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    Tournament, EntryCount, Prize, TournamentScores, Token, TokenMetadata, TournamentConfig,
+    Tournament, EntryCount, Prize, TournamentScores, Token, Registration, TournamentConfig,
     PlatformMetrics, PrizeMetrics, TournamentTokenMetrics,
 };
 
@@ -53,7 +53,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_token_metadata(self: Store, token_id: u128) -> TokenMetadata {
+    fn get_registration(self: Store, token_id: u128) -> Registration {
         (self.world.read_model(token_id))
     }
 
@@ -99,7 +99,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_token_metadata(ref self: Store, model: @TokenMetadata) {
+    fn set_registration(ref self: Store, model: @Registration) {
         self.world.write_model(model);
     }
 

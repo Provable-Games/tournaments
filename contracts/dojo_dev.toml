@@ -39,7 +39,7 @@ private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 "tournaments-Game" = ["tournaments-game_mock"]
 "tournaments-GameCount" = ["tournaments-game_mock"]
 "tournaments-Settings" = ["tournaments-game_mock"]
-"tournaments-GameSettings" = ["tournaments-game_mock"]
+"tournaments-GameMetadata" = ["tournaments-game_mock"]
 "tournaments-SettingsCount" = ["tournaments-game_mock"]
 
 [migration]

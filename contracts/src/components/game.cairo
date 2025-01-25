@@ -1,12 +1,20 @@
 use starknet::ContractAddress;
-use tournaments::components::models::game::SettingsDetails;
+use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
 
 #[starknet::interface]
 trait IGame<TState> {
-    fn new_game(ref self: TState, settings_id: u32, to: ContractAddress) -> u64;
+    fn new_game(
+        ref self: TState,
+        player_name: felt252,
+        settings_id: u32,
+        available_at: u64,
+        expires_at: u64,
+        to: ContractAddress,
+    ) -> u64;
     fn get_settings_id(self: @TState, token_id: u64) -> u32;
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
     fn settings_exists(self: @TState, settings_id: u32) -> bool;
+    fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
 }
 
 ///
@@ -19,7 +27,7 @@ pub mod game_component {
     use starknet::{ContractAddress, get_contract_address};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
-    use tournaments::components::models::game::{GameMetadata, SettingsDetails, GameSettings};
+    use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
     use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID};
     use tournaments::components::libs::game_store::{Store, StoreTrait};
 
@@ -57,7 +65,12 @@ pub mod game_component {
         +Drop<TContractState>,
     > of IGame<ComponentState<TContractState>> {
         fn new_game(
-            ref self: ComponentState<TContractState>, settings_id: u32, to: ContractAddress,
+            ref self: ComponentState<TContractState>,
+            player_name: felt252,
+            settings_id: u32,
+            available_at: u64,
+            expires_at: u64,
+            to: ContractAddress,
         ) -> u64 {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
@@ -68,19 +81,34 @@ pub mod game_component {
             self.assert_setting_exists(settings_id);
 
             // mint game token
-            let game_token_id = self.mint_game(ref store, to);
+            let token_id = self.mint_game(ref store, to);
 
-            // set game settings
-            store.set_game_settings(@GameSettings { game_token_id, settings_id });
+            // get block timestamp and caller address
+            let minted_at = starknet::get_block_timestamp();
+            let minted_by = starknet::get_caller_address();
 
-            // return the game token id
-            game_token_id
+            // record token metadata
+            store
+                .set_token_metadata(
+                    @TokenMetadata {
+                        token_id,
+                        minted_by,
+                        player_name,
+                        settings_id,
+                        minted_at,
+                        available_at,
+                        expires_at,
+                    },
+                );
+
+            // return the token id of the game
+            token_id
         }
 
         fn get_settings_id(self: @ComponentState<TContractState>, token_id: u64) -> u32 {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            store.get_game_settings(token_id).settings_id
+            store.get_token_metadata(token_id).settings_id
         }
 
         fn get_settings_details(
@@ -95,6 +123,12 @@ pub mod game_component {
 
         fn settings_exists(self: @ComponentState<TContractState>, settings_id: u32) -> bool {
             self._setting_exists(settings_id)
+        }
+
+        fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.get_token_metadata(token_id)
         }
     }
     #[generate_trait]
@@ -123,7 +157,7 @@ pub mod game_component {
             store
                 .set_game_metadata(
                     @GameMetadata {
-                        game_address: get_contract_address(),
+                        address: get_contract_address(),
                         name,
                         description,
                         developer,
