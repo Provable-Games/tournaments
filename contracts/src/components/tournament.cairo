@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use tournaments::components::models::tournament::{
     Tournament as TournamentModel, EntryRequirement, EntryFee, TokenDataType, Registration,
-    PrizeType,
+    PrizeType, TournamentState,
 };
 
 ///
@@ -48,6 +48,7 @@ trait ITournament<TState> {
     fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
     fn register_token(ref self: TState, address: ContractAddress, token_data: TokenDataType);
     fn tournament_winners(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn tournament_state(self: @TState, tournament_id: u64) -> TournamentState;
 }
 
 ///
@@ -70,9 +71,9 @@ pub mod tournament_component {
         IGameDispatcher, IGameDispatcherTrait, IGAME_ID, IGAME_METADATA_ID,
     };
     use tournaments::components::models::tournament::{
-        Tournament as TournamentModel, Registration, TournamentState, TournamentScores, Prize,
-        Token, TournamentConfig, TokenDataType, EntryRequirement, TournamentType, EntryFee,
-        ERC20Data, ERC721Data, PrizeType, Role, PrizeClaim,
+        Tournament as TournamentModel, Registration, TournamentScores, Prize, Token,
+        TournamentConfig, TokenDataType, EntryRequirement, TournamentType, EntryFee, ERC20Data,
+        ERC721Data, PrizeType, Role, PrizeClaim, TournamentState,
     };
     use tournaments::components::interfaces::{WorldTrait, WorldImpl};
     use tournaments::components::libs::store::{Store, StoreTrait};
@@ -185,6 +186,17 @@ pub mod tournament_component {
             store.get_tournament_scores(tournament_id).winner_token_ids
         }
 
+        fn tournament_state(
+            self: @ComponentState<TContractState>, tournament_id: u64,
+        ) -> TournamentState {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+            );
+            let mut store: Store = StoreTrait::new(world);
+            let tournament = store.get_tournament(tournament_id);
+            self._get_tournament_state(@tournament)
+        }
+
         /// @title Create tournament
         /// @notice Allows a player to create a tournament.
         /// @dev Registration times provide capability of seasons (overlaps of entry periods and
@@ -281,7 +293,6 @@ pub mod tournament_component {
                 entry_fee,
                 game_address,
                 settings_id,
-                state: TournamentState::Registration,
             };
 
             // save it
@@ -955,16 +966,6 @@ pub mod tournament_component {
             );
         }
 
-        fn _assert_tournament_not_finalized(
-            self: @ComponentState<TContractState>, state: TournamentState, tournament_id: u64,
-        ) {
-            assert!(
-                state != TournamentState::Finalized,
-                "Tournament: Tournament id {} is already finalized",
-                tournament_id,
-            );
-        }
-
         fn _assert_scores_count_valid(
             self: @ComponentState<TContractState>, tournament: @TournamentModel, scores_count: u32,
         ) {
@@ -1592,6 +1593,26 @@ pub mod tournament_component {
                         );
                 },
             };
+        }
+
+        fn _get_tournament_state(
+            self: @ComponentState<TContractState>, tournament: @TournamentModel,
+        ) -> TournamentState {
+            let current_timestamp = get_block_timestamp();
+
+            if current_timestamp < *tournament.registration_start_time {
+                TournamentState::Scheduled
+            } else if current_timestamp < *tournament.registration_end_time {
+                TournamentState::Registration
+            } else if current_timestamp < *tournament.start_time {
+                TournamentState::Staging
+            } else if current_timestamp < *tournament.end_time {
+                TournamentState::Live
+            } else if current_timestamp < *tournament.end_time + *tournament.submission_period {
+                TournamentState::Submission
+            } else {
+                TournamentState::Finalized
+            }
         }
     }
 }

@@ -41,7 +41,9 @@ pub enum TokenDataType {
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TournamentState {
+    Scheduled,
     Registration,
+    Staging,
     Live,
     Submission,
     Finalized,
@@ -66,7 +68,6 @@ pub struct Tournament {
     pub end_time: u64,
     pub submission_period: u64,
     pub prize_spots: u8,
-    pub state: TournamentState,
     pub entry_requirement: Option<EntryRequirement>,
     pub entry_fee: Option<EntryFee>,
     pub game_address: ContractAddress,

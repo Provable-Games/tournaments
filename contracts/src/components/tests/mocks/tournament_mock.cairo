@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
     Tournament as TournamentModel, EntryFee, TokenDataType, EntryRequirement, Registration,
-    PrizeType,
+    PrizeType, TournamentState,
 };
 
 #[starknet::interface]
@@ -34,6 +34,7 @@ pub trait ITournamentMock<TState> {
     fn get_registration(self: @TState, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn tournament_winners(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn tournament_state(self: @TState, tournament_id: u64) -> TournamentState;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);

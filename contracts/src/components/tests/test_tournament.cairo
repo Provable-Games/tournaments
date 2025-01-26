@@ -19,7 +19,7 @@ use tournaments::components::models::{
         m_Tournament, m_Registration, m_EntryCount, m_TournamentScores, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
         m_PrizeClaim, ERC20Data, ERC721Data, EntryFee, TokenDataType, EntryRequirement,
-        TournamentType, PrizeType, Role,
+        TournamentType, PrizeType, Role, TournamentState,
     },
 };
 
@@ -2254,3 +2254,100 @@ fn test_claim_prizes_season() {
     assert(contracts.erc721.owner_of(1) == OWNER(), 'Invalid owner');
 }
 
+#[test]
+fn test_tournament_state_transitions() {
+    let contracts = setup();
+    utils::impersonate(OWNER());
+    create_settings_details(contracts.game);
+
+    let registration_start_time = 1000;
+    let registration_end_time = 10000;
+    let start_time = 20000;
+    let end_time = 30000;
+    let submission_period = 86400;
+
+    // Create tournament
+    let (tournament_id, _) = contracts
+        .tournament
+        .create_tournament(
+            TOURNAMENT_NAME(),
+            TOURNAMENT_DESCRIPTION(),
+            registration_start_time,
+            registration_end_time,
+            start_time,
+            end_time,
+            submission_period,
+            1,
+            Option::None,
+            Option::None,
+            contracts.game.contract_address,
+            1,
+        );
+
+    // Test Scheduled state (before registration)
+    testing::set_block_timestamp(registration_start_time - 1);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Scheduled,
+        "Tournament should be in Scheduled state",
+    );
+
+    // Test Registration state
+    testing::set_block_timestamp(registration_start_time);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Registration,
+        "Tournament should be in Registration state at start",
+    );
+
+    testing::set_block_timestamp(registration_end_time - 1);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Registration,
+        "Tournament should be in Registration state before end",
+    );
+
+    // Test Staging state (between registration end and tournament start)
+    testing::set_block_timestamp(registration_end_time);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Staging,
+        "Tournament should be in Staging state after registration",
+    );
+
+    testing::set_block_timestamp(start_time - 1);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Staging,
+        "Tournament should be in Staging state before start",
+    );
+
+    // Test Live state
+    testing::set_block_timestamp(start_time);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Live,
+        "Tournament should be in Live state at start",
+    );
+
+    testing::set_block_timestamp(end_time - 1);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Live,
+        "Tournament should be in Live state before end",
+    );
+
+    // Test Submission state
+    testing::set_block_timestamp(end_time);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Submission,
+        "Tournament should be in Submission state after end",
+    );
+
+    // just before submission period ends
+    testing::set_block_timestamp(end_time + submission_period - 1);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Submission,
+        "Tournament should be in Submission state before submission period ends",
+    );
+
+    // Submission is over, so tournament should be finalized
+    testing::set_block_timestamp(end_time + submission_period);
+    assert!(
+        contracts.tournament.tournament_state(tournament_id) == TournamentState::Finalized,
+        "Tournament should be in Finalized state after submission period",
+    );
+}
