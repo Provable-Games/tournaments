@@ -1386,7 +1386,9 @@ pub mod tournament_component {
             game_token_id
         }
 
-        fn _process_entry_fee(ref self: ComponentState<TContractState>, entry_fee: Option<EntryFee>) {
+        fn _process_entry_fee(
+            ref self: ComponentState<TContractState>, entry_fee: Option<EntryFee>,
+        ) {
             match entry_fee {
                 Option::Some(entry_fee) => {
                     let erc20_dispatcher = IERC20Dispatcher {
