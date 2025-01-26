@@ -121,12 +121,11 @@ fn test_distribute_many_prizes() {
             .world
             .write_model_test(
                 @Prize {
+                    id: i + 1,
                     tournament_id,
-                    prize_id: i + 1,
-                    token: contracts.erc20.contract_address,
+                    token_address: contracts.erc20.contract_address,
                     token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 }),
                     payout_position: (i + 1).try_into().unwrap(),
-                    claimed: true,
                 },
             );
         i += 1;

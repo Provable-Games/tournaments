@@ -4,7 +4,7 @@ use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
     Tournament, EntryCount, Prize, TournamentScores, Token, Registration, TournamentConfig,
-    PlatformMetrics, PrizeMetrics, TournamentTokenMetrics,
+    PlatformMetrics, PrizeMetrics, TournamentTokenMetrics, PrizeClaim, PrizeType,
 };
 
 #[derive(Copy, Drop)]
@@ -63,8 +63,8 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_prize(self: Store, prize_id: u64) -> Prize {
-        (self.world.read_model(prize_id))
+    fn get_prize(self: Store, id: u64) -> Prize {
+        (self.world.read_model(id))
     }
 
     #[inline(always)]
@@ -75,6 +75,11 @@ pub impl StoreImpl of StoreTrait {
     #[inline(always)]
     fn get_tournament_config(self: Store, contract: ContractAddress) -> TournamentConfig {
         (self.world.read_model(contract))
+    }
+
+    #[inline(always)]
+    fn get_prize_claim(self: Store, tournament_id: u64, prize_type: PrizeType) -> PrizeClaim {
+        (self.world.read_model((tournament_id, prize_type)))
     }
 
     //
@@ -120,6 +125,11 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn set_tournament_config(ref self: Store, model: @TournamentConfig) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn set_prize_claim(ref self: Store, model: @PrizeClaim) {
         self.world.write_model(model);
     }
 }

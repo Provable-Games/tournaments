@@ -1,7 +1,8 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, Premium, TokenDataType, GatedType, Registration,
+    Tournament as TournamentModel, EntryFee, TokenDataType, EntryRequirement, Registration,
+    PrizeType,
 };
 
 #[starknet::interface]
@@ -32,6 +33,7 @@ pub trait ITournamentMock<TState> {
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn get_registration(self: @TState, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
+    fn tournament_winners(self: @TState, tournament_id: u64) -> Span<u64>;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
@@ -44,9 +46,9 @@ pub trait ITournamentMock<TState> {
         start_time: u64,
         end_time: u64,
         submission_period: u64,
-        winners_count: u8,
-        gated_type: Option<GatedType>,
-        entry_premium: Option<Premium>,
+        prize_spots: u8,
+        entry_requirement: Option<EntryRequirement>,
+        entry_fee: Option<EntryFee>,
         game_address: ContractAddress,
         settings_id: u32,
     ) -> u64;
@@ -57,14 +59,12 @@ pub trait ITournamentMock<TState> {
         player_address: ContractAddress,
         qualifying_token_id: Option<u64>,
     ) -> (u64, u32);
-    fn start_game(ref self: TState, tournament_token_id: u64);
     fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
-    fn distribute_prize(ref self: TState, prize_id: u64);
-    fn distribute_unclaimable_prize(ref self: TState, prize_id: u64);
+    fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn add_prize(
         ref self: TState,
         tournament_id: u64,
-        token: ContractAddress,
+        token_address: ContractAddress,
         token_data_type: TokenDataType,
         position: u8,
     ) -> u64;

@@ -16,18 +16,19 @@ pub struct ERC721Data {
     pub token_id: u128,
 }
 
+// TODO: Change this to EntryFeeConfig
+// add game_fee to the struct
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct Premium {
+pub struct EntryFee {
     pub token_address: ContractAddress,
-    pub token_amount: u128,
-    pub token_distribution: Span<u8>,
+    pub amount: u128,
     pub creator_fee: u8,
+    pub distribution: Span<u8>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum GatedType {
+pub enum EntryRequirement {
     token: ContractAddress,
-    // TODO: add enum between winners and participants
     tournament: TournamentType,
     address: Span<ContractAddress>,
 }
@@ -54,7 +55,7 @@ pub enum TournamentState {
 #[derive(Drop, Serde)]
 pub struct Tournament {
     #[key]
-    pub tournament_id: u64,
+    pub id: u64,
     pub name: felt252,
     pub description: ByteArray,
     pub creator: ContractAddress,
@@ -64,10 +65,10 @@ pub struct Tournament {
     pub settings_id: u32,
     pub end_time: u64,
     pub submission_period: u64,
-    pub winners_count: u8,
+    pub prize_spots: u8,
     pub state: TournamentState,
-    pub gated_type: Option<GatedType>,
-    pub entry_premium: Option<Premium>,
+    pub entry_requirement: Option<EntryRequirement>,
+    pub entry_fee: Option<EntryFee>,
     pub game_address: ContractAddress,
 }
 
@@ -86,7 +87,7 @@ pub struct Registration {
 pub struct TournamentScores {
     #[key]
     pub tournament_id: u64,
-    pub top_score_token_ids: Span<u64>,
+    pub winner_token_ids: Span<u64>,
 }
 
 #[dojo::model]
@@ -125,11 +126,10 @@ pub struct EntryCount {
 #[derive(Copy, Drop, Serde)]
 pub struct Prize {
     #[key]
-    pub prize_id: u64,
+    pub id: u64,
     pub tournament_id: u64,
     pub payout_position: u8,
-    pub claimed: bool,
-    pub token: ContractAddress,
+    pub token_address: ContractAddress,
     pub token_data_type: TokenDataType,
 }
 
@@ -153,4 +153,27 @@ pub struct TournamentConfig {
     pub key: felt252,
     pub safe_mode: bool,
     pub test_mode: bool,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde, IntrospectPacked)]
+pub struct PrizeClaim {
+    #[key]
+    pub tournament_id: u64,
+    #[key]
+    pub prize_type: PrizeType,
+    pub claimed: bool,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum Role {
+    TournamentCreator,
+    GameCreator,
+    Position: u8,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum PrizeType {
+    EntryFees: Role,
+    Sponsored: u64,
 }
