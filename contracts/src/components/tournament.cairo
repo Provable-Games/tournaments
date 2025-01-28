@@ -210,7 +210,8 @@ pub mod tournament_component {
             // mint the tournament creator a game token with following notable details:
             // - player name will be same as tournament name
             // - game start time will be 0
-            // - game expiration will be 1 less than current timestamp so it will be minted as expired
+            // - game expiration will be 1 less than current timestamp so it will be minted as
+            // expired
             let game_start_time = 0;
             let game_expiration_time = get_block_timestamp() - 1;
             let game_token_id = self
@@ -1178,20 +1179,20 @@ pub mod tournament_component {
                 TournamentType::winners(ids) => (ids, true),
                 TournamentType::participants(ids) => (ids, false),
             };
-        
+
             let mut loop_index = 0;
             let mut is_qualified = false;
-        
+
             loop {
                 if loop_index == tournament_ids.len() {
                     break;
                 }
-        
+
                 let tournament_id = *tournament_ids.at(loop_index);
                 let tournament = store.get_tournament(tournament_id);
                 let owner = self._get_owner(tournament.game_config.address, token_id.into());
                 let registration = store.get_registration(tournament.id, token_id);
-        
+
                 if owner == get_caller_address()
                     && registration.tournament_id == tournament.id
                     && registration.entry_number != 0 {
@@ -1204,15 +1205,15 @@ pub mod tournament_component {
                     } else {
                         is_qualified = true;
                     }
-        
+
                     if is_qualified {
                         break;
                     }
                 }
-        
+
                 loop_index += 1;
             };
-        
+
             is_qualified
         }
 
