@@ -2,48 +2,6 @@
 
 use starknet::ContractAddress;
 
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum TournamentType {
-    winners: Span<u64>,
-    participants: Span<u64>,
-}
-
-#[derive(Copy, Drop, Serde, Introspect)]
-pub struct ERC20Data {
-    pub amount: u128,
-}
-
-#[derive(Copy, Drop, Serde, Introspect)]
-pub struct ERC721Data {
-    pub id: u128,
-}
-
-#[derive(Copy, Drop, Serde, Introspect)]
-pub enum TokenType {
-    erc20: ERC20Data,
-    erc721: ERC721Data,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum TournamentState {
-    Scheduled,
-    Registration,
-    Staging,
-    Live,
-    Submission,
-    Finalized,
-}
-
-///
-/// Model
-///
-
-// STOPPING POINT: Doing the Tournament Model refactor
-// shouldn't be hard, just need to trace down all the instantiations and make sure they are updated
-// after this, do submit_score issue #10
-// then do enter_tournament token gate simplification issue #13
-// then #16
-// then #2
 #[dojo::model]
 #[derive(Drop, Serde)]
 pub struct Tournament {
@@ -102,6 +60,38 @@ pub enum EntryRequirement {
     token: ContractAddress,
     tournament: TournamentType,
     allowlist: Span<ContractAddress>,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum TournamentType {
+    winners: Span<u64>,
+    participants: Span<u64>,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub struct ERC20Data {
+    pub amount: u128,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub struct ERC721Data {
+    pub id: u128,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub enum TokenType {
+    erc20: ERC20Data,
+    erc721: ERC721Data,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum TournamentState {
+    Scheduled,
+    Registration,
+    Staging,
+    Live,
+    Submission,
+    Finalized,
 }
 
 #[dojo::model]

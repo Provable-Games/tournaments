@@ -207,14 +207,18 @@ pub mod tournament_component {
             // create tournament
             let tournament = store.create_tournament(metadata, schedule, game_config, entry_config);
 
-            // mint the tournament creator a game token, name will be same as tournament name
-            // TODO: Set expiration to previous timestamp
+            // mint the tournament creator a game token with following notable details:
+            // - player name will be same as tournament name
+            // - game start time will be 0
+            // - game expiration will be 1 less than current timestamp so it will be minted as expired
+            let game_start_time = 0;
+            let game_expiration_time = get_block_timestamp() - 1;
             let game_token_id = self
                 ._mint_game(
                     tournament.game_config.address,
                     tournament.game_config.settings_id,
-                    tournament.schedule.game.start,
-                    tournament.schedule.game.end,
+                    game_start_time,
+                    game_expiration_time,
                     tournament.metadata.name,
                     get_caller_address(),
                 );
@@ -1164,30 +1168,30 @@ pub mod tournament_component {
             }
         }
 
-        fn _assert_has_qualified_in_tournaments(
+        fn _has_qualified_in_tournaments(
             self: @ComponentState<TContractState>,
             store: Store,
             tournament_type: TournamentType,
             token_id: u64,
-        ) {
+        ) -> bool {
             let (tournament_ids, requires_top_score) = match tournament_type {
                 TournamentType::winners(ids) => (ids, true),
                 TournamentType::participants(ids) => (ids, false),
             };
-
+        
             let mut loop_index = 0;
             let mut is_qualified = false;
-
+        
             loop {
                 if loop_index == tournament_ids.len() {
                     break;
                 }
-
+        
                 let tournament_id = *tournament_ids.at(loop_index);
                 let tournament = store.get_tournament(tournament_id);
                 let owner = self._get_owner(tournament.game_config.address, token_id.into());
                 let registration = store.get_registration(tournament.id, token_id);
-
+        
                 if owner == get_caller_address()
                     && registration.tournament_id == tournament.id
                     && registration.entry_number != 0 {
@@ -1200,107 +1204,29 @@ pub mod tournament_component {
                     } else {
                         is_qualified = true;
                     }
-
+        
                     if is_qualified {
                         break;
                     }
                 }
-
+        
                 loop_index += 1;
             };
-
-            assert!(
-                is_qualified,
-                "Tournament: game token id {} does not qualify for tournament",
-                token_id,
-            );
+        
+            is_qualified
         }
 
-        // TODO: Instead of looping through all qualifying tournaments, the caller should pass in
-        // the tournament ID they are qualifying with.
-        // This will simplify this code to an assertion that the tournament ID is part of the set
-        // ofqualifying tournament IDs and an assertion that the caller owns the qualifying token
-        // id.
-        // TODO: Need to prevent the same game token from being used to qualify into the same
-        // tournament
-        fn _assert_has_qualified_in_tournaments_old(
+        fn _assert_has_qualified_in_tournaments(
             self: @ComponentState<TContractState>,
             store: Store,
             tournament_type: TournamentType,
             token_id: u64,
         ) {
-            match tournament_type {
-                TournamentType::winners(tournament_ids) => {
-                    let mut loop_index = 0;
-                    let mut qualified = false;
-                    loop {
-                        if loop_index == tournament_ids.len() {
-                            break;
-                        }
-                        let tournament = store
-                            .get_tournament(*tournament_ids.at(loop_index).into());
-                        let game_dispatcher = IGameDispatcher {
-                            contract_address: tournament.game_config.address,
-                        };
-
-                        let owner = self
-                            ._get_owner(tournament.game_config.address, token_id.into());
-                        if owner == get_caller_address() {
-                            let registration = store.get_registration(tournament.id, token_id);
-                            if registration.tournament_id == tournament.id {
-                                assert!(
-                                    registration.entry_number != 0,
-                                    "Tournament: Host token cannot be used to qualify in tournament gated tournaments",
-                                );
-                                let score = game_dispatcher.get_score(token_id);
-                                if self
-                                    ._is_top_score(store, *tournament_ids.at(loop_index), score) {
-                                    qualified = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        loop_index += 1;
-                    };
-                    assert!(
-                        qualified,
-                        "Tournament: game token id {} is not a top score in a qualifying tournament",
-                        token_id,
-                    );
-                },
-                TournamentType::participants(tournament_ids) => {
-                    let mut loop_index = 0;
-                    let mut participated = false;
-                    loop {
-                        if loop_index == tournament_ids.len() {
-                            break;
-                        }
-                        let tournament = store.get_tournament(*tournament_ids.at(loop_index));
-                        let owner = self
-                            ._get_owner(tournament.game_config.address, token_id.into());
-
-                        // if the caller owners the provided game token
-                        if owner == get_caller_address() {
-                            let registration = store.get_registration(tournament.id, token_id);
-                            if registration.tournament_id == tournament.id {
-                                assert!(
-                                    registration.entry_number != 0,
-                                    "Tournament: Host token cannot be used to qualify in tournament gated tournaments",
-                                );
-                                participated = true;
-                                break;
-                            }
-                        }
-                        loop_index += 1;
-                    };
-                    assert!(
-                        participated,
-                        "Tournament: game token id {} did not participate in a qualifying tournament",
-                        token_id,
-                    );
-                },
-            }
+            assert!(
+                self._has_qualified_in_tournaments(store, tournament_type, token_id),
+                "Tournament: game token id {} does not qualify for tournament",
+                token_id,
+            );
         }
 
         fn _assert_qualifying_address(
@@ -1519,10 +1445,6 @@ pub mod tournament_component {
                 },
                 TokenType::erc721(erc721_token) => {
                     let token_dispatcher = IERC721Dispatcher { contract_address: token };
-
-                    // TODO: I don't think we need this call as transfer_from will fail if the
-                    // caller is not the owner
-                    self._assert_token_owner(token, erc721_token.id.into(), get_caller_address());
                     token_dispatcher
                         .transfer_from(
                             get_caller_address(), get_contract_address(), erc721_token.id.into(),
