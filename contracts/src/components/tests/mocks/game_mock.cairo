@@ -124,7 +124,9 @@ mod game_mock {
         }
 
         fn get_score(self: @ContractState, game_id: u64) -> u64 {
-            game_id
+            let mut world = self.world(DEFAULT_NS());
+            let mut store: Store = StoreTrait::new(world);
+            store.get_score(game_id)
         }
     }
 

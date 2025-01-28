@@ -1,6 +1,6 @@
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, EntryFee, TokenDataType, EntryRequirement, Registration,
-    PrizeType, TournamentState,
+    Tournament as TournamentModel, TokenType, Registration, PrizeType, TournamentState, Metadata,
+    Schedule, GameConfig, EntryConfig,
 };
 use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
 
@@ -12,7 +12,7 @@ use tournaments::components::libs::utils::ZERO;
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Token {
     pub token: ContractAddress,
-    pub token_data_type: TokenDataType,
+    pub token_type: TokenType,
 }
 
 pub const IGAME_ID: felt252 = 0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
@@ -143,32 +143,24 @@ pub trait ITournamentMock<TState> {
     // ITournament
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn get_registration(self: @TState, token_id: u64) -> Registration;
+    fn get_registration(self: @TState, tournament_id: u64, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
-    fn tournament_winners(self: @TState, tournament_id: u64) -> Span<u64>;
-    fn tournament_state(self: @TState, tournament_id: u64) -> TournamentState;
+    fn get_leaderboard(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn create_tournament(
         ref self: TState,
-        name: felt252,
-        description: ByteArray,
-        registration_start_time: u64,
-        registration_end_time: u64,
-        start_time: u64,
-        end_time: u64,
-        submission_period: u64,
-        prize_spots: u8,
-        entry_requirement: Option<EntryRequirement>,
-        entry_fee: Option<EntryFee>,
-        game_address: ContractAddress,
-        settings_id: u32,
-    ) -> (u64, u64);
+        metadata: Metadata,
+        schedule: Schedule,
+        game_config: GameConfig,
+        entry_config: Option<EntryConfig>,
+    ) -> (TournamentModel, u64);
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,
-        name: felt252,
+        player_name: felt252,
         player_address: ContractAddress,
         qualifying_token_id: Option<u256>,
     ) -> (u64, u32);
@@ -176,7 +168,7 @@ pub trait ITournamentMock<TState> {
         ref self: TState,
         tournament_id: u64,
         token_address: ContractAddress,
-        token_data_type: TokenDataType,
+        token_type: TokenType,
         position: u8,
     ) -> u64;
     fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);

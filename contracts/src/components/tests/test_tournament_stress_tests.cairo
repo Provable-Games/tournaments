@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: UNLICENSED
+
 use starknet::testing;
 use tournaments::components::constants::{MIN_SUBMISSION_PERIOD};
-use tournaments::components::models::tournament::{TournamentGame, TokenDataType, ERC20Data, Prize};
+use tournaments::components::models::tournament::{TournamentGame, TokenType, ERC20Data, Prize};
 
 use tournaments::components::tests::interfaces::{
     IGameMockDispatcherTrait, ITournamentMockDispatcherTrait, IERC20MockDispatcherTrait,
@@ -124,7 +126,7 @@ fn test_distribute_many_prizes() {
                     id: i + 1,
                     tournament_id,
                     token_address: contracts.erc20.contract_address,
-                    token_data_type: TokenDataType::erc20(ERC20Data { token_amount: 1 }),
+                    token_type: TokenType::erc20(ERC20Data { amount: 1 }),
                     payout_position: (i + 1).try_into().unwrap(),
                 },
             );

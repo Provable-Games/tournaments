@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BUSL-1.1
+
 use starknet::ContractAddress;
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
@@ -8,33 +10,16 @@ pub enum TournamentType {
 
 #[derive(Copy, Drop, Serde, Introspect)]
 pub struct ERC20Data {
-    pub token_amount: u128,
+    pub amount: u128,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
 pub struct ERC721Data {
-    pub token_id: u128,
-}
-
-// TODO: Change this to EntryFeeConfig
-// add game_fee to the struct
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct EntryFee {
-    pub token_address: ContractAddress,
-    pub amount: u128,
-    pub creator_fee: u8,
-    pub distribution: Span<u8>,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum EntryRequirement {
-    token: ContractAddress,
-    tournament: TournamentType,
-    address: Span<ContractAddress>,
+    pub id: u128,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
-pub enum TokenDataType {
+pub enum TokenType {
     erc20: ERC20Data,
     erc721: ERC721Data,
 }
@@ -53,42 +38,89 @@ pub enum TournamentState {
 /// Model
 ///
 
+// STOPPING POINT: Doing the Tournament Model refactor
+// shouldn't be hard, just need to trace down all the instantiations and make sure they are updated
+// after this, do submit_score issue #10
+// then do enter_tournament token gate simplification issue #13
+// then #16
+// then #2
 #[dojo::model]
 #[derive(Drop, Serde)]
 pub struct Tournament {
     #[key]
     pub id: u64,
+    pub creator: ContractAddress,
+    pub metadata: Metadata,
+    pub schedule: Schedule,
+    pub game_config: GameConfig,
+    pub entry_config: Option<EntryConfig>,
+}
+
+#[derive(Drop, Serde, Introspect)]
+pub struct Metadata {
     pub name: felt252,
     pub description: ByteArray,
-    pub creator: ContractAddress,
-    pub registration_start_time: u64,
-    pub registration_end_time: u64,
-    pub start_time: u64,
-    pub settings_id: u32,
-    pub end_time: u64,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct Schedule {
+    pub registration: Option<Period>,
+    pub game: Period,
     pub submission_period: u64,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct Period {
+    pub start: u64,
+    pub end: u64,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub struct GameConfig {
+    pub address: ContractAddress,
+    pub settings_id: u32,
     pub prize_spots: u8,
-    pub entry_requirement: Option<EntryRequirement>,
-    pub entry_fee: Option<EntryFee>,
-    pub game_address: ContractAddress,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct EntryConfig {
+    pub fee: Option<EntryFee>,
+    pub requirement: Option<EntryRequirement>,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct EntryFee {
+    pub token_address: ContractAddress,
+    pub amount: u128,
+    pub distribution: Span<u8>,
+    pub tournament_creator_share: Option<u8>,
+    pub game_creator_share: Option<u8>,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub enum EntryRequirement {
+    token: ContractAddress,
+    tournament: TournamentType,
+    allowlist: Span<ContractAddress>,
 }
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde, IntrospectPacked)]
 pub struct Registration {
     #[key]
-    pub game_token_id: u64,
     pub tournament_id: u64,
+    #[key]
+    pub game_token_id: u64,
     pub entry_number: u32,
-    pub submitted_score: bool,
+    pub has_submitted: bool,
 }
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
-pub struct TournamentScores {
+pub struct Leaderboard {
     #[key]
     pub tournament_id: u64,
-    pub winner_token_ids: Span<u64>,
+    pub token_ids: Span<u64>,
 }
 
 #[dojo::model]
@@ -131,7 +163,7 @@ pub struct Prize {
     pub tournament_id: u64,
     pub payout_position: u8,
     pub token_address: ContractAddress,
-    pub token_data_type: TokenDataType,
+    pub token_type: TokenType,
 }
 
 
@@ -143,7 +175,7 @@ pub struct Token {
     pub address: ContractAddress,
     pub name: ByteArray,
     pub symbol: ByteArray,
-    pub token_data_type: TokenDataType,
+    pub token_type: TokenType,
     pub is_registered: bool,
 }
 

@@ -3,8 +3,9 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    Tournament, EntryCount, Prize, TournamentScores, Token, Registration, TournamentConfig,
-    TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType,
+    Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
+    TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
+    Schedule, GameConfig, EntryConfig,
 };
 
 use tournaments::components::constants::{VERSION};
@@ -53,12 +54,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_registration(self: Store, token_id: u64) -> Registration {
-        (self.world.read_model(token_id))
+    fn get_registration(self: Store, tournament_id: u64, token_id: u64) -> Registration {
+        (self.world.read_model((tournament_id, token_id)))
     }
 
     #[inline(always)]
-    fn get_tournament_scores(self: Store, tournament_id: u64) -> TournamentScores {
+    fn get_leaderboard(self: Store, tournament_id: u64) -> Leaderboard {
         (self.world.read_model(tournament_id))
     }
 
@@ -89,6 +90,21 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
+    fn create_tournament(
+        ref self: Store,
+        metadata: Metadata,
+        schedule: Schedule,
+        game_config: GameConfig,
+        entry_config: Option<EntryConfig>,
+    ) -> Tournament {
+        let id = self.increment_and_get_tournament_count();
+        let creator = starknet::get_caller_address();
+        let tournament = Tournament { id, creator, metadata, schedule, game_config, entry_config };
+        self.world.write_model(@tournament);
+        tournament
+    }
+
+    #[inline(always)]
     fn set_tournament(ref self: Store, model: @Tournament) {
         self.world.write_model(model);
     }
@@ -112,7 +128,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_tournament_scores(ref self: Store, model: @TournamentScores) {
+    fn set_leaderboard(ref self: Store, model: @Leaderboard) {
         self.world.write_model(model);
     }
 

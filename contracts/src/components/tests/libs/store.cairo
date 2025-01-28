@@ -3,9 +3,12 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::tournament::{
-    Tournament, EntryCount, Prize, TournamentScores, Token, Registration, TournamentConfig,
-    PlatformMetrics, PrizeMetrics, TournamentTokenMetrics, PrizeClaim, PrizeType,
+    Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
+    TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
+    Schedule, GameConfig, EntryConfig,
 };
+
+use tournaments::components::constants::{VERSION};
 
 #[derive(Copy, Drop)]
 pub struct Store {
@@ -26,20 +29,18 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn get_platform_metrics(self: Store, contract: ContractAddress) -> PlatformMetrics {
-        (self.world.read_model(contract))
+    fn get_platform_metrics(self: Store, key: felt252) -> PlatformMetrics {
+        (self.world.read_model(key))
     }
 
     #[inline(always)]
-    fn get_prize_metrics(self: Store, contract: ContractAddress) -> PrizeMetrics {
-        (self.world.read_model(contract))
+    fn get_token_metadata_metrics(self: Store, key: felt252) -> TournamentTokenMetrics {
+        (self.world.read_model(key))
     }
 
     #[inline(always)]
-    fn get_tournament_token_metrics(
-        self: Store, contract: ContractAddress,
-    ) -> TournamentTokenMetrics {
-        (self.world.read_model(contract))
+    fn get_prize_metrics(self: Store, key: felt252) -> PrizeMetrics {
+        (self.world.read_model(key))
     }
 
     #[inline(always)]
@@ -53,12 +54,12 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_registration(self: Store, token_id: u128) -> Registration {
-        (self.world.read_model(token_id))
+    fn get_registration(self: Store, tournament_id: u64, token_id: u64) -> Registration {
+        (self.world.read_model((tournament_id, token_id)))
     }
 
     #[inline(always)]
-    fn get_tournament_scores(self: Store, tournament_id: u64) -> TournamentScores {
+    fn get_leaderboard(self: Store, tournament_id: u64) -> Leaderboard {
         (self.world.read_model(tournament_id))
     }
 
@@ -68,13 +69,13 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_token(self: Store, token: ContractAddress) -> Token {
-        (self.world.read_model(token))
+    fn get_token(self: Store, address: ContractAddress) -> Token {
+        (self.world.read_model(address))
     }
 
     #[inline(always)]
-    fn get_tournament_config(self: Store, contract: ContractAddress) -> TournamentConfig {
-        (self.world.read_model(contract))
+    fn get_tournament_config(self: Store, key: felt252) -> TournamentConfig {
+        (self.world.read_model(key))
     }
 
     #[inline(always)]
@@ -89,8 +90,18 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn set_platform_metrics(ref self: Store, model: @PlatformMetrics) {
-        self.world.write_model(model);
+    fn create_tournament(
+        ref self: Store,
+        metadata: Metadata,
+        schedule: Schedule,
+        game_config: GameConfig,
+        entry_config: Option<EntryConfig>,
+    ) -> Tournament {
+        let id = self.increment_and_get_tournament_count();
+        let creator = starknet::get_caller_address();
+        let tournament = Tournament { id, creator, metadata, schedule, game_config, entry_config };
+        self.world.write_model(@tournament);
+        tournament
     }
 
     #[inline(always)]
@@ -104,12 +115,20 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
+    fn increment_and_get_tournament_entry_count(ref self: Store, tournament_id: u64) -> u32 {
+        let mut entries = self.get_tournament_entry_count(tournament_id);
+        entries.count += 1;
+        self.set_tournament_entry_count(@entries);
+        entries.count
+    }
+
+    #[inline(always)]
     fn set_registration(ref self: Store, model: @Registration) {
         self.world.write_model(model);
     }
 
     #[inline(always)]
-    fn set_tournament_scores(ref self: Store, model: @TournamentScores) {
+    fn set_leaderboard(ref self: Store, model: @Leaderboard) {
         self.world.write_model(model);
     }
 
@@ -119,12 +138,52 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
+    fn set_prize_metrics(ref self: Store, model: @PrizeMetrics) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn increment_and_get_prize_count(ref self: Store) -> u64 {
+        let mut metrics = self.get_prize_metrics(VERSION);
+        metrics.total_prizes += 1;
+        self.set_prize_metrics(@metrics);
+        metrics.total_prizes
+    }
+
+
+    #[inline(always)]
     fn set_token(ref self: Store, model: @Token) {
         self.world.write_model(model);
     }
 
     #[inline(always)]
     fn set_tournament_config(ref self: Store, model: @TournamentConfig) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn increment_and_get_token_supply(ref self: Store) -> u64 {
+        let mut metrics = self.get_token_metadata_metrics(VERSION);
+        metrics.total_supply += 1;
+        self.set_token_metadata_metrics(@metrics);
+        metrics.total_supply
+    }
+
+    #[inline(always)]
+    fn set_token_metadata_metrics(ref self: Store, model: @TournamentTokenMetrics) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn increment_and_get_tournament_count(ref self: Store) -> u64 {
+        let mut platform_metrics = self.get_platform_metrics(VERSION);
+        platform_metrics.total_tournaments += 1;
+        self.set_platform_metrics(@platform_metrics);
+        platform_metrics.total_tournaments
+    }
+
+    #[inline(always)]
+    fn set_platform_metrics(ref self: Store, model: @PlatformMetrics) {
         self.world.write_model(model);
     }
 

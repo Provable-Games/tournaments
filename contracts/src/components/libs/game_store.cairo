@@ -47,8 +47,9 @@ pub impl StoreImpl of StoreTrait {
         (self.world.read_model(token_id))
     }
 
-    fn get_score(self: Store, game_id: u64) -> Score {
-        (self.world.read_model(game_id))
+    fn get_score(self: Store, game_id: u64) -> u64 {
+        let score: Score = self.world.read_model(game_id);
+        score.score
     }
 
     //
