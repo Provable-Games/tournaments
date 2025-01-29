@@ -308,9 +308,10 @@ pub mod tournament_component {
         /// @notice Allows a player to submit a score for a tournament
         /// @dev This function uses a 1-based index for the position parameter. Input 1 for first
         /// place, 2 for second, etc.
-        /// @dev This function is permissionless, allowing anyone to submit a valid score for a tournament.
-        /// @dev When tournament enters submission, save gas by multi-calling this with scores starting
-        /// from first and going to last place.
+        /// @dev This function is permissionless, allowing anyone to submit a valid score for a
+        /// tournament.
+        /// @dev When tournament enters submission, save gas by multi-calling this with scores
+        /// starting from first and going to last place.
         /// @param self A reference to the ContractState object.
         /// @param tournament_id A u64 representing the unique ID of the tournament.
         /// @param token_id A u64 representing the unique ID of the game token.
