@@ -21,7 +21,8 @@ use tournaments::components::models::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
         m_PrizeClaim, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement, TournamentType,
-        PrizeType, Role, TournamentState, Schedule, Period, EntryConfig,
+        PrizeType, Role, TournamentState, Schedule, Period, QualificationProof,
+        TournamentQualification, NFTQualification,
     },
 };
 
@@ -254,7 +255,10 @@ fn test_create_tournament() {
         tournament.schedule.game.start == TEST_START_TIME().into(), 'Invalid tournament start time',
     );
     assert(tournament.schedule.game.end == TEST_END_TIME().into(), 'Invalid tournament end time');
-    assert!(tournament.entry_config == Option::None, "tournament entry config should be none");
+    assert!(
+        tournament.entry_requirement == Option::None, "tournament entry requirement should be none",
+    );
+    assert!(tournament.entry_fee == Option::None, "tournament entry fee should be none");
     assert(
         tournament.game_config.address == contracts.game.contract_address, 'Invalid game address',
     );
@@ -294,6 +298,7 @@ fn test_create_tournament_start_time_too_close() {
             schedule,
             test_game_config(contracts.game.contract_address),
             Option::None,
+            Option::None,
         );
 }
 
@@ -312,7 +317,8 @@ fn test_create_tournament_registration_period_too_short() {
         MIN_SUBMISSION_PERIOD.into(),
     );
 
-    let entry_config = Option::None;
+    let entry_requirement = Option::None;
+    let entry_fee = Option::None;
 
     contracts
         .tournament
@@ -320,7 +326,8 @@ fn test_create_tournament_registration_period_too_short() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            entry_config,
+            entry_fee,
+            entry_requirement,
         );
 }
 
@@ -339,14 +346,17 @@ fn test_create_tournament_registration_period_too_long() {
         test_game_period(),
         MIN_SUBMISSION_PERIOD.into(),
     );
-    let entry_config = Option::None;
+    let entry_requirement = Option::None;
+    let entry_fee = Option::None;
+
     contracts
         .tournament
         .create_tournament(
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            entry_config,
+            entry_fee,
+            entry_requirement,
         );
 }
 
@@ -362,7 +372,8 @@ fn test_create_tournament_end_time_too_close() {
 
     let schedule = registration_open_beyond_tournament_end();
 
-    let entry_config = Option::None;
+    let entry_requirement = Option::None;
+    let entry_fee = Option::None;
 
     contracts
         .tournament
@@ -370,7 +381,8 @@ fn test_create_tournament_end_time_too_close() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            entry_config,
+            entry_fee,
+            entry_requirement,
         );
 }
 
@@ -392,6 +404,7 @@ fn test_create_tournament_tournament_too_long() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
+            Option::None,
             Option::None,
         );
 }
@@ -416,6 +429,7 @@ fn test_create_tournament_submission_period_too_short() {
             schedule,
             test_game_config(contracts.game.contract_address),
             Option::None,
+            Option::None,
         );
 }
 
@@ -439,6 +453,7 @@ fn test_create_tournament_submission_period_too_long() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
+            Option::None,
             Option::None,
         );
 }
@@ -558,7 +573,8 @@ fn test_create_tournament_with_premiums_too_long() {
         game_creator_share: Option::None,
     };
 
-    let entry_config = EntryConfig { fee: Option::Some(entry_fee), requirement: Option::None };
+    let entry_fee = Option::Some(entry_fee);
+    let entry_requirement = Option::None;
 
     contracts
         .tournament
@@ -566,7 +582,8 @@ fn test_create_tournament_with_premiums_too_long() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 }
 
@@ -589,8 +606,8 @@ fn test_create_tournament_with_premiums_not_100() {
         tournament_creator_share: Option::None,
         game_creator_share: Option::None,
     };
-
-    let entry_config = EntryConfig { fee: Option::Some(entry_fee), requirement: Option::None };
+    let entry_fee = Option::Some(entry_fee);
+    let entry_requirement = Option::None;
 
     let mut game_config = test_game_config(contracts.game.contract_address);
     game_config.prize_spots = 2;
@@ -598,7 +615,7 @@ fn test_create_tournament_with_premiums_not_100() {
     contracts
         .tournament
         .create_tournament(
-            test_metadata(), test_schedule(), game_config, Option::Some(entry_config),
+            test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement,
         );
 }
 
@@ -626,9 +643,8 @@ fn test_create_gated_tournament_with_unsettled_tournament() {
         TournamentType::winners(array![tournament_token_id].span()),
     );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
 
     let current_time = get_block_timestamp();
 
@@ -652,7 +668,8 @@ fn test_create_gated_tournament_with_unsettled_tournament() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 }
 
@@ -701,9 +718,8 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
         TournamentType::winners(array![first_tournament.id, second_tournament.id].span()),
     );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
 
     let current_time = get_block_timestamp();
 
@@ -724,17 +740,28 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
-    assert(
-        gated_tournament.entry_config == Option::Some(entry_config), 'Invalid tournament gate type',
-    );
+    assert(gated_tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
 
     testing::set_block_timestamp(current_time + MIN_REGISTRATION_PERIOD.into() - 1);
 
-    let first_qualifying_token_id = Option::Some(first_entry_token_id.into());
-    let second_qualifying_token_id = Option::Some(second_entry_token_id.into());
+    let first_qualifying_token_id = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: first_tournament.id, token_id: first_entry_token_id, position: 1,
+            },
+        ),
+    );
+    let second_qualifying_token_id = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: second_tournament.id, token_id: second_entry_token_id, position: 1,
+            },
+        ),
+    );
     // This should succeed since we completed both required tournaments
     contracts
         .tournament
@@ -762,9 +789,8 @@ fn test_allowlist_gated_tournament() {
     // Create tournament gated by account list
     let entry_requirement = EntryRequirement::allowlist(allowed_accounts);
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
 
     let (tournament, _) = contracts
         .tournament
@@ -772,16 +798,12 @@ fn test_allowlist_gated_tournament() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
     // Verify tournament was created with correct gating
-    assert(tournament.entry_config == Option::Some(entry_config), 'Invalid tournament gate type');
-
-    assert(
-        tournament.entry_config.unwrap().requirement == Option::Some(entry_requirement),
-        'Invalid entry requirement',
-    );
+    assert(tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
 
     // Start tournament entries
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -801,7 +823,7 @@ fn test_allowlist_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Caller is not in allowlist", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Player not in allowlist", 'ENTRYPOINT_FAILED'))]
 fn test_allowlist_gated_tournament_unauthorized() {
     let contracts = setup();
 
@@ -812,11 +834,9 @@ fn test_allowlist_gated_tournament_unauthorized() {
     let allowed_accounts = array![OWNER(), allowed_player].span();
 
     // Create tournament gated by account list
-    let entry_requirement = EntryRequirement::allowlist(allowed_accounts);
+    let entry_requirement = Option::Some(EntryRequirement::allowlist(allowed_accounts));
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let (tournament, _) = contracts
         .tournament
@@ -824,7 +844,8 @@ fn test_allowlist_gated_tournament_unauthorized() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
     // Start tournament entries
@@ -860,6 +881,7 @@ fn test_create_tournament_season() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
+            Option::None,
             Option::None,
         );
 
@@ -998,7 +1020,10 @@ fn test_enter_tournament() {
 
 #[test]
 #[should_panic(
-    expected: ("Tournament: game token id 3 does not qualify for tournament", 'ENTRYPOINT_FAILED'),
+    expected: (
+        "Tournament: Provided Token ID 1 does not match Token ID 1 at leaderboard position 1 for tournament 1",
+        'ENTRYPOINT_FAILED',
+    ),
 )]
 fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
     let contracts = setup();
@@ -1006,7 +1031,7 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
     utils::impersonate(OWNER());
 
     // First create and complete a tournament that will be used as a gate
-    let (first_tournament, _) = create_basic_tournament(
+    let (first_tournament, host_token_id) = create_basic_tournament(
         contracts.tournament, contracts.game.contract_address,
     );
 
@@ -1035,13 +1060,11 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
     );
 
     // Create a tournament gated by the previous tournament
-    let entry_requirement = EntryRequirement::tournament(
-        TournamentType::winners(array![first_tournament.id].span()),
+    let entry_requirement = Option::Some(
+        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
     );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let current_time = get_block_timestamp();
 
@@ -1056,17 +1079,24 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
         submission_period: MIN_SUBMISSION_PERIOD.into(),
     };
 
-    let (second_tournament, second_tournament_creator_token_id) = contracts
+    let (second_tournament, _) = contracts
         .tournament
         .create_tournament(
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
     // attempt to join second tournament using the host token, should panic
-    let wrong_submission_type = Option::Some(second_tournament_creator_token_id.into());
+    let wrong_submission_type = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: first_tournament.id, token_id: host_token_id, position: 1,
+            },
+        ),
+    );
     contracts
         .tournament
         .enter_tournament(second_tournament.id, 'test_player', OWNER(), wrong_submission_type);
@@ -1075,7 +1105,10 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
 
 #[test]
 #[should_panic(
-    expected: ("Tournament: game token id 3 does not qualify for tournament", 'ENTRYPOINT_FAILED'),
+    expected: (
+        "Tournament: Provided Token ID 3 does not match Token ID 3 at leaderboard position 1 for tournament 1",
+        'ENTRYPOINT_FAILED',
+    ),
 )]
 fn test_enter_tournament_wrong_submission_type() {
     let contracts = setup();
@@ -1117,13 +1150,11 @@ fn test_enter_tournament_wrong_submission_type() {
     );
 
     // Create a tournament gated by the previous tournament
-    let entry_requirement = EntryRequirement::tournament(
-        TournamentType::winners(array![first_tournament.id].span()),
+    let entry_requirement = Option::Some(
+        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
     );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let current_time = get_block_timestamp();
 
@@ -1144,11 +1175,18 @@ fn test_enter_tournament_wrong_submission_type() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
     // attempt to join second tournament using token that did not win first tournament, should panic
-    let wrong_submission_type = Option::Some(second_entry_token_id.into());
+    let wrong_submission_type = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: first_tournament.id, token_id: second_entry_token_id, position: 1,
+            },
+        ),
+    );
     contracts
         .tournament
         .enter_tournament(second_tournament.id, 'test_player', OWNER(), wrong_submission_type);
@@ -1168,6 +1206,7 @@ fn test_enter_tournament_season() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
+            Option::None,
             Option::None,
         );
 
@@ -1204,7 +1243,9 @@ fn test_submit_score_basic() {
     game_config.prize_spots = 3;
     let (tournament, _) = contracts
         .tournament
-        .create_tournament(test_metadata(), test_schedule(), game_config, Option::None);
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
@@ -1235,7 +1276,9 @@ fn test_submit_score_multiple_positions() {
     game_config.prize_spots = 4;
     let (tournament, _) = contracts
         .tournament
-        .create_tournament(test_metadata(), test_schedule(), game_config, Option::None);
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
@@ -1286,7 +1329,9 @@ fn test_submit_score_lower_score() {
     game_config.prize_spots = 3;
     let (tournament, _) = contracts
         .tournament
-        .create_tournament(test_metadata(), test_schedule(), game_config, Option::None);
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
@@ -1320,7 +1365,9 @@ fn test_submit_score_invalid_position() {
     game_config.prize_spots = 2;
     let (tournament, _) = contracts
         .tournament
-        .create_tournament(test_metadata(), test_schedule(), game_config, Option::None);
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
     let (token_id, _) = contracts
@@ -1414,7 +1461,9 @@ fn test_submit_score_with_gap() {
     game_config.prize_spots = 3;
     let (tournament, _) = contracts
         .tournament
-        .create_tournament(test_metadata(), test_schedule(), game_config, Option::None);
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
     let (token_id1, _) = contracts
@@ -1561,11 +1610,11 @@ fn test_claim_prizes_with_gated_tokens_criteria() {
 
     utils::impersonate(OWNER());
 
-    let entry_requirement = EntryRequirement::token(contracts.erc721.contract_address);
+    let entry_requirement = Option::Some(
+        EntryRequirement::token(contracts.erc721.contract_address),
+    );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let (tournament, _) = contracts
         .tournament
@@ -1573,21 +1622,19 @@ fn test_claim_prizes_with_gated_tokens_criteria() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
-    assert(tournament.entry_config == Option::Some(entry_config), 'Invalid entry config');
-
-    assert(
-        tournament.entry_config.unwrap().requirement == Option::Some(entry_requirement),
-        'Invalid entry requirement',
-    );
+    assert(tournament.entry_fee == entry_fee, 'Invalid entry fee');
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
+    let qualification = Option::Some(QualificationProof::NFT(NFTQualification { token_id: 1 }));
+
     let (entry_token_id, _) = contracts
         .tournament
-        .enter_tournament(tournament.id, 'test_player', OWNER(), Option::Some(1));
+        .enter_tournament(tournament.id, 'test_player', OWNER(), qualification);
 
     testing::set_block_timestamp(TEST_START_TIME().into());
 
@@ -1609,11 +1656,11 @@ fn test_claim_prizes_with_gated_tokens_uniform() {
 
     utils::impersonate(OWNER());
 
-    let entry_requirement = EntryRequirement::token(contracts.erc721.contract_address);
+    let entry_requirement = Option::Some(
+        EntryRequirement::token(contracts.erc721.contract_address),
+    );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let (tournament, _) = contracts
         .tournament
@@ -1621,21 +1668,19 @@ fn test_claim_prizes_with_gated_tokens_uniform() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
-    assert(tournament.entry_config == Option::Some(entry_config), 'Invalid entry config');
-
-    assert(
-        tournament.entry_config.unwrap().requirement == Option::Some(entry_requirement),
-        'Invalid entry requirement',
-    );
+    assert(tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
+    let qualification = Option::Some(QualificationProof::NFT(NFTQualification { token_id: 1 }));
+
     let (entry_token_id, _) = contracts
         .tournament
-        .enter_tournament(tournament.id, 'test_player', OWNER(), Option::Some(1));
+        .enter_tournament(tournament.id, 'test_player', OWNER(), qualification);
 
     // check tournament entries
     assert(contracts.tournament.tournament_entries(tournament.id) == 1, 'Invalid entries');
@@ -1683,13 +1728,11 @@ fn test_claim_prizes_with_gated_tournaments() {
     );
 
     // create a new tournament that is restricted to winners of the first tournament
-    let entry_requirement = EntryRequirement::tournament(
-        TournamentType::winners(array![first_tournament.id].span()),
+    let entry_requirement = Option::Some(
+        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
     );
 
-    let entry_config = EntryConfig {
-        fee: Option::None, requirement: Option::Some(entry_requirement),
-    };
+    let entry_fee = Option::None;
 
     let current_time = get_block_timestamp();
 
@@ -1710,22 +1753,26 @@ fn test_claim_prizes_with_gated_tournaments() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
-    assert(second_tournament.entry_config == Option::Some(entry_config), 'Invalid entry config');
-    assert(
-        second_tournament.entry_config.unwrap().requirement == Option::Some(entry_requirement),
-        'Invalid entry requirement',
-    );
+    assert(second_tournament.entry_fee == entry_fee, 'Invalid entry fee');
+    assert(second_tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
 
     testing::set_block_timestamp(current_time);
 
+    let qualification = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: first_tournament.id, token_id: entry_token_id, position: 1,
+            },
+        ),
+    );
+
     let (second_entry_token_id, _) = contracts
         .tournament
-        .enter_tournament(
-            second_tournament.id, 'test_player2', OWNER(), Option::Some(entry_token_id.into()),
-        );
+        .enter_tournament(second_tournament.id, 'test_player2', OWNER(), qualification);
 
     testing::set_block_timestamp(
         current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
@@ -1742,15 +1789,17 @@ fn test_claim_prizes_with_premiums() {
 
     utils::impersonate(OWNER());
 
-    let entry_fee = EntryFee {
-        token_address: contracts.erc20.contract_address,
-        amount: 1,
-        distribution: array![100].span(),
-        tournament_creator_share: Option::None,
-        game_creator_share: Option::None,
-    };
+    let entry_fee = Option::Some(
+        EntryFee {
+            token_address: contracts.erc20.contract_address,
+            amount: 1,
+            distribution: array![100].span(),
+            tournament_creator_share: Option::None,
+            game_creator_share: Option::None,
+        },
+    );
 
-    let entry_config = EntryConfig { fee: Option::Some(entry_fee), requirement: Option::None };
+    let entry_requirement = Option::None;
 
     let (tournament, _) = contracts
         .tournament
@@ -1758,10 +1807,11 @@ fn test_claim_prizes_with_premiums() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
-    assert(tournament.entry_config == Option::Some(entry_config), 'Invalid entry premium');
+    assert(tournament.entry_fee == entry_fee, 'Invalid entry fee');
 
     // handle approval for the premium
     contracts.erc20.approve(contracts.tournament.contract_address, 1);
@@ -1802,15 +1852,17 @@ fn test_claim_prizes_with_premium_creator_fee() {
     utils::impersonate(OWNER());
 
     // Create entry fee with 10% creator fee and 90% to winner
-    let entry_fee = EntryFee {
-        token_address: contracts.erc20.contract_address,
-        amount: 100, // 100 tokens per entry
-        distribution: array![90].span(), // 90% to winner
-        tournament_creator_share: Option::Some(10),
-        game_creator_share: Option::None,
-    };
+    let entry_fee = Option::Some(
+        EntryFee {
+            token_address: contracts.erc20.contract_address,
+            amount: 100, // 100 tokens per entry
+            distribution: array![90].span(), // 90% to winner
+            tournament_creator_share: Option::Some(10),
+            game_creator_share: Option::None,
+        },
+    );
 
-    let entry_config = EntryConfig { fee: Option::Some(entry_fee), requirement: Option::None };
+    let entry_requirement = Option::None;
 
     let (tournament, _) = contracts
         .tournament
@@ -1818,7 +1870,8 @@ fn test_claim_prizes_with_premium_creator_fee() {
             test_metadata(),
             test_schedule(),
             test_game_config(contracts.game.contract_address),
-            Option::Some(entry_config),
+            entry_fee,
+            entry_requirement,
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1883,15 +1936,17 @@ fn test_claim_prizes_with_premium_multiple_winners() {
 
     // Create premium with 10% creator fee and split remaining 90% between top 3:
     // 1st: 50%, 2nd: 30%, 3rd: 20%
-    let entry_fee = EntryFee {
-        token_address: contracts.erc20.contract_address,
-        amount: 100, // 100 tokens per entry
-        distribution: array![50, 25, 15].span(), // Distribution percentages
-        tournament_creator_share: Option::Some(10),
-        game_creator_share: Option::None,
-    };
+    let entry_fee = Option::Some(
+        EntryFee {
+            token_address: contracts.erc20.contract_address,
+            amount: 100, // 100 tokens per entry
+            distribution: array![50, 25, 15].span(), // Distribution percentages
+            tournament_creator_share: Option::Some(10),
+            game_creator_share: Option::None,
+        },
+    );
 
-    let entry_config = EntryConfig { fee: Option::Some(entry_fee), requirement: Option::None };
+    let entry_requirement = Option::None;
 
     let mut game_config = test_game_config(contracts.game.contract_address);
     game_config.prize_spots = 3;
@@ -1899,7 +1954,7 @@ fn test_claim_prizes_with_premium_multiple_winners() {
     let (tournament, _) = contracts
         .tournament
         .create_tournament(
-            test_metadata(), test_schedule(), game_config, Option::Some(entry_config),
+            test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement,
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2191,6 +2246,7 @@ fn test_state_transitions() {
             test_metadata(),
             schedule,
             test_game_config(contracts.game.contract_address),
+            Option::None,
             Option::None,
         );
 

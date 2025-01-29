@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
     Tournament as TournamentModel, TokenType, PrizeType, TournamentState, Metadata, Schedule,
-    GameConfig, EntryConfig,
+    GameConfig, EntryFee, EntryRequirement, QualificationProof,
 };
 
 #[starknet::interface]
@@ -24,14 +24,15 @@ pub trait ITournament<TState> {
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
-        entry_config: Option<EntryConfig>,
+        entry_fee: Option<EntryFee>,
+        entry_requirement: Option<EntryRequirement>,
     ) -> (TournamentModel, u64);
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,
         player_name: felt252,
         player_address: ContractAddress,
-        qualifying_token_id: Option<u256>,
+        qualification: Option<QualificationProof>,
     ) -> (u64, u32);
     fn submit_score(ref self: TState, tournament_id: u64, token_id: u64, position: u8);
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);

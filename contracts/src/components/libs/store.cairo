@@ -5,7 +5,7 @@ use dojo::model::{ModelStorage};
 use tournaments::components::models::tournament::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
     TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
-    Schedule, GameConfig, EntryConfig,
+    Schedule, GameConfig, EntryFee, EntryRequirement,
 };
 
 use tournaments::components::constants::{VERSION};
@@ -96,11 +96,14 @@ pub impl StoreImpl of StoreTrait {
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
-        entry_config: Option<EntryConfig>,
+        entry_fee: Option<EntryFee>,
+        entry_requirement: Option<EntryRequirement>,
     ) -> Tournament {
         let id = self.increment_and_get_tournament_count();
         let creator = starknet::get_caller_address();
-        let tournament = Tournament { id, creator, metadata, schedule, game_config, entry_config };
+        let tournament = Tournament {
+            id, creator, metadata, schedule, game_config, entry_fee, entry_requirement,
+        };
         self.world.write_model(@tournament);
         tournament
     }

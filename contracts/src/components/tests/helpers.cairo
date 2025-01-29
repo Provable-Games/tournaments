@@ -113,7 +113,9 @@ pub fn create_basic_tournament(
     tournament: ITournamentMockDispatcher, game: ContractAddress,
 ) -> (Tournament, u64) {
     tournament
-        .create_tournament(test_metadata(), test_schedule(), test_game_config(game), Option::None)
+        .create_tournament(
+            test_metadata(), test_schedule(), test_game_config(game), Option::None, Option::None,
+        )
 }
 
 pub fn create_settings_details(game: IGameMockDispatcher) {

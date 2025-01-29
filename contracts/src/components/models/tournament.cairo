@@ -11,7 +11,8 @@ pub struct Tournament {
     pub metadata: Metadata,
     pub schedule: Schedule,
     pub game_config: GameConfig,
-    pub entry_config: Option<EntryConfig>,
+    pub entry_fee: Option<EntryFee>,
+    pub entry_requirement: Option<EntryRequirement>,
 }
 
 #[derive(Drop, Serde, Introspect)]
@@ -38,12 +39,6 @@ pub struct GameConfig {
     pub address: ContractAddress,
     pub settings_id: u32,
     pub prize_spots: u8,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct EntryConfig {
-    pub fee: Option<EntryFee>,
-    pub requirement: Option<EntryRequirement>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
@@ -199,4 +194,24 @@ pub enum Role {
 pub enum PrizeType {
     EntryFees: Role,
     Sponsored: u64,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq)]
+pub enum QualificationProof {
+    // For qualifying via previous tournament
+    Tournament: TournamentQualification,
+    // For qualifying via NFT ownership
+    NFT: NFTQualification,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq)]
+pub struct TournamentQualification {
+    pub tournament_id: u64,
+    pub token_id: u64,
+    pub position: u8 // 1-based position in leaderboard
+}
+
+#[derive(Copy, Drop, Serde, PartialEq)]
+pub struct NFTQualification {
+    pub token_id: u256,
 }

@@ -1,6 +1,6 @@
 use tournaments::components::models::tournament::{
     Tournament as TournamentModel, TokenType, Registration, PrizeType, TournamentState, Metadata,
-    Schedule, GameConfig, EntryConfig,
+    Schedule, GameConfig, EntryFee, EntryRequirement, QualificationProof,
 };
 use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
 
@@ -155,14 +155,15 @@ pub trait ITournamentMock<TState> {
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
-        entry_config: Option<EntryConfig>,
+        entry_fee: Option<EntryFee>,
+        entry_requirement: Option<EntryRequirement>,
     ) -> (TournamentModel, u64);
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,
         player_name: felt252,
         player_address: ContractAddress,
-        qualifying_token_id: Option<u256>,
+        qualification: Option<QualificationProof>,
     ) -> (u64, u32);
     fn add_prize(
         ref self: TState,
