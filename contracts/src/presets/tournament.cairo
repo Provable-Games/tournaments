@@ -33,7 +33,7 @@ pub trait ITournament<TState> {
         player_address: ContractAddress,
         qualifying_token_id: Option<u256>,
     ) -> (u64, u32);
-    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
+    fn submit_score(ref self: TState, tournament_id: u64, token_id: u64, position: u8);
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn add_prize(
         ref self: TState,

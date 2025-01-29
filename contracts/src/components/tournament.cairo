@@ -26,7 +26,7 @@ trait ITournament<TState> {
         player_address: ContractAddress,
         qualifying_token_id: Option<u256>,
     ) -> (u64, u32);
-    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
+    fn submit_score(ref self: TState, tournament_id: u64, token_id: u64, position: u8);
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn add_prize(
         ref self: TState,
@@ -163,7 +163,7 @@ pub mod tournament_component {
         fn get_leaderboard(self: @ComponentState<TContractState>, tournament_id: u64) -> Span<u64> {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            self._get_leaderboard(store, tournament_id)
+            store.get_leaderboard(tournament_id)
         }
 
         fn get_state(self: @ComponentState<TContractState>, tournament_id: u64) -> TournamentState {
@@ -304,69 +304,46 @@ pub mod tournament_component {
             (game_token_id, entry_number)
         }
 
-        /// @title Submit scores
-        /// @notice Allows anyone to submit scores for a tournament for a particular tournament id.
-        /// @dev For more efficient gas we assume that the game ids are in order of highest score
+        /// @title Submit score
+        /// @notice Allows a player to submit a score for a tournament
+        /// @dev This function uses a 1-based index for the position parameter. Input 1 for first
+        /// place, 2 for second, etc.
+        /// @dev This function is permissionless, allowing anyone to submit a valid score for a tournament.
+        /// @dev When tournament enters submission, save gas by multi-calling this with scores starting
+        /// from first and going to last place.
         /// @param self A reference to the ContractState object.
         /// @param tournament_id A u64 representing the unique ID of the tournament.
-        /// @param token_ids An array of u64 representing the token ids to submit.
-        /// TODO: Change this to accept a single token id with the expected position in the top
-        /// scores
-        /// TODO: Provide a view function for `get_placement_for_token_id` that returns the
-        /// position of the token id in the top scores.
-        /// TODO: Prevent entry 0 (creator) from submitting a score
-        fn submit_scores(
-            ref self: ComponentState<TContractState>, tournament_id: u64, token_ids: Array<u64>,
+        /// @param token_id A u64 representing the unique ID of the game token.
+        /// @param position A u8 representing the position on the leaderboard.
+        fn submit_score(
+            ref self: ComponentState<TContractState>,
+            tournament_id: u64,
+            token_id: u64,
+            position: u8,
         ) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
-            let mut tournament = store.get_tournament(tournament_id);
 
-            self._assert_tournament_ended(tournament.schedule.game.end, tournament_id);
-            self._assert_scores_count_valid(tournament.game_config.prize_spots, token_ids.len());
-            self._assert_tournament_not_finalized(tournament_id, @tournament.schedule);
+            // get current leaderboard
+            let current_leaderboard = store.get_leaderboard(tournament_id);
 
-            let mut game_dispatcher = IGameDispatcher {
-                contract_address: tournament.game_config.address,
-            };
-
-            // loop through game ids and update scores
-            let mut num_games = token_ids.len();
-            let mut token_index = 0;
-            let mut winner_token_ids = ArrayTrait::<u64>::new();
-            loop {
-                if token_index == num_games {
-                    break;
-                }
-                let token_id = *token_ids.at(token_index);
-
-                // get token metadata from game contract
-                let token_metadata = game_dispatcher.token_metadata(token_id);
-
-                // assert game has ended
-                self._assert_game_ended(token_id, token_metadata.expires_at);
-
-                // get score from game contract
-                let score = game_dispatcher.get_score(token_id);
-
-                winner_token_ids
-                    .append(
-                        self
-                            ._update_tournament_scores(
-                                store, tournament_id, token_id, score, token_index,
-                            ),
-                    );
-
-                // increment token index
-                token_index += 1;
-            };
-
-            store
-                .set_leaderboard(
-                    @Leaderboard { tournament_id, token_ids: winner_token_ids.span() },
+            // validate submission
+            self
+                ._validate_score_submission(
+                    store, tournament_id, token_id, position, current_leaderboard.len(),
                 );
+
+            // update leaderboard
+            let new_leaderboard = self
+                ._update_leaderboard(store, tournament_id, token_id, position, current_leaderboard);
+
+            // save new leaderboard
+            store.set_leaderboard(@new_leaderboard);
+
+            // mark score as submitted
+            self._mark_score_submitted(ref store, tournament_id, token_id);
         }
 
         /// @title Claim prize
@@ -569,14 +546,14 @@ pub mod tournament_component {
         fn _is_top_score(
             self: @ComponentState<TContractState>, store: Store, tournament_id: u64, score: u64,
         ) -> bool {
-            let winner_token_ids = store.get_leaderboard(tournament_id).token_ids;
-            let num_scores = winner_token_ids.len();
+            let leaderboard = store.get_leaderboard(tournament_id);
+            let num_scores = leaderboard.len();
 
             if num_scores == 0 {
                 return true;
             }
 
-            let last_place_id = *winner_token_ids.at(num_scores - 1);
+            let last_place_id = *leaderboard.at(num_scores - 1);
             let last_place_score = self
                 .get_score_for_token_id(store, tournament_id, last_place_id.try_into().unwrap());
 
@@ -1383,48 +1360,6 @@ pub mod tournament_component {
                 );
         }
 
-        fn _update_tournament_scores(
-            ref self: ComponentState<TContractState>,
-            store: Store,
-            tournament_id: u64,
-            game_token_id: u64,
-            score: u64,
-            game_index: u32,
-        ) -> u64 {
-            // get current scores which will be mutated as part of this function
-            let winner_token_ids = store.get_leaderboard(tournament_id).token_ids;
-
-            let num_scores = winner_token_ids.len();
-
-            let mut new_score_id: u64 = 0;
-            let mut new_score: u64 = 0;
-
-            if num_scores == 0 {
-                new_score_id = game_token_id.try_into().unwrap();
-                new_score = score;
-            } else {
-                if (game_index < num_scores) {
-                    let top_score_id = *winner_token_ids.at(game_index);
-                    let top_score = self
-                        .get_score_for_token_id(
-                            store, tournament_id, top_score_id.try_into().unwrap(),
-                        );
-                    if (score > top_score) {
-                        new_score_id = game_token_id.try_into().unwrap();
-                        new_score = score;
-                    } else {
-                        new_score_id = top_score_id;
-                        new_score = top_score;
-                    }
-                } else {
-                    new_score_id = game_token_id.try_into().unwrap();
-                    new_score = score;
-                }
-            }
-
-            new_score_id
-        }
-
         fn _deposit_prize(
             ref self: ComponentState<TContractState>,
             tournament_id: u64,
@@ -1498,8 +1433,8 @@ pub mod tournament_component {
                             panic!("Tournament: Game creator fee not yet implemented")
                         },
                         Role::Position(position) => {
-                            let winners = store.get_leaderboard(tournament_id).token_ids;
-                            self._assert_position_is_valid(position, winners.len());
+                            let leaderboard = store.get_leaderboard(tournament_id);
+                            self._assert_position_is_valid(position, leaderboard.len());
                             *entry_fee.distribution.at(position.into() - 1)
                         },
                     };
@@ -1513,8 +1448,8 @@ pub mod tournament_component {
                             self._get_game_creator_address(tournament.game_config.address)
                         },
                         Role::Position(position) => {
-                            let winners = store.get_leaderboard(tournament_id).token_ids;
-                            let winner_token_id = *winners.at(position.into() - 1);
+                            let leaderboard = store.get_leaderboard(tournament_id);
+                            let winner_token_id = *leaderboard.at(position.into() - 1);
                             self._get_owner(tournament.game_config.address, winner_token_id.into())
                         },
                     };
@@ -1551,10 +1486,10 @@ pub mod tournament_component {
             );
 
             // Get winner address
-            let winner_token_ids = store.get_leaderboard(tournament_id).token_ids;
-            self._assert_position_is_valid(prize.payout_position, winner_token_ids.len());
+            let leaderboard = store.get_leaderboard(tournament_id);
+            self._assert_position_is_valid(prize.payout_position, leaderboard.len());
 
-            let winner_token_id = *winner_token_ids.at(prize.payout_position.into() - 1);
+            let winner_token_id = *leaderboard.at(prize.payout_position.into() - 1);
             let winner_address = self
                 ._get_owner(tournament.game_config.address, winner_token_id.into());
 
@@ -1602,10 +1537,153 @@ pub mod tournament_component {
             }
         }
 
-        fn _get_leaderboard(
-            self: @ComponentState<TContractState>, store: Store, tournament_id: u64,
-        ) -> Span<u64> {
-            store.get_leaderboard(tournament_id).token_ids
+        fn _validate_score_submission(
+            self: @ComponentState<TContractState>,
+            store: Store,
+            tournament_id: u64,
+            token_id: u64,
+            position: u8,
+            leaderboard_len: u32,
+        ) {
+            // Get tournament and validate state
+            let tournament = store.get_tournament(tournament_id);
+            assert!(
+                self._get_state(@tournament.schedule) == TournamentState::Submission,
+                "Tournament: Not in submission period",
+            );
+
+            // Validate position is within prize spots (1-based indexing)
+            assert!(
+                position > 0 && position <= tournament.game_config.prize_spots.into(),
+                "Tournament: Invalid position",
+            );
+
+            // Validate registration
+            let registration = store.get_registration(tournament_id, token_id);
+            assert!(
+                registration.tournament_id == tournament_id,
+                "Tournament: Token not registered for tournament",
+            );
+
+            // Score can only be submitted once
+            assert!(!registration.has_submitted, "Tournament: Score already submitted");
+
+            // Prevent gaps in leaderboard
+            let position_index: u32 = position.into() - 1;
+            assert!(
+                position_index <= leaderboard_len,
+                "Tournament: Must submit for next available position",
+            );
+        }
+
+        fn _update_leaderboard(
+            self: @ComponentState<TContractState>,
+            store: Store,
+            tournament_id: u64,
+            token_id: u64,
+            position: u8,
+            current_leaderboard: Span<u64>,
+        ) -> Leaderboard {
+            // convert position to 0-based index
+            let position_index: u32 = position.into() - 1;
+
+            // if the new score is in the last position, save gas and simply append it to the
+            // leaderboard
+            if position_index == current_leaderboard.len() {
+                self._append_to_leaderboard(tournament_id, token_id, current_leaderboard)
+            } else {
+                // otherwise we need to insert it into the leaderboard
+                self
+                    ._insert_into_leaderboard(
+                        store, tournament_id, token_id, position_index, current_leaderboard,
+                    )
+            }
+        }
+
+        fn _append_to_leaderboard(
+            self: @ComponentState<TContractState>,
+            tournament_id: u64,
+            token_id: u64,
+            current_leaderboard: Span<u64>,
+        ) -> Leaderboard {
+            let mut new_token_ids = ArrayTrait::new();
+            let mut i = 0;
+            loop {
+                if i >= current_leaderboard.len() {
+                    break;
+                }
+                new_token_ids.append(*current_leaderboard.at(i));
+                i += 1;
+            };
+            new_token_ids.append(token_id);
+
+            Leaderboard { tournament_id, token_ids: new_token_ids.span() }
+        }
+
+        fn _insert_into_leaderboard(
+            self: @ComponentState<TContractState>,
+            store: Store,
+            tournament_id: u64,
+            token_id: u64,
+            position_index: u32,
+            current_leaderboard: Span<u64>,
+        ) -> Leaderboard {
+            // Verify score is high enough for position
+            let tournament = store.get_tournament(tournament_id);
+            let game_dispatcher = IGameDispatcher {
+                contract_address: tournament.game_config.address,
+            };
+            let submitted_score = game_dispatcher.get_score(token_id);
+            assert!(
+                submitted_score > game_dispatcher
+                    .get_score(*current_leaderboard.at(position_index)),
+                "Tournament: Score not high enough for position",
+            );
+
+            // Create new leaderboard with inserted score
+            let mut new_leaderboard = ArrayTrait::new();
+            let mut i = 0;
+
+            // Copy scores up to the position
+            loop {
+                if i >= position_index {
+                    break;
+                }
+                new_leaderboard.append(*current_leaderboard.at(i));
+                i += 1;
+            };
+
+            // Insert new score
+            new_leaderboard.append(token_id);
+
+            // Copy remaining scores
+            loop {
+                if i >= current_leaderboard.len() {
+                    break;
+                }
+                new_leaderboard.append(*current_leaderboard.at(i));
+                i += 1;
+            };
+
+            Leaderboard { tournament_id, token_ids: new_leaderboard.span() }
+        }
+
+        fn _mark_score_submitted(
+            ref self: ComponentState<TContractState>,
+            ref store: Store,
+            tournament_id: u64,
+            token_id: u64,
+        ) {
+            let registration = store.get_registration(tournament_id, token_id);
+            store
+                .set_registration(
+                    @Registration {
+                        tournament_id,
+                        game_token_id: token_id,
+                        entry_number: registration.entry_number,
+                        has_submitted: true,
+                    },
+                );
         }
     }
 }

@@ -171,7 +171,7 @@ pub trait ITournamentMock<TState> {
         token_type: TokenType,
         position: u8,
     ) -> u64;
-    fn submit_scores(ref self: TState, tournament_id: u64, token_ids: Array<u64>);
+    fn submit_score(ref self: TState, tournament_id: u64, token_id: u64, position: u8);
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn initializer(
         ref self: TState,
