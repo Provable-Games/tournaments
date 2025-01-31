@@ -1,7 +1,6 @@
 use starknet::ContractAddress;
 use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
-
 use tournaments::components::models::tournament::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
     TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
@@ -29,9 +28,16 @@ pub impl StoreImpl of StoreTrait {
     // Tournament
 
     #[inline(always)]
-    fn get_platform_metrics(self: Store, key: felt252) -> PlatformMetrics {
-        (self.world.read_model(key))
+    fn get_platform_metrics(self: Store) -> PlatformMetrics {
+        (self.world.read_model(VERSION))
     }
+
+    #[inline(always)]
+    fn get_tournament_count(self: Store) -> u64 {
+        let metrics: PlatformMetrics = (self.world.read_model(VERSION));
+        metrics.total_tournaments
+    }
+
 
     #[inline(always)]
     fn get_token_metadata_metrics(self: Store, key: felt252) -> TournamentTokenMetrics {
@@ -180,7 +186,7 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn increment_and_get_tournament_count(ref self: Store) -> u64 {
-        let mut platform_metrics = self.get_platform_metrics(VERSION);
+        let mut platform_metrics = self.get_platform_metrics();
         platform_metrics.total_tournaments += 1;
         self.set_platform_metrics(@platform_metrics);
         platform_metrics.total_tournaments
