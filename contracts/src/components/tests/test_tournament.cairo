@@ -1234,13 +1234,168 @@ fn test_enter_tournament_season() {
 //
 
 #[test]
+fn test_submit_score_gas_check() {
+    let contracts = setup();
+    utils::impersonate(OWNER());
+
+    // Create tournament with leaderboard of 10
+    let mut game_config = test_game_config(contracts.game.contract_address);
+    game_config.prize_spots = 10;
+    let (tournament, _) = contracts
+        .tournament
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter 10 players into the tournament
+    let (player1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player', OWNER(), Option::None);
+
+    let (player2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player2', OWNER(), Option::None);
+
+    let (player3, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player3', OWNER(), Option::None);
+
+    let (player4, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player4', OWNER(), Option::None);
+
+    let (player5, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player5', OWNER(), Option::None);
+
+    let (player6, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player6', OWNER(), Option::None);
+
+    let (player7, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player7', OWNER(), Option::None);
+
+    let (player8, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player8', OWNER(), Option::None);
+
+    let (player9, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player9', OWNER(), Option::None);
+
+    let (player10, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player10', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // Set scores for each player
+    contracts.game.end_game(player1, 100);
+    contracts.game.end_game(player2, 90);
+    contracts.game.end_game(player3, 80);
+    contracts.game.end_game(player4, 70);
+    contracts.game.end_game(player5, 60);
+    contracts.game.end_game(player6, 50);
+    contracts.game.end_game(player7, 40);
+    contracts.game.end_game(player8, 30);
+    contracts.game.end_game(player9, 20);
+    contracts.game.end_game(player10, 10);
+
+    // Submit scores for each player
+    contracts.tournament.submit_score(tournament.id, player10, 1);
+    contracts.tournament.submit_score(tournament.id, player9, 1);
+    contracts.tournament.submit_score(tournament.id, player8, 1);
+    contracts.tournament.submit_score(tournament.id, player7, 1);
+    contracts.tournament.submit_score(tournament.id, player6, 1);
+    contracts.tournament.submit_score(tournament.id, player5, 1);
+    contracts.tournament.submit_score(tournament.id, player4, 1);
+    contracts.tournament.submit_score(tournament.id, player3, 1);
+    contracts.tournament.submit_score(tournament.id, player2, 1);
+    contracts.tournament.submit_score(tournament.id, player1, 1);
+
+    // Roll forward to beyond submission period
+    testing::set_block_timestamp(TEST_END_TIME().into() + MIN_SUBMISSION_PERIOD.into() + 1);
+
+    // verify tournament is finalized
+    let state = contracts.tournament.get_state(tournament.id);
+    assert!(state == TournamentState::Finalized, "Tournament should be finalized");
+
+    // Verify final leaderboard
+    let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
+    assert!(leaderboard.len() == 10, "Invalid leaderboard length");
+    assert!(
+        *leaderboard.at(0) == player1,
+        "Invalid first place. Expected: {}, got: {}",
+        player1,
+        *leaderboard.at(0),
+    );
+    assert!(
+        *leaderboard.at(1) == player2,
+        "Invalid second place. Expected: {}, got: {}",
+        player2,
+        *leaderboard.at(1),
+    );
+    assert!(
+        *leaderboard.at(2) == player3,
+        "Invalid third place. Expected: {}, got: {}",
+        player3,
+        *leaderboard.at(2),
+    );
+    assert!(
+        *leaderboard.at(3) == player4,
+        "Invalid fourth place. Expected: {}, got: {}",
+        player4,
+        *leaderboard.at(3),
+    );
+    assert!(
+        *leaderboard.at(4) == player5,
+        "Invalid fifth place. Expected: {}, got: {}",
+        player5,
+        *leaderboard.at(4),
+    );
+    assert!(
+        *leaderboard.at(5) == player6,
+        "Invalid sixth place. Expected: {}, got: {}",
+        player6,
+        *leaderboard.at(5),
+    );
+    assert!(
+        *leaderboard.at(6) == player7,
+        "Invalid seventh place. Expected: {}, got: {}",
+        player7,
+        *leaderboard.at(6),
+    );
+    assert!(
+        *leaderboard.at(7) == player8,
+        "Invalid eighth place. Expected: {}, got: {}",
+        player8,
+        *leaderboard.at(7),
+    );
+    assert!(
+        *leaderboard.at(8) == player9,
+        "Invalid ninth place. Expected: {}, got: {}",
+        player9,
+        *leaderboard.at(8),
+    );
+    assert!(
+        *leaderboard.at(9) == player10,
+        "Invalid tenth place. Expected: {}, got: {}",
+        player10,
+        *leaderboard.at(9),
+    );
+}
+
+#[test]
 fn test_submit_score_basic() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
-    // Create tournament with 3 prize spots
+    // Create tournament with 10 prize spots
     let mut game_config = test_game_config(contracts.game.contract_address);
-    game_config.prize_spots = 3;
+    game_config.prize_spots = 10;
     let (tournament, _) = contracts
         .tournament
         .create_tournament(
@@ -1320,7 +1475,11 @@ fn test_submit_score_multiple_positions() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Score not high enough for position", 'ENTRYPOINT_FAILED'))]
+#[should_panic(
+    expected: (
+        "Tournament: Score 50 is less than current score of 100 at position 1", 'ENTRYPOINT_FAILED',
+    ),
+)]
 fn test_submit_score_lower_score() {
     let contracts = setup();
     utils::impersonate(OWNER());
@@ -1489,15 +1648,21 @@ fn test_submit_score_with_gap() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Not in submission period", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Tournament 2 does not exist", 'ENTRYPOINT_FAILED'))]
 fn test_submit_score_invalid_tournament() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
-    testing::set_block_timestamp(TEST_END_TIME().into());
+    // create basic tournament
+    let (tournament, _) = create_basic_tournament(
+        contracts.tournament, contracts.game.contract_address,
+    );
 
     // Try to submit score for non-existent tournament
-    contracts.tournament.submit_score(999, 1, 1);
+    let tournament_id = tournament.id + 1;
+    let token_id = 1;
+    let position = 1;
+    contracts.tournament.submit_score(tournament_id, token_id, position);
 }
 
 //
@@ -2207,19 +2372,6 @@ fn test_claim_prizes_season() {
     assert(contracts.erc721.owner_of(1) == OWNER(), 'Invalid owner');
 }
 
-// #[derive(Copy, Drop, Serde, Introspect)]
-// pub struct Schedule {
-//     pub registration: Option<Period>,
-//     pub game: Period,
-//     pub submission_period: u64,
-// }
-
-// #[derive(Copy, Drop, Serde, Introspect)]
-// pub struct Period {
-//     pub start: u64,
-//     pub end: u64,
-// }
-
 #[test]
 fn test_state_transitions() {
     let contracts = setup();
@@ -2316,4 +2468,65 @@ fn test_state_transitions() {
         contracts.tournament.get_state(tournament.id) == TournamentState::Finalized,
         "Tournament should be in Finalized state after submission period",
     );
+}
+
+#[test]
+#[should_panic(
+    expected: ("Tournament: Score 1000 qualifies for higher position than 3", 'ENTRYPOINT_FAILED'),
+)]
+fn test_malicious_score_submission() {
+    let contracts = setup();
+    utils::impersonate(OWNER());
+
+    // Create tournament with 5 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+
+    // Tournament has 3 prize spots
+    game_config.prize_spots = 3;
+    let (tournament, _) = contracts
+        .tournament
+        .create_tournament(
+            test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Five people enter the tournament
+    let (first_place, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
+
+    let (second_place, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
+
+    let (third_place, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player3', OWNER(), Option::None);
+
+    let (fourth_place, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player4', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // End games and set scores
+    contracts.game.end_game(first_place, 1000);
+    contracts.game.end_game(second_place, 800);
+    contracts.game.end_game(third_place, 600);
+    contracts.game.end_game(fourth_place, 400);
+
+    // second place submits score first, as first which is valid
+    contracts.tournament.submit_score(tournament.id, second_place, 1);
+
+    // third place submits score second, as second which is valid
+    contracts.tournament.submit_score(tournament.id, third_place, 2);
+
+    // fourth place submits score third, as third which is valid
+    contracts.tournament.submit_score(tournament.id, fourth_place, 3);
+
+    // Someone then attempts to submit first place's score as third
+    // This should fail because the contract will see that the score is more than the
+    // position above it.
+    contracts.tournament.submit_score(tournament.id, first_place, 3);
 }

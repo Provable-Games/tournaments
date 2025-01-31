@@ -101,7 +101,7 @@ pub struct Registration {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde)]
+#[derive(Drop, Serde)]
 pub struct Leaderboard {
     #[key]
     pub tournament_id: u64,
@@ -150,7 +150,6 @@ pub struct Prize {
     pub token_address: ContractAddress,
     pub token_type: TokenType,
 }
-
 
 //TODO: Remove name and symbol from the model
 #[dojo::model]
