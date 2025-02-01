@@ -65,7 +65,7 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_leaderboard(self: Store, tournament_id: u64) -> Span<u64> {
+    fn get_leaderboard(self: Store, tournament_id: u64) -> Array<u64> {
         let leaderboard: Leaderboard = (self.world.read_model(tournament_id));
         leaderboard.token_ids
     }

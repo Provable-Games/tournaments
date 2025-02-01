@@ -105,7 +105,7 @@ pub struct Registration {
 pub struct Leaderboard {
     #[key]
     pub tournament_id: u64,
-    pub token_ids: Span<u64>,
+    pub token_ids: Array<u64>,
 }
 
 #[dojo::model]

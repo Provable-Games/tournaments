@@ -13,7 +13,7 @@ pub trait ITournament<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
-    fn get_leaderboard(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
     fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;

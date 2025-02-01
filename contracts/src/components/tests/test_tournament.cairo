@@ -1305,16 +1305,16 @@ fn test_submit_score_gas_check() {
     contracts.game.end_game(player10, 10);
 
     // Submit scores for each player
-    contracts.tournament.submit_score(tournament.id, player10, 1);
-    contracts.tournament.submit_score(tournament.id, player9, 1);
-    contracts.tournament.submit_score(tournament.id, player8, 1);
-    contracts.tournament.submit_score(tournament.id, player7, 1);
-    contracts.tournament.submit_score(tournament.id, player6, 1);
-    contracts.tournament.submit_score(tournament.id, player5, 1);
-    contracts.tournament.submit_score(tournament.id, player4, 1);
-    contracts.tournament.submit_score(tournament.id, player3, 1);
-    contracts.tournament.submit_score(tournament.id, player2, 1);
     contracts.tournament.submit_score(tournament.id, player1, 1);
+    contracts.tournament.submit_score(tournament.id, player2, 2);
+    contracts.tournament.submit_score(tournament.id, player3, 3);
+    contracts.tournament.submit_score(tournament.id, player4, 4);
+    contracts.tournament.submit_score(tournament.id, player5, 5);
+    contracts.tournament.submit_score(tournament.id, player6, 6);
+    contracts.tournament.submit_score(tournament.id, player7, 7);
+    contracts.tournament.submit_score(tournament.id, player8, 8);
+    contracts.tournament.submit_score(tournament.id, player9, 9);
+    contracts.tournament.submit_score(tournament.id, player10, 10);
 
     // Roll forward to beyond submission period
     testing::set_block_timestamp(TEST_END_TIME().into() + MIN_SUBMISSION_PERIOD.into() + 1);

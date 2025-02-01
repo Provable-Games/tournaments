@@ -42,7 +42,7 @@ trait ITournament<TState> {
     fn tournament_entries(self: @TState, tournament_id: u64) -> u32;
     fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
     fn register_token(ref self: TState, address: ContractAddress, token_type: TokenType);
-    fn get_leaderboard(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
     fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
 }
 
@@ -162,7 +162,9 @@ pub mod tournament_component {
             store.set_token(@token_model);
         }
 
-        fn get_leaderboard(self: @ComponentState<TContractState>, tournament_id: u64) -> Span<u64> {
+        fn get_leaderboard(
+            self: @ComponentState<TContractState>, tournament_id: u64,
+        ) -> Array<u64> {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_leaderboard(tournament_id)
@@ -326,7 +328,7 @@ pub mod tournament_component {
             let registration = store.get_registration(tournament_id, token_id);
 
             // get current leaderboard
-            let current_leaderboard = store.get_leaderboard(tournament_id);
+            let mut leaderboard = store.get_leaderboard(tournament_id);
 
             // get score for token id
             let submitted_score = self
@@ -335,15 +337,14 @@ pub mod tournament_component {
             // validate submission
             self
                 ._validate_score_submission(
-                    @tournament, @registration, current_leaderboard, submitted_score, position,
+                    @tournament, @registration, leaderboard.span(), submitted_score, position,
                 );
 
             // update leaderboard
-            let new_leaderboard = self
-                ._update_leaderboard(@tournament, token_id, position, current_leaderboard);
+            self._update_leaderboard(@tournament, token_id, position, ref leaderboard);
 
             // save new leaderboard
-            store.set_leaderboard(@Leaderboard { tournament_id, token_ids: new_leaderboard });
+            store.set_leaderboard(@Leaderboard { tournament_id, token_ids: leaderboard });
 
             // mark score as submitted
             self._mark_score_submitted(ref store, tournament_id, token_id);
@@ -1210,7 +1211,7 @@ pub mod tournament_component {
                     && registration.has_submitted {
                     if requires_top_score {
                         let score = self.get_score_for_token_id(game_address, token_id);
-                        is_qualified = self._is_top_score(game_address, leaderboard, score);
+                        is_qualified = self._is_top_score(game_address, leaderboard.span(), score);
                     } else {
                         is_qualified = true;
                     }
@@ -1667,27 +1668,27 @@ pub mod tournament_component {
             tournament: @TournamentModel,
             token_id: u64,
             position: u8,
-            current_leaderboard: Span<u64>,
-        ) -> Span<u64> {
+            ref leaderboard: Array<u64>,
+        ) {
             // convert position to 0-based index
             let position_index: u32 = position.into() - 1;
 
             // if the new score is in the last position, save gas and simply append it to the
             // leaderboard
-            let next_position = current_leaderboard.len();
+            let next_position = leaderboard.len();
 
             let prize_spots = *tournament.game_config.prize_spots.into();
 
             // if the score being submitted is for the next position and there are still prize spots
             // available, save gas and simply append it to the leaderboard
-            if position_index == next_position && current_leaderboard.len() < prize_spots.into() {
-                self._append_to_leaderboard(token_id, current_leaderboard)
+            if position_index == next_position && leaderboard.len() < prize_spots.into() {
+                leaderboard.append(token_id);
             } else {
                 // otherwise we need to insert it into the leaderboard
                 self
                     ._insert_into_leaderboard(
-                        token_id, position_index, current_leaderboard, prize_spots,
-                    )
+                        token_id, position_index, ref leaderboard, prize_spots,
+                    );
             }
         }
 
@@ -1703,9 +1704,9 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>,
             token_id: u64,
             position_index: u32,
-            current_leaderboard: Span<u64>,
+            ref current_leaderboard: Array<u64>,
             prize_spots: u8,
-        ) -> Span<u64> {
+        ) {
             // Create new leaderboard with inserted score
             let mut new_leaderboard = ArrayTrait::new();
             let mut i = 0;
@@ -1731,7 +1732,7 @@ pub mod tournament_component {
                 i += 1;
             };
 
-            new_leaderboard.span()
+            current_leaderboard = new_leaderboard;
         }
 
         fn _mark_score_submitted(
@@ -1809,7 +1810,10 @@ pub mod tournament_component {
             self._validate_tournament_eligibility(tournament_type, qualification.tournament_id);
 
             // assert position requirements
-            self._validate_position_requirements(leaderboard, tournament_type, qualification);
+            self
+                ._validate_position_requirements(
+                    leaderboard.span(), tournament_type, qualification,
+                );
 
             // assert token ownership
             self

@@ -33,7 +33,7 @@ pub trait ITournamentMock<TState> {
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn get_registration(self: @TState, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
-    fn get_leaderboard(self: @TState, tournament_id: u64) -> Span<u64>;
+    fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
     fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
