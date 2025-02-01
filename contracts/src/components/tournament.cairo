@@ -522,6 +522,7 @@ pub mod tournament_component {
         // GETTERS
         //
 
+        #[inline(always)]
         fn get_score_for_token_id(
             self: @ComponentState<TContractState>, contract_address: ContractAddress, token_id: u64,
         ) -> u64 {
@@ -529,6 +530,7 @@ pub mod tournament_component {
             game_dispatcher.get_score(token_id)
         }
 
+        #[inline(always)]
         fn _get_owner(
             self: @ComponentState<TContractState>,
             contract_address: ContractAddress,
@@ -537,6 +539,7 @@ pub mod tournament_component {
             IERC721Dispatcher { contract_address }.owner_of(token_id)
         }
 
+        #[inline(always)]
         fn _is_token_registered(self: @ComponentState<TContractState>, token: @Token) -> bool {
             *token.is_registered
         }
@@ -568,6 +571,7 @@ pub mod tournament_component {
         // ASSERTIONS
         //
 
+        #[inline(always)]
         fn _assert_token_registered(self: @ComponentState<TContractState>, token: Token) {
             let token_address: felt252 = token.address.into();
             assert!(
@@ -577,6 +581,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_valid_entry_requirement(
             self: @ComponentState<TContractState>,
             store: Store,
@@ -585,6 +590,7 @@ pub mod tournament_component {
             self._assert_gated_type_validates(store, entry_requirement);
         }
 
+        #[inline(always)]
         fn _assert_valid_entry_fee(
             self: @ComponentState<TContractState>,
             store: Store,
@@ -595,6 +601,7 @@ pub mod tournament_component {
             self._assert_valid_payout_distribution(entry_fee, prize_spots);
         }
 
+        #[inline(always)]
         fn _assert_valid_game_config(
             self: @ComponentState<TContractState>, game_config: GameConfig,
         ) {
@@ -609,6 +616,7 @@ pub mod tournament_component {
             self._assert_game_supports_erc721_interface(src5_dispatcher, contract_address);
         }
 
+        #[inline(always)]
         fn _assert_valid_tournament_schedule(
             self: @ComponentState<TContractState>, schedule: Schedule,
         ) {
@@ -619,6 +627,7 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _assert_valid_submission_duration(
             self: @ComponentState<TContractState>, submission_duration: u64,
         ) {
@@ -626,12 +635,14 @@ pub mod tournament_component {
             self._assert_submission_period_less_than_maximum(submission_duration);
         }
 
+        #[inline(always)]
         fn _assert_valid_game_schedule(self: @ComponentState<TContractState>, game_period: Period) {
             self._assert_start_time_in_future(game_period.start);
             self._assert_tournament_length_not_too_short(game_period.start, game_period.end);
             self._assert_tournament_length_not_too_long(game_period.start, game_period.end);
         }
 
+        #[inline(always)]
         fn _assert_valid_registration_schedule(
             self: @ComponentState<TContractState>, registration_period: Period, game_period: Period,
         ) {
@@ -648,6 +659,7 @@ pub mod tournament_component {
                 );
         }
 
+        #[inline(always)]
         fn _assert_start_time_in_future(self: @ComponentState<TContractState>, start_time: u64) {
             assert!(
                 start_time >= get_block_timestamp(),
@@ -656,6 +668,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_registration_start_time(self: @ComponentState<TContractState>, start_time: u64) {
             assert!(
                 start_time >= get_block_timestamp(),
@@ -664,6 +677,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_min_registration_period(self: @ComponentState<TContractState>, period: Period) {
             let registration_duration = period.end - period.start;
             assert!(
@@ -674,6 +688,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_less_than_max_registration_period(
             self: @ComponentState<TContractState>, period: Period,
         ) {
@@ -686,6 +701,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_registration_starts_before_tournament(
             self: @ComponentState<TContractState>, registration_start: u64, tournament_start: u64,
         ) {
@@ -697,6 +713,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_registration_ends_before_tournament(
             self: @ComponentState<TContractState>, registration_end: u64, tournament_end: u64,
         ) {
@@ -708,6 +725,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_tournament_length_not_too_short(
             self: @ComponentState<TContractState>, start: u64, end: u64,
         ) {
@@ -720,6 +738,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_tournament_length_not_too_long(
             self: @ComponentState<TContractState>, start: u64, end: u64,
         ) {
@@ -732,6 +751,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_submission_period_larger_than_minimum(
             self: @ComponentState<TContractState>, submission_period: u64,
         ) {
@@ -743,6 +763,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_submission_period_less_than_maximum(
             self: @ComponentState<TContractState>, submission_period: u64,
         ) {
@@ -754,6 +775,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_winners_count_greater_than_zero(
             self: @ComponentState<TContractState>, prize_spots: u8,
         ) {
@@ -796,6 +818,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_supports_game_interface(
             self: @ComponentState<TContractState>,
             src5_dispatcher: ISRC5Dispatcher,
@@ -809,6 +832,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_supports_game_metadata_interface(
             self: @ComponentState<TContractState>,
             src5_dispatcher: ISRC5Dispatcher,
@@ -822,6 +846,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_game_supports_erc721_interface(
             self: @ComponentState<TContractState>,
             src5_dispatcher: ISRC5Dispatcher,
@@ -835,6 +860,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_settings_exists(
             self: @ComponentState<TContractState>, game: ContractAddress, settings_id: u32,
         ) {
@@ -849,6 +875,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_entry_fee_token_registered(
             self: @ComponentState<TContractState>, token: @Token,
         ) {
@@ -857,6 +884,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_entry_fee_token_distribution_length_not_too_long(
             self: @ComponentState<TContractState>, distribution_length: u32, prize_spots: u32,
         ) {
@@ -868,6 +896,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_entry_fee_token_distribution_sum_is_100(
             self: @ComponentState<TContractState>,
             player_percentage: u8,
@@ -883,10 +912,12 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_prize_token_registered(self: @ComponentState<TContractState>, token: @Token) {
             assert!(self._is_token_registered(token), "Tournament: Prize token is not registered");
         }
 
+        #[inline(always)]
         fn _assert_registration_is_open(
             self: @ComponentState<TContractState>, tournament_id: u64, schedule: @Schedule,
         ) {
@@ -904,6 +935,7 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _assert_game_ended(
             self: @ComponentState<TContractState>, token_id: u64, expires_at: u64,
         ) {
@@ -915,6 +947,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_tournament_ended(
             self: @ComponentState<TContractState>, end_time: u64, tournament_id: u64,
         ) {
@@ -925,6 +958,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_tournament_not_ended(
             self: @ComponentState<TContractState>, end_time: u64, tournament_id: u64,
         ) {
@@ -935,6 +969,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_scores_count_valid(
             self: @ComponentState<TContractState>, prize_spots: u8, scores_count: u32,
         ) {
@@ -946,6 +981,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_position_on_leaderboard(
             self: @ComponentState<TContractState>, prize_spots: u8, position: u8,
         ) {
@@ -957,12 +993,14 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_prize_exists(
             self: @ComponentState<TContractState>, token: ContractAddress, id: u64,
         ) {
             assert!(!token.is_zero(), "Tournament: Prize key {} does not exist", id);
         }
 
+        #[inline(always)]
         fn _assert_prize_not_claimed(
             self: @ComponentState<TContractState>,
             store: Store,
@@ -973,6 +1011,7 @@ pub mod tournament_component {
             assert!(!prize_claim.claimed, "Tournament: Prize has already been claimed");
         }
 
+        #[inline(always)]
         fn _assert_payout_is_top_score(
             self: @ComponentState<TContractState>, payout_position: u8, winner_token_ids: Span<u64>,
         ) {
@@ -983,6 +1022,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_payout_is_not_top_score(
             self: @ComponentState<TContractState>, payout_position: u8, winner_token_ids: Span<u64>,
         ) {
@@ -993,7 +1033,7 @@ pub mod tournament_component {
             );
         }
 
-
+        #[inline(always)]
         fn _validate_token_ownership(
             self: @ComponentState<TContractState>,
             token: ContractAddress,
@@ -1004,6 +1044,7 @@ pub mod tournament_component {
             assert!(owner == account, "Tournament: Caller does not own token id {}", token_id);
         }
 
+        #[inline(always)]
         fn _assert_gated_token_owner(
             self: @ComponentState<TContractState>, token: ContractAddress, token_id: u256,
         ) {
@@ -1068,6 +1109,7 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _validate_tournament_finalized(
             self: @ComponentState<TContractState>, tournament_id: u64, schedule: @Schedule,
         ) {
@@ -1079,6 +1121,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_tournament_not_finalized(
             self: @ComponentState<TContractState>, tournament_id: u64, schedule: @Schedule,
         ) {
@@ -1135,6 +1178,7 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _validate_tournament_eligibility(
             self: @ComponentState<TContractState>,
             tournament_type: TournamentType,
@@ -1227,6 +1271,7 @@ pub mod tournament_component {
             is_qualified
         }
 
+        #[inline(always)]
         fn _assert_has_qualified_in_tournaments(
             self: @ComponentState<TContractState>,
             store: Store,
@@ -1240,6 +1285,7 @@ pub mod tournament_component {
             );
         }
 
+        #[inline(always)]
         fn _assert_qualifying_address(
             self: @ComponentState<TContractState>, qualifying_addresses: Span<ContractAddress>,
         ) {
@@ -1259,6 +1305,7 @@ pub mod tournament_component {
             assert!(found, "Tournament: Caller is not in allowlist");
         }
 
+        #[inline(always)]
         fn _assert_position_is_valid(
             self: @ComponentState<TContractState>, position: u8, winner_count: u32,
         ) {
@@ -1412,6 +1459,7 @@ pub mod tournament_component {
             game_token_id
         }
 
+        #[inline(always)]
         fn _process_entry_fee(ref self: ComponentState<TContractState>, entry_fee: EntryFee) {
             let erc20_dispatcher = IERC20Dispatcher { contract_address: entry_fee.token_address };
             erc20_dispatcher
@@ -1449,12 +1497,14 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _calculate_payout(
             ref self: ComponentState<TContractState>, bp: u128, total_value: u128,
         ) -> u128 {
             (bp * total_value) / 100
         }
 
+        #[inline(always)]
         fn _get_game_creator_address(
             self: @ComponentState<TContractState>, game_address: ContractAddress,
         ) -> ContractAddress {
@@ -1864,6 +1914,7 @@ pub mod tournament_component {
             }
         }
 
+        #[inline(always)]
         fn _validate_allowlist_qualification(
             self: @ComponentState<TContractState>,
             allowlist_addresses: Span<ContractAddress>,
