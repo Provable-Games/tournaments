@@ -57,9 +57,10 @@ checksum = "sha256:725b212839f3eddc32791408609099c5e808c167ca0cf331d8c1d778b07a4
 
 [[package]]
 name = "tournaments"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "dojo",
  "dojo_cairo_test",
+ "openzeppelin_introspection",
  "openzeppelin_token",
 ]
