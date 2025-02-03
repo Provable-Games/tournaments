@@ -446,9 +446,6 @@ pub mod tournament_component {
         /// @param test_mode A bool representing whether to use test mode.
         fn initialize(
             ref self: ComponentState<TContractState>,
-            name: ByteArray,
-            symbol: ByteArray,
-            base_uri: ByteArray,
             safe_mode: bool,
             test_mode: bool,
         ) {
@@ -458,9 +455,6 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             // Store the config
             store.set_tournament_config(@TournamentConfig { key: VERSION, safe_mode, test_mode });
-
-            let mut erc721 = get_dep_component_mut!(ref self, ERC721);
-            erc721.initializer(name, symbol, base_uri);
         }
 
         //

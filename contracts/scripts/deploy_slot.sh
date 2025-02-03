@@ -29,32 +29,25 @@ get_contract_address () {
   echo $RESULT
 }
 
-export LS_TOURNAMENTS_V0_ADDRESS=$(get_contract_address "ls_tournaments_v0-tournament_mock")
-export ETH_ADDRESS=$(get_contract_address "ls_tournaments_v0-eth_mock")
-export LORDS_ADDRESS=$(get_contract_address "ls_tournaments_v0-lords_mock")
-export LOOT_SURVIVOR_ADDRESS=$(get_contract_address "ls_tournaments_v0-loot_survivor_mock")
-export ORACLE_ADDRESS=$(get_contract_address "ls_tournaments_v0-pragma_mock")
-export TEST_ERC20=$(get_contract_address "ls_tournaments_v0-erc20_mock")
-export TEST_ERC721=$(get_contract_address "ls_tournaments_v0-erc721_mock")
+export TOURNAMENTS_ADDRESS=$(get_contract_address "tournaments-tournament_mock")
+export GAME_ADDRESS=$(get_contract_address "tournaments-game_mock")
+export TEST_ERC20=$(get_contract_address "tournaments-erc20_mock")
+export TEST_ERC721=$(get_contract_address "tournaments-erc721_mock")
 
 #-----------------
 # initialize tournament
 #
 echo ">>> Initialize tournament"
-echo "ETH_ADDRESS: $ETH_ADDRESS"
-echo "LORDS_ADDRESS: $LORDS_ADDRESS"
-echo "LOOT_SURVIVOR_ADDRESS: $LOOT_SURVIVOR_ADDRESS"
-echo "ORACLE_ADDRESS: $ORACLE_ADDRESS"
+echo "GAME_ADDRESS: $GAME_ADDRESS"
+echo "TOURNAMENTS_ADDRESS: $TOURNAMENTS_ADDRESS"
 echo "TEST_ERC20: $TEST_ERC20"
 echo "TEST_ERC721: $TEST_ERC721"
 
 echo "Waiting 10 seconds before execution..."
 sleep 10
 
-sozo -P slot execute tournament_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$LOOT_SURVIVOR_ADDRESS,$ORACLE_ADDRESS,$TEST_ERC721,$TEST_ERC721,0,1,$TEST_ERC20,$TEST_ERC721
-sozo -P slot execute loot_survivor_mock initializer --calldata $ETH_ADDRESS,$LORDS_ADDRESS,$ORACLE_ADDRESS
-sozo -P slot execute loot_survivor_mock set_free_game_available --calldata 0,1
-sozo -P slot execute loot_survivor_mock set_free_game_available --calldata 1,1
+sozo -P slot execute tournament_mock initializer --calldata 0,1,$TEST_ERC20,$TEST_ERC721
+sozo -P slot execute game_mock initializer
 
 #------------------
 echo "--- DONE! 👍"

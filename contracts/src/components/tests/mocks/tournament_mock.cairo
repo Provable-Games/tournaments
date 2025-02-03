@@ -65,9 +65,6 @@ pub trait ITournamentMock<TState> {
 
     fn initializer(
         ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         safe_mode: bool,
         test_mode: bool,
         test_erc20: ContractAddress,
@@ -79,9 +76,6 @@ pub trait ITournamentMock<TState> {
 trait ITournamentMockInit<TState> {
     fn initializer(
         ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         safe_mode: bool,
         test_mode: bool,
         test_erc20: ContractAddress,
@@ -132,15 +126,12 @@ pub mod tournament_mock {
     impl TournamentInitializerImpl of super::ITournamentMockInit<ContractState> {
         fn initializer(
             ref self: ContractState,
-            name: ByteArray,
-            symbol: ByteArray,
-            base_uri: ByteArray,
             safe_mode: bool,
             test_mode: bool,
             test_erc20: ContractAddress,
             test_erc721: ContractAddress,
         ) {
-            self.tournament.initialize(name, symbol, base_uri, safe_mode, test_mode);
+            self.tournament.initialize(safe_mode, test_mode);
             self.tournament.initialize_erc20(test_erc20, "Test ERC20", "TERC20");
             self.tournament.initialize_erc721(test_erc721, "Test ERC721", "TERC721");
         }

@@ -176,9 +176,6 @@ pub trait ITournamentMock<TState> {
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn initializer(
         ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         safe_mode: bool,
         test_mode: bool,
         test_erc20: ContractAddress,

@@ -166,9 +166,6 @@ pub fn setup() -> TestContracts {
     // initialize contracts
     tournament
         .initializer(
-            "Tournament",
-            "TOURNAMENT",
-            "https://tournament.com",
             false,
             false,
             erc20.contract_address,

@@ -98,13 +98,10 @@ pub mod Tournament {
 
     fn dojo_init(
         ref self: ContractState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
         safe_mode: bool,
         test_mode: bool,
     ) {
-        self.tournament.initialize(name, symbol, base_uri, safe_mode, test_mode);
+        self.tournament.initialize(safe_mode, test_mode);
         self
             .tournament
             .initialize_erc20(

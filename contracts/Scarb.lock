@@ -129,7 +129,7 @@ source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.18.0#2f3730
 
 [[package]]
 name = "tournaments"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "dojo",
  "dojo_cairo_test",
