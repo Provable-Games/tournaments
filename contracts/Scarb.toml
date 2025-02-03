@@ -4,6 +4,9 @@ name = "tournaments"
 version = "0.0.0"
 edition = "2024_07"
 
+[lib]
+name = "tournaments"
+
 [[target.starknet-contract]]
 sierra = true
 # It's important to keep this, since it's used by Sozo to check the world version.

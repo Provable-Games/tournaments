@@ -1,0 +1,15 @@
+[package]
+name = "tournaments"
+version = "0.0.1"
+edition = "2024_07"
+
+[workspace]
+members = [
+    "contracts",
+]
+
+[workspace.tool.fmt]
+sort-module-level-items = true
+
+[tool]
+fmt.workspace = true
