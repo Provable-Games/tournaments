@@ -1,4 +1,4 @@
-mod components {
+pub mod components {
     pub mod constants;
     mod interfaces;
     mod game;
