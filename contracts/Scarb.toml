@@ -6,6 +6,7 @@ edition = "2024_07"
 
 [lib]
 name = "tournaments"
+path = "src/lib.cairo"
 
 [[target.starknet-contract]]
 sierra = true
