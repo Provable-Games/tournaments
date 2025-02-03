@@ -1,12 +1,10 @@
 [package]
 cairo-version = "=2.8.4"
 name = "tournaments"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2024_07"
 
 [lib]
-name = "tournaments"
-path = "src/lib.cairo"
 
 [[target.starknet-contract]]
 sierra = true
