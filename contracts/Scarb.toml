@@ -12,7 +12,8 @@ sierra = true
 build-external-contracts = ["dojo::world::world_contract::world"]
 
 [dependencies]
-openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0"}
+openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0"}
+openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0"}
 dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.9" }
 starknet = "2.8.4"
 
