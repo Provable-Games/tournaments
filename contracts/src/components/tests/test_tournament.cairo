@@ -164,16 +164,7 @@ pub fn setup() -> TestContracts {
     let erc721 = world.erc721_mock_dispatcher();
 
     // initialize contracts
-    tournament
-        .initializer(
-            "Tournament",
-            "TOURNAMENT",
-            "https://tournament.com",
-            false,
-            false,
-            erc20.contract_address,
-            erc721.contract_address,
-        );
+    tournament.initializer(false, false, erc20.contract_address, erc721.contract_address);
     game.initializer();
 
     // mint tokens

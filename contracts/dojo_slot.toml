@@ -1,10 +1,10 @@
 [world]
-name = "Dojo starter"
-description = "The official Dojo Starter guide, the quickest and most streamlined way to get your Dojo Autonomous World up and running. This guide will assist you with the initial setup, from cloning the repository to deploying your world."
+name = "Tournaments"
+description = "Test Tournaments deployment on slot"
 cover_uri = "file://assets/cover.png"
 icon_uri = "file://assets/icon.png"
 website = "https://github.com/dojoengine/dojo-starter"
-seed = "ls_tournaments_v0"
+seed = "tournaments"
 
 [world.socials]
 x = "https://x.com/ohayo_dojo"
@@ -13,36 +13,35 @@ github = "https://github.com/dojoengine/dojo-starter"
 telegram = "https://t.me/dojoengine"
 
 [namespace]
-default = "ls_tournaments_v0"
+default = "tournaments"
 
 [env]
-chain_id = "WP_LS_TOURNAMENTS_KATANA"
-rpc_url = "https://api.cartridge.gg/x/ls-tournaments-katana/katana"
-account_address = "0x6677fe62ee39c7b07401f754138502bab7fac99d2d3c5d37df7d1c6fab10819"
-private_key = "0x3e3979c1ed728490308054fe357a9f49cf67f80f9721f44cc57235129e090f4"
+chain_id = "WP_TOURNAMENTS"
+rpc_url = "https://api.cartridge.gg/x/tournaments/katana"
+account_address = "0x5b6b8189bb580f0df1e6d6bec509ff0d6c9be7365d10627e0cf222ec1b47a71"
+private_key = "0x33003003001800009900180300d206308b0070db00121318d17b5e6262150b"
 # world_address = "0x02b127646258e21186e6c7e6234f42583d0d19bf88a57776a404c2cefeb421f2"  # Uncomment and update this line with your world address.
 
 [writers]
 # Tournament
-"ls_tournaments_v0-Tournament" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-TournamentGame" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-TournamentEntryAddresses" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-EntryCountAddress" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-TournamentStartsAddress" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-EntryCount" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-Leaderboard" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-Metrics" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-Prize" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-Token" = ["ls_tournaments_v0-tournament_mock"]
-"ls_tournaments_v0-TournamentConfig" = ["ls_tournaments_v0-tournament_mock"]
-# Loot Survivor
-"ls_tournaments_v0-AdventurerModel" = ["ls_tournaments_v0-loot_survivor_mock"]
-"ls_tournaments_v0-AdventurerMetaModel" = ["ls_tournaments_v0-loot_survivor_mock"]
-"ls_tournaments_v0-BagModel" = ["ls_tournaments_v0-loot_survivor_mock"]
-"ls_tournaments_v0-GameCountModel" = ["ls_tournaments_v0-loot_survivor_mock"]
-"ls_tournaments_v0-FreeGameAvailableModel" = ["ls_tournaments_v0-loot_survivor_mock"]
-"ls_tournaments_v0-Contracts" = ["ls_tournaments_v0-loot_survivor_mock"]
+"tournaments-Tournament" = ["tournaments-tournament_mock"]
+"tournaments-Registration" = ["tournaments-tournament_mock"]
+"tournaments-Leaderboard" = ["tournaments-tournament_mock"]
+"tournaments-PlatformMetrics" = ["tournaments-tournament_mock"]
+"tournaments-TournamentTokenMetrics" = ["tournaments-tournament_mock"]
+"tournaments-PrizeMetrics" = ["tournaments-tournament_mock"]
+"tournaments-EntryCount" = ["tournaments-tournament_mock"]
+"tournaments-Prize" = ["tournaments-tournament_mock"]
+"tournaments-Token" = ["tournaments-tournament_mock"]
+"tournaments-TournamentConfig" = ["tournaments-tournament_mock"]
+"tournaments-PrizeClaim" = ["tournaments-tournament_mock"]
+# Game
+"tournaments-GameMetadata" = ["tournaments-game_mock"]
+"tournaments-GameCount" = ["tournaments-game_mock"]
+"tournaments-SettingsDetails" = ["tournaments-game_mock"]
+"tournaments-TokenMetadata" = ["tournaments-game_mock"]
+"tournaments-Score" = ["tournaments-game_mock"]
 
 [migration]
 order_inits = []
-skip_contracts = ["ls_tournaments_v0-LSTournament"]
+skip_contracts = ["tournaments-Tournament"]
