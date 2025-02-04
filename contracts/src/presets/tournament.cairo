@@ -96,11 +96,7 @@ pub mod Tournament {
         SRC5Event: SRC5Component::Event,
     }
 
-    fn dojo_init(
-        ref self: ContractState,
-        safe_mode: bool,
-        test_mode: bool,
-    ) {
+    fn dojo_init(ref self: ContractState, safe_mode: bool, test_mode: bool) {
         self.tournament.initialize(safe_mode, test_mode);
         self
             .tournament

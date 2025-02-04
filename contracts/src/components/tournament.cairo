@@ -444,11 +444,7 @@ pub mod tournament_component {
         /// @param base_uri A byte array representing the base uri of the tournament.
         /// @param safe_mode A bool representing whether to use safe mode.
         /// @param test_mode A bool representing whether to use test mode.
-        fn initialize(
-            ref self: ComponentState<TContractState>,
-            safe_mode: bool,
-            test_mode: bool,
-        ) {
+        fn initialize(ref self: ComponentState<TContractState>, safe_mode: bool, test_mode: bool) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
             );
