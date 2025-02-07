@@ -1,10 +1,10 @@
 use starknet::ContractAddress;
-use tournaments::components::models::game::{TokenMetadata};
+use tournaments::components::models::game::{TokenMetadata, GameMetadata};
 
 // TODO: Move to interface file
 #[starknet::interface]
 pub trait ISettings<TState> {
-    fn is_valid_setting(self: @TState, settings_id: u32) -> bool;
+    fn setting_exists(self: @TState, settings_id: u32) -> bool;
 }
 
 // TODO: Move to interface file
@@ -16,7 +16,7 @@ pub trait IGameDetails<TState> {
 // TODO: Move to interface file
 #[starknet::interface]
 pub trait IGame<TState> {
-    fn new_game(
+    fn mint(
         ref self: TState,
         player_name: felt252,
         settings_id: u32,
@@ -24,6 +24,7 @@ pub trait IGame<TState> {
         expires_at: u64,
         to: ContractAddress,
     ) -> u64;
+    fn game_metadata(self: @TState) -> GameMetadata;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
     fn game_count(self: @TState) -> u64;
     fn namespace(self: @TState) -> ByteArray;
@@ -79,7 +80,7 @@ pub mod game_component {
         impl ERC721: ERC721Component::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of IGame<ComponentState<TContractState>> {
-        fn new_game(
+        fn mint(
             ref self: ComponentState<TContractState>,
             player_name: felt252,
             settings_id: u32,
@@ -93,7 +94,7 @@ pub mod game_component {
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
-            // self.assert_setting_is_valid(settings_id);
+            self.assert_setting_exists(settings_id);
 
             // mint game token
             let token_id = self.mint_game(ref store, to);
@@ -102,11 +103,10 @@ pub mod game_component {
             let minted_at = starknet::get_block_timestamp();
             let minted_by = starknet::get_caller_address();
 
-            // record token metadata
             store
                 .set_token_metadata(
                     @TokenMetadata {
-                        token_id: 1,
+                        token_id,
                         minted_by,
                         player_name,
                         settings_id,
@@ -116,8 +116,15 @@ pub mod game_component {
                     },
                 );
 
-            // return the token id of the game
             token_id
+        }
+
+        fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), self.get_namespace(),
+            );
+            let store: Store = StoreTrait::new(world);
+            store.get_game_metadata(get_contract_address())
         }
 
         fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
@@ -220,9 +227,9 @@ pub mod game_component {
             token_id
         }
 
-        fn assert_setting_is_valid(self: @ComponentState<TContractState>, settings_id: u32) {
+        fn assert_setting_exists(self: @ComponentState<TContractState>, settings_id: u32) {
             assert!(
-                self.get_contract().is_valid_setting(settings_id),
+                self.get_contract().setting_exists(settings_id),
                 "Setting ID {} does not exist",
                 settings_id,
             );
