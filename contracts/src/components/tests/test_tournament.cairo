@@ -138,14 +138,14 @@ fn setup_uninitialized() -> WorldStorage {
     };
 
     let mut contract_defs: Array<ContractDef> = array![
-        ContractDefTrait::new(DEFAULT_NS(), @"tournament_mock")
-            .with_writer_of([dojo::utils::bytearray_hash(DEFAULT_NS())].span()),
-        ContractDefTrait::new(DEFAULT_NS(), @"game_mock")
-            .with_writer_of([dojo::utils::bytearray_hash(DEFAULT_NS())].span()),
-        ContractDefTrait::new(DEFAULT_NS(), @"erc20_mock")
-            .with_writer_of([dojo::utils::bytearray_hash(DEFAULT_NS())].span()),
-        ContractDefTrait::new(DEFAULT_NS(), @"erc721_mock")
-            .with_writer_of([dojo::utils::bytearray_hash(DEFAULT_NS())].span()),
+        ContractDefTrait::new(@DEFAULT_NS(), @"tournament_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
+        ContractDefTrait::new(@DEFAULT_NS(), @"game_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
+        ContractDefTrait::new(@DEFAULT_NS(), @"erc20_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
+        ContractDefTrait::new(@DEFAULT_NS(), @"erc721_mock")
+            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
     ];
 
     let mut world: WorldStorage = spawn_test_world([ndef].span());

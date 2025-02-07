@@ -98,7 +98,7 @@ mod game_mock {
     #[abi(embed_v0)]
     impl SettingsImpl of ISettings<ContractState> {
         fn is_valid_setting(self: @ContractState, settings_id: u32) -> bool {
-            let world = self.world(DEFAULT_NS());
+            let world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_settings_details(settings_id).exists
         }
@@ -107,7 +107,7 @@ mod game_mock {
     #[abi(embed_v0)]
     impl GameDetailsImpl of IGameDetails<ContractState> {
         fn score(self: @ContractState, game_id: u64) -> u32 {
-            let world = self.world(DEFAULT_NS());
+            let world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_score(game_id)
         }
@@ -116,14 +116,14 @@ mod game_mock {
     #[abi(embed_v0)]
     impl GameMockImpl of super::IGameMock<ContractState> {
         fn start_game(ref self: ContractState, game_id: u64) {
-            let mut world = self.world(DEFAULT_NS());
+            let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
 
             store.set_score(@Score { game_id, score: 0 });
         }
 
         fn end_game(ref self: ContractState, game_id: u64, score: u32) {
-            let mut world = self.world(DEFAULT_NS());
+            let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
             store.set_score(@Score { game_id, score });
         }
@@ -135,7 +135,7 @@ mod game_mock {
             description: ByteArray,
             exists: bool,
         ) {
-            let mut world = self.world(DEFAULT_NS());
+            let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
             store
                 .set_settings_details(
@@ -144,7 +144,7 @@ mod game_mock {
         }
 
         fn get_score(self: @ContractState, game_id: u64) -> u32 {
-            let mut world = self.world(DEFAULT_NS());
+            let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
             store.get_score(game_id)
         }
@@ -162,6 +162,7 @@ mod game_mock {
                     GAME_PUBLISHER(),
                     GAME_GENRE(),
                     GAME_IMAGE(),
+                    DEFAULT_NS(),
                 );
         }
     }

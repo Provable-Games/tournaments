@@ -11,6 +11,6 @@ pub const MAX_TOURNAMENT_LENGTH: u32 = 31104000; // 1 year
 pub const MIN_SUBMISSION_PERIOD: u32 = 900; // 15 minutes
 pub const MAX_SUBMISSION_PERIOD: u32 = 604800; // 1 week
 
-pub fn DEFAULT_NS() -> @ByteArray {
-    @"tournaments"
+pub fn DEFAULT_NS() -> ByteArray {
+    "tournaments"
 }

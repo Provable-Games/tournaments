@@ -26,6 +26,7 @@ pub trait IGame<TState> {
     ) -> u64;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
     fn game_count(self: @TState) -> u64;
+    fn namespace(self: @TState) -> ByteArray;
 }
 
 ///
@@ -35,6 +36,7 @@ pub trait IGame<TState> {
 pub mod game_component {
     use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
+        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
@@ -51,7 +53,9 @@ pub mod game_component {
     use tournaments::components::constants::{DEFAULT_NS};
 
     #[storage]
-    pub struct Storage {}
+    pub struct Storage {
+        namespace: ByteArray,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -77,25 +81,26 @@ pub mod game_component {
     > of IGame<ComponentState<TContractState>> {
         fn new_game(
             ref self: ComponentState<TContractState>,
-            world: WorldStorage
             player_name: felt252,
             settings_id: u32,
             available_at: u64,
             expires_at: u64,
             to: ContractAddress,
         ) -> u64 {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), self.get_namespace(),
+            );
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
             // self.assert_setting_is_valid(settings_id);
 
             // mint game token
-            // let token_id = self.mint_game(ref store, to);
+            let token_id = self.mint_game(ref store, to);
 
             // get block timestamp and caller address
             let minted_at = starknet::get_block_timestamp();
             let minted_by = starknet::get_caller_address();
-
 
             // record token metadata
             store
@@ -112,17 +117,27 @@ pub mod game_component {
                 );
 
             // return the token id of the game
-            1
+            token_id
         }
 
-        fn token_metadata(self: @ComponentState<TContractState>, world: WorldStorage, token_id: u64) -> TokenMetadata {
+        fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), self.get_namespace(),
+            );
             let store: Store = StoreTrait::new(world);
             store.get_token_metadata(token_id)
         }
 
-        fn game_count(self: @ComponentState<TContractState>, world: WorldStorage) -> u64 {
+        fn game_count(self: @ComponentState<TContractState>) -> u64 {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), self.get_namespace(),
+            );
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
+        }
+
+        fn namespace(self: @ComponentState<TContractState>) -> ByteArray {
+            self.namespace.read()
         }
     }
     #[generate_trait]
@@ -138,14 +153,15 @@ pub mod game_component {
     > of InternalTrait<TContractState> {
         fn initializer(
             ref self: ComponentState<TContractState>,
-            world: WorldStorage,
             name: felt252,
             description: ByteArray,
             developer: felt252,
             publisher: felt252,
             genre: felt252,
             image: ByteArray,
+            namespace: ByteArray,
         ) {
+            let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @namespace);
             let mut store: Store = StoreTrait::new(world);
             store
                 .set_game_metadata(
@@ -163,10 +179,11 @@ pub mod game_component {
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
             src5_component.register_interface(IGAME_ID);
             src5_component.register_interface(IGAME_METADATA_ID);
+            self.namespace.write(namespace);
         }
 
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
         }
@@ -178,7 +195,7 @@ pub mod game_component {
             description: ByteArray,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             store
@@ -204,7 +221,16 @@ pub mod game_component {
         }
 
         fn assert_setting_is_valid(self: @ComponentState<TContractState>, settings_id: u32) {
-            assert!(self.get_contract().is_valid_setting(settings_id), "Setting ID {} does not exist", settings_id);
+            assert!(
+                self.get_contract().is_valid_setting(settings_id),
+                "Setting ID {} does not exist",
+                settings_id,
+            );
+        }
+
+        fn get_namespace(self: @ComponentState<TContractState>) -> @ByteArray {
+            let namespace = self.namespace.read();
+            @namespace
         }
     }
 }

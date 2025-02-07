@@ -110,26 +110,26 @@ pub mod tournament_component {
         +Drop<TContractState>,
     > of ITournament<ComponentState<TContractState>> {
         fn total_tournaments(self: @ComponentState<TContractState>) -> u64 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_platform_metrics().total_tournaments
         }
         fn tournament(
             self: @ComponentState<TContractState>, tournament_id: u64,
         ) -> TournamentModel {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_tournament(tournament_id)
         }
         fn get_registration(
             self: @ComponentState<TContractState>, tournament_id: u64, token_id: u64,
         ) -> Registration {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_registration(tournament_id, token_id)
         }
         fn tournament_entries(self: @ComponentState<TContractState>, tournament_id: u64) -> u32 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_tournament_entry_count(tournament_id).count
         }
@@ -137,7 +137,7 @@ pub mod tournament_component {
         fn is_token_registered(
             self: @ComponentState<TContractState>, address: ContractAddress,
         ) -> bool {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             let token = store.get_token(address);
             self._is_token_registered(@token)
@@ -165,13 +165,13 @@ pub mod tournament_component {
         fn get_leaderboard(
             self: @ComponentState<TContractState>, tournament_id: u64,
         ) -> Array<u64> {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_leaderboard(tournament_id)
         }
 
         fn get_state(self: @ComponentState<TContractState>, tournament_id: u64) -> TournamentState {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
             self._get_state(@tournament.schedule)
@@ -195,7 +195,7 @@ pub mod tournament_component {
             entry_requirement: Option<EntryRequirement>,
         ) -> (TournamentModel, u64) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
 
@@ -252,7 +252,7 @@ pub mod tournament_component {
             qualification: Option<QualificationProof>,
         ) -> (u64, u32) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
@@ -310,7 +310,7 @@ pub mod tournament_component {
             position: u8,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
 
@@ -359,7 +359,7 @@ pub mod tournament_component {
             ref self: ComponentState<TContractState>, tournament_id: u64, prize_type: PrizeType,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
@@ -395,7 +395,7 @@ pub mod tournament_component {
             position: u8,
         ) -> u64 {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
@@ -446,7 +446,7 @@ pub mod tournament_component {
         /// @param test_mode A bool representing whether to use test mode.
         fn initialize(ref self: ComponentState<TContractState>, safe_mode: bool, test_mode: bool) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             // Store the config
@@ -470,7 +470,7 @@ pub mod tournament_component {
             symbol: ByteArray,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
 
@@ -495,7 +495,7 @@ pub mod tournament_component {
             symbol: ByteArray,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             let token_model = store.get_token(address);
