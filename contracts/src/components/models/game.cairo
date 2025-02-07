@@ -26,7 +26,7 @@ pub struct GameCounter {
 }
 
 #[dojo::model]
-#[derive(Copy, Drop, Serde, IntrospectPacked)]
+#[derive(Copy, Drop, Serde)]
 pub struct TokenMetadata {
     #[key]
     pub token_id: u64,
