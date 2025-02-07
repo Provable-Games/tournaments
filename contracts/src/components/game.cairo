@@ -101,18 +101,18 @@ pub mod game_component {
 
 
             // record token metadata
-            store
-                .set_token_metadata(
-                    @TokenMetadata {
-                        token_id: 1,
-                        minted_by,
-                        player_name,
-                        settings_id,
-                        minted_at,
-                        available_at,
-                        expires_at,
-                    },
-                );
+            // store
+            //     .set_token_metadata(
+            //         @TokenMetadata {
+            //             token_id: 1,
+            //             minted_by,
+            //             player_name,
+            //             settings_id,
+            //             minted_at,
+            //             available_at,
+            //             expires_at,
+            //         },
+            //     );
 
             // return the token id of the game
             1
