@@ -28,25 +28,12 @@ pub trait IGame<TState> {
     fn game_count(self: @TState) -> u64;
 }
 
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct TokenMetadataNew {
-    #[key]
-    pub token_id: u64,
-    pub minted_by: ContractAddress,
-    pub player_name: felt252,
-    pub settings_id: u32,
-    pub minted_at: u64,
-    pub available_at: u64,
-    pub expires_at: u64,
-}
-
 ///
 /// Game Component
 ///
 #[starknet::component]
 pub mod game_component {
-    use super::{IGame, ISettings, IGameDetails, TokenMetadataNew};
+    use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
@@ -112,28 +99,20 @@ pub mod game_component {
             let minted_at = starknet::get_block_timestamp();
             let minted_by = starknet::get_caller_address();
 
-            // world.write_model(@TokenMetadataNew {
-            //     token_id: 1,
-            //     minted_by,
-            //     player_name,
-            //     settings_id,
-            //     minted_at,
-            //     available_at,
-            //     expires_at,
-            // });
-            // // record token metadata
-            // store
-            //     .set_token_metadata(
-            //         @TokenMetadata {
-            //             token_id: 1,
-            //             minted_by,
-            //             player_name,
-            //             settings_id,
-            //             minted_at,
-            //             available_at,
-            //             expires_at,
-            //         },
-            //     );
+
+            // record token metadata
+            store
+                .set_token_metadata(
+                    @TokenMetadata {
+                        token_id: 1,
+                        minted_by,
+                        player_name,
+                        settings_id,
+                        minted_at,
+                        available_at,
+                        expires_at,
+                    },
+                );
 
             // return the token id of the game
             token_id
