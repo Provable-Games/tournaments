@@ -54,7 +54,7 @@ pub mod game_component {
 
     #[storage]
     pub struct Storage {
-        namespace: ByteArray,
+        _namespace: ByteArray,
     }
 
     #[event]
@@ -137,7 +137,7 @@ pub mod game_component {
         }
 
         fn namespace(self: @ComponentState<TContractState>) -> ByteArray {
-            self.namespace.read()
+            self._namespace.read()
         }
     }
     #[generate_trait]
@@ -179,7 +179,7 @@ pub mod game_component {
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
             src5_component.register_interface(IGAME_ID);
             src5_component.register_interface(IGAME_METADATA_ID);
-            self.namespace.write(namespace);
+            self._namespace.write(namespace);
         }
 
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
@@ -229,7 +229,7 @@ pub mod game_component {
         }
 
         fn get_namespace(self: @ComponentState<TContractState>) -> @ByteArray {
-            let namespace = self.namespace.read();
+            let namespace = self._namespace.read();
             @namespace
         }
     }
