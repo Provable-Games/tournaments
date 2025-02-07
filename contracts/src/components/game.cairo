@@ -77,16 +77,13 @@ pub mod game_component {
     > of IGame<ComponentState<TContractState>> {
         fn new_game(
             ref self: ComponentState<TContractState>,
+            world: WorldStorage
             player_name: felt252,
             settings_id: u32,
             available_at: u64,
             expires_at: u64,
             to: ContractAddress,
         ) -> u64 {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
-            );
-
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
@@ -101,31 +98,29 @@ pub mod game_component {
 
 
             // record token metadata
-            // store
-            //     .set_token_metadata(
-            //         @TokenMetadata {
-            //             token_id: 1,
-            //             minted_by,
-            //             player_name,
-            //             settings_id,
-            //             minted_at,
-            //             available_at,
-            //             expires_at,
-            //         },
-            //     );
+            store
+                .set_token_metadata(
+                    @TokenMetadata {
+                        token_id: 1,
+                        minted_by,
+                        player_name,
+                        settings_id,
+                        minted_at,
+                        available_at,
+                        expires_at,
+                    },
+                );
 
             // return the token id of the game
             1
         }
 
-        fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+        fn token_metadata(self: @ComponentState<TContractState>, world: WorldStorage, token_id: u64) -> TokenMetadata {
             let store: Store = StoreTrait::new(world);
             store.get_token_metadata(token_id)
         }
 
-        fn game_count(self: @ComponentState<TContractState>) -> u64 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+        fn game_count(self: @ComponentState<TContractState>, world: WorldStorage) -> u64 {
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
         }
@@ -143,6 +138,7 @@ pub mod game_component {
     > of InternalTrait<TContractState> {
         fn initializer(
             ref self: ComponentState<TContractState>,
+            world: WorldStorage,
             name: felt252,
             description: ByteArray,
             developer: felt252,
@@ -150,9 +146,6 @@ pub mod game_component {
             genre: felt252,
             image: ByteArray,
         ) {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
-            );
             let mut store: Store = StoreTrait::new(world);
             store
                 .set_game_metadata(
