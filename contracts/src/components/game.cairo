@@ -115,7 +115,7 @@ pub mod game_component {
                 );
 
             // return the token id of the game
-            token_id
+            1
         }
 
         fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
