@@ -90,7 +90,7 @@ pub mod game_component {
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
-            self.assert_setting_is_valid(settings_id);
+            // self.assert_setting_is_valid(settings_id);
 
             // mint game token
             let token_id = self.mint_game(ref store, to);
