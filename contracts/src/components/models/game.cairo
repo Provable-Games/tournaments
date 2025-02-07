@@ -19,20 +19,10 @@ pub struct GameMetadata {
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde, IntrospectPacked)]
-pub struct GameCount {
+pub struct GameCounter {
     #[key]
     pub key: felt252,
     pub count: u64,
-}
-
-#[dojo::model]
-#[derive(Drop, Serde)]
-pub struct SettingsDetails {
-    #[key]
-    pub id: u32,
-    pub name: felt252,
-    pub description: ByteArray,
-    pub exists: bool,
 }
 
 #[dojo::model]
@@ -53,5 +43,39 @@ pub struct TokenMetadata {
 pub struct Score {
     #[key]
     pub game_id: u64,
-    pub score: u64,
+    pub score: u32,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct Settings {
+    #[key]
+    pub id: u32,
+    #[key]
+    pub name: felt252,
+    pub value: felt252,
+}
+
+// part of Settings Component
+// add_settings(Array<Settings>, SettingsDetails)
+// - assert length of Settings matches number of settings for the game
+// - iterate over Settings and verify each name matches a known setting name for the game
+// - add Settings and SettingsDetails to the store
+// - increment SettingsCounter
+#[dojo::model]
+#[derive(Drop, Serde)]
+pub struct SettingsDetails {
+    #[key]
+    pub id: u32,
+    pub name: felt252,
+    pub description: ByteArray,
+    pub exists: bool,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct SettingsCounter {
+    #[key]
+    pub key: felt252,
+    pub count: u32,
 }

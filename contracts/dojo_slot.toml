@@ -23,7 +23,7 @@ world_address = "0x04254b770ec69289dae26a6b488cc75689b3765171423cae8d648323ae4de
 "tournaments-PrizeClaim" = ["tournaments-tournament_mock"]
 # Game
 "tournaments-GameMetadata" = ["tournaments-game_mock"]
-"tournaments-GameCount" = ["tournaments-game_mock"]
+"tournaments-GameCounter" = ["tournaments-game_mock"]
 "tournaments-SettingsDetails" = ["tournaments-game_mock"]
 "tournaments-TokenMetadata" = ["tournaments-game_mock"]
 "tournaments-Score" = ["tournaments-game_mock"]

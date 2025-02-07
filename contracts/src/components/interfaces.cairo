@@ -19,7 +19,7 @@ pub trait IGame<TState> {
         expires_at: u64,
         to: ContractAddress,
     ) -> u64;
-    fn get_score(self: @TState, token_id: u64) -> u64;
+    fn get_score(self: @TState, token_id: u64) -> u32;
     fn get_settings_id(self: @TState, token_id: u64) -> u32;
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
     fn settings_exists(self: @TState, settings_id: u32) -> bool;

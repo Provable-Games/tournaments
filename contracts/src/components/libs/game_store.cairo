@@ -3,7 +3,7 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use tournaments::components::models::game::{
-    GameMetadata, SettingsDetails, TokenMetadata, GameCount, Score,
+    GameMetadata, SettingsDetails, TokenMetadata, GameCounter, Score,
 };
 
 use tournaments::components::game::game_component::{VERSION};
@@ -33,8 +33,9 @@ pub impl StoreImpl of StoreTrait {
 
 
     #[inline(always)]
-    fn get_game_count(self: Store) -> GameCount {
-        (self.world.read_model(VERSION))
+    fn get_game_count(self: Store) -> u64 {
+        let game_counter: GameCounter = self.world.read_model(VERSION);
+        game_counter.count
     }
 
     #[inline(always)]
@@ -47,7 +48,7 @@ pub impl StoreImpl of StoreTrait {
         (self.world.read_model(token_id))
     }
 
-    fn get_score(self: Store, game_id: u64) -> u64 {
+    fn get_score(self: Store, game_id: u64) -> u32 {
         let score: Score = self.world.read_model(game_id);
         score.score
     }
@@ -64,16 +65,16 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn set_game_count(ref self: Store, model: @GameCount) {
-        self.world.write_model(model);
+    fn set_game_count(ref self: Store, count: u64) {
+        self.world.write_model(@GameCounter { key: VERSION, count: count });
     }
 
     #[inline(always)]
     fn increment_and_get_game_count(ref self: Store) -> u64 {
         let mut count = self.get_game_count();
-        count.count += 1;
-        self.set_game_count(@count);
-        count.count
+        count += 1;
+        self.set_game_count(count);
+        count
     }
 
     #[inline(always)]

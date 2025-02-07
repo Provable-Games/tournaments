@@ -1,5 +1,16 @@
 use starknet::ContractAddress;
-use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
+use tournaments::components::models::game::{TokenMetadata};
+
+#[starknet::interface]
+pub trait ISettings<TState> {
+    fn get_game_setting_id(self: @TState, game_id: u64) -> u32;
+    fn is_valid_setting(self: @TState, settings_id: u32) -> bool;
+}
+
+#[starknet::interface]
+pub trait IGameDetails<TState> {
+    fn score(self: @TState, game_id: u64) -> u32;
+}
 
 #[starknet::interface]
 trait IGame<TState> {
@@ -11,10 +22,8 @@ trait IGame<TState> {
         expires_at: u64,
         to: ContractAddress,
     ) -> u64;
-    fn get_settings_id(self: @TState, token_id: u64) -> u32;
-    fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
-    fn settings_exists(self: @TState, settings_id: u32) -> bool;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
+    fn game_count(self: @TState) -> u64;
 }
 
 ///
@@ -22,8 +31,7 @@ trait IGame<TState> {
 ///
 #[starknet::component]
 pub mod game_component {
-    use super::IGame;
-
+    use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
@@ -60,6 +68,8 @@ pub mod game_component {
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
         +ERC721Component::ERC721HooksTrait<TContractState>,
+        +ISettings<TContractState>,
+        +IGameDetails<TContractState>,
         impl SRC5: SRC5Component::HasComponent<TContractState>,
         impl ERC721: ERC721Component::HasComponent<TContractState>,
         +Drop<TContractState>,
@@ -105,30 +115,16 @@ pub mod game_component {
             token_id
         }
 
-        fn get_settings_id(self: @ComponentState<TContractState>, token_id: u64) -> u32 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
-            let store: Store = StoreTrait::new(world);
-            store.get_token_metadata(token_id).settings_id
-        }
-
-        fn get_settings_details(
-            self: @ComponentState<TContractState>, settings_id: u32,
-        ) -> SettingsDetails {
-            let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), DEFAULT_NS(),
-            );
-            let mut store: Store = StoreTrait::new(world);
-            store.get_settings_details(settings_id)
-        }
-
-        fn settings_exists(self: @ComponentState<TContractState>, settings_id: u32) -> bool {
-            self._setting_exists(settings_id)
-        }
-
         fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_token_metadata(token_id)
+        }
+
+        fn game_count(self: @ComponentState<TContractState>) -> u64 {
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.get_game_count()
         }
     }
     #[generate_trait]
@@ -175,7 +171,7 @@ pub mod game_component {
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            store.get_game_count().count.into()
+            store.get_game_count()
         }
 
         fn set_settings(

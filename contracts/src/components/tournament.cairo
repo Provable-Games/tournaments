@@ -515,7 +515,7 @@ pub mod tournament_component {
         #[inline(always)]
         fn get_score_for_token_id(
             self: @ComponentState<TContractState>, contract_address: ContractAddress, token_id: u64,
-        ) -> u64 {
+        ) -> u32 {
             let game_dispatcher = IGameDispatcher { contract_address };
             game_dispatcher.get_score(token_id)
         }
@@ -541,7 +541,7 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>,
             game_address: ContractAddress,
             leaderboard: Span<u64>,
-            score: u64,
+            score: u32,
         ) -> bool {
             let num_scores = leaderboard.len();
 
@@ -1638,7 +1638,7 @@ pub mod tournament_component {
             tournament: @TournamentModel,
             registration: @Registration,
             current_leaderboard: Span<u64>,
-            submitted_score: u64,
+            submitted_score: u32,
             submitted_position: u8,
         ) {
             assert!(
