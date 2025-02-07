@@ -1,17 +1,19 @@
 use starknet::ContractAddress;
 use tournaments::components::models::game::{TokenMetadata};
 
+// TODO: Move to interface file
 #[starknet::interface]
 pub trait ISettings<TState> {
-    fn get_game_setting_id(self: @TState, game_id: u64) -> u32;
-    fn is_valid_setting(self: @TState, settings_id: u32) -> bool;
+    fn is_setting_valid(self: @TState, settings_id: u32) -> bool;
 }
 
+// TODO: Move to interface file
 #[starknet::interface]
 pub trait IGameDetails<TState> {
     fn score(self: @TState, game_id: u64) -> u32;
 }
 
+// TODO: Move to interface file
 #[starknet::interface]
 trait IGame<TState> {
     fn new_game(

@@ -103,7 +103,7 @@ mod game_mock {
             store.get_token_metadata(game_id).settings_id
         }
 
-        fn is_valid_setting(self: @ContractState, settings_id: u32) -> bool {
+        fn is_setting_valid(self: @ContractState, settings_id: u32) -> bool {
             let world = self.world(DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_settings_details(settings_id).exists
