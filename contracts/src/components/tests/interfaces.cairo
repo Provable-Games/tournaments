@@ -229,7 +229,7 @@ pub trait IGameMock<TState> {
     fn tokenURI(self: @TState, tokenId: u256) -> ByteArray;
 
     // IGame
-    fn new_game(
+    fn mint(
         ref self: TState,
         name: felt252,
         settings_id: u32,

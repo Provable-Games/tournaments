@@ -1,6 +1,5 @@
 #[starknet::interface]
 trait IGameMock<TContractState> {
-    fn get_score(self: @TContractState, game_id: u64) -> u32;
     fn start_game(ref self: TContractState, game_id: u64);
     fn end_game(ref self: TContractState, game_id: u64, score: u32);
     fn set_settings(
@@ -97,7 +96,7 @@ mod game_mock {
 
     #[abi(embed_v0)]
     impl SettingsImpl of ISettings<ContractState> {
-        fn is_valid_setting(self: @ContractState, settings_id: u32) -> bool {
+        fn setting_exists(self: @ContractState, settings_id: u32) -> bool {
             let world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_settings_details(settings_id).exists
@@ -141,12 +140,6 @@ mod game_mock {
                 .set_settings_details(
                     @SettingsDetails { id: settings_id, name, description, exists: true },
                 );
-        }
-
-        fn get_score(self: @ContractState, game_id: u64) -> u32 {
-            let mut world = self.world(@DEFAULT_NS());
-            let mut store: Store = StoreTrait::new(world);
-            store.get_score(game_id)
         }
     }
 

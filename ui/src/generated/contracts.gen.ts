@@ -15,7 +15,7 @@ export function setupWorld(provider: DojoProvider) {
     try {
       return await provider.call("tournaments", {
         contractName: "game_mock",
-        entrypoint: "get_score",
+        entrypoint: "score",
         calldata: [gameId],
       });
     } catch (error) {
@@ -115,7 +115,7 @@ export function setupWorld(provider: DojoProvider) {
         snAccount,
         {
           contractName: "game_mock",
-          entrypoint: "new_game",
+          entrypoint: "mint",
           calldata: [playerName, settingsId, availableAt, expiresAt, to],
         },
         "tournaments"

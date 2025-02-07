@@ -517,7 +517,7 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>, contract_address: ContractAddress, token_id: u64,
         ) -> u32 {
             let game_dispatcher = IGameDispatcher { contract_address };
-            game_dispatcher.get_score(token_id)
+            game_dispatcher.score(token_id)
         }
 
         #[inline(always)]
@@ -1445,7 +1445,7 @@ pub mod tournament_component {
         ) -> u64 {
             let game_dispatcher = IGameDispatcher { contract_address: game_address };
             let game_token_id = game_dispatcher
-                .new_game(player_name, settings_id, start_time, end_time, player_address);
+                .mint(player_name, settings_id, start_time, end_time, player_address);
             game_token_id
         }
 
@@ -1677,7 +1677,7 @@ pub mod tournament_component {
             if position_index < current_leaderboard.len() {
                 // validate it's higher
                 let current_score_at_position = game_dispatcher
-                    .get_score(*current_leaderboard.at(position_index));
+                    .score(*current_leaderboard.at(position_index));
 
                 assert!(
                     submitted_score > current_score_at_position,
@@ -1692,7 +1692,7 @@ pub mod tournament_component {
             if submitted_position > 1 {
                 // validate it is less than the score above it.
                 let current_score_above_position = game_dispatcher
-                    .get_score(*current_leaderboard.at(position_index - 1));
+                    .score(*current_leaderboard.at(position_index - 1));
 
                 assert!(
                     submitted_score < current_score_above_position,
