@@ -112,15 +112,15 @@ pub mod game_component {
             let minted_at = starknet::get_block_timestamp();
             let minted_by = starknet::get_caller_address();
 
-            world.write_model(@TokenMetadataNew {
-                token_id: 1,
-                minted_by,
-                player_name,
-                settings_id,
-                minted_at,
-                available_at,
-                expires_at,
-            });
+            // world.write_model(@TokenMetadataNew {
+            //     token_id: 1,
+            //     minted_by,
+            //     player_name,
+            //     settings_id,
+            //     minted_at,
+            //     available_at,
+            //     expires_at,
+            // });
             // // record token metadata
             // store
             //     .set_token_metadata(
