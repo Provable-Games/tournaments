@@ -95,23 +95,23 @@ pub mod game_component {
             // mint game token
             // let token_id = self.mint_game(ref store, to);
 
-            // // get block timestamp and caller address
-            // let minted_at = starknet::get_block_timestamp();
-            // let minted_by = starknet::get_caller_address();
+            // get block timestamp and caller address
+            let minted_at = starknet::get_block_timestamp();
+            let minted_by = starknet::get_caller_address();
 
-            // // record token metadata
-            // store
-            //     .set_token_metadata(
-            //         @TokenMetadata {
-            //             token_id,
-            //             minted_by,
-            //             player_name,
-            //             settings_id,
-            //             minted_at,
-            //             available_at,
-            //             expires_at,
-            //         },
-            //     );
+            // record token metadata
+            store
+                .set_token_metadata(
+                    @TokenMetadata {
+                        token_id: 1,
+                        minted_by,
+                        player_name,
+                        settings_id,
+                        minted_at,
+                        available_at,
+                        expires_at,
+                    },
+                );
 
             // return the token id of the game
             1
