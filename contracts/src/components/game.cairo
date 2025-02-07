@@ -4,7 +4,7 @@ use tournaments::components::models::game::{TokenMetadata};
 // TODO: Move to interface file
 #[starknet::interface]
 pub trait ISettings<TState> {
-    fn is_setting_valid(self: @TState, settings_id: u32) -> bool;
+    fn is_valid_setting(self: @TState, settings_id: u32) -> bool;
 }
 
 // TODO: Move to interface file
