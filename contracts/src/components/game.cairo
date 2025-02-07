@@ -50,6 +50,19 @@ pub mod game_component {
 
     use tournaments::components::constants::{DEFAULT_NS};
 
+    #[dojo::model]
+    #[derive(Copy, Drop, Serde)]
+    pub struct TokenMetadataNew {
+        #[key]
+        pub token_id: u64,
+        pub minted_by: ContractAddress,
+        pub player_name: felt252,
+        pub settings_id: u32,
+        pub minted_at: u64,
+        pub available_at: u64,
+        pub expires_at: u64,
+    }
+
 
     #[storage]
     pub struct Storage {}
@@ -87,6 +100,7 @@ pub mod game_component {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), DEFAULT_NS(),
             );
+
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
@@ -99,19 +113,28 @@ pub mod game_component {
             let minted_at = starknet::get_block_timestamp();
             let minted_by = starknet::get_caller_address();
 
-            // record token metadata
-            store
-                .set_token_metadata(
-                    @TokenMetadata {
-                        token_id: 1,
-                        minted_by,
-                        player_name,
-                        settings_id,
-                        minted_at,
-                        available_at,
-                        expires_at,
-                    },
-                );
+            world.write_model(@TokenMetadataNew {
+                token_id: 1,
+                minted_by,
+                player_name,
+                settings_id,
+                minted_at,
+                available_at,
+                expires_at,
+            });
+            // // record token metadata
+            // store
+            //     .set_token_metadata(
+            //         @TokenMetadata {
+            //             token_id: 1,
+            //             minted_by,
+            //             player_name,
+            //             settings_id,
+            //             minted_at,
+            //             available_at,
+            //             expires_at,
+            //         },
+            //     );
 
             // return the token id of the game
             1
