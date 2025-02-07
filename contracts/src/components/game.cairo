@@ -15,7 +15,7 @@ pub trait IGameDetails<TState> {
 
 // TODO: Move to interface file
 #[starknet::interface]
-trait IGame<TState> {
+pub trait IGame<TState> {
     fn new_game(
         ref self: TState,
         player_name: felt252,
