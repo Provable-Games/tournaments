@@ -93,7 +93,7 @@ pub mod game_component {
             // self.assert_setting_is_valid(settings_id);
 
             // mint game token
-            let token_id = self.mint_game(ref store, to);
+            // let token_id = self.mint_game(ref store, to);
 
             // get block timestamp and caller address
             let minted_at = starknet::get_block_timestamp();
