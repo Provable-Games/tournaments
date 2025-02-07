@@ -90,7 +90,7 @@ pub mod game_component {
             let mut store: Store = StoreTrait::new(world);
 
             // verify settings exist
-            self.assert_setting_exists(settings_id);
+            self.assert_setting_is_valid(settings_id);
 
             // mint game token
             let token_id = self.mint_game(ref store, to);
@@ -135,6 +135,7 @@ pub mod game_component {
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
         +ERC721Component::ERC721HooksTrait<TContractState>,
+        +ISettings<TContractState>,
         impl ERC721: ERC721Component::HasComponent<TContractState>,
         impl SRC5: SRC5Component::HasComponent<TContractState>,
         +Drop<TContractState>,
@@ -208,14 +209,8 @@ pub mod game_component {
             token_id
         }
 
-        fn _setting_exists(self: @ComponentState<TContractState>, settings_id: u32) -> bool {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), DEFAULT_NS());
-            let store: Store = StoreTrait::new(world);
-            store.get_settings_details(settings_id).exists
-        }
-
-        fn assert_setting_exists(self: @ComponentState<TContractState>, settings_id: u32) {
-            assert!(self._setting_exists(settings_id), "Setting ID {} does not exist", settings_id);
+        fn assert_setting_is_valid(self: @ComponentState<TContractState>, settings_id: u32) {
+            assert!(self.get_contract().is_valid_setting(settings_id), "Setting ID {} does not exist", settings_id);
         }
     }
 }
