@@ -35,6 +35,7 @@ pub trait IGame<TState> {
 ///
 #[starknet::component]
 pub mod game_component {
+    use core::num::traits::Zero;
     use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
         use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -48,7 +49,9 @@ pub mod game_component {
     use openzeppelin_introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
     use openzeppelin_introspection::src5::SRC5Component::SRC5Impl;
     use openzeppelin_token::erc721::{
-        ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl},
+        ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl}, interface::{
+            IERC721_ID, IERC721_METADATA_ID,
+        },
     };
 
     use tournaments::components::constants::{DEFAULT_NS};
@@ -186,6 +189,8 @@ pub mod game_component {
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
             src5_component.register_interface(IGAME_ID);
             src5_component.register_interface(IGAME_METADATA_ID);
+            src5_component.register_interface(IERC721_ID);
+            src5_component.register_interface(IERC721_METADATA_ID);
             self._namespace.write(namespace);
         }
 
@@ -228,16 +233,60 @@ pub mod game_component {
         }
 
         fn assert_setting_exists(self: @ComponentState<TContractState>, settings_id: u32) {
-            assert!(
-                self.get_contract().setting_exists(settings_id),
-                "Setting ID {} does not exist",
-                settings_id,
-            );
+            let setting_exists = self.get_contract().setting_exists(settings_id);
+            if !setting_exists {
+                let world = WorldTrait::storage(
+                    self.get_contract().world_dispatcher(), self.get_namespace(),
+                );
+                let store: Store = StoreTrait::new(world);
+                let game_metadata = store.get_game_metadata(get_contract_address());
+                panic!("{}: Setting ID {} does not exist", game_metadata.name, settings_id);
+            }
         }
 
         fn get_namespace(self: @ComponentState<TContractState>) -> @ByteArray {
             let namespace = self._namespace.read();
             @namespace
+        }
+
+        fn is_game_expired(self: @ComponentState<TContractState>, expires_at: u64) -> bool {
+            let now = starknet::get_block_timestamp();
+            if expires_at.is_non_zero() && now >= expires_at {
+                true
+            } else {
+                false
+            }
+        }
+
+        fn assert_game_not_expired(self: @ComponentState<TContractState>, game_id: u64, expires_at: u64) {
+            if self.is_game_expired(expires_at) {
+                let world = WorldTrait::storage(
+                    self.get_contract().world_dispatcher(), self.get_namespace(),
+                );
+                let store: Store = StoreTrait::new(world);
+                let game_metadata = store.get_game_metadata(get_contract_address());
+                panic!("{}: Game {} expired at {}", game_metadata.name, game_id, expires_at);
+            }
+        }
+
+        fn is_game_available(self: @ComponentState<TContractState>, available_at: u64) -> bool {
+            let now = starknet::get_block_timestamp();
+            if available_at.is_non_zero() && now < available_at {
+                true
+            } else {
+                false
+            }
+        }
+
+        fn assert_game_is_available(self: @ComponentState<TContractState>, game_id: u64, available_at: u64) {
+            if !self.is_game_available(available_at) {
+                let world = WorldTrait::storage(
+                    self.get_contract().world_dispatcher(), self.get_namespace(),
+                );
+                let store: Store = StoreTrait::new(world);
+                let game_metadata = store.get_game_metadata(get_contract_address());
+                panic!("{}: Game {} is not available until {}", game_metadata.name, game_id, available_at);
+            }
         }
     }
 }
