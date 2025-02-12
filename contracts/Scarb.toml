@@ -29,4 +29,5 @@ default = []
 #
 [profile.dev]
 [profile.slot]
+[profile.sepolia]
 [profile.mainnet]

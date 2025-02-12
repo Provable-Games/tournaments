@@ -59,6 +59,7 @@ pub mod tournament_component {
     use tournaments::components::constants::{
         TWO_POW_128, MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH,
         MAX_TOURNAMENT_LENGTH, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD, DEFAULT_NS, VERSION,
+        SEPOLIA_CHAIN_ID,
     };
     use tournaments::components::interfaces::{
         IGameDispatcher, IGameDispatcherTrait, IGAME_ID, IGAME_METADATA_ID,
@@ -531,7 +532,12 @@ pub mod tournament_component {
 
         #[inline(always)]
         fn _is_token_registered(self: @ComponentState<TContractState>, token: @Token) -> bool {
-            *token.is_registered
+            let chain_id = starknet::get_tx_info().unbox().chain_id;
+            if chain_id == SEPOLIA_CHAIN_ID {
+                true
+            } else {
+                *token.is_registered
+            }
         }
 
         // @dev instead of iterating over all scores, we just check if the submitted score is

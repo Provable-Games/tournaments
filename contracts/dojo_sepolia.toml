@@ -1,0 +1,35 @@
+[world]
+seed = "darkshuffle_v1.1.0"
+name = "Dark Shuffle"
+description = "Enter the darkness"
+website = "https://darkshuffle.io/"
+
+[namespace]
+default = "tournaments"
+
+[env]
+world_address = "0x021cc11eab0001dade1751f7934596d67c6fd95b7659560520c620c82c8a537b"
+
+[writers]
+# Tournament
+"tournaments-Tournament" = ["tournaments-tournament_mock"]
+"tournaments-Registration" = ["tournaments-tournament_mock"]
+"tournaments-Leaderboard" = ["tournaments-tournament_mock"]
+"tournaments-PlatformMetrics" = ["tournaments-tournament_mock"]
+"tournaments-TournamentTokenMetrics" = ["tournaments-tournament_mock"]
+"tournaments-PrizeMetrics" = ["tournaments-tournament_mock"]
+"tournaments-EntryCount" = ["tournaments-tournament_mock"]
+"tournaments-Prize" = ["tournaments-tournament_mock"]
+"tournaments-Token" = ["tournaments-tournament_mock"]
+"tournaments-TournamentConfig" = ["tournaments-tournament_mock"]
+"tournaments-PrizeClaim" = ["tournaments-tournament_mock"]
+# Game
+"tournaments-GameMetadata" = ["tournaments-game_mock"]
+"tournaments-GameCounter" = ["tournaments-game_mock"]
+"tournaments-SettingsDetails" = ["tournaments-game_mock"]
+"tournaments-TokenMetadata" = ["tournaments-game_mock"]
+"tournaments-Score" = ["tournaments-game_mock"]
+
+[migration]
+order_inits = []
+skip_contracts = ["tournaments-Bodukan"]
