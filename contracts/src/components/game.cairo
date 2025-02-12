@@ -53,8 +53,6 @@ pub mod game_component {
         interface::{IERC721_ID, IERC721_METADATA_ID},
     };
 
-    use tournaments::components::constants::{DEFAULT_NS};
-
     #[storage]
     pub struct Storage {
         _namespace: ByteArray,
@@ -226,7 +224,9 @@ pub mod game_component {
         }
 
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
-            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
+            let world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), self.get_namespace(),
+            );
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
         }
@@ -238,7 +238,7 @@ pub mod game_component {
             description: ByteArray,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
+                self.get_contract().world_dispatcher(), self.get_namespace(),
             );
             let mut store: Store = StoreTrait::new(world);
             store
