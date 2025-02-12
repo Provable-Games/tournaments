@@ -304,7 +304,7 @@ pub mod game_component {
 
         fn is_game_available(self: @ComponentState<TContractState>, available_at: u64) -> bool {
             let now = starknet::get_block_timestamp();
-            if available_at.is_non_zero() && now < available_at {
+            if available_at.is_non_zero() && now >= available_at {
                 true
             } else {
                 false
