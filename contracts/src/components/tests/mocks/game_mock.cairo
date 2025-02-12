@@ -29,17 +29,18 @@ mod game_mock {
 
     use tournaments::components::constants::{DEFAULT_NS};
 
+    use starknet::{ContractAddress, contract_address_const};
+
     component!(path: game_component, storage: game, event: GameEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
 
     #[abi(embed_v0)]
     impl GameImpl = game_component::GameImpl<ContractState>;
+    impl GameInternalImpl = game_component::InternalImpl<ContractState>;
+
     #[abi(embed_v0)]
     impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
-
-
-    impl GameInternalImpl = game_component::InternalImpl<ContractState>;
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     #[storage]
@@ -91,6 +92,9 @@ mod game_mock {
     }
     fn GAME_IMAGE() -> ByteArray {
         ("https://game.io/image.png")
+    }
+    fn GAME_CREATOR() -> ContractAddress {
+        contract_address_const::<'GAME CREATOR'>()
     }
     //*******************************
 
@@ -146,9 +150,11 @@ mod game_mock {
     #[abi(embed_v0)]
     impl GameInitializerImpl of super::IGameMockInit<ContractState> {
         fn initializer(ref self: ContractState) {
+            self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI());
             self
                 .game
                 .initializer(
+                    GAME_CREATOR(),
                     GAME_NAME(),
                     GAME_DESCRIPTION(),
                     GAME_DEVELOPER(),

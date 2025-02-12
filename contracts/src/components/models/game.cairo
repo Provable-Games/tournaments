@@ -8,7 +8,8 @@ use starknet::ContractAddress;
 #[derive(Drop, Serde)]
 pub struct GameMetadata {
     #[key]
-    pub address: ContractAddress,
+    pub contract_address: ContractAddress,
+    pub creator_address: ContractAddress,
     pub name: felt252,
     pub description: ByteArray,
     pub developer: felt252,

@@ -16,7 +16,7 @@ use tournaments::components::constants::{
 use tournaments::components::tests::interfaces::WorldTrait;
 
 use tournaments::components::models::{
-    game::{m_GameMetadata, m_GameCount, m_SettingsDetails, m_TokenMetadata, m_Score},
+    game::{m_GameMetadata, m_GameCounter, m_SettingsDetails, m_TokenMetadata, m_Score},
     tournament::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
@@ -112,7 +112,7 @@ fn setup_uninitialized() -> WorldStorage {
         resources: [
             // game models
             TestResource::Model(m_GameMetadata::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_GameCount::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(m_GameCounter::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_SettingsDetails::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TokenMetadata::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_Score::TEST_CLASS_HASH.try_into().unwrap()),

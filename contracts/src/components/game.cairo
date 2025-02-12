@@ -38,7 +38,7 @@ pub mod game_component {
     use core::num::traits::Zero;
     use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
-        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
@@ -49,9 +49,8 @@ pub mod game_component {
     use openzeppelin_introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
     use openzeppelin_introspection::src5::SRC5Component::SRC5Impl;
     use openzeppelin_token::erc721::{
-        ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl}, interface::{
-            IERC721_ID, IERC721_METADATA_ID,
-        },
+        ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl},
+        interface::{IERC721_ID, IERC721_METADATA_ID},
     };
 
     use tournaments::components::constants::{DEFAULT_NS};
@@ -163,6 +162,7 @@ pub mod game_component {
     > of InternalTrait<TContractState> {
         fn initializer(
             ref self: ComponentState<TContractState>,
+            creator_address: ContractAddress,
             name: felt252,
             description: ByteArray,
             developer: felt252,
@@ -173,25 +173,56 @@ pub mod game_component {
         ) {
             let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @namespace);
             let mut store: Store = StoreTrait::new(world);
-            store
-                .set_game_metadata(
-                    @GameMetadata {
-                        address: get_contract_address(),
-                        name,
-                        description,
-                        developer,
-                        publisher,
-                        genre,
-                        image,
-                    },
-                );
+            let game_metadata = @GameMetadata {
+                contract_address: get_contract_address(),
+                creator_address,
+                name,
+                description,
+                developer,
+                publisher,
+                genre,
+                image,
+            };
+            store.set_game_metadata(game_metadata);
+            self.mint_creator_token(ref store, creator_address);
+            self.register_src5_interfaces();
+            self._namespace.write(namespace);
+        }
 
+        fn register_src5_interfaces(ref self: ComponentState<TContractState>) {
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
             src5_component.register_interface(IGAME_ID);
             src5_component.register_interface(IGAME_METADATA_ID);
             src5_component.register_interface(IERC721_ID);
             src5_component.register_interface(IERC721_METADATA_ID);
-            self._namespace.write(namespace);
+        }
+
+        fn mint_creator_token(
+            ref self: ComponentState<TContractState>, ref store: Store, to: ContractAddress,
+        ) {
+            let token_id = 0;
+            let minted_by = get_contract_address();
+            let player_name = 'Creator';
+            let settings_id = 0;
+            let minted_at = starknet::get_block_timestamp();
+            let available_at = 0;
+            let expires_at = 0;
+
+            let mut erc721 = get_dep_component_mut!(ref self, ERC721);
+            erc721.mint(to, token_id.into());
+
+            store
+                .set_token_metadata(
+                    @TokenMetadata {
+                        token_id,
+                        minted_by,
+                        player_name,
+                        settings_id,
+                        minted_at,
+                        available_at,
+                        expires_at,
+                    },
+                );
         }
 
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
@@ -258,7 +289,9 @@ pub mod game_component {
             }
         }
 
-        fn assert_game_not_expired(self: @ComponentState<TContractState>, game_id: u64, expires_at: u64) {
+        fn assert_game_not_expired(
+            self: @ComponentState<TContractState>, game_id: u64, expires_at: u64,
+        ) {
             if self.is_game_expired(expires_at) {
                 let world = WorldTrait::storage(
                     self.get_contract().world_dispatcher(), self.get_namespace(),
@@ -278,14 +311,21 @@ pub mod game_component {
             }
         }
 
-        fn assert_game_is_available(self: @ComponentState<TContractState>, game_id: u64, available_at: u64) {
+        fn assert_game_is_available(
+            self: @ComponentState<TContractState>, game_id: u64, available_at: u64,
+        ) {
             if !self.is_game_available(available_at) {
                 let world = WorldTrait::storage(
                     self.get_contract().world_dispatcher(), self.get_namespace(),
                 );
                 let store: Store = StoreTrait::new(world);
                 let game_metadata = store.get_game_metadata(get_contract_address());
-                panic!("{}: Game {} is not available until {}", game_metadata.name, game_id, available_at);
+                panic!(
+                    "{}: Game {} is not available until {}",
+                    game_metadata.name,
+                    game_id,
+                    available_at,
+                );
             }
         }
     }

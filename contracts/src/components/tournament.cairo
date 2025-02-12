@@ -71,9 +71,9 @@ pub mod tournament_component {
     };
     use tournaments::components::interfaces::{WorldTrait, WorldImpl};
     use tournaments::components::libs::store::{Store, StoreTrait};
+    use tournaments::components::game::{ISettingsDispatcher, ISettingsDispatcherTrait};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
-
 
     use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
 
@@ -854,8 +854,8 @@ pub mod tournament_component {
         fn _assert_settings_exists(
             self: @ComponentState<TContractState>, game: ContractAddress, settings_id: u32,
         ) {
-            let game_dispatcher = IGameDispatcher { contract_address: game };
-            let settings_exist = game_dispatcher.get_settings_details(settings_id).exists;
+            let settings_dispatcher = ISettingsDispatcher { contract_address: game };
+            let settings_exist = settings_dispatcher.setting_exists(settings_id);
             let game_address: felt252 = game.into();
             assert!(
                 settings_exist,
