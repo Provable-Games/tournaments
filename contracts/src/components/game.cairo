@@ -20,8 +20,8 @@ pub trait IGame<TState> {
         ref self: TState,
         player_name: felt252,
         settings_id: u32,
-        available_at: u64,
-        expires_at: u64,
+        start: Option<u64>,
+        end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
     fn game_metadata(self: @TState) -> GameMetadata;
@@ -35,16 +35,15 @@ pub trait IGame<TState> {
 ///
 #[starknet::component]
 pub mod game_component {
-    use core::num::traits::Zero;
     use super::{IGame, ISettings, IGameDetails};
     use starknet::{ContractAddress, get_contract_address};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
+    use tournaments::components::models::lifecycle::Lifecycle;
     use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID};
     use tournaments::components::libs::game_store::{Store, StoreTrait};
-
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
     use openzeppelin_introspection::src5::SRC5Component::SRC5Impl;
@@ -84,8 +83,8 @@ pub mod game_component {
             ref self: ComponentState<TContractState>,
             player_name: felt252,
             settings_id: u32,
-            available_at: u64,
-            expires_at: u64,
+            start: Option<u64>,
+            end: Option<u64>,
             to: ContractAddress,
         ) -> u64 {
             let mut world = WorldTrait::storage(
@@ -100,20 +99,13 @@ pub mod game_component {
             let token_id = self.mint_game(ref store, to);
 
             // get block timestamp and caller address
-            let minted_at = starknet::get_block_timestamp();
+            let lifecycle = Lifecycle { mint: starknet::get_block_timestamp(), start, end };
+
             let minted_by = starknet::get_caller_address();
 
             store
                 .set_token_metadata(
-                    @TokenMetadata {
-                        token_id,
-                        minted_by,
-                        player_name,
-                        settings_id,
-                        minted_at,
-                        available_at,
-                        expires_at,
-                    },
+                    @TokenMetadata { token_id, minted_by, player_name, settings_id, lifecycle },
                 );
 
             token_id
@@ -202,24 +194,17 @@ pub mod game_component {
             let minted_by = get_contract_address();
             let player_name = 'Creator';
             let settings_id = 0;
-            let minted_at = starknet::get_block_timestamp();
-            let available_at = 0;
-            let expires_at = 0;
+
+            let lifecycle = Lifecycle {
+                mint: starknet::get_block_timestamp(), start: Option::None, end: Option::None,
+            };
 
             let mut erc721 = get_dep_component_mut!(ref self, ERC721);
             erc721.mint(to, token_id.into());
 
             store
                 .set_token_metadata(
-                    @TokenMetadata {
-                        token_id,
-                        minted_by,
-                        player_name,
-                        settings_id,
-                        minted_at,
-                        available_at,
-                        expires_at,
-                    },
+                    @TokenMetadata { token_id, minted_by, player_name, settings_id, lifecycle },
                 );
         }
 
@@ -278,55 +263,6 @@ pub mod game_component {
         fn get_namespace(self: @ComponentState<TContractState>) -> @ByteArray {
             let namespace = self._namespace.read();
             @namespace
-        }
-
-        fn is_game_expired(self: @ComponentState<TContractState>, expires_at: u64) -> bool {
-            let now = starknet::get_block_timestamp();
-            if expires_at.is_non_zero() && now >= expires_at {
-                true
-            } else {
-                false
-            }
-        }
-
-        fn assert_game_not_expired(
-            self: @ComponentState<TContractState>, game_id: u64, expires_at: u64,
-        ) {
-            if self.is_game_expired(expires_at) {
-                let world = WorldTrait::storage(
-                    self.get_contract().world_dispatcher(), self.get_namespace(),
-                );
-                let store: Store = StoreTrait::new(world);
-                let game_metadata = store.get_game_metadata(get_contract_address());
-                panic!("{}: Game {} expired at {}", game_metadata.name, game_id, expires_at);
-            }
-        }
-
-        fn is_game_available(self: @ComponentState<TContractState>, available_at: u64) -> bool {
-            let now = starknet::get_block_timestamp();
-            if available_at.is_non_zero() && now >= available_at {
-                true
-            } else {
-                false
-            }
-        }
-
-        fn assert_game_is_available(
-            self: @ComponentState<TContractState>, game_id: u64, available_at: u64,
-        ) {
-            if !self.is_game_available(available_at) {
-                let world = WorldTrait::storage(
-                    self.get_contract().world_dispatcher(), self.get_namespace(),
-                );
-                let store: Store = StoreTrait::new(world);
-                let game_metadata = store.get_game_metadata(get_contract_address());
-                panic!(
-                    "{}: Game {} is not available until {}",
-                    game_metadata.name,
-                    game_id,
-                    available_at,
-                );
-            }
         }
     }
 }

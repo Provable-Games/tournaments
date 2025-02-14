@@ -1409,8 +1409,9 @@ pub mod tournament_component {
         ) -> u64 {
             let address = *tournament.game_config.address;
             let settings = *tournament.game_config.settings_id;
-            let start = 0;
-            let end = starknet::get_block_timestamp() - 1;
+            let start = Option::None;
+            // creator game are not intended to be played so they are minted already expired
+            let end = Option::Some(1);
             let name = *tournament.metadata.name;
             let creator_address = *tournament.creator;
             self._mint_game(address, settings, start, end, name, creator_address)
@@ -1422,21 +1423,23 @@ pub mod tournament_component {
             player_name: felt252,
             player_address: ContractAddress,
         ) -> u64 {
-            let address = *tournament.game_config.address;
+            let game_address = *tournament.game_config.address;
             let settings = *tournament.game_config.settings_id;
-            let start = *tournament.schedule.game.start;
-            let end = *tournament.schedule.game.end;
-            let name = player_name;
+            let game_start = Option::Some(*tournament.schedule.game.start);
+            let game_end = Option::Some(*tournament.schedule.game.end);
 
-            self._mint_game(address, settings, start, end, name, player_address)
+            self
+                ._mint_game(
+                    game_address, settings, game_start, game_end, player_name, player_address,
+                )
         }
 
         /// @title mint_game
         /// @notice Mints a new game token to the provided player address.
         /// @param game_address The address of the game contract.
         /// @param settings_id The id of the game settings.
-        /// @param start_time The start time of the game.
-        /// @param end_time The end time of the game.
+        /// @param game_start An optional start time for the game.
+        /// @param game_end An optional end time for the game.
         /// @param player_name The name of the player to mint the game token to.
         /// @param player_address The address of the player to mint the game token to.
         /// @return The game token id.
@@ -1444,14 +1447,14 @@ pub mod tournament_component {
             ref self: ComponentState<TContractState>,
             game_address: ContractAddress,
             settings_id: u32,
-            start_time: u64,
-            end_time: u64,
+            game_start: Option<u64>,
+            game_end: Option<u64>,
             player_name: felt252,
             player_address: ContractAddress,
         ) -> u64 {
             let game_dispatcher = IGameDispatcher { contract_address: game_address };
             let game_token_id = game_dispatcher
-                .mint(player_name, settings_id, start_time, end_time, player_address);
+                .mint(player_name, settings_id, game_start, game_end, player_address);
             game_token_id
         }
 

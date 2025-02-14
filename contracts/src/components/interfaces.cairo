@@ -15,8 +15,8 @@ pub trait IGame<TState> {
         ref self: TState,
         player_name: felt252,
         settings_id: u32,
-        available_at: u64,
-        expires_at: u64,
+        start: Option<u64>,
+        end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
     fn score(self: @TState, token_id: u64) -> u32;

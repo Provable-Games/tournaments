@@ -233,8 +233,8 @@ pub trait IGameMock<TState> {
         ref self: TState,
         name: felt252,
         settings_id: u32,
-        available_at: u64,
-        expires_at: u64,
+        start: Option<u64>,
+        end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
     fn get_settings_id(self: @TState, game_id: u64) -> u32;

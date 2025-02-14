@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+use tournaments::components::models::lifecycle::Lifecycle;
 
 ///
 /// Model
@@ -34,9 +35,7 @@ pub struct TokenMetadata {
     pub minted_by: ContractAddress,
     pub player_name: felt252,
     pub settings_id: u32,
-    pub minted_at: u64,
-    pub available_at: u64,
-    pub expires_at: u64,
+    pub lifecycle: Lifecycle,
 }
 
 #[dojo::model]
