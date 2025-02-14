@@ -1,9 +1,10 @@
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, TokenType, PrizeType, TournamentState, Metadata, Schedule,
-    GameConfig, EntryFee, EntryRequirement, QualificationProof,
+    Tournament as TournamentModel, TokenType, PrizeType, Metadata, GameConfig, EntryFee,
+    EntryRequirement, QualificationProof,
 };
+use tournaments::components::models::schedule::{Phase, Schedule};
 
 #[starknet::interface]
 pub trait ITournament<TState> {
@@ -14,7 +15,7 @@ pub trait ITournament<TState> {
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
-    fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
+    fn current_phase(self: @TState, tournament_id: u64) -> Phase;
     fn top_scores(self: @TState, tournament_id: u64) -> Array<u64>;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)

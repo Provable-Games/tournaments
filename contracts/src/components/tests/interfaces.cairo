@@ -1,7 +1,8 @@
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, TokenType, Registration, PrizeType, TournamentState, Metadata,
-    Schedule, GameConfig, EntryFee, EntryRequirement, QualificationProof,
+    Tournament as TournamentModel, TokenType, Registration, PrizeType, Metadata, GameConfig,
+    EntryFee, EntryRequirement, QualificationProof,
 };
+use tournaments::components::models::schedule::{Schedule, Phase};
 use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
 
 use starknet::ContractAddress;
@@ -146,7 +147,7 @@ pub trait ITournamentMock<TState> {
     fn get_registration(self: @TState, tournament_id: u64, token_id: u64) -> Registration;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
-    fn get_state(self: @TState, tournament_id: u64) -> TournamentState;
+    fn current_phase(self: @TState, tournament_id: u64) -> Phase;
     fn is_token_registered(self: @TState, token: ContractAddress) -> bool;
     // TODO: add for V2 (only ERC721 tokens)
     // fn register_tokens(ref self: TState, tokens: Array<Token>);

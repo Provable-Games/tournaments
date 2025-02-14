@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 use starknet::ContractAddress;
+use tournaments::components::models::schedule::Schedule;
 
 #[dojo::model]
 #[derive(Drop, Serde)]
@@ -19,19 +20,6 @@ pub struct Tournament {
 pub struct Metadata {
     pub name: felt252,
     pub description: ByteArray,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct Schedule {
-    pub registration: Option<Period>,
-    pub game: Period,
-    pub submission_period: u64,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub struct Period {
-    pub start: u64,
-    pub end: u64,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
@@ -77,16 +65,6 @@ pub struct ERC721Data {
 pub enum TokenType {
     erc20: ERC20Data,
     erc721: ERC721Data,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum TournamentState {
-    Scheduled,
-    Registration,
-    Staging,
-    Live,
-    Submission,
-    Finalized,
 }
 
 #[dojo::model]

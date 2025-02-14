@@ -7,10 +7,12 @@ pub mod components {
         pub mod game_store;
         pub mod utils;
         pub mod lifecycle;
+        pub mod schedule;
     }
     pub mod models {
         pub mod game;
         pub mod lifecycle;
+        pub mod schedule;
         pub mod tournament;
     }
     pub mod tournament;

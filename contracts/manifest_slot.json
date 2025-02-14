@@ -3646,7 +3646,7 @@
               "type": "tournaments::components::models::tournament::Period"
             },
             {
-              "name": "submission_period",
+              "name": "submission_duration",
               "type": "core::integer::u64"
             }
           ]
@@ -3993,7 +3993,7 @@
         },
         {
           "type": "enum",
-          "name": "tournaments::components::models::tournament::TournamentState",
+          "name": "tournaments::components::models::tournament::Phase",
           "variants": [
             {
               "name": "Scheduled",
@@ -4271,7 +4271,7 @@
               ],
               "outputs": [
                 {
-                  "type": "tournaments::components::models::tournament::TournamentState"
+                  "type": "tournaments::components::models::tournament::Phase"
                 }
               ],
               "state_mutability": "view"

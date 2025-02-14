@@ -190,7 +190,7 @@ const Tournament = () => {
               startTime={Number(tournamentModel?.schedule.game.start)}
               duration={durationSeconds}
               submissionPeriod={Number(
-                tournamentModel?.schedule.submission_period
+                tournamentModel?.schedule.submission_duration
               )}
             />
           </div>

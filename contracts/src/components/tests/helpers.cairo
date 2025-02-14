@@ -15,9 +15,9 @@ use tournaments::components::tests::interfaces::{
     IGameMockDispatcherTrait,
 };
 
-use tournaments::components::models::tournament::{
-    Tournament, Metadata, GameConfig, Schedule, Period,
-};
+use tournaments::components::models::tournament::{Tournament, Metadata, GameConfig};
+
+use tournaments::components::models::schedule::{Schedule, Period};
 
 //
 // Test Helpers
@@ -30,17 +30,11 @@ pub fn test_game_config(game_address: ContractAddress) -> GameConfig {
     GameConfig { address: game_address, settings_id: 1, prize_spots: 1 }
 }
 
-// pub struct Schedule {
-//     pub registration: Option<Period>,
-//     pub game: Period,
-//     pub submission_period: u64,
-// }
-
 pub fn test_schedule() -> Schedule {
     Schedule {
         registration: Option::Some(test_registration_period()),
         game: test_game_period(),
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     }
 }
 
@@ -48,14 +42,14 @@ pub fn test_season_schedule() -> Schedule {
     Schedule {
         registration: Option::None,
         game: test_game_period(),
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     }
 }
 
 pub fn custom_schedule(
-    registration: Option<Period>, game: Period, submission_period: u64,
+    registration: Option<Period>, game: Period, submission_duration: u64,
 ) -> Schedule {
-    Schedule { registration, game, submission_period }
+    Schedule { registration, game, submission_duration }
 }
 
 pub fn start_time_too_soon() -> Period {

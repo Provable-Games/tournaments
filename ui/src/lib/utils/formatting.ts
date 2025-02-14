@@ -82,7 +82,7 @@ export const processTournamentData = (
         start: startTimestamp,
         end: endTimestamp,
       },
-      submission_period: Number(formData.submissionPeriod) * SECONDS_IN_HOUR,
+      submission_duration: Number(formData.submissionPeriod) * SECONDS_IN_HOUR,
     },
     game_config: {
       address: addAddressPadding(formData.game),

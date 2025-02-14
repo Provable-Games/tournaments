@@ -218,7 +218,7 @@ export interface RegistrationValue {
 export interface Schedule {
   registration: CairoOption<Period>;
   game: Period;
-  submission_period: BigNumberish;
+  submission_duration: BigNumberish;
 }
 
 // Type definition for `tournaments::components::models::tournament::Token` struct
@@ -618,10 +618,10 @@ export const schema: SchemaType = {
       has_submitted: false,
     },
     Schedule: {
-      fieldOrder: ["registration", "game", "submission_period"],
+      fieldOrder: ["registration", "game", "submission_duration"],
       registration: new CairoOption(CairoOptionVariant.None),
       game: { start: 0, end: 0 },
-      submission_period: 0,
+      submission_duration: 0,
     },
     Token: {
       fieldOrder: ["address", "name", "symbol", "token_type", "is_registered"],
@@ -660,7 +660,7 @@ export const schema: SchemaType = {
       schedule: {
         registration: new CairoOption(CairoOptionVariant.None),
         game: { start: 0, end: 0 },
-        submission_period: 0,
+        submission_duration: 0,
       },
       game_config: { address: "", settings_id: 0, prize_spots: 0 },
       entry_fee: new CairoOption(CairoOptionVariant.None),
@@ -703,7 +703,7 @@ export const schema: SchemaType = {
       schedule: {
         registration: new CairoOption(CairoOptionVariant.None),
         game: { start: 0, end: 0 },
-        submission_period: 0,
+        submission_duration: 0,
       },
       game_config: {
         address: "",

@@ -5338,7 +5338,7 @@
               "type": "core::integer::u64"
             },
             {
-              "name": "submission_period",
+              "name": "submission_duration",
               "type": "core::integer::u64"
             },
             {
@@ -5573,7 +5573,7 @@
                   "type": "core::integer::u64"
                 },
                 {
-                  "name": "submission_period",
+                  "name": "submission_duration",
                   "type": "core::integer::u64"
                 },
                 {

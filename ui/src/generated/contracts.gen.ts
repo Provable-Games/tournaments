@@ -925,7 +925,7 @@ export function setupWorld(provider: DojoProvider) {
     try {
       return await provider.call("tournaments", {
         contractName: "tournament_mock",
-        entrypoint: "get_state",
+        entrypoint: "current_phase",
         calldata: [tournamentId],
       });
     } catch (error) {

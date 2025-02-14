@@ -21,10 +21,11 @@ use tournaments::components::models::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
         m_PrizeClaim, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement, TournamentType,
-        PrizeType, Role, TournamentState, Schedule, Period, QualificationProof,
-        TournamentQualification, NFTQualification,
+        PrizeType, Role, QualificationProof, TournamentQualification, NFTQualification,
     },
 };
+
+use tournaments::components::models::schedule::{Schedule, Period, Phase};
 
 use tournaments::tests::{
     utils,
@@ -187,7 +188,7 @@ pub fn setup() -> TestContracts {
 //
 
 #[test]
-fn test_initializer() {
+fn initializer() {
     let contracts = setup();
 
     assert(contracts.game.symbol() == "GAME", 'Symbol is wrong');
@@ -215,7 +216,7 @@ fn test_initializer() {
 //
 
 #[test]
-fn test_create_tournament() {
+fn create_tournament() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -269,16 +270,16 @@ fn test_create_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Start time 0 is not in the future.", 'ENTRYPOINT_FAILED'))]
-fn test_create_tournament_start_time_too_close() {
+#[should_panic(expected: ("Schedule: Start time must be in the future", 'ENTRYPOINT_FAILED'))]
+fn create_tournament_start_time_too_close() {
     let contracts = setup();
 
-    let current_time = get_block_timestamp();
+    let time = 100;
+
+    testing::set_block_timestamp(time);
 
     // try to create a tournament with the tournament start time in the past
-    let game_period = Period {
-        start: current_time.into() - 1, end: current_time.into() + MIN_TOURNAMENT_LENGTH.into(),
-    };
+    let game_period = Period { start: time - 10, end: time + MIN_TOURNAMENT_LENGTH.into() };
 
     let schedule = custom_schedule(Option::None, game_period, MIN_SUBMISSION_PERIOD.into());
 
@@ -295,11 +296,9 @@ fn test_create_tournament_start_time_too_close() {
 
 #[test]
 #[should_panic(
-    expected: (
-        "Tournament: Registration period of 899 lower than minimum 900", 'ENTRYPOINT_FAILED',
-    ),
+    expected: ("Schedule: Registration period less than minimum of 900", 'ENTRYPOINT_FAILED'),
 )]
-fn test_create_tournament_registration_period_too_short() {
+fn create_tournament_registration_period_too_short() {
     let contracts = setup();
 
     let schedule = custom_schedule(
@@ -325,11 +324,10 @@ fn test_create_tournament_registration_period_too_short() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Registration period of 2592001 higher than maximum 2592000",
-        'ENTRYPOINT_FAILED',
+        "Schedule: Registration period greater than maximum of 2592000", 'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_registration_period_too_long() {
+fn create_tournament_registration_period_too_long() {
     let contracts = setup();
 
     let schedule = custom_schedule(
@@ -354,11 +352,11 @@ fn test_create_tournament_registration_period_too_long() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Registration end time 1802 after tournament end time 1801",
+        "Schedule: Registration end time 1802 is after tournament end time 1801",
         'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_end_time_too_close() {
+fn create_tournament_end_time_too_close() {
     let contracts = setup();
 
     let schedule = registration_open_beyond_tournament_end();
@@ -380,11 +378,10 @@ fn test_create_tournament_end_time_too_close() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Tournament period of 31104001 higher than maximum 31104000",
-        'ENTRYPOINT_FAILED',
+        "Schedule: Tournament duration greater than maximum of 31104000", 'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_tournament_too_long() {
+fn create_tournament_tournament_too_long() {
     let contracts = setup();
 
     let schedule = tournament_too_long();
@@ -402,11 +399,9 @@ fn test_create_tournament_tournament_too_long() {
 
 #[test]
 #[should_panic(
-    expected: (
-        "Tournament: Submission period of 899 lower than the minimum 900", 'ENTRYPOINT_FAILED',
-    ),
+    expected: ("Schedule: Submission duration must be between 900 and 604800", 'ENTRYPOINT_FAILED'),
 )]
-fn test_create_tournament_submission_period_too_short() {
+fn create_tournament_submission_period_too_short() {
     let contracts = setup();
 
     let schedule = custom_schedule(
@@ -426,12 +421,9 @@ fn test_create_tournament_submission_period_too_short() {
 
 #[test]
 #[should_panic(
-    expected: (
-        "Tournament: Submission period of 604801 higher than the maximum 604800",
-        'ENTRYPOINT_FAILED',
-    ),
+    expected: ("Schedule: Submission duration must be between 900 and 604800", 'ENTRYPOINT_FAILED'),
 )]
-fn test_create_tournament_submission_period_too_long() {
+fn create_tournament_submission_period_too_long() {
     let contracts = setup();
 
     let schedule = custom_schedule(
@@ -450,7 +442,7 @@ fn test_create_tournament_submission_period_too_long() {
 }
 
 #[test]
-fn test_create_tournament_with_prizes() {
+fn create_tournament_with_prizes() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -482,7 +474,7 @@ fn test_create_tournament_with_prizes() {
 
 // #[test]
 // #[should_panic(expected: ('prize token not registered', 'ENTRYPOINT_FAILED'))]
-// fn test_create_tournament_with_prizes_token_not_registered() {
+// fn create_tournament_with_prizes_token_not_registered() {
 //     let (_world, mut tournament, _loot_survivor, _pragma, _eth, _lords, mut erc20, mut erc721,
 // _golden_token, _blobert) =
 //         setup();
@@ -513,7 +505,7 @@ fn test_create_tournament_with_prizes() {
         "Tournament: Prize position 2 is greater than the winners count 1", 'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_with_prizes_position_too_large() {
+fn create_tournament_with_prizes_position_too_large() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -549,7 +541,7 @@ fn test_create_tournament_with_prizes_position_too_large() {
         'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_with_premiums_too_long() {
+fn create_tournament_with_premiums_too_long() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -585,7 +577,7 @@ fn test_create_tournament_with_premiums_too_long() {
         'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_create_tournament_with_premiums_not_100() {
+fn create_tournament_with_premiums_not_100() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -611,8 +603,8 @@ fn test_create_tournament_with_premiums_not_100() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Tournament 1 is not finalized", 'ENTRYPOINT_FAILED'))]
-fn test_create_gated_tournament_with_unsettled_tournament() {
+#[should_panic(expected: ("Schedule: Tournament is not finalized", 'ENTRYPOINT_FAILED'))]
+fn create_gated_tournament_with_unsettled_tournament() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -665,7 +657,7 @@ fn test_create_gated_tournament_with_unsettled_tournament() {
 }
 
 #[test]
-fn test_create_tournament_gated_by_multiple_tournaments() {
+fn create_tournament_gated_by_multiple_tournaments() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -722,7 +714,7 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
             start: current_time + MIN_REGISTRATION_PERIOD.into(),
             end: current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
         },
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     };
 
     let (gated_tournament, _) = contracts
@@ -767,7 +759,7 @@ fn test_create_tournament_gated_by_multiple_tournaments() {
 }
 
 #[test]
-fn test_allowlist_gated_tournament() {
+fn allowlist_gated_tournament() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -815,7 +807,7 @@ fn test_allowlist_gated_tournament() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Player not in allowlist", 'ENTRYPOINT_FAILED'))]
-fn test_allowlist_gated_tournament_unauthorized() {
+fn allowlist_gated_tournament_unauthorized() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -855,7 +847,7 @@ fn test_allowlist_gated_tournament_unauthorized() {
 }
 
 #[test]
-fn test_create_tournament_season() {
+fn create_tournament_season() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -863,7 +855,7 @@ fn test_create_tournament_season() {
     let schedule = Schedule {
         registration: Option::None,
         game: Period { start: TEST_START_TIME().into(), end: TEST_END_TIME().into() },
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     };
 
     let (tournament, _) = contracts
@@ -885,7 +877,7 @@ fn test_create_tournament_season() {
 // //
 
 // // #[test]
-// // fn test_register_token() {
+// // fn register_token() {
 // //     let (_world, mut tournament, _loot_survivor, _pragma, _eth, _lords, mut erc20, mut
 // // erc721,) =
 // //         setup();
@@ -913,7 +905,7 @@ fn test_create_tournament_season() {
 
 // // #[test]
 // // #[should_panic(expected: ('token already registered', 'ENTRYPOINT_FAILED'))]
-// // fn test_register_token_already_registered() {
+// // fn register_token_already_registered() {
 // //     let (_world, mut tournament, _loot_survivor, _pragma, _eth, _lords, mut erc20, mut erc721,
 // // _golden_token, _blobert) =
 // //         setup();
@@ -951,7 +943,7 @@ fn test_create_tournament_season() {
 //
 
 #[test]
-fn test_enter_tournament() {
+fn enter_tournament() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1016,7 +1008,7 @@ fn test_enter_tournament() {
         'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
+fn use_host_token_to_qualify_into_tournament_gated_tournament() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1067,7 +1059,7 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
             start: current_time + MIN_REGISTRATION_PERIOD.into(),
             end: current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
         },
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     };
 
     let (second_tournament, _) = contracts
@@ -1101,7 +1093,7 @@ fn test_use_host_token_to_qualify_into_tournament_gated_tournament() {
         'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_enter_tournament_wrong_submission_type() {
+fn enter_tournament_wrong_submission_type() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1157,7 +1149,7 @@ fn test_enter_tournament_wrong_submission_type() {
             start: current_time + MIN_REGISTRATION_PERIOD.into(),
             end: current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
         },
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     };
 
     let (second_tournament, _) = contracts
@@ -1184,7 +1176,7 @@ fn test_enter_tournament_wrong_submission_type() {
 }
 
 #[test]
-fn test_enter_tournament_season() {
+fn enter_tournament_season() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1225,7 +1217,7 @@ fn test_enter_tournament_season() {
 //
 
 #[test]
-fn test_submit_score_gas_check() {
+fn submit_score_gas_check() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1311,8 +1303,8 @@ fn test_submit_score_gas_check() {
     testing::set_block_timestamp(TEST_END_TIME().into() + MIN_SUBMISSION_PERIOD.into() + 1);
 
     // verify tournament is finalized
-    let state = contracts.tournament.get_state(tournament.id);
-    assert!(state == TournamentState::Finalized, "Tournament should be finalized");
+    let state = contracts.tournament.current_phase(tournament.id);
+    assert!(state == Phase::Finalized, "Tournament should be finalized");
 
     // Verify final leaderboard
     let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
@@ -1380,7 +1372,7 @@ fn test_submit_score_gas_check() {
 }
 
 #[test]
-fn test_submit_score_basic() {
+fn submit_score_basic() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1413,7 +1405,7 @@ fn test_submit_score_basic() {
 }
 
 #[test]
-fn test_submit_score_multiple_positions() {
+fn submit_score_multiple_positions() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1471,7 +1463,7 @@ fn test_submit_score_multiple_positions() {
         "Tournament: Score 50 is less than current score of 100 at position 1", 'ENTRYPOINT_FAILED',
     ),
 )]
-fn test_submit_score_lower_score() {
+fn submit_score_lower_score() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1507,7 +1499,7 @@ fn test_submit_score_lower_score() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Invalid position", 'ENTRYPOINT_FAILED'))]
-fn test_submit_score_invalid_position() {
+fn submit_score_invalid_position() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1533,7 +1525,7 @@ fn test_submit_score_invalid_position() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Score already submitted", 'ENTRYPOINT_FAILED'))]
-fn test_submit_score_already_submitted() {
+fn submit_score_already_submitted() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1558,7 +1550,7 @@ fn test_submit_score_already_submitted() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Not in submission period", 'ENTRYPOINT_FAILED'))]
-fn test_submit_score_wrong_period() {
+fn submit_score_wrong_period() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1579,7 +1571,7 @@ fn test_submit_score_wrong_period() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Invalid position", 'ENTRYPOINT_FAILED'))]
-fn test_submit_score_position_zero() {
+fn submit_score_position_zero() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1603,7 +1595,7 @@ fn test_submit_score_position_zero() {
 #[should_panic(
     expected: ("Tournament: Must submit for next available position", 'ENTRYPOINT_FAILED'),
 )]
-fn test_submit_score_with_gap() {
+fn submit_score_with_gap() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1640,7 +1632,7 @@ fn test_submit_score_with_gap() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Tournament 2 does not exist", 'ENTRYPOINT_FAILED'))]
-fn test_submit_score_invalid_tournament() {
+fn submit_score_invalid_tournament() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -1661,7 +1653,7 @@ fn test_submit_score_invalid_tournament() {
 //
 
 #[test]
-fn test_claim_prizes_with_sponsored_prizes() {
+fn claim_prizes_with_sponsored_prizes() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1714,7 +1706,7 @@ fn test_claim_prizes_with_sponsored_prizes() {
 
 #[test]
 #[should_panic(expected: ("Tournament: Prize has already been claimed", 'ENTRYPOINT_FAILED'))]
-fn test_claim_prizes_prize_already_claimed() {
+fn claim_prizes_prize_already_claimed() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1761,7 +1753,7 @@ fn test_claim_prizes_prize_already_claimed() {
 }
 
 #[test]
-fn test_claim_prizes_with_gated_tokens_criteria() {
+fn claim_prizes_with_gated_tokens_criteria() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1807,7 +1799,7 @@ fn test_claim_prizes_with_gated_tokens_criteria() {
 }
 
 #[test]
-fn test_claim_prizes_with_gated_tokens_uniform() {
+fn claim_prizes_with_gated_tokens_uniform() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1851,7 +1843,7 @@ fn test_claim_prizes_with_gated_tokens_uniform() {
 }
 
 #[test]
-fn test_claim_prizes_with_gated_tournaments() {
+fn claim_prizes_with_gated_tournaments() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -1900,7 +1892,7 @@ fn test_claim_prizes_with_gated_tournaments() {
             start: current_time + MIN_REGISTRATION_PERIOD.into(),
             end: current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
         },
-        submission_period: MIN_SUBMISSION_PERIOD.into(),
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
     };
 
     let (second_tournament, _) = contracts
@@ -1940,7 +1932,7 @@ fn test_claim_prizes_with_gated_tournaments() {
 }
 
 #[test]
-fn test_claim_prizes_with_premiums() {
+fn claim_prizes_with_premiums() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -2002,7 +1994,7 @@ fn test_claim_prizes_with_premiums() {
 }
 
 #[test]
-fn test_claim_prizes_with_premium_creator_fee() {
+fn claim_prizes_with_premium_creator_fee() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -2085,7 +2077,7 @@ fn test_claim_prizes_with_premium_creator_fee() {
 }
 
 #[test]
-fn test_claim_prizes_with_premium_multiple_winners() {
+fn claim_prizes_with_premium_multiple_winners() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -2212,7 +2204,7 @@ fn test_claim_prizes_with_premium_multiple_winners() {
 
 // TODO: Revisit this test case when we have a way to claim unclaimable prizes
 // #[test]
-// fn test_tournament_with_no_submissions() {
+// fn tournament_with_no_submissions() {
 //     let contracts = setup();
 
 //     utils::impersonate(OWNER());
@@ -2312,7 +2304,7 @@ fn test_claim_prizes_with_premium_multiple_winners() {
 // }
 
 #[test]
-fn test_claim_prizes_season() {
+fn claim_prizes_season() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
@@ -2364,7 +2356,7 @@ fn test_claim_prizes_season() {
 }
 
 #[test]
-fn test_state_transitions() {
+fn state_transitions() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
@@ -2372,14 +2364,14 @@ fn test_state_transitions() {
     let registration_end_time = 10000;
     let tournament_start_time = 20000;
     let tournament_end_time = 30000;
-    let submission_period = 86400;
+    let submission_duration = 86400;
 
     let schedule = Schedule {
         registration: Option::Some(
             Period { start: registration_start_time, end: registration_end_time },
         ),
         game: Period { start: tournament_start_time, end: tournament_end_time },
-        submission_period: submission_period,
+        submission_duration: submission_duration,
     };
 
     // Create tournament
@@ -2396,67 +2388,67 @@ fn test_state_transitions() {
     // Test Scheduled state (before registration)
     testing::set_block_timestamp(registration_start_time - 1);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Scheduled,
+        contracts.tournament.current_phase(tournament.id) == Phase::Scheduled,
         "Tournament should be in Scheduled state",
     );
 
     // Test Registration state
     testing::set_block_timestamp(registration_start_time);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Registration,
+        contracts.tournament.current_phase(tournament.id) == Phase::Registration,
         "Tournament should be in Registration state at start",
     );
 
     testing::set_block_timestamp(registration_end_time - 1);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Registration,
+        contracts.tournament.current_phase(tournament.id) == Phase::Registration,
         "Tournament should be in Registration state before end",
     );
 
     // Test Staging state (between registration end and tournament start)
     testing::set_block_timestamp(registration_end_time);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Staging,
+        contracts.tournament.current_phase(tournament.id) == Phase::Staging,
         "Tournament should be in Staging state after registration",
     );
 
     testing::set_block_timestamp(tournament_start_time - 1);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Staging,
+        contracts.tournament.current_phase(tournament.id) == Phase::Staging,
         "Tournament should be in Staging state before start",
     );
 
     // Test Live state
     testing::set_block_timestamp(tournament_start_time);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Live,
+        contracts.tournament.current_phase(tournament.id) == Phase::Live,
         "Tournament should be in Live state at start",
     );
 
     testing::set_block_timestamp(tournament_end_time - 1);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Live,
+        contracts.tournament.current_phase(tournament.id) == Phase::Live,
         "Tournament should be in Live state before end",
     );
 
     // Test Submission state
     testing::set_block_timestamp(tournament_end_time);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Submission,
+        contracts.tournament.current_phase(tournament.id) == Phase::Submission,
         "Tournament should be in Submission state after end",
     );
 
     // just before submission period ends
-    testing::set_block_timestamp(tournament_end_time + submission_period - 1);
+    testing::set_block_timestamp(tournament_end_time + submission_duration - 1);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Submission,
+        contracts.tournament.current_phase(tournament.id) == Phase::Submission,
         "Tournament should be in Submission state before submission period ends",
     );
 
     // Submission is over, so tournament should be finalized
-    testing::set_block_timestamp(tournament_end_time + submission_period);
+    testing::set_block_timestamp(tournament_end_time + submission_duration);
     assert!(
-        contracts.tournament.get_state(tournament.id) == TournamentState::Finalized,
+        contracts.tournament.current_phase(tournament.id) == Phase::Finalized,
         "Tournament should be in Finalized state after submission period",
     );
 }
@@ -2465,7 +2457,7 @@ fn test_state_transitions() {
 #[should_panic(
     expected: ("Tournament: Score 1000 qualifies for higher position than 3", 'ENTRYPOINT_FAILED'),
 )]
-fn test_malicious_score_submission() {
+fn malicious_score_submission() {
     let contracts = setup();
     utils::impersonate(OWNER());
 

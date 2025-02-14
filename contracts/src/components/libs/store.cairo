@@ -4,9 +4,9 @@ use dojo::model::{ModelStorage};
 use tournaments::components::models::tournament::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
     TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
-    Schedule, GameConfig, EntryFee, EntryRequirement,
+    GameConfig, EntryFee, EntryRequirement,
 };
-
+use tournaments::components::models::schedule::Schedule;
 use tournaments::components::constants::{VERSION};
 
 #[derive(Copy, Drop)]
