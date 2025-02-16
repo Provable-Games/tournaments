@@ -1,6 +1,6 @@
 pub mod components {
     pub mod constants;
-    mod interfaces;
+    pub mod interfaces;
     pub mod game;
     mod libs {
         pub mod store;

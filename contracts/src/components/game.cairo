@@ -24,6 +24,7 @@ pub trait IGame<TState> {
         end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
+    fn set_token_uri(ref self: TState, token_id: 256);
     fn game_metadata(self: @TState) -> GameMetadata;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
     fn game_count(self: @TState) -> u64;
@@ -42,7 +43,7 @@ pub mod game_component {
 
     use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
     use tournaments::components::models::lifecycle::Lifecycle;
-    use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID};
+    use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID, IERC4906_ID};
     use tournaments::components::libs::game_store::{Store, StoreTrait};
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
@@ -59,7 +60,15 @@ pub mod game_component {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    pub enum Event {}
+    pub enum Event {
+        MetadataUpdate: MetadataUpdate,
+    }
+
+    #[derive(Drop, PartialEq, starknet::Event)]
+    pub struct MetadataUpdate {
+        #[key]
+        pub token_id: u256,
+    }
 
     mod Errors {
         const CALLER_IS_NOT_OWNER: felt252 = 'ERC721: caller is not owner';
@@ -109,6 +118,11 @@ pub mod game_component {
                 );
 
             token_id
+        }
+
+        fn set_token_uri(ref self: ComponentState<TContractState>, token_id: u64) {
+            let event = Event::MetadataUpdate(MetadataUpdate { token_id });
+            self.emit(event);
         }
 
         fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata {
@@ -185,6 +199,7 @@ pub mod game_component {
             src5_component.register_interface(IGAME_METADATA_ID);
             src5_component.register_interface(IERC721_ID);
             src5_component.register_interface(IERC721_METADATA_ID);
+            src5_component.register_interface(IERC4906_ID);
         }
 
         fn mint_creator_token(
