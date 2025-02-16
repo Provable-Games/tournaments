@@ -24,7 +24,7 @@ pub trait IGame<TState> {
         end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
-    fn set_token_uri(ref self: TState, token_id: 256);
+    fn set_token_uri(ref self: TState, token_id: u256);
     fn game_metadata(self: @TState) -> GameMetadata;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
     fn game_count(self: @TState) -> u64;
@@ -120,7 +120,7 @@ pub mod game_component {
             token_id
         }
 
-        fn set_token_uri(ref self: ComponentState<TContractState>, token_id: u64) {
+        fn set_token_uri(ref self: ComponentState<TContractState>, token_id: u256) {
             let event = Event::MetadataUpdate(MetadataUpdate { token_id });
             self.emit(event);
         }
