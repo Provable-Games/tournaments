@@ -86,7 +86,6 @@ pub mod tournament_mock {
     use tournaments::components::tournament::tournament_component;
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
-    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);

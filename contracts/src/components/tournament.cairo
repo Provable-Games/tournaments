@@ -59,7 +59,8 @@ pub mod tournament_component {
 
     use tournaments::components::constants::{TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID};
     use tournaments::components::interfaces::{
-        IGameDispatcher, IGameDispatcherTrait, IGAME_ID, IGAME_METADATA_ID,
+        IGameTokenDispatcher, IGameTokenDispatcherTrait, IGameDetailsDispatcher,
+        IGameDetailsDispatcherTrait, IGAMETOKEN_ID, IGAME_METADATA_ID,
     };
     use tournaments::components::models::tournament::{
         Tournament as TournamentModel, Registration, Leaderboard, Prize, Token, TournamentConfig,
@@ -72,7 +73,7 @@ pub mod tournament_component {
     use tournaments::components::libs::schedule::{
         ScheduleTrait, ScheduleImpl, ScheduleAssertionsTrait, ScheduleAssertionsImpl,
     };
-    use tournaments::components::game::{ISettingsDispatcher, ISettingsDispatcherTrait};
+    use tournaments::components::interfaces::{ISettingsDispatcher, ISettingsDispatcherTrait};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
 
@@ -518,7 +519,7 @@ pub mod tournament_component {
         fn get_score_for_token_id(
             self: @ComponentState<TContractState>, contract_address: ContractAddress, token_id: u64,
         ) -> u32 {
-            let game_dispatcher = IGameDispatcher { contract_address };
+            let game_dispatcher = IGameDetailsDispatcher { contract_address };
             game_dispatcher.score(token_id)
         }
 
@@ -664,7 +665,7 @@ pub mod tournament_component {
         ) {
             let address: felt252 = address.into();
             assert!(
-                src5_dispatcher.supports_interface(IGAME_ID),
+                src5_dispatcher.supports_interface(IGAMETOKEN_ID),
                 "Tournament: Game address {} does not support IGame interface",
                 address,
             );
@@ -1217,7 +1218,7 @@ pub mod tournament_component {
             player_name: felt252,
             player_address: ContractAddress,
         ) -> u64 {
-            let game_dispatcher = IGameDispatcher { contract_address: game_address };
+            let game_dispatcher = IGameTokenDispatcher { contract_address: game_address };
             let game_token_id = game_dispatcher
                 .mint(player_name, settings_id, game_start, game_end, player_address);
             game_token_id
@@ -1416,7 +1417,7 @@ pub mod tournament_component {
                 "Tournament: Must submit for next available position",
             );
 
-            let game_dispatcher = IGameDispatcher {
+            let game_dispatcher = IGameDetailsDispatcher {
                 contract_address: *tournament.game_config.address,
             };
 

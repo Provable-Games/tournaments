@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait IGameMock<TContractState> {
+trait IGameTokenMock<TContractState> {
     fn start_game(ref self: TContractState, game_id: u64);
     fn end_game(ref self: TContractState, game_id: u64, score: u32);
     fn set_settings(
@@ -12,13 +12,13 @@ trait IGameMock<TContractState> {
 }
 
 #[starknet::interface]
-trait IGameMockInit<TContractState> {
+trait IGameTokenMockInit<TContractState> {
     fn initializer(ref self: TContractState);
 }
 
 #[dojo::contract]
 mod game_mock {
-    use tournaments::components::game::{ISettings, IGameDetails};
+    use tournaments::components::interfaces::{ISettings, IGameDetails};
     use tournaments::components::game::game_component;
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
@@ -30,8 +30,6 @@ mod game_mock {
     use tournaments::components::constants::{DEFAULT_NS};
 
     use starknet::{ContractAddress, contract_address_const};
-
-    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 
     component!(path: game_component, storage: game, event: GameEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -119,7 +117,7 @@ mod game_mock {
     }
 
     #[abi(embed_v0)]
-    impl GameMockImpl of super::IGameMock<ContractState> {
+    impl GameMockImpl of super::IGameTokenMock<ContractState> {
         fn start_game(ref self: ContractState, game_id: u64) {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
@@ -150,7 +148,7 @@ mod game_mock {
     }
 
     #[abi(embed_v0)]
-    impl GameInitializerImpl of super::IGameMockInit<ContractState> {
+    impl GameInitializerImpl of super::IGameTokenMockInit<ContractState> {
         fn initializer(ref self: ContractState) {
             self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI());
             self

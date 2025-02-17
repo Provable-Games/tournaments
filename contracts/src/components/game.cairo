@@ -1,48 +1,18 @@
-use starknet::ContractAddress;
-use tournaments::components::models::game::{TokenMetadata, GameMetadata};
-
-// TODO: Move to interface file
-#[starknet::interface]
-pub trait ISettings<TState> {
-    fn setting_exists(self: @TState, settings_id: u32) -> bool;
-}
-
-// TODO: Move to interface file
-#[starknet::interface]
-pub trait IGameDetails<TState> {
-    fn score(self: @TState, game_id: u64) -> u32;
-}
-
-// TODO: Move to interface file
-#[starknet::interface]
-pub trait IGame<TState> {
-    fn mint(
-        ref self: TState,
-        player_name: felt252,
-        settings_id: u32,
-        start: Option<u64>,
-        end: Option<u64>,
-        to: ContractAddress,
-    ) -> u64;
-    fn game_metadata(self: @TState) -> GameMetadata;
-    fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
-    fn game_count(self: @TState) -> u64;
-    fn namespace(self: @TState) -> ByteArray;
-}
-
 ///
 /// Game Component
 ///
 #[starknet::component]
 pub mod game_component {
-    use super::{IGame, ISettings, IGameDetails};
+    use tournaments::components::interfaces::{IGameToken, IGameDetails, ISettings};
     use starknet::{ContractAddress, get_contract_address};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use tournaments::components::models::game::{GameMetadata, TokenMetadata, SettingsDetails};
     use tournaments::components::models::lifecycle::Lifecycle;
-    use tournaments::components::interfaces::{WorldTrait, WorldImpl, IGAME_ID, IGAME_METADATA_ID};
+    use tournaments::components::interfaces::{
+        WorldTrait, WorldImpl, IGAMETOKEN_ID, IGAME_METADATA_ID,
+    };
     use tournaments::components::libs::game_store::{Store, StoreTrait};
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
@@ -57,9 +27,16 @@ pub mod game_component {
         _namespace: ByteArray,
     }
 
+    #[derive(Drop, starknet::Event)]
+    pub struct MetadataUpdateEvent {
+        token_id: u256,
+    }
+
     #[event]
     #[derive(Drop, starknet::Event)]
-    pub enum Event {}
+    pub enum Event {
+        MetadataUpdate: MetadataUpdateEvent,
+    }
 
     mod Errors {
         const CALLER_IS_NOT_OWNER: felt252 = 'ERC721: caller is not owner';
@@ -78,7 +55,7 @@ pub mod game_component {
         impl SRC5: SRC5Component::HasComponent<TContractState>,
         impl ERC721: ERC721Component::HasComponent<TContractState>,
         +Drop<TContractState>,
-    > of IGame<ComponentState<TContractState>> {
+    > of IGameToken<ComponentState<TContractState>> {
         fn mint(
             ref self: ComponentState<TContractState>,
             player_name: felt252,
@@ -138,6 +115,10 @@ pub mod game_component {
         fn namespace(self: @ComponentState<TContractState>) -> ByteArray {
             self._namespace.read()
         }
+
+        fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64) {
+            self.emit(MetadataUpdateEvent { token_id: game_id.into() });
+        }
     }
     #[generate_trait]
     pub impl InternalImpl<
@@ -181,7 +162,7 @@ pub mod game_component {
 
         fn register_src5_interfaces(ref self: ComponentState<TContractState>) {
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
-            src5_component.register_interface(IGAME_ID);
+            src5_component.register_interface(IGAMETOKEN_ID);
             src5_component.register_interface(IGAME_METADATA_ID);
             src5_component.register_interface(IERC721_ID);
             src5_component.register_interface(IERC721_METADATA_ID);

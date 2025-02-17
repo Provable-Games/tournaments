@@ -16,7 +16,8 @@ pub struct Token {
     pub token_type: TokenType,
 }
 
-pub const IGAME_ID: felt252 = 0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
+pub const IGAMETOKEN_ID: felt252 =
+    0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
 pub const IGAME_METADATA_ID: felt252 =
     0xdbe4736acc1847cb2bca994503d50e7fc21daf5cc7b76688ad4d6788c0a9f1;
 
@@ -185,7 +186,7 @@ pub trait ITournamentMock<TState> {
 }
 
 #[starknet::interface]
-pub trait IGameMock<TState> {
+pub trait IGameTokenMock<TState> {
     // IWorldProvider
     fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
@@ -303,8 +304,8 @@ pub impl WorldImpl of WorldTrait {
         (ITournamentMockDispatcher { contract_address: self.tournament_mock_address() })
     }
     #[inline(always)]
-    fn game_mock_dispatcher(self: @WorldStorage) -> IGameMockDispatcher {
-        (IGameMockDispatcher { contract_address: self.game_mock_address() })
+    fn game_mock_dispatcher(self: @WorldStorage) -> IGameTokenMockDispatcher {
+        (IGameTokenMockDispatcher { contract_address: self.game_mock_address() })
     }
 
     #[inline(always)]

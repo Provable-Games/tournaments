@@ -11,8 +11,8 @@ use tournaments::tests::{
     },
 };
 use tournaments::components::tests::interfaces::{
-    ITournamentMockDispatcher, ITournamentMockDispatcherTrait, IGameMockDispatcher,
-    IGameMockDispatcherTrait,
+    ITournamentMockDispatcher, ITournamentMockDispatcherTrait, IGameTokenMockDispatcher,
+    IGameTokenMockDispatcherTrait,
 };
 
 use tournaments::components::models::tournament::{Tournament, Metadata, GameConfig};
@@ -112,7 +112,7 @@ pub fn create_basic_tournament(
         )
 }
 
-pub fn create_settings_details(game: IGameMockDispatcher) {
+pub fn create_settings_details(game: IGameTokenMockDispatcher) {
     game.set_settings(1, SETTINGS_NAME(), SETTINGS_DESCRIPTION(), true);
 }
 // pub fn register_tokens_for_test(

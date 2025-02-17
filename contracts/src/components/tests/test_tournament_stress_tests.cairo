@@ -5,7 +5,7 @@ use tournaments::components::constants::{MIN_SUBMISSION_PERIOD};
 use tournaments::components::models::tournament::{TournamentGame, TokenType, ERC20Data, Prize};
 
 use tournaments::components::tests::interfaces::{
-    IGameMockDispatcherTrait, ITournamentMockDispatcherTrait, IERC20MockDispatcherTrait,
+    IGameTokenMockDispatcherTrait, ITournamentMockDispatcherTrait, IERC20MockDispatcherTrait,
 };
 use tournaments::components::tests::test_tournament::{setup, TestContracts};
 use tournaments::tests::{

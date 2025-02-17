@@ -45,9 +45,9 @@ use tournaments::components::tests::mocks::{
     game_mock::game_mock,
 };
 use tournaments::components::tests::interfaces::{
-    IGameMockDispatcher, IGameMockDispatcherTrait, ITournamentMockDispatcher,
+    IGameTokenMockDispatcher, IGameTokenMockDispatcherTrait, ITournamentMockDispatcher,
     ITournamentMockDispatcherTrait, IERC20MockDispatcher, IERC20MockDispatcherTrait,
-    IERC721MockDispatcher, IERC721MockDispatcherTrait, IGAME_ID, IGAME_METADATA_ID,
+    IERC721MockDispatcher, IERC721MockDispatcherTrait, IGAMETOKEN_ID, IGAME_METADATA_ID,
 };
 
 use openzeppelin_token::erc721::interface;
@@ -57,7 +57,7 @@ use openzeppelin_token::erc721::{ERC721Component::{Transfer, Approval}};
 pub struct TestContracts {
     pub world: WorldStorage,
     pub tournament: ITournamentMockDispatcher,
-    pub game: IGameMockDispatcher,
+    pub game: IGameTokenMockDispatcher,
     pub erc20: IERC20MockDispatcher,
     pub erc721: IERC721MockDispatcher,
 }
@@ -201,7 +201,7 @@ fn initializer() {
         contracts.game.supports_interface(interface::IERC721_METADATA_ID) == true,
         'should support TOKEN_METADATA',
     );
-    assert(contracts.game.supports_interface(IGAME_ID) == true, 'should support GAME');
+    assert(contracts.game.supports_interface(IGAMETOKEN_ID) == true, 'should support GAME');
     assert(
         contracts.game.supports_interface(IGAME_METADATA_ID) == true,
         'should support GAME_METADATA',

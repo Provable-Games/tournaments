@@ -1,16 +1,18 @@
 use starknet::ContractAddress;
 use dojo::world::{WorldStorage, WorldStorageTrait, IWorldDispatcher};
 
-use tournaments::components::models::game::{SettingsDetails, TokenMetadata};
+use tournaments::components::models::game::{TokenMetadata, GameMetadata};
 
 use tournaments::components::libs::utils::ZERO;
 
-pub const IGAME_ID: felt252 = 0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
+pub const IGAMETOKEN_ID: felt252 =
+    0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
 pub const IGAME_METADATA_ID: felt252 =
     0xdbe4736acc1847cb2bca994503d50e7fc21daf5cc7b76688ad4d6788c0a9f1;
+pub const IERC4906_ID: felt252 = 0x49064906;
 
 #[starknet::interface]
-pub trait IGame<TState> {
+pub trait IGameToken<TState> {
     fn mint(
         ref self: TState,
         player_name: felt252,
@@ -19,11 +21,21 @@ pub trait IGame<TState> {
         end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
-    fn score(self: @TState, token_id: u64) -> u32;
-    fn get_settings_id(self: @TState, token_id: u64) -> u32;
-    fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
-    fn settings_exists(self: @TState, settings_id: u32) -> bool;
+    fn emit_metadata_update(ref self: TState, game_id: u64);
+    fn game_metadata(self: @TState) -> GameMetadata;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
+    fn game_count(self: @TState) -> u64;
+    fn namespace(self: @TState) -> ByteArray;
+}
+
+#[starknet::interface]
+pub trait IGameDetails<TState> {
+    fn score(self: @TState, game_id: u64) -> u32;
+}
+
+#[starknet::interface]
+pub trait ISettings<TState> {
+    fn setting_exists(self: @TState, settings_id: u32) -> bool;
 }
 
 #[generate_trait]
