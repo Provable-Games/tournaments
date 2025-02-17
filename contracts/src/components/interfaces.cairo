@@ -20,7 +20,7 @@ pub trait IGame<TState> {
         end: Option<u64>,
         to: ContractAddress,
     ) -> u64;
-    fn set_token_uri(ref self: TState, token_id: u64);
+    fn update_token_uri(ref self: TState, token_id: u64);
     fn score(self: @TState, token_id: u64) -> u32;
     fn get_settings_id(self: @TState, token_id: u64) -> u32;
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
