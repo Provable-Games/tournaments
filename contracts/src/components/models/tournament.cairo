@@ -8,6 +8,7 @@ use tournaments::components::models::schedule::Schedule;
 pub struct Tournament {
     #[key]
     pub id: u64,
+    pub created_at: u64,
     pub creator: ContractAddress,
     pub metadata: Metadata,
     pub schedule: Schedule,

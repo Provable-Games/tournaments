@@ -107,8 +107,9 @@ pub impl StoreImpl of StoreTrait {
     ) -> Tournament {
         let id = self.increment_and_get_tournament_count();
         let creator = starknet::get_caller_address();
+        let created_at = starknet::get_block_timestamp();
         let tournament = Tournament {
-            id, creator, metadata, schedule, game_config, entry_fee, entry_requirement,
+            id, creator, created_at, metadata, schedule, game_config, entry_fee, entry_requirement,
         };
         self.world.write_model(@tournament);
         tournament
