@@ -1,9 +1,9 @@
 {
   "world": {
     "class_hash": "0x45575a88cc5cef1e444c77ce60b7b4c9e73a01cbbe20926d5a4c72a94011410",
-    "address": "0x21cc11eab0001dade1751f7934596d67c6fd95b7659560520c620c82c8a537b",
-    "seed": "darkshuffle_v1.1.0",
-    "name": "Dark Shuffle",
+    "address": "0x1ae9655937bde6abec7a89152ec645bc9a4993ddbb7d58075852f3dc8c39099",
+    "seed": "pg_sepolia",
+    "name": "Provable Games",
     "entrypoints": [
       "uuid",
       "set_metadata",
@@ -1252,7 +1252,7 @@
   },
   "contracts": [
     {
-      "address": "0x5396022627692e09a91cccd79044c2e89f4881062023bf44c196761a275fe05",
+      "address": "0x96844ae2f1419ff8ee75f1e9a9412b49528a834bb3017117bbadd088a76718",
       "class_hash": "0x3b6adf92300b027f1d6d3314ec1361b92eb35a5ee60dbf411abfb8007dac30f",
       "abi": [
         {
@@ -1761,7 +1761,7 @@
       ]
     },
     {
-      "address": "0x64ee636e8cdad1d6df04ae1db709efc44f3ba8806a1d55778ca202e233a8467",
+      "address": "0xb31b3d07bb13e6e38c4016ce0fb244a0486163624d4bddd24a8f967a334f26",
       "class_hash": "0x68b4995d5f0c58d051b153e33a9debcb63a2afd99781730bee8ae1f80edb3a9",
       "abi": [
         {
@@ -2468,8 +2468,8 @@
       ]
     },
     {
-      "address": "0x82f09529496004aa987a61e32f071d4681086870211fdd62559fdf03974698",
-      "class_hash": "0x2967e00092d132a2cdd74e3c1589f774401fd1a76c43847a73fc686343e8a61",
+      "address": "0x7089b9ee17959650efb08f5bbb30680ef1c8eecc801824938826517f9775ec9",
+      "class_hash": "0x515acb89216dae0c2a4d3b9eaa8c9fdbbefe0508af706ddb408659b9838e281",
       "abi": [
         {
           "type": "impl",
@@ -2524,7 +2524,7 @@
         {
           "type": "impl",
           "name": "SettingsImpl",
-          "interface_name": "tournaments::components::game::ISettings"
+          "interface_name": "tournaments::components::interfaces::ISettings"
         },
         {
           "type": "enum",
@@ -2542,7 +2542,7 @@
         },
         {
           "type": "interface",
-          "name": "tournaments::components::game::ISettings",
+          "name": "tournaments::components::interfaces::ISettings",
           "items": [
             {
               "type": "function",
@@ -2565,11 +2565,11 @@
         {
           "type": "impl",
           "name": "GameDetailsImpl",
-          "interface_name": "tournaments::components::game::IGameDetails"
+          "interface_name": "tournaments::components::interfaces::IGameDetails"
         },
         {
           "type": "interface",
-          "name": "tournaments::components::game::IGameDetails",
+          "name": "tournaments::components::interfaces::IGameDetails",
           "items": [
             {
               "type": "function",
@@ -2592,11 +2592,11 @@
         {
           "type": "impl",
           "name": "GameMockImpl",
-          "interface_name": "tournaments::components::tests::mocks::game_mock::IGameMock"
+          "interface_name": "tournaments::components::tests::mocks::game_mock::IGameTokenMock"
         },
         {
           "type": "interface",
-          "name": "tournaments::components::tests::mocks::game_mock::IGameMock",
+          "name": "tournaments::components::tests::mocks::game_mock::IGameTokenMock",
           "items": [
             {
               "type": "function",
@@ -2655,11 +2655,11 @@
         {
           "type": "impl",
           "name": "GameInitializerImpl",
-          "interface_name": "tournaments::components::tests::mocks::game_mock::IGameMockInit"
+          "interface_name": "tournaments::components::tests::mocks::game_mock::IGameTokenMockInit"
         },
         {
           "type": "interface",
-          "name": "tournaments::components::tests::mocks::game_mock::IGameMockInit",
+          "name": "tournaments::components::tests::mocks::game_mock::IGameTokenMockInit",
           "items": [
             {
               "type": "function",
@@ -2735,7 +2735,21 @@
         {
           "type": "impl",
           "name": "GameImpl",
-          "interface_name": "tournaments::components::game::IGame"
+          "interface_name": "tournaments::components::interfaces::IGameToken"
+        },
+        {
+          "type": "enum",
+          "name": "core::option::Option::<core::integer::u64>",
+          "variants": [
+            {
+              "name": "Some",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "None",
+              "type": "()"
+            }
+          ]
         },
         {
           "type": "struct",
@@ -2777,6 +2791,24 @@
         },
         {
           "type": "struct",
+          "name": "tournaments::components::models::lifecycle::Lifecycle",
+          "members": [
+            {
+              "name": "mint",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "start",
+              "type": "core::option::Option::<core::integer::u64>"
+            },
+            {
+              "name": "end",
+              "type": "core::option::Option::<core::integer::u64>"
+            }
+          ]
+        },
+        {
+          "type": "struct",
           "name": "tournaments::components::models::game::TokenMetadata",
           "members": [
             {
@@ -2796,22 +2828,14 @@
               "type": "core::integer::u32"
             },
             {
-              "name": "minted_at",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "available_at",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "expires_at",
-              "type": "core::integer::u64"
+              "name": "lifecycle",
+              "type": "tournaments::components::models::lifecycle::Lifecycle"
             }
           ]
         },
         {
           "type": "interface",
-          "name": "tournaments::components::game::IGame",
+          "name": "tournaments::components::interfaces::IGameToken",
           "items": [
             {
               "type": "function",
@@ -2826,12 +2850,12 @@
                   "type": "core::integer::u32"
                 },
                 {
-                  "name": "available_at",
-                  "type": "core::integer::u64"
+                  "name": "start",
+                  "type": "core::option::Option::<core::integer::u64>"
                 },
                 {
-                  "name": "expires_at",
-                  "type": "core::integer::u64"
+                  "name": "end",
+                  "type": "core::option::Option::<core::integer::u64>"
                 },
                 {
                   "name": "to",
@@ -2843,6 +2867,18 @@
                   "type": "core::integer::u64"
                 }
               ],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "emit_metadata_update",
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u64"
+                }
+              ],
+              "outputs": [],
               "state_mutability": "external"
             },
             {
@@ -3310,9 +3346,27 @@
         },
         {
           "type": "event",
+          "name": "tournaments::components::game::game_component::MetadataUpdateEvent",
+          "kind": "struct",
+          "members": [
+            {
+              "name": "token_id",
+              "type": "core::integer::u256",
+              "kind": "data"
+            }
+          ]
+        },
+        {
+          "type": "event",
           "name": "tournaments::components::game::game_component::Event",
           "kind": "enum",
-          "variants": []
+          "variants": [
+            {
+              "name": "MetadataUpdate",
+              "type": "tournaments::components::game::game_component::MetadataUpdateEvent",
+              "kind": "nested"
+            }
+          ]
         },
         {
           "type": "event",
@@ -3451,6 +3505,7 @@
         "initializer",
         "upgrade",
         "mint",
+        "emit_metadata_update",
         "safe_transfer_from",
         "transfer_from",
         "approve",
@@ -3461,8 +3516,8 @@
       ]
     },
     {
-      "address": "0x42f50523bcbd31e9a50b2928debb4647c4060d500b5f45792df297188206323",
-      "class_hash": "0x1bca83665fd255c3adc7d0361176708c236ecaf3483d35187c3f22f5517a63b",
+      "address": "0x25b1e8fc5e887aeccde45d1c07bf45e3e4897740d70a7e9adc58a68324df1f5",
+      "class_hash": "0x52d542b33afa2f7d1b6e08b911c9677b4085d34ad1ea08160efc2dde6c612a7",
       "abi": [
         {
           "type": "impl",
@@ -3646,7 +3701,7 @@
         },
         {
           "type": "struct",
-          "name": "tournaments::components::models::tournament::Period",
+          "name": "tournaments::components::models::schedule::Period",
           "members": [
             {
               "name": "start",
@@ -3660,11 +3715,11 @@
         },
         {
           "type": "enum",
-          "name": "core::option::Option::<tournaments::components::models::tournament::Period>",
+          "name": "core::option::Option::<tournaments::components::models::schedule::Period>",
           "variants": [
             {
               "name": "Some",
-              "type": "tournaments::components::models::tournament::Period"
+              "type": "tournaments::components::models::schedule::Period"
             },
             {
               "name": "None",
@@ -3674,15 +3729,15 @@
         },
         {
           "type": "struct",
-          "name": "tournaments::components::models::tournament::Schedule",
+          "name": "tournaments::components::models::schedule::Schedule",
           "members": [
             {
               "name": "registration",
-              "type": "core::option::Option::<tournaments::components::models::tournament::Period>"
+              "type": "core::option::Option::<tournaments::components::models::schedule::Period>"
             },
             {
               "name": "game",
-              "type": "tournaments::components::models::tournament::Period"
+              "type": "tournaments::components::models::schedule::Period"
             },
             {
               "name": "submission_duration",
@@ -3847,8 +3902,16 @@
               "type": "core::integer::u64"
             },
             {
-              "name": "creator",
+              "name": "created_at",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "created_by",
               "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "creator_token_id",
+              "type": "core::integer::u64"
             },
             {
               "name": "metadata",
@@ -3856,7 +3919,7 @@
             },
             {
               "name": "schedule",
-              "type": "tournaments::components::models::tournament::Schedule"
+              "type": "tournaments::components::models::schedule::Schedule"
             },
             {
               "name": "game_config",
@@ -4032,7 +4095,7 @@
         },
         {
           "type": "enum",
-          "name": "tournaments::components::models::tournament::Phase",
+          "name": "tournaments::components::models::schedule::Phase",
           "variants": [
             {
               "name": "Scheduled",
@@ -4069,12 +4132,16 @@
               "name": "create_tournament",
               "inputs": [
                 {
+                  "name": "creator_rewards_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
                   "name": "metadata",
                   "type": "tournaments::components::models::tournament::Metadata"
                 },
                 {
                   "name": "schedule",
-                  "type": "tournaments::components::models::tournament::Schedule"
+                  "type": "tournaments::components::models::schedule::Schedule"
                 },
                 {
                   "name": "game_config",
@@ -4091,7 +4158,7 @@
               ],
               "outputs": [
                 {
-                  "type": "(tournaments::components::models::tournament::Tournament, core::integer::u64)"
+                  "type": "tournaments::components::models::tournament::Tournament"
                 }
               ],
               "state_mutability": "external"
@@ -4301,7 +4368,7 @@
             },
             {
               "type": "function",
-              "name": "get_state",
+              "name": "current_phase",
               "inputs": [
                 {
                   "name": "tournament_id",
@@ -4310,7 +4377,7 @@
               ],
               "outputs": [
                 {
-                  "type": "tournaments::components::models::tournament::Phase"
+                  "type": "tournaments::components::models::schedule::Phase"
                 }
               ],
               "state_mutability": "view"
@@ -4957,13 +5024,13 @@
     },
     {
       "members": [],
-      "class_hash": "0x1aa618f37d71b7e93ef8af5b7e9d99adf1f7e52ea9e2e62fc41fec78fe08f1d",
+      "class_hash": "0x4e2cb9df948d236db5e77096c6e73f94a1335713bfc3bc189bb0e08bf1c70ca",
       "tag": "tournaments-TokenMetadata",
       "selector": "0x44c9ae93085bc1b86a4e6b088a10dc38be01b717c3c63551ebb49126e6a0cb5"
     },
     {
       "members": [],
-      "class_hash": "0x18be7c2db6073025916064aa9051b3112d2c1b74ac3ecad4f2f82a46edf4ee6",
+      "class_hash": "0x3c62096532d852f76e9996f68d8ca6e0ef49d1d9ca49e913b0ff24759e6c413",
       "tag": "tournaments-Tournament",
       "selector": "0x3ef7a9a57a595d2717b8cac5c4b95f10fa41c28c85a27e980cc1833f0de0885"
     },

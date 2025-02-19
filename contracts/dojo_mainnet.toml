@@ -1,15 +1,8 @@
 [world]
-name = "LS Tournaments V0"
-description = "Loot Survivor Tournaments Version 0"
-website = "https://github.com/Provable-Games/ls-tournaments"
-seed = "ls_tournaments_v0"
-
-[world.socials]
-x = "https://x.com/provablegames"
-github = "https://github.com/Provable-Games"
-
-[namespace]
-default = "ls_tournaments_v0"
+name = "Realms World"
+website = "https://realms.world/"
+description = "DNC"
+seed = "DNC"
 
 [env]
 chain_id = "SN_MAINNET"
@@ -17,21 +10,14 @@ rpc_url = "https://api.cartridge.gg/x/starknet/mainnet"
 world_address = "0x06a9e4c6f0799160ea8ddc43ff982a5f83d7f633e9732ce42701de1288ff705f"
 world_block = 948010
 
+[namespace]
+default = "bodukan"
+
 [writers]
-"ls_tournaments_v0-Tournament" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-TournamentGame" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-TournamentEntryAddresses" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-EntryCountAddress" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-EntryCount" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-TournamentStartsAddress" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-Leaderboard" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-Metrics" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-Prize" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-Token" = ["ls_tournaments_v0-LSTournament"]
-"ls_tournaments_v0-TournamentConfig" = ["ls_tournaments_v0-LSTournament"]
+"bodukan" = ["bodukan-Bodukan"]
 
 [init_call_args]
-"ls_tournaments_v0-LSTournament" = [
+"bodukan-Bodukan" = [
     "1", # safe_mode
     "0" # test_mode
 ]
@@ -39,11 +25,8 @@ world_block = 948010
 [migration]
 order_inits = []
 skip_contracts = [
-    "ls_tournaments_v0-tournament_mock", 
-    "ls_tournaments_v0-loot_survivor_mock", 
-    "ls_tournaments_v0-pragma_mock", 
-    "ls_tournaments_v0-eth_mock", 
-    "ls_tournaments_v0-lords_mock", 
-    "ls_tournaments_v0-erc20_mock", 
-    "ls_tournaments_v0-erc721_mock"
+    "bodukan-tournament_mock", 
+    "bodukan-game_mock", 
+    "bodukan-erc20_mock", 
+    "bodukan-erc721_mock", 
 ]

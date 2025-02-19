@@ -1,9 +1,9 @@
 {
   "world": {
     "class_hash": "0x45575a88cc5cef1e444c77ce60b7b4c9e73a01cbbe20926d5a4c72a94011410",
-    "address": "0x1b069be8278b3197d8eadd861adcfb57f3572793d1ca155e5f57094de641f0f",
-    "seed": "ls_tournaments",
-    "name": "LS Tournaments V0",
+    "address": "0x6a9e4c6f0799160ea8ddc43ff982a5f83d7f633e9732ce42701de1288ff705f",
+    "seed": "DNC",
+    "name": "Realms World",
     "entrypoints": [
       "uuid",
       "set_metadata",
@@ -1252,12 +1252,12 @@
   },
   "contracts": [
     {
-      "address": "0x3347382d530ff6acb9283ac1d78471187aae8a4690e9316bb4e3c3365ff7a86",
-      "class_hash": "0x697f1b88f50e938ebe1372ba7c237f195d868ddc953012c7a998e3e43582e57",
+      "address": "0x2dd237c450403a94ca6a0d508b33474205cb00f1ec953214f49d55f4e204a77",
+      "class_hash": "0x1ed4e177425e076fdf61fcfbe4d1c478760abb49ee5ee936185c9561e4da7f3",
       "abi": [
         {
           "type": "impl",
-          "name": "LSTournament__ContractImpl",
+          "name": "Bodukan__ContractImpl",
           "interface_name": "dojo::contract::interface::IContract"
         },
         {
@@ -1267,7 +1267,7 @@
         },
         {
           "type": "impl",
-          "name": "LSTournament__DeployedContractImpl",
+          "name": "Bodukan__DeployedContractImpl",
           "interface_name": "dojo::meta::interface::IDeployedResource"
         },
         {
@@ -1392,58 +1392,148 @@
         },
         {
           "type": "impl",
-          "name": "TournamentImpl",
-          "interface_name": "ls_tournaments_v0::ls15_components::tournament::ITournament"
+          "name": "TournamentComponentImpl",
+          "interface_name": "tournaments::components::tournament::ITournament"
         },
         {
           "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::EntryCriteria",
+          "name": "tournaments::components::models::tournament::Metadata",
           "members": [
             {
-              "name": "token_id",
-              "type": "core::integer::u128"
+              "name": "name",
+              "type": "core::felt252"
             },
             {
-              "name": "entry_count",
-              "type": "core::integer::u64"
+              "name": "description",
+              "type": "core::byte_array::ByteArray"
             }
           ]
         },
         {
           "type": "struct",
-          "name": "core::array::Span::<ls_tournaments_v0::ls15_components::models::tournament::EntryCriteria>",
+          "name": "tournaments::components::models::schedule::Period",
           "members": [
             {
-              "name": "snapshot",
-              "type": "@core::array::Array::<ls_tournaments_v0::ls15_components::models::tournament::EntryCriteria>"
+              "name": "start",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "end",
+              "type": "core::integer::u64"
             }
           ]
         },
         {
           "type": "enum",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::GatedEntryType",
+          "name": "core::option::Option::<tournaments::components::models::schedule::Period>",
           "variants": [
             {
-              "name": "criteria",
-              "type": "core::array::Span::<ls_tournaments_v0::ls15_components::models::tournament::EntryCriteria>"
+              "name": "Some",
+              "type": "tournaments::components::models::schedule::Period"
             },
             {
-              "name": "uniform",
+              "name": "None",
+              "type": "()"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "tournaments::components::models::schedule::Schedule",
+          "members": [
+            {
+              "name": "registration",
+              "type": "core::option::Option::<tournaments::components::models::schedule::Period>"
+            },
+            {
+              "name": "game",
+              "type": "tournaments::components::models::schedule::Period"
+            },
+            {
+              "name": "submission_duration",
               "type": "core::integer::u64"
             }
           ]
         },
         {
           "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::GatedToken",
+          "name": "tournaments::components::models::tournament::GameConfig",
           "members": [
             {
-              "name": "token",
+              "name": "address",
               "type": "core::starknet::contract_address::ContractAddress"
             },
             {
-              "name": "entry_type",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::GatedEntryType"
+              "name": "settings_id",
+              "type": "core::integer::u32"
+            },
+            {
+              "name": "prize_spots",
+              "type": "core::integer::u8"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "core::array::Span::<core::integer::u8>",
+          "members": [
+            {
+              "name": "snapshot",
+              "type": "@core::array::Array::<core::integer::u8>"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "core::option::Option::<core::integer::u8>",
+          "variants": [
+            {
+              "name": "Some",
+              "type": "core::integer::u8"
+            },
+            {
+              "name": "None",
+              "type": "()"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "tournaments::components::models::tournament::EntryFee",
+          "members": [
+            {
+              "name": "token_address",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u128"
+            },
+            {
+              "name": "distribution",
+              "type": "core::array::Span::<core::integer::u8>"
+            },
+            {
+              "name": "tournament_creator_share",
+              "type": "core::option::Option::<core::integer::u8>"
+            },
+            {
+              "name": "game_creator_share",
+              "type": "core::option::Option::<core::integer::u8>"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "core::option::Option::<tournaments::components::models::tournament::EntryFee>",
+          "variants": [
+            {
+              "name": "Some",
+              "type": "tournaments::components::models::tournament::EntryFee"
+            },
+            {
+              "name": "None",
+              "type": "()"
             }
           ]
         },
@@ -1454,6 +1544,20 @@
             {
               "name": "snapshot",
               "type": "@core::array::Array::<core::integer::u64>"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "tournaments::components::models::tournament::TournamentType",
+          "variants": [
+            {
+              "name": "winners",
+              "type": "core::array::Span::<core::integer::u64>"
+            },
+            {
+              "name": "participants",
+              "type": "core::array::Span::<core::integer::u64>"
             }
           ]
         },
@@ -1469,29 +1573,29 @@
         },
         {
           "type": "enum",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::GatedType",
+          "name": "tournaments::components::models::tournament::EntryRequirement",
           "variants": [
             {
               "name": "token",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::GatedToken"
+              "type": "core::starknet::contract_address::ContractAddress"
             },
             {
               "name": "tournament",
-              "type": "core::array::Span::<core::integer::u64>"
+              "type": "tournaments::components::models::tournament::TournamentType"
             },
             {
-              "name": "address",
+              "name": "allowlist",
               "type": "core::array::Span::<core::starknet::contract_address::ContractAddress>"
             }
           ]
         },
         {
           "type": "enum",
-          "name": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::GatedType>",
+          "name": "core::option::Option::<tournaments::components::models::tournament::EntryRequirement>",
           "variants": [
             {
               "name": "Some",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::GatedType"
+              "type": "tournaments::components::models::tournament::EntryRequirement"
             },
             {
               "name": "None",
@@ -1501,135 +1605,61 @@
         },
         {
           "type": "struct",
-          "name": "core::array::Span::<core::integer::u8>",
+          "name": "tournaments::components::models::tournament::Tournament",
           "members": [
             {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::integer::u8>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::Premium",
-          "members": [
+              "name": "id",
+              "type": "core::integer::u64"
+            },
             {
-              "name": "token",
+              "name": "created_at",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "created_by",
               "type": "core::starknet::contract_address::ContractAddress"
             },
             {
-              "name": "token_amount",
-              "type": "core::integer::u128"
+              "name": "creator_token_id",
+              "type": "core::integer::u64"
             },
             {
-              "name": "token_distribution",
-              "type": "core::array::Span::<core::integer::u8>"
+              "name": "metadata",
+              "type": "tournaments::components::models::tournament::Metadata"
             },
             {
-              "name": "creator_fee",
-              "type": "core::integer::u8"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::Premium>",
-          "variants": [
-            {
-              "name": "Some",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::Premium"
+              "name": "schedule",
+              "type": "tournaments::components::models::schedule::Schedule"
             },
             {
-              "name": "None",
-              "type": "()"
+              "name": "game_config",
+              "type": "tournaments::components::models::tournament::GameConfig"
+            },
+            {
+              "name": "entry_fee",
+              "type": "core::option::Option::<tournaments::components::models::tournament::EntryFee>"
+            },
+            {
+              "name": "entry_requirement",
+              "type": "core::option::Option::<tournaments::components::models::tournament::EntryRequirement>"
             }
           ]
         },
         {
           "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::Tournament",
+          "name": "tournaments::components::models::tournament::TournamentQualification",
           "members": [
             {
               "name": "tournament_id",
               "type": "core::integer::u64"
             },
             {
-              "name": "name",
-              "type": "core::felt252"
-            },
-            {
-              "name": "description",
-              "type": "core::byte_array::ByteArray"
-            },
-            {
-              "name": "creator",
-              "type": "core::starknet::contract_address::ContractAddress"
-            },
-            {
-              "name": "registration_start_time",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "registration_end_time",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "start_time",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "end_time",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "submission_duration",
-              "type": "core::integer::u64"
-            },
-            {
-              "name": "winners_count",
-              "type": "core::integer::u8"
-            },
-            {
-              "name": "gated_type",
-              "type": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::GatedType>"
-            },
-            {
-              "name": "entry_premium",
-              "type": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::Premium>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::ERC20Data",
-          "members": [
-            {
-              "name": "token_amount",
-              "type": "core::integer::u128"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::ERC721Data",
-          "members": [
-            {
               "name": "token_id",
-              "type": "core::integer::u128"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::TokenDataType",
-          "variants": [
-            {
-              "name": "erc20",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::ERC20Data"
+              "type": "core::integer::u64"
             },
             {
-              "name": "erc721",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::ERC721Data"
+              "name": "position",
+              "type": "core::integer::u8"
             }
           ]
         },
@@ -1649,35 +1679,35 @@
         },
         {
           "type": "struct",
-          "name": "core::array::Span::<core::felt252>",
+          "name": "tournaments::components::models::tournament::NFTQualification",
           "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::felt252>"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "ls_tournaments_v0::ls15_components::models::tournament::GatedSubmissionType",
-          "variants": [
             {
               "name": "token_id",
               "type": "core::integer::u256"
-            },
-            {
-              "name": "game_id",
-              "type": "core::array::Span::<core::felt252>"
             }
           ]
         },
         {
           "type": "enum",
-          "name": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::GatedSubmissionType>",
+          "name": "tournaments::components::models::tournament::QualificationProof",
+          "variants": [
+            {
+              "name": "Tournament",
+              "type": "tournaments::components::models::tournament::TournamentQualification"
+            },
+            {
+              "name": "NFT",
+              "type": "tournaments::components::models::tournament::NFTQualification"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "core::option::Option::<tournaments::components::models::tournament::QualificationProof>",
           "variants": [
             {
               "name": "Some",
-              "type": "ls_tournaments_v0::ls15_components::models::tournament::GatedSubmissionType"
+              "type": "tournaments::components::models::tournament::QualificationProof"
             },
             {
               "name": "None",
@@ -1687,32 +1717,254 @@
         },
         {
           "type": "enum",
-          "name": "core::option::Option::<core::integer::u64>",
+          "name": "tournaments::components::models::tournament::Role",
           "variants": [
             {
-              "name": "Some",
+              "name": "TournamentCreator",
+              "type": "()"
+            },
+            {
+              "name": "GameCreator",
+              "type": "()"
+            },
+            {
+              "name": "Position",
+              "type": "core::integer::u8"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "tournaments::components::models::tournament::PrizeType",
+          "variants": [
+            {
+              "name": "EntryFees",
+              "type": "tournaments::components::models::tournament::Role"
+            },
+            {
+              "name": "Sponsored",
               "type": "core::integer::u64"
-            },
-            {
-              "name": "None",
-              "type": "()"
             }
           ]
         },
         {
           "type": "struct",
-          "name": "core::array::Span::<core::integer::u256>",
+          "name": "tournaments::components::models::tournament::ERC20Data",
           "members": [
             {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::integer::u256>"
+              "name": "amount",
+              "type": "core::integer::u128"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "tournaments::components::models::tournament::ERC721Data",
+          "members": [
+            {
+              "name": "id",
+              "type": "core::integer::u128"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "tournaments::components::models::tournament::TokenType",
+          "variants": [
+            {
+              "name": "erc20",
+              "type": "tournaments::components::models::tournament::ERC20Data"
+            },
+            {
+              "name": "erc721",
+              "type": "tournaments::components::models::tournament::ERC721Data"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "tournaments::components::models::tournament::Registration",
+          "members": [
+            {
+              "name": "tournament_id",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "game_token_id",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "entry_number",
+              "type": "core::integer::u32"
+            },
+            {
+              "name": "has_submitted",
+              "type": "core::bool"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "tournaments::components::models::schedule::Phase",
+          "variants": [
+            {
+              "name": "Scheduled",
+              "type": "()"
+            },
+            {
+              "name": "Registration",
+              "type": "()"
+            },
+            {
+              "name": "Staging",
+              "type": "()"
+            },
+            {
+              "name": "Live",
+              "type": "()"
+            },
+            {
+              "name": "Submission",
+              "type": "()"
+            },
+            {
+              "name": "Finalized",
+              "type": "()"
             }
           ]
         },
         {
           "type": "interface",
-          "name": "ls_tournaments_v0::ls15_components::tournament::ITournament",
+          "name": "tournaments::components::tournament::ITournament",
           "items": [
+            {
+              "type": "function",
+              "name": "create_tournament",
+              "inputs": [
+                {
+                  "name": "creator_rewards_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "metadata",
+                  "type": "tournaments::components::models::tournament::Metadata"
+                },
+                {
+                  "name": "schedule",
+                  "type": "tournaments::components::models::schedule::Schedule"
+                },
+                {
+                  "name": "game_config",
+                  "type": "tournaments::components::models::tournament::GameConfig"
+                },
+                {
+                  "name": "entry_fee",
+                  "type": "core::option::Option::<tournaments::components::models::tournament::EntryFee>"
+                },
+                {
+                  "name": "entry_requirement",
+                  "type": "core::option::Option::<tournaments::components::models::tournament::EntryRequirement>"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "tournaments::components::models::tournament::Tournament"
+                }
+              ],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "enter_tournament",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "player_name",
+                  "type": "core::felt252"
+                },
+                {
+                  "name": "player_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "qualification",
+                  "type": "core::option::Option::<tournaments::components::models::tournament::QualificationProof>"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "(core::integer::u64, core::integer::u32)"
+                }
+              ],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "submit_score",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "position",
+                  "type": "core::integer::u8"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "claim_prize",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "prize_type",
+                  "type": "tournaments::components::models::tournament::PrizeType"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "add_prize",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "token_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "token_type",
+                  "type": "tournaments::components::models::tournament::TokenType"
+                },
+                {
+                  "name": "position",
+                  "type": "core::integer::u8"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::integer::u64"
+                }
+              ],
+              "state_mutability": "external"
+            },
             {
               "type": "function",
               "name": "total_tournaments",
@@ -1735,7 +1987,27 @@
               ],
               "outputs": [
                 {
-                  "type": "ls_tournaments_v0::ls15_components::models::tournament::Tournament"
+                  "type": "tournaments::components::models::tournament::Tournament"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "get_registration",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u64"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "tournaments::components::models::tournament::Registration"
                 }
               ],
               "state_mutability": "view"
@@ -1751,23 +2023,7 @@
               ],
               "outputs": [
                 {
-                  "type": "core::integer::u64"
-                }
-              ],
-              "state_mutability": "view"
-            },
-            {
-              "type": "function",
-              "name": "top_scores",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "core::array::Array::<core::integer::u64>"
+                  "type": "core::integer::u32"
                 }
               ],
               "state_mutability": "view"
@@ -1777,7 +2033,7 @@
               "name": "is_token_registered",
               "inputs": [
                 {
-                  "name": "token",
+                  "name": "address",
                   "type": "core::starknet::contract_address::ContractAddress"
                 }
               ],
@@ -1793,12 +2049,12 @@
               "name": "register_token",
               "inputs": [
                 {
-                  "name": "token",
+                  "name": "address",
                   "type": "core::starknet::contract_address::ContractAddress"
                 },
                 {
-                  "name": "token_data_type",
-                  "type": "ls_tournaments_v0::ls15_components::models::tournament::TokenDataType"
+                  "name": "token_type",
+                  "type": "tournaments::components::models::tournament::TokenType"
                 }
               ],
               "outputs": [],
@@ -1806,167 +2062,398 @@
             },
             {
               "type": "function",
-              "name": "create_tournament",
+              "name": "get_leaderboard",
               "inputs": [
                 {
-                  "name": "name",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "description",
-                  "type": "core::byte_array::ByteArray"
-                },
-                {
-                  "name": "registration_start_time",
+                  "name": "tournament_id",
                   "type": "core::integer::u64"
-                },
-                {
-                  "name": "registration_end_time",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "start_time",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "end_time",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "submission_duration",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "winners_count",
-                  "type": "core::integer::u8"
-                },
-                {
-                  "name": "gated_type",
-                  "type": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::GatedType>"
-                },
-                {
-                  "name": "entry_premium",
-                  "type": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::Premium>"
                 }
               ],
               "outputs": [
                 {
-                  "type": "core::integer::u64"
-                }
-              ],
-              "state_mutability": "external"
-            },
-            {
-              "type": "function",
-              "name": "enter_tournament",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "gated_submission_type",
-                  "type": "core::option::Option::<ls_tournaments_v0::ls15_components::models::tournament::GatedSubmissionType>"
-                }
-              ],
-              "outputs": [],
-              "state_mutability": "external"
-            },
-            {
-              "type": "function",
-              "name": "start_tournament",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "start_all",
-                  "type": "core::bool"
-                },
-                {
-                  "name": "start_count",
-                  "type": "core::option::Option::<core::integer::u64>"
-                },
-                {
-                  "name": "client_reward_address",
-                  "type": "core::starknet::contract_address::ContractAddress"
-                },
-                {
-                  "name": "golden_token_free_game_token_ids",
-                  "type": "core::array::Span::<core::integer::u256>"
-                },
-                {
-                  "name": "blobert_free_game_token_ids",
-                  "type": "core::array::Span::<core::integer::u256>"
-                },
-                {
-                  "name": "weapon",
-                  "type": "core::integer::u8"
-                },
-                {
-                  "name": "name",
-                  "type": "core::felt252"
-                }
-              ],
-              "outputs": [],
-              "state_mutability": "external"
-            },
-            {
-              "type": "function",
-              "name": "submit_scores",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "game_ids",
-                  "type": "core::array::Array::<core::felt252>"
-                }
-              ],
-              "outputs": [],
-              "state_mutability": "external"
-            },
-            {
-              "type": "function",
-              "name": "add_prize",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "token",
-                  "type": "core::starknet::contract_address::ContractAddress"
-                },
-                {
-                  "name": "token_data_type",
-                  "type": "ls_tournaments_v0::ls15_components::models::tournament::TokenDataType"
-                },
-                {
-                  "name": "position",
-                  "type": "core::integer::u8"
-                }
-              ],
-              "outputs": [],
-              "state_mutability": "external"
-            },
-            {
-              "type": "function",
-              "name": "distribute_prizes",
-              "inputs": [
-                {
-                  "name": "tournament_id",
-                  "type": "core::integer::u64"
-                },
-                {
-                  "name": "prize_keys",
                   "type": "core::array::Array::<core::integer::u64>"
                 }
               ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "current_phase",
+              "inputs": [
+                {
+                  "name": "tournament_id",
+                  "type": "core::integer::u64"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "tournaments::components::models::schedule::Phase"
+                }
+              ],
+              "state_mutability": "view"
+            }
+          ]
+        },
+        {
+          "type": "impl",
+          "name": "ERC721MixinImpl",
+          "interface_name": "openzeppelin_token::erc721::interface::ERC721ABI"
+        },
+        {
+          "type": "struct",
+          "name": "core::array::Span::<core::felt252>",
+          "members": [
+            {
+              "name": "snapshot",
+              "type": "@core::array::Array::<core::felt252>"
+            }
+          ]
+        },
+        {
+          "type": "interface",
+          "name": "openzeppelin_token::erc721::interface::ERC721ABI",
+          "items": [
+            {
+              "type": "function",
+              "name": "balance_of",
+              "inputs": [
+                {
+                  "name": "account",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::integer::u256"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "owner_of",
+              "inputs": [
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "safe_transfer_from",
+              "inputs": [
+                {
+                  "name": "from",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "to",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                },
+                {
+                  "name": "data",
+                  "type": "core::array::Span::<core::felt252>"
+                }
+              ],
               "outputs": [],
               "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "transfer_from",
+              "inputs": [
+                {
+                  "name": "from",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "to",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "approve",
+              "inputs": [
+                {
+                  "name": "to",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "set_approval_for_all",
+              "inputs": [
+                {
+                  "name": "operator",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "approved",
+                  "type": "core::bool"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "get_approved",
+              "inputs": [
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "is_approved_for_all",
+              "inputs": [
+                {
+                  "name": "owner",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "operator",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::bool"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "supports_interface",
+              "inputs": [
+                {
+                  "name": "interface_id",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::bool"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "name",
+              "inputs": [],
+              "outputs": [
+                {
+                  "type": "core::byte_array::ByteArray"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "symbol",
+              "inputs": [],
+              "outputs": [
+                {
+                  "type": "core::byte_array::ByteArray"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "token_uri",
+              "inputs": [
+                {
+                  "name": "token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::byte_array::ByteArray"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "balanceOf",
+              "inputs": [
+                {
+                  "name": "account",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::integer::u256"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "ownerOf",
+              "inputs": [
+                {
+                  "name": "tokenId",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "safeTransferFrom",
+              "inputs": [
+                {
+                  "name": "from",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "to",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "tokenId",
+                  "type": "core::integer::u256"
+                },
+                {
+                  "name": "data",
+                  "type": "core::array::Span::<core::felt252>"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "transferFrom",
+              "inputs": [
+                {
+                  "name": "from",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "to",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "tokenId",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "setApprovalForAll",
+              "inputs": [
+                {
+                  "name": "operator",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "approved",
+                  "type": "core::bool"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "getApproved",
+              "inputs": [
+                {
+                  "name": "tokenId",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "isApprovedForAll",
+              "inputs": [
+                {
+                  "name": "owner",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "operator",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::bool"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "tokenURI",
+              "inputs": [
+                {
+                  "name": "tokenId",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::byte_array::ByteArray"
+                }
+              ],
+              "state_mutability": "view"
             }
           ]
         },
@@ -2007,13 +2494,107 @@
         },
         {
           "type": "event",
-          "name": "ls_tournaments_v0::ls15_components::tournament::tournament_component::Event",
+          "name": "tournaments::components::tournament::tournament_component::Event",
           "kind": "enum",
           "variants": []
         },
         {
           "type": "event",
-          "name": "ls_tournaments_v0::presets::ls_tournament::LSTournament::Event",
+          "name": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+          "kind": "struct",
+          "members": [
+            {
+              "name": "from",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "to",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "token_id",
+              "type": "core::integer::u256",
+              "kind": "key"
+            }
+          ]
+        },
+        {
+          "type": "event",
+          "name": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+          "kind": "struct",
+          "members": [
+            {
+              "name": "owner",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "approved",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "token_id",
+              "type": "core::integer::u256",
+              "kind": "key"
+            }
+          ]
+        },
+        {
+          "type": "event",
+          "name": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+          "kind": "struct",
+          "members": [
+            {
+              "name": "owner",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "operator",
+              "type": "core::starknet::contract_address::ContractAddress",
+              "kind": "key"
+            },
+            {
+              "name": "approved",
+              "type": "core::bool",
+              "kind": "data"
+            }
+          ]
+        },
+        {
+          "type": "event",
+          "name": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+          "kind": "enum",
+          "variants": [
+            {
+              "name": "Transfer",
+              "type": "openzeppelin_token::erc721::erc721::ERC721Component::Transfer",
+              "kind": "nested"
+            },
+            {
+              "name": "Approval",
+              "type": "openzeppelin_token::erc721::erc721::ERC721Component::Approval",
+              "kind": "nested"
+            },
+            {
+              "name": "ApprovalForAll",
+              "type": "openzeppelin_token::erc721::erc721::ERC721Component::ApprovalForAll",
+              "kind": "nested"
+            }
+          ]
+        },
+        {
+          "type": "event",
+          "name": "openzeppelin_introspection::src5::SRC5Component::Event",
+          "kind": "enum",
+          "variants": []
+        },
+        {
+          "type": "event",
+          "name": "tournaments::presets::tournament::Bodukan::Event",
           "kind": "enum",
           "variants": [
             {
@@ -2028,8 +2609,18 @@
             },
             {
               "name": "TournamentEvent",
-              "type": "ls_tournaments_v0::ls15_components::tournament::tournament_component::Event",
-              "kind": "nested"
+              "type": "tournaments::components::tournament::tournament_component::Event",
+              "kind": "flat"
+            },
+            {
+              "name": "ERC721Event",
+              "type": "openzeppelin_token::erc721::erc721::ERC721Component::Event",
+              "kind": "flat"
+            },
+            {
+              "name": "SRC5Event",
+              "type": "openzeppelin_introspection::src5::SRC5Component::Event",
+              "kind": "flat"
             }
           ]
         }
@@ -2038,87 +2629,135 @@
         "1",
         "0"
       ],
-      "tag": "ls_tournaments_v0-LSTournament",
-      "selector": "0x44e252a02ec34801b185d890c3a732cfa9e1e29408cfd75d440e8631f309f9b",
+      "tag": "bodukan-Bodukan",
+      "selector": "0x4196648cb3f223e31a43bf34b77b55c371242a3b4f5547a061b452417bf61d9",
       "systems": [
         "dojo_init",
         "upgrade",
-        "register_token",
         "create_tournament",
         "enter_tournament",
-        "start_tournament",
-        "submit_scores",
+        "submit_score",
+        "claim_prize",
         "add_prize",
-        "distribute_prizes"
+        "register_token",
+        "safe_transfer_from",
+        "transfer_from",
+        "approve",
+        "set_approval_for_all",
+        "safeTransferFrom",
+        "transferFrom",
+        "setApprovalForAll"
       ]
     }
   ],
   "models": [
     {
       "members": [],
-      "class_hash": "0x7956f8ed7f37e8518ae2136dcb16a62b2789e6845b96eb75b17d12eca655e9c",
-      "tag": "ls_tournaments_v0-Token",
-      "selector": "0x72402936166a4f48922114e029bd0be75b40f94b5ca9a0405d53d953f050443"
+      "class_hash": "0x6ca3d4ef263a973153f92c1a60cb781781e5af6dc620697074c2c5a26116e21",
+      "tag": "bodukan-EntryCount",
+      "selector": "0x579f192095d600ac51b8101e6cb2c49edb8e0c4f35e9870010407370d005c82"
     },
     {
       "members": [],
-      "class_hash": "0x4d4a0a8c47099122e1e8f4a3d45ac1ca93141f7b70abeab4f4bbb17b82cc2da",
-      "tag": "ls_tournaments_v0-Tournament",
-      "selector": "0x46bbb67b6458ffde3b8b58d00518050e02192443448a63804c1ba2b5539b953"
+      "class_hash": "0x7634474ae448d779e8b6edf6e13d22d0414ec01f04167061fe0cbce7509e3d7",
+      "tag": "bodukan-GameCounter",
+      "selector": "0x12cf5069c8f9c5687a7eedf2fad78bbbf4524ac5d6b63088cd4fec97f537b11"
     },
     {
       "members": [],
-      "class_hash": "0x5e8fd034ed8b180d523afc47bf0268ccec3c9cccbe02032e2961312a33c2dd9",
-      "tag": "ls_tournaments_v0-TournamentConfig",
-      "selector": "0x69f275ce0a800e8697adbc692c79c98cd48ffb4729a40550c9c314808a782fd"
+      "class_hash": "0x7f8343d96398622c5cd8e8bf36071b29b8e96050bb2af4b9d1261d164d7f782",
+      "tag": "bodukan-GameMetadata",
+      "selector": "0x48bc6417066abb9ce95ea82965948fe6ede007a803be10590718fb33cb219cf"
     },
     {
       "members": [],
-      "class_hash": "0x38383eb638f50d434181ff5166a8c6b71158a79a4aab5d3bc291a2581c2e7ff",
-      "tag": "ls_tournaments_v0-TournamentEntries",
-      "selector": "0x2ddf0c34cf35099fd776e790b3abb6a8af591dc8f8aff2a9cefce27c2510733"
+      "class_hash": "0x361a321854495deada9c9abf00c13e9d757f11175ae98088a2f8d868690a02b",
+      "tag": "bodukan-Leaderboard",
+      "selector": "0xeba2ac4d90dbba3618d4d644536d92b2a2258d5843c864bf9072802c919856"
     },
     {
       "members": [],
-      "class_hash": "0x50821fc5aa1a025ae7beb574394e83381042f004822dd3807cb69fcb978b854",
-      "tag": "ls_tournaments_v0-TournamentEntriesAddress",
-      "selector": "0x631f3b47deef2f631c928aa360304c2c512e5aad64b5995d623826d8d0fe646"
+      "class_hash": "0x5eafb9e7e80810c5db578cb8fa25324bc02ccae526ef3f6800d74ef3a5801e6",
+      "tag": "bodukan-PlatformMetrics",
+      "selector": "0x120cb5d32e41f3dbd0d4573fa56b0f0238ff3ec57c0fb4caa03d52ee3c1958"
     },
     {
       "members": [],
-      "class_hash": "0x4253d7930dcc5138509d4ddea029dfff7eb9f42bac4310cd193f65f154d4955",
-      "tag": "ls_tournaments_v0-TournamentEntryAddresses",
-      "selector": "0x156ce687d6cb36c011554900a376902aa7666cf9b532c7375c88b3ce028effb"
+      "class_hash": "0x233194bd39d24ac8176b0f90df77a0375746a578d1c761575c66eb2e20d4b3f",
+      "tag": "bodukan-Prize",
+      "selector": "0xee97589911efdbb3a0ad28a195b5a685a6d55a11f42e52a52eca7df7477563"
     },
     {
       "members": [],
-      "class_hash": "0x5d3429c57c3a30b94efa92b7275021e6ba023241409d6297a8ba0f274bc5aa3",
-      "tag": "ls_tournaments_v0-TournamentGame",
-      "selector": "0x7100f1dedef972c7f6fd6d0c57fd9506eb85cec9ce48636bca51de2e677e2a4"
+      "class_hash": "0x7053c532c03b187b5cc80d5dfcd4c92ced699b89535e2d6d2a684dfb433f2e7",
+      "tag": "bodukan-PrizeClaim",
+      "selector": "0x75ae91060bb631d917d9f7700d9e1dd58e9700f395b23c2157d98f1ec5a281f"
     },
     {
       "members": [],
-      "class_hash": "0x4a3963e1b353ecf63157316fe2e7933333cc032df9094bc83718c8ea432ae71",
-      "tag": "ls_tournaments_v0-TournamentPrize",
-      "selector": "0x5ecde74632e5d60ad82d1510494884a7180d92806d2f3ac711cf6b43ff4cac9"
+      "class_hash": "0x4b008256b5e688ab2e82500f60d1436e2aa72fc56d96813af1b27850ec806ed",
+      "tag": "bodukan-PrizeMetrics",
+      "selector": "0x188825d2b8e6e28c809307b3bee7dad9eaa65534d2ef27e80aad52b1044e53d"
     },
     {
       "members": [],
-      "class_hash": "0x7bb696df03b20e5522a7f2a77f0eef18e6605973c7993907fdd2ac165d8cd8b",
-      "tag": "ls_tournaments_v0-TournamentScores",
-      "selector": "0x5e05f7556f95c051f15aa076b5c211fcba49459a665fbdbb18b903477d0eb71"
+      "class_hash": "0x59fd7f4e2ea7f214b10df6fbbf1b53f2f90eb7e7ead23dd9deb5a2bec600055",
+      "tag": "bodukan-Registration",
+      "selector": "0x2ce8f513bbcd56d164546f04386a4e3b326b03b96e58296b3cc2079980d2b2c"
     },
     {
       "members": [],
-      "class_hash": "0x27401a442852b1936590103b372845c097ad930205957fd4cafbf8ebb45691b",
-      "tag": "ls_tournaments_v0-TournamentStartsAddress",
-      "selector": "0xb25d99bf5adb2902574af6b8d543650f1bed4f75bbe9fe652f59877f9558c7"
+      "class_hash": "0x1cbfe9c95d6428d3699cdfe922689995300ef06537e6695b8cc238dfd9b2a6c",
+      "tag": "bodukan-Score",
+      "selector": "0x798e8c86460ba0c10b95065d0bac73980492ebf3ba5f38a3cab3229dda624a2"
     },
     {
       "members": [],
-      "class_hash": "0x127910179e1bd258b80c98f6dc5b433ccbfe5f8dd136124f9d8898248e1ead0",
-      "tag": "ls_tournaments_v0-TournamentTotals",
-      "selector": "0x2680e1f229a757e8be3d0e2547f43337cb6fcaea57dc6127699f47e06a00868"
+      "class_hash": "0x6a2219b6866e1862fe52c8325d3b517bb121a0685677fcbed97f2caa6f4dc28",
+      "tag": "bodukan-Settings",
+      "selector": "0x28994f13f8c072d5c33a2590376bc299897a4cc9f819953b833a535cb0026cd"
+    },
+    {
+      "members": [],
+      "class_hash": "0x5f19e106f871814473a3940a490ccac63804a216f1dbe31c383e8e0831159e",
+      "tag": "bodukan-SettingsCounter",
+      "selector": "0x60b68fa6d6a8fdfe0a1a63c1ef8449d96b8fa001cdb061f24c5b93f6ff228c6"
+    },
+    {
+      "members": [],
+      "class_hash": "0x4f140e4e65a924bc2e492d8ece550b97c13e22f24f72cb741d8d8d0c5044dd8",
+      "tag": "bodukan-SettingsDetails",
+      "selector": "0x2467cc1b07a7649677371231a8ba3267656dc149b1717c1b8db55f9ed555cdf"
+    },
+    {
+      "members": [],
+      "class_hash": "0x32e9bfe74774b3113f7e153bf7bafac83cc9036a2cefbba0291c5fa8770e97b",
+      "tag": "bodukan-Token",
+      "selector": "0x2605cd34b30749f722acb59a06ede771917076b26689d81e6f4516f6213ea29"
+    },
+    {
+      "members": [],
+      "class_hash": "0x4e2cb9df948d236db5e77096c6e73f94a1335713bfc3bc189bb0e08bf1c70ca",
+      "tag": "bodukan-TokenMetadata",
+      "selector": "0x79d58c7522f6c558e427ab4d1185e2cf4372b075cae9611ca3629e6fd5dfc1c"
+    },
+    {
+      "members": [],
+      "class_hash": "0x3c62096532d852f76e9996f68d8ca6e0ef49d1d9ca49e913b0ff24759e6c413",
+      "tag": "bodukan-Tournament",
+      "selector": "0x3424ea748215e39af2ed4cf67d8d2dc95c31b3448b95acf47f725d04b62cdbc"
+    },
+    {
+      "members": [],
+      "class_hash": "0x67ea83dba24b121dce2a2bfcbc1c087c7d65c76819a8b4ad5654bdc3f64eec0",
+      "tag": "bodukan-TournamentConfig",
+      "selector": "0x43bfd204202f1caba5bf2d8e5577ba93adf2b288fba85c5be8ada25097b4924"
+    },
+    {
+      "members": [],
+      "class_hash": "0x7ce70aa2e743ec49f916768cb8fe2ee42353eec7a1c3cc7741d286f92aa501a",
+      "tag": "bodukan-TournamentTokenMetrics",
+      "selector": "0x60f6ebe393cac078ad4db976b01b6746b3630fd9460eb554e5a2a1333e0a7a9"
     }
   ],
   "events": []
