@@ -15,12 +15,13 @@ use tournaments::components::models::schedule::{Schedule, Phase};
 trait ITournament<TState> {
     fn create_tournament(
         ref self: TState,
+        creator_rewards_address: ContractAddress,
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
-    ) -> (TournamentModel, u64);
+    ) -> TournamentModel;
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,
@@ -57,7 +58,9 @@ pub mod tournament_component {
 
     use core::num::traits::Zero;
 
-    use tournaments::components::constants::{TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID};
+    use tournaments::components::constants::{
+        TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID,
+    };
     use tournaments::components::interfaces::{
         IGameTokenDispatcher, IGameTokenDispatcherTrait, IGameDetailsDispatcher,
         IGameDetailsDispatcherTrait, IGAMETOKEN_ID, IGAME_METADATA_ID,
@@ -182,6 +185,7 @@ pub mod tournament_component {
         /// @title Create tournament
         /// @notice Allows anyone to create a tournament.
         /// @param self A reference to the ContractState object.
+        /// @param creator_rewards_address the address to mint the creator's game token to.
         /// @param metadata the tournament metadata.
         /// @param schedule the tournament schedule.
         /// @param game_config the tournament game configuration.
@@ -190,51 +194,43 @@ pub mod tournament_component {
         /// @return A tuple containing the tournament and the creator's game token id.
         fn create_tournament(
             ref self: ComponentState<TContractState>,
+            creator_rewards_address: ContractAddress,
             metadata: Metadata,
             schedule: Schedule,
             game_config: GameConfig,
             entry_fee: Option<EntryFee>,
             entry_requirement: Option<EntryRequirement>,
-        ) -> (TournamentModel, u64) {
+        ) -> TournamentModel {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
 
             schedule.assert_is_valid(get_block_timestamp());
-
             self._assert_valid_game_config(game_config);
 
-            // if an entry fee was provided, validate it
             if let Option::Some(entry_fee) = entry_fee {
                 self._assert_valid_entry_fee(store, entry_fee, game_config.prize_spots);
             }
 
-            // if any entry requirement was provided, valid it
             if let Option::Some(entry_requirement) = entry_requirement {
                 self._assert_valid_entry_requirement(store, entry_requirement);
             }
 
-            // create tournament
-            let tournament = store
-                .create_tournament(metadata, schedule, game_config, entry_fee, entry_requirement);
-
-            // mint the tournament creator a game token for creator rewards
-            let game_token_id = self._mint_creator_game(@tournament);
-
-            // save it as entry #0 so we have a transferrable address for issuing creator rewards
-            store
-                .set_registration(
-                    @Registration {
-                        game_token_id,
-                        tournament_id: tournament.id,
-                        entry_number: 0,
-                        has_submitted: false,
-                    },
+            // mint a game to the tournament creator for reward distribution
+            let creator_token_id = self
+                ._mint_game(
+                    game_config.address,
+                    game_config.settings_id,
+                    schedule,
+                    metadata.name,
+                    creator_rewards_address,
                 );
 
-            // return Tournament model and the tournament creators game token id
-            (tournament, game_token_id)
+            store
+                .create_tournament(
+                    creator_token_id, metadata, schedule, game_config, entry_fee, entry_requirement,
+                )
         }
 
         /// @title Enter tournament
@@ -275,8 +271,15 @@ pub mod tournament_component {
                 self._process_entry_fee(entry_fee);
             }
 
-            // mint game and send to player
-            let game_token_id = self._mint_player_game(@tournament, player_name, player_address);
+            // mint game to the entrant
+            let game_token_id = self
+                ._mint_game(
+                    tournament.game_config.address,
+                    tournament.game_config.settings_id,
+                    tournament.schedule,
+                    player_name,
+                    player_address,
+                );
 
             // increment and get entry count for the tournament
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -1170,58 +1173,31 @@ pub mod tournament_component {
             (name, symbol)
         }
 
-        fn _mint_creator_game(
-            ref self: ComponentState<TContractState>, tournament: @TournamentModel,
-        ) -> u64 {
-            let address = *tournament.game_config.address;
-            let settings = *tournament.game_config.settings_id;
-            let start = Option::None;
-            // creator game are not intended to be played so they are minted already expired
-            let end = Option::Some(1);
-            let name = *tournament.metadata.name;
-            let creator_address = *tournament.creator;
-            self._mint_game(address, settings, start, end, name, creator_address)
-        }
-
-        fn _mint_player_game(
-            ref self: ComponentState<TContractState>,
-            tournament: @TournamentModel,
-            player_name: felt252,
-            player_address: ContractAddress,
-        ) -> u64 {
-            let game_address = *tournament.game_config.address;
-            let settings = *tournament.game_config.settings_id;
-            let game_start = Option::Some(*tournament.schedule.game.start);
-            let game_end = Option::Some(*tournament.schedule.game.end);
-
-            self
-                ._mint_game(
-                    game_address, settings, game_start, game_end, player_name, player_address,
-                )
-        }
-
         /// @title mint_game
         /// @notice Mints a new game token to the provided player address.
         /// @param game_address The address of the game contract.
         /// @param settings_id The id of the game settings.
-        /// @param game_start An optional start time for the game.
-        /// @param game_end An optional end time for the game.
-        /// @param player_name The name of the player to mint the game token to.
-        /// @param player_address The address of the player to mint the game token to.
+        /// @param game_schedule The schedule of the game.
+        /// @param player_name The name of the player.
+        /// @param to_address The address to mint the game token to.
         /// @return The game token id.
         fn _mint_game(
             ref self: ComponentState<TContractState>,
             game_address: ContractAddress,
             settings_id: u32,
-            game_start: Option<u64>,
-            game_end: Option<u64>,
+            game_schedule: Schedule,
             player_name: felt252,
-            player_address: ContractAddress,
+            to_address: ContractAddress,
         ) -> u64 {
             let game_dispatcher = IGameTokenDispatcher { contract_address: game_address };
-            let game_token_id = game_dispatcher
-                .mint(player_name, settings_id, game_start, game_end, player_address);
-            game_token_id
+            game_dispatcher
+                .mint(
+                    player_name,
+                    settings_id,
+                    Option::Some(game_schedule.game.start),
+                    Option::Some(game_schedule.game.end),
+                    to_address,
+                )
         }
 
         #[inline(always)]
@@ -1297,14 +1273,19 @@ pub mod tournament_component {
                             tournament_creator_share
                         } else {
                             panic!(
-                                "Tournament: tournament {} does not have a tournament creator share set",
-                                tournament_id,
+                                "Tournament: tournament {} does not have a host tip", tournament_id,
                             )
                         }
                     },
                     Role::GameCreator => {
-                        // TODO: issue #2
-                        panic!("Tournament: Game creator fee not yet implemented")
+                        if let Option::Some(game_creator_share) = entry_fee.game_creator_share {
+                            game_creator_share
+                        } else {
+                            panic!(
+                                "Tournament: tournament {} does not have a game creator tip",
+                                tournament_id,
+                            )
+                        }
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);
@@ -1317,9 +1298,19 @@ pub mod tournament_component {
 
                 // Get recipient address
                 let recipient_address = match role {
-                    Role::TournamentCreator => { tournament.creator },
+                    Role::TournamentCreator => {
+                        // tournament creator is owner of the tournament creator token
+                        self
+                            ._get_owner(
+                                tournament.game_config.address, tournament.creator_token_id.into(),
+                            )
+                    },
                     Role::GameCreator => {
-                        self._get_game_creator_address(tournament.game_config.address)
+                        // game creator is owner of token id 0 of the game contract
+                        self
+                            ._get_owner(
+                                tournament.game_config.address, GAME_CREATOR_TOKEN_ID.into(),
+                            )
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);

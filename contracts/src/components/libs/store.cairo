@@ -99,17 +99,23 @@ pub impl StoreImpl of StoreTrait {
     #[inline(always)]
     fn create_tournament(
         ref self: Store,
+        creator_token_id: u64,
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
     ) -> Tournament {
-        let id = self.increment_and_get_tournament_count();
-        let creator = starknet::get_caller_address();
-        let created_at = starknet::get_block_timestamp();
         let tournament = Tournament {
-            id, creator, created_at, metadata, schedule, game_config, entry_fee, entry_requirement,
+            id: self.increment_and_get_tournament_count(),
+            created_at: starknet::get_block_timestamp(),
+            created_by: starknet::get_caller_address(),
+            creator_token_id,
+            metadata,
+            schedule,
+            game_config,
+            entry_fee,
+            entry_requirement,
         };
         self.world.write_model(@tournament);
         tournament

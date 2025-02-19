@@ -9,7 +9,8 @@ pub struct Tournament {
     #[key]
     pub id: u64,
     pub created_at: u64,
-    pub creator: ContractAddress,
+    pub created_by: ContractAddress,
+    pub creator_token_id: u64,
     pub metadata: Metadata,
     pub schedule: Schedule,
     pub game_config: GameConfig,

@@ -154,12 +154,13 @@ pub trait ITournamentMock<TState> {
     // fn register_tokens(ref self: TState, tokens: Array<Token>);
     fn create_tournament(
         ref self: TState,
+        creator_rewards_address: ContractAddress,
         metadata: Metadata,
         schedule: Schedule,
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
-    ) -> (TournamentModel, u64);
+    ) -> TournamentModel;
     fn enter_tournament(
         ref self: TState,
         tournament_id: u64,

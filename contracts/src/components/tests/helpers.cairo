@@ -7,7 +7,7 @@ use tournaments::tests::{
     constants::{
         TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_REGISTRATION_START_TIME,
         TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, SETTINGS_NAME,
-        SETTINGS_DESCRIPTION,
+        SETTINGS_DESCRIPTION, OWNER,
     },
 };
 use tournaments::components::tests::interfaces::{
@@ -105,10 +105,15 @@ pub fn registration_open_beyond_tournament_end() -> Schedule {
 
 pub fn create_basic_tournament(
     tournament: ITournamentMockDispatcher, game: ContractAddress,
-) -> (Tournament, u64) {
+) -> Tournament {
     tournament
         .create_tournament(
-            test_metadata(), test_schedule(), test_game_config(game), Option::None, Option::None,
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(game),
+            Option::None,
+            Option::None,
         )
 }
 
