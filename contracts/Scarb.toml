@@ -8,7 +8,6 @@ edition = "2024_07"
 
 [[target.starknet-contract]]
 sierra = true
-# It's important to keep this, since it's used by Sozo to check the world version.
 build-external-contracts = ["dojo::world::world_contract::world"]
 
 [dependencies]
@@ -18,15 +17,11 @@ dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.9" }
 starknet = "2.8.4"
 
 [dev-dependencies]
-# This package is required to run tests and add dojo utilities to your project in test only.
 dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.9" }
 
 [features]
 default = []
 
-#--------------------------
-# Dojo profiles declaration
-#
 [profile.dev]
 [profile.slot]
 [profile.sepolia]
