@@ -8,28 +8,28 @@ rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
 world_address = "0x01ae9655937bde6abec7a89152ec645bc9a4993ddbb7d58075852f3dc8c39099"
 
 [namespace]
-default = "bodukan"
+default = "budokan"
 
 [writers]
 # Tournament
-"bodukan-Tournament" = ["bodukan-tournament_mock"]
-"bodukan-Registration" = ["bodukan-tournament_mock"]
-"bodukan-Leaderboard" = ["bodukan-tournament_mock"]
-"bodukan-PlatformMetrics" = ["bodukan-tournament_mock"]
-"bodukan-TournamentTokenMetrics" = ["bodukan-tournament_mock"]
-"bodukan-PrizeMetrics" = ["bodukan-tournament_mock"]
-"bodukan-EntryCount" = ["bodukan-tournament_mock"]
-"bodukan-Prize" = ["bodukan-tournament_mock"]
-"bodukan-Token" = ["bodukan-tournament_mock"]
-"bodukan-TournamentConfig" = ["bodukan-tournament_mock"]
-"bodukan-PrizeClaim" = ["bodukan-tournament_mock"]
+"budokan-Tournament" = ["budokan-tournament_mock"]
+"budokan-Registration" = ["budokan-tournament_mock"]
+"budokan-Leaderboard" = ["budokan-tournament_mock"]
+"budokan-PlatformMetrics" = ["budokan-tournament_mock"]
+"budokan-TournamentTokenMetrics" = ["budokan-tournament_mock"]
+"budokan-PrizeMetrics" = ["budokan-tournament_mock"]
+"budokan-EntryCount" = ["budokan-tournament_mock"]
+"budokan-Prize" = ["budokan-tournament_mock"]
+"budokan-Token" = ["budokan-tournament_mock"]
+"budokan-TournamentConfig" = ["budokan-tournament_mock"]
+"budokan-PrizeClaim" = ["budokan-tournament_mock"]
 # Game
-"bodukan-GameMetadata" = ["bodukan-game_mock"]
-"bodukan-GameCounter" = ["bodukan-game_mock"]
-"bodukan-SettingsDetails" = ["bodukan-game_mock"]
-"bodukan-TokenMetadata" = ["bodukan-game_mock"]
-"bodukan-Score" = ["bodukan-game_mock"]
+"budokan-GameMetadata" = ["budokan-game_mock"]
+"budokan-GameCounter" = ["budokan-game_mock"]
+"budokan-SettingsDetails" = ["budokan-game_mock"]
+"budokan-TokenMetadata" = ["budokan-game_mock"]
+"budokan-Score" = ["budokan-game_mock"]
 
 [migration]
 order_inits = []
-skip_contracts = ["bodukan-Bodukan"]
+skip_contracts = ["budokan-Budokan"]

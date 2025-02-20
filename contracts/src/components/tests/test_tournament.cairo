@@ -109,7 +109,7 @@ fn setup_uninitialized() -> WorldStorage {
     testing::set_block_timestamp(1);
 
     let ndef = NamespaceDef {
-        namespace: "tournaments",
+        namespace: "budokan",
         resources: [
             // game models
             TestResource::Model(m_GameMetadata::TEST_CLASS_HASH.try_into().unwrap()),

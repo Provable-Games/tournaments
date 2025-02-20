@@ -59,32 +59,21 @@ pub trait ITournament<TState> {
 }
 
 #[dojo::contract]
-pub mod Bodukan {
+pub mod Budokan {
     use starknet::{contract_address_const};
     use tournaments::components::tournament::tournament_component;
-    use openzeppelin_introspection::src5::SRC5Component;
-    use openzeppelin_token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
-    component!(path: ERC721Component, storage: erc721, event: ERC721Event);
-    component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
     #[abi(embed_v0)]
     impl TournamentComponentImpl =
         tournament_component::TournamentImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
-
     impl TournamentComponentInternalImpl = tournament_component::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         #[substorage(v0)]
         tournament: tournament_component::Storage,
-        #[substorage(v0)]
-        erc721: ERC721Component::Storage,
-        #[substorage(v0)]
-        src5: SRC5Component::Storage,
     }
 
     #[event]
@@ -92,10 +81,6 @@ pub mod Bodukan {
     enum Event {
         #[flat]
         TournamentEvent: tournament_component::Event,
-        #[flat]
-        ERC721Event: ERC721Component::Event,
-        #[flat]
-        SRC5Event: SRC5Component::Event,
     }
 
     fn dojo_init(ref self: ContractState, safe_mode: bool, test_mode: bool) {

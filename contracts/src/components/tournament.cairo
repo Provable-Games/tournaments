@@ -82,9 +82,7 @@ pub mod tournament_component {
 
     use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
 
-    use openzeppelin_introspection::{
-        src5::SRC5Component, interface::{ISRC5Dispatcher, ISRC5DispatcherTrait},
-    };
+    use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
     use openzeppelin_token::erc20::interface::{
         IERC20Dispatcher, IERC20DispatcherTrait, IERC20MetadataDispatcher,
         IERC20MetadataDispatcherTrait,
@@ -93,13 +91,12 @@ pub mod tournament_component {
         IERC721Dispatcher, IERC721DispatcherTrait, IERC721MetadataDispatcher,
         IERC721MetadataDispatcherTrait, IERC721_ID,
     };
-    use openzeppelin_token::erc721::{
-        ERC721Component, ERC721Component::{InternalImpl as ERC721InternalImpl},
-    };
 
+    // uses dojo world storage
     #[storage]
     pub struct Storage {}
 
+    // uses dojo world events
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {}
@@ -109,9 +106,6 @@ pub mod tournament_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        +ERC721Component::ERC721HooksTrait<TContractState>,
-        impl ERC721: ERC721Component::HasComponent<TContractState>,
-        impl SRC5: SRC5Component::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of ITournament<ComponentState<TContractState>> {
         fn total_tournaments(self: @ComponentState<TContractState>) -> u64 {
@@ -433,9 +427,6 @@ pub mod tournament_component {
         TContractState,
         +HasComponent<TContractState>,
         +IWorldProvider<TContractState>,
-        +ERC721Component::ERC721HooksTrait<TContractState>,
-        impl ERC721: ERC721Component::HasComponent<TContractState>,
-        impl SRC5: SRC5Component::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of InternalTrait<TContractState> {
         //
