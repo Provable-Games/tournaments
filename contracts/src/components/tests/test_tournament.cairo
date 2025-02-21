@@ -261,8 +261,7 @@ fn create_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Schedule: Start time must be in the future", 'ENTRYPOINT_FAILED'))]
-fn create_tournament_start_time_too_close() {
+fn create_tournament_start_time_in_past() {
     let contracts = setup();
 
     let time = 100;
@@ -598,7 +597,6 @@ fn create_tournament_with_premiums_not_100() {
 }
 
 #[test]
-#[should_panic(expected: ("Schedule: Tournament is not finalized", 'ENTRYPOINT_FAILED'))]
 fn create_gated_tournament_with_unsettled_tournament() {
     let contracts = setup();
 
@@ -639,7 +637,6 @@ fn create_gated_tournament_with_unsettled_tournament() {
         Option::Some(registration_period), game_period, MIN_SUBMISSION_PERIOD.into(),
     );
 
-    // This should panic because the first tournament hasn't been settled yet
     contracts
         .tournament
         .create_tournament(

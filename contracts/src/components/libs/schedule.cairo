@@ -27,11 +27,11 @@ pub impl ScheduleImpl of ScheduleTrait {
 
     /// @notice Validates all aspects of a tournament schedule
     /// @return bool indicating if the schedule is valid
-    fn is_valid(self: Schedule, current_time: u64) -> bool {
-        let game_valid = self.game.is_valid_game_schedule(current_time);
+    fn is_valid(self: Schedule) -> bool {
+        let game_valid = self.game.is_valid_game_schedule();
         let submission_valid = self.is_valid_submission_duration();
         let registration_valid = if let Option::Some(_) = self.registration {
-            self.is_valid_registration_schedule(current_time)
+            self.is_valid_registration_schedule()
         } else {
             true
         };
@@ -40,11 +40,8 @@ pub impl ScheduleImpl of ScheduleTrait {
     }
 
     /// @notice Validates the game period schedule
-    fn is_valid_game_schedule(self: Period, current_time: u64) -> bool {
-        self.is_start_time_in_future(current_time)
-            && self.ends_after_start()
-            && self.is_min_duration()
-            && self.is_max_duration()
+    fn is_valid_game_schedule(self: Period) -> bool {
+        self.ends_after_start() && self.is_min_duration() && self.is_max_duration()
     }
 
     /// @notice Checks if the submission duration is valid
@@ -55,23 +52,12 @@ pub impl ScheduleImpl of ScheduleTrait {
 
     /// @notice Validates the registration period schedule
     /// @dev This should only be called if registration exists
-    fn is_valid_registration_schedule(self: Schedule, current_time: u64) -> bool {
+    fn is_valid_registration_schedule(self: Schedule) -> bool {
         let registration = self.registration.unwrap();
-        registration.is_registration_start_time_in_future(current_time)
-            && registration.is_min_registration_period()
+        registration.is_min_registration_period()
             && registration.is_less_than_max_registration_period()
             && registration.is_registration_starts_before_tournament_starts(self.game.start)
             && registration.is_registration_ends_before_tournament_ends(self.game.end)
-    }
-
-    /// @notice Checks if the start time is in the future
-    fn is_start_time_in_future(self: Period, current_time: u64) -> bool {
-        self.start >= current_time
-    }
-
-    /// @notice Checks if the registration start time is in the future
-    fn is_registration_start_time_in_future(self: Period, current_time: u64) -> bool {
-        self.start >= current_time
     }
 
     /// @notice Checks if the registration period meets minimum duration
@@ -133,21 +119,20 @@ pub impl ScheduleImpl of ScheduleTrait {
 #[generate_trait]
 pub impl ScheduleAssertionsImpl of ScheduleAssertionsTrait {
     /// @notice Asserts that all aspects of a tournament schedule are valid
-    fn assert_is_valid(self: Schedule, current_time: u64) {
+    fn assert_is_valid(self: Schedule) {
         // Validate game schedule
-        self.game.assert_valid_game_schedule(current_time);
+        self.game.assert_valid_game_schedule();
 
         // Validate submission duration
         self.assert_valid_submission_duration();
 
         // Validate registration if present
         if let Option::Some(_) = self.registration {
-            self.assert_valid_registration_schedule(current_time);
+            self.assert_valid_registration_schedule();
         }
     }
 
-    fn assert_valid_game_schedule(self: Period, current_time: u64) {
-        self.assert_start_time_in_future(current_time);
+    fn assert_valid_game_schedule(self: Period) {
         self.assert_ends_after_start();
         self.assert_min_duration();
         self.assert_max_duration();
@@ -168,27 +153,12 @@ pub impl ScheduleAssertionsImpl of ScheduleAssertionsTrait {
 
     /// @notice Asserts that the registration schedule is valid
     /// @dev This should only be called if registration exists
-    fn assert_valid_registration_schedule(self: Schedule, current_time: u64) {
+    fn assert_valid_registration_schedule(self: Schedule) {
         let registration = self.registration.unwrap();
-        registration.assert_registration_starts_in_future(current_time);
         registration.assert_min_registration_period();
         registration.assert_less_than_max_registration_period();
         registration.assert_registration_starts_before_tournament_starts(self.game.start);
         registration.assert_registration_ends_before_tournament_ends(self.game.end);
-    }
-
-    fn assert_start_time_in_future(self: Period, current_time: u64) {
-        assert!(
-            self.is_start_time_in_future(current_time),
-            "Schedule: Start time must be in the future",
-        );
-    }
-
-    fn assert_registration_starts_in_future(self: Period, current_time: u64) {
-        assert!(
-            self.is_registration_start_time_in_future(current_time),
-            "Schedule: Registration start time must be in the future",
-        );
     }
 
     fn assert_min_registration_period(self: Period) {
@@ -391,7 +361,7 @@ mod tests {
             game: Period { start: 3000, end: 4000 },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(valid_schedule.is_valid(50), "Should be valid when all conditions met");
+        assert!(valid_schedule.is_valid(), "Should be valid when all conditions met");
 
         // Case 2: All valid without registration
         let valid_no_reg = Schedule {
@@ -399,7 +369,7 @@ mod tests {
             game: Period { start: 3000, end: 4000 },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(valid_no_reg.is_valid(50), "Should be valid without registration");
+        assert!(valid_no_reg.is_valid(), "Should be valid without registration");
 
         // Case 3: Invalid game period
         let invalid_game = Schedule {
@@ -407,7 +377,7 @@ mod tests {
             game: Period { start: 1000, end: 500 }, // end before start
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(!invalid_game.is_valid(0), "Should be invalid with invalid game period");
+        assert!(!invalid_game.is_valid(), "Should be invalid with invalid game period");
 
         // Case 4: Invalid submission duration
         let invalid_submission = Schedule {
@@ -416,7 +386,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into() - 1,
         };
         assert!(
-            !invalid_submission.is_valid(0), "Should be invalid with invalid submission duration",
+            !invalid_submission.is_valid(), "Should be invalid with invalid submission duration",
         );
     }
 
@@ -543,28 +513,23 @@ mod tests {
     fn is_valid_game_schedule() {
         // Case 1: Valid game schedule
         let valid_period = Period { start: 200, end: 200 + MIN_TOURNAMENT_LENGTH.into() };
-        assert!(valid_period.is_valid_game_schedule(100), "Should be valid with minimum duration");
+        assert!(valid_period.is_valid_game_schedule(), "Should be valid with minimum duration");
 
         // Case 2: Invalid - end before start
         let invalid_order = Period { start: 200, end: 199 };
-        assert!(
-            !invalid_order.is_valid_game_schedule(100), "Should be invalid when end before start",
-        );
+        assert!(!invalid_order.is_valid_game_schedule(), "Should be invalid when end before start");
 
         // Case 3: Invalid - duration too short
         let too_short = Period { start: 200, end: 200 + MIN_TOURNAMENT_LENGTH.into() - 1 };
-        assert!(
-            !too_short.is_valid_game_schedule(100), "Should be invalid with too short duration",
-        );
+        assert!(!too_short.is_valid_game_schedule(), "Should be invalid with too short duration");
 
         // Case 4: Invalid - duration too long
         let too_long = Period { start: 200, end: 200 + MAX_TOURNAMENT_LENGTH.into() + 1 };
-        assert!(!too_long.is_valid_game_schedule(100), "Should be invalid with too long duration");
+        assert!(!too_long.is_valid_game_schedule(), "Should be invalid with too long duration");
     }
 
     #[test]
     fn is_valid_registration_schedule() {
-        let current_time = 50;
         let game_start = 3000;
         let game_end = 4000;
 
@@ -577,7 +542,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            valid_schedule.is_valid_registration_schedule(current_time),
+            valid_schedule.is_valid_registration_schedule(),
             "Should be valid with minimum registration period",
         );
 
@@ -588,7 +553,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !late_reg.is_valid_registration_schedule(current_time),
+            !late_reg.is_valid_registration_schedule(),
             "Should be invalid when registration starts after game",
         );
 
@@ -601,7 +566,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !short_reg.is_valid_registration_schedule(current_time),
+            !short_reg.is_valid_registration_schedule(),
             "Should be invalid with too short registration period",
         );
     }
@@ -639,13 +604,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: ("Schedule: Start time must be in the future",))]
-    fn assert_start_time_in_future() {
-        let period = Period { start: 100, end: 200 };
-        period.assert_start_time_in_future(150);
-    }
-
-    #[test]
     #[should_panic(expected: ("Schedule: Tournament has ended",))]
     fn assert_is_active() {
         let period = Period { start: 100, end: 200 };
@@ -663,9 +621,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
 
-        assert!(
-            max_schedule.is_valid(Bounded::MAX - 15000), "Should handle scheduling near u64::MAX",
-        );
+        assert!(max_schedule.is_valid(), "Should handle scheduling near u64::MAX");
         assert!(
             max_schedule.is_registration_open(Bounded::MAX - 9000),
             "Should handle registration near u64::MAX",
@@ -692,7 +648,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !reg_ends_after_game_start.is_valid_registration_schedule(current_time),
+            !reg_ends_after_game_start.is_valid_registration_schedule(),
             "Should be invalid when registration ends after game starts",
         );
 
@@ -705,7 +661,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !reg_too_long.is_valid_registration_schedule(current_time),
+            !reg_too_long.is_valid_registration_schedule(),
             "Should be invalid when registration period exceeds maximum",
         );
 
@@ -721,7 +677,7 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !reg_in_past.is_valid_registration_schedule(current_time),
+            !reg_in_past.is_valid_registration_schedule(),
             "Should be invalid when registration starts in the past",
         );
     }
@@ -738,9 +694,7 @@ mod tests {
             },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(
-            !game_in_past.is_valid(current_time), "Should be invalid when game starts in the past",
-        );
+        assert!(game_in_past.is_valid(), "Games can start in past");
 
         // Case 2: Invalid - game period too short
         let game_too_short = Schedule {
@@ -751,10 +705,7 @@ mod tests {
             },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(
-            !game_too_short.is_valid(current_time),
-            "Should be invalid when game period is too short",
-        );
+        assert!(!game_too_short.is_valid(), "Should be invalid when game period is too short");
 
         // Case 3: Invalid - game period too long
         let game_too_long = Schedule {
@@ -765,10 +716,7 @@ mod tests {
             },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
-        assert!(
-            !game_too_long.is_valid(current_time),
-            "Should be invalid when game period exceeds maximum",
-        );
+        assert!(!game_too_long.is_valid(), "Should be invalid when game period exceeds maximum");
     }
 
     #[test]
