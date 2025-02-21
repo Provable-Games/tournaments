@@ -4,9 +4,9 @@ rpc = "https://api.cartridge.gg/x/starknet/mainnet"
 
 [indexing]
 index_pending = true
-world_block = 1165580
+world_block = 1167729
 contracts = [
-  "ERC721:0x06f32edb41a707fc6e368b37dd74890b1a518f5fba6b7fef7061ef72afc27336", # dark shuffle
+  "ERC721:0x02ffe2edea10d1622b9cc65ce18b441755f322253e24e6cd862518ab037009f5", # dark shuffle
 ]
 
 [events]

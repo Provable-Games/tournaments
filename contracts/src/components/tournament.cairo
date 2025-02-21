@@ -200,7 +200,7 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
 
-            schedule.assert_is_valid(get_block_timestamp());
+            schedule.assert_is_valid();
             self._assert_valid_game_config(game_config);
 
             if let Option::Some(entry_fee) = entry_fee {
@@ -248,6 +248,9 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
+
+            // assert tournament exists
+            self._assert_tournament_exists(store, tournament_id);
 
             // assert registration is open
             tournament.schedule.assert_registration_open(get_block_timestamp());
@@ -314,11 +317,7 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
 
             // assert tournament exists
-            assert!(
-                tournament_id <= store.get_tournament_count(),
-                "Tournament: Tournament {} does not exist",
-                tournament_id,
-            );
+            self._assert_tournament_exists(store, tournament_id);
 
             // get tournament
             let tournament = store.get_tournament(tournament_id);
@@ -363,6 +362,9 @@ pub mod tournament_component {
             let mut store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
 
+            // assert tournament exists
+            self._assert_tournament_exists(store, tournament_id);
+
             tournament.schedule.assert_tournament_is_finalized(get_block_timestamp());
 
             self._assert_prize_not_claimed(store, tournament_id, prize_type);
@@ -399,6 +401,9 @@ pub mod tournament_component {
             );
             let mut store: Store = StoreTrait::new(world);
             let mut tournament = store.get_tournament(tournament_id);
+
+            // assert tournament exists
+            self._assert_tournament_exists(store, tournament_id);
 
             tournament.schedule.game.assert_is_active(get_block_timestamp());
             self._assert_prize_token_registered(@store.get_token(token_address));
@@ -856,31 +861,23 @@ pub mod tournament_component {
                 EntryRequirement::tournament(tournament_type) => {
                     match tournament_type {
                         TournamentType::winners(tournament_ids) => {
-                            let mut loop_index = 0;
+                            let mut index = 0;
                             loop {
-                                if loop_index == tournament_ids.len() {
+                                if index == tournament_ids.len() {
                                     break;
                                 }
-                                let tournament = store
-                                    .get_tournament(*tournament_ids.at(loop_index));
-                                tournament
-                                    .schedule
-                                    .assert_tournament_is_finalized(get_block_timestamp());
-                                loop_index += 1;
+                                self._assert_tournament_exists(store, *tournament_ids.at(index));
+                                index += 1;
                             }
                         },
                         TournamentType::participants(tournament_ids) => {
-                            let mut loop_index = 0;
+                            let mut index = 0;
                             loop {
-                                if loop_index == tournament_ids.len() {
+                                if index == tournament_ids.len() {
                                     break;
                                 }
-                                let tournament = store
-                                    .get_tournament(*tournament_ids.at(loop_index));
-                                tournament
-                                    .schedule
-                                    .assert_tournament_is_finalized(get_block_timestamp());
-                                loop_index += 1;
+                                self._assert_tournament_exists(store, *tournament_ids.at(index));
+                                index += 1;
                             }
                         },
                     }
@@ -932,6 +929,16 @@ pub mod tournament_component {
                     self._assert_qualifying_address(addresses);
                 },
             }
+        }
+
+        fn _assert_tournament_exists(
+            self: @ComponentState<TContractState>, store: Store, tournament_id: u64,
+        ) {
+            assert!(
+                tournament_id <= store.get_tournament_count(),
+                "Tournament: Tournament {} does not exist",
+                tournament_id,
+            );
         }
 
         #[inline(always)]
