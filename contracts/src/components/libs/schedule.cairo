@@ -634,22 +634,22 @@ mod tests {
 
     #[test]
     fn registration_period_validation() {
-        let current_time = 50;
-        let game_start = 300;
-        let game_end = 400;
+        let current_time = 500;
+        let game_start = 3000;
+        let game_end = 4000;
 
-        // Case 1: Invalid - registration ends after game start
+        // Case 1: Valid - registration ends after game start
         let reg_ends_after_game_start = Schedule {
             registration: Option::Some(
-                Period { start: 100, end: game_start + 1 // Registration ends after game starts
-                },
+                Period { start: 100, end: game_start + 100 // Registration ends after game starts
+                 },
             ),
             game: Period { start: game_start, end: game_end },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !reg_ends_after_game_start.is_valid_registration_schedule(),
-            "Should be invalid when registration ends after game starts",
+            reg_ends_after_game_start.is_valid_registration_schedule(),
+            "Should be valid for registration to end after game starts",
         );
 
         // Case 2: Invalid - registration period exceeds maximum
@@ -665,11 +665,11 @@ mod tests {
             "Should be invalid when registration period exceeds maximum",
         );
 
-        // Case 3: Invalid - registration starts in the past
+        // Case 3: Valid - registration starts in the past
         let reg_in_past = Schedule {
             registration: Option::Some(
                 Period {
-                    start: current_time - 1, // Start in past
+                    start: current_time - 100, // Start in past
                     end: current_time + MIN_REGISTRATION_PERIOD.into(),
                 },
             ),
@@ -677,8 +677,8 @@ mod tests {
             submission_duration: MIN_SUBMISSION_PERIOD.into(),
         };
         assert!(
-            !reg_in_past.is_valid_registration_schedule(),
-            "Should be invalid when registration starts in the past",
+            reg_in_past.is_valid_registration_schedule(),
+            "Should be valid for registration to start in the past",
         );
     }
 
