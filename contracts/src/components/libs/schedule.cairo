@@ -642,7 +642,7 @@ mod tests {
         let reg_ends_after_game_start = Schedule {
             registration: Option::Some(
                 Period { start: 100, end: game_start + 100 // Registration ends after game starts
-                 },
+                },
             ),
             game: Period { start: game_start, end: game_end },
             submission_duration: MIN_SUBMISSION_PERIOD.into(),

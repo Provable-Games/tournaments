@@ -109,7 +109,8 @@ fn setup_uninitialized() -> WorldStorage {
     testing::set_block_timestamp(1);
 
     let ndef = NamespaceDef {
-        namespace: DEFAULT_NS(), resources: [
+        namespace: DEFAULT_NS(),
+        resources: [
             // game models
             TestResource::Model(m_GameMetadata::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_GameCounter::TEST_CLASS_HASH.try_into().unwrap()),
@@ -133,7 +134,8 @@ fn setup_uninitialized() -> WorldStorage {
             TestResource::Contract(game_mock::TEST_CLASS_HASH),
             TestResource::Contract(erc20_mock::TEST_CLASS_HASH),
             TestResource::Contract(erc721_mock::TEST_CLASS_HASH),
-        ].span(),
+        ]
+            .span(),
     };
 
     let mut contract_defs: Array<ContractDef> = array![
