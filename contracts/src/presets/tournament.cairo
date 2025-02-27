@@ -184,5 +184,14 @@ pub mod Budokan {
                 "Beasts",
                 "BEASTS",
             );
+        self
+            .tournament
+            .initialize_erc20(
+                contract_address_const::<
+                    0x498edfaf50ca5855666a700c25dd629d577eb9afccdf3b5977aec79aee55ada,
+                >(),
+                "Cash",
+                "CASH",
+            );
     }
 }
