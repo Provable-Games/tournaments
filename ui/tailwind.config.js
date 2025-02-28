@@ -13,9 +13,9 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-        'retro-green': 'rgba(0, 218, 163, 1)',
-        'retro-green-dark': 'rgba(0, 140, 105, 1)',
-        'retro-green-darker': 'rgba(31, 66, 42, 1)',
+        'retro-green': 'rgba(128, 144, 20, 1)',
+        'retro-green-dark': 'rgba(177, 185, 122, 1)',
+        'retro-green-darker': 'rgba(177, 185, 122, 1)',
         'retro-grey': 'rgba(34, 34, 34, 1)',
       },
       fontFamily: {
