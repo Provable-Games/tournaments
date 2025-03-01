@@ -244,6 +244,11 @@ pub trait IGameTokenMock<TState> {
     fn get_settings_details(self: @TState, settings_id: u32) -> SettingsDetails;
     fn settings_exists(self: @TState, settings_id: u32) -> bool;
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
+    fn game_count(self: @TState) -> u64;
+    fn namespace(self: @TState) -> ByteArray;
+    fn score_model(self: @TState) -> ByteArray;
+    fn score_attribute(self: @TState) -> ByteArray;
+    fn settings_model(self: @TState) -> ByteArray;
 
     // GameMock
     fn start_game(ref self: TState, game_id: u64);

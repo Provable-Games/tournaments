@@ -26,6 +26,9 @@ pub trait IGameToken<TState> {
     fn token_metadata(self: @TState, token_id: u64) -> TokenMetadata;
     fn game_count(self: @TState) -> u64;
     fn namespace(self: @TState) -> ByteArray;
+    fn score_model(self: @TState) -> ByteArray;
+    fn score_attribute(self: @TState) -> ByteArray;
+    fn settings_model(self: @TState) -> ByteArray;
 }
 
 #[starknet::interface]

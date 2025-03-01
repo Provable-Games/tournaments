@@ -167,6 +167,9 @@ mod game_mock {
                     GAME_GENRE(),
                     GAME_IMAGE(),
                     DEFAULT_NS(),
+                    "Score",
+                    "score",
+                    "SettingsDetails",
                 );
             self.game.set_settings(0, 'Test', "This is a test");
         }

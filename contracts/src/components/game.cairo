@@ -24,7 +24,10 @@ pub mod game_component {
 
     #[storage]
     pub struct Storage {
-        _namespace: ByteArray,
+        namespace: ByteArray,
+        score_model: ByteArray,
+        score_attribute: ByteArray,
+        settings_model: ByteArray,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -37,10 +40,6 @@ pub mod game_component {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         MetadataUpdate: MetadataUpdateEvent,
-    }
-
-    mod Errors {
-        const CALLER_IS_NOT_OWNER: felt252 = 'ERC721: caller is not owner';
     }
 
     pub const VERSION: felt252 = '0.0.1';
@@ -66,7 +65,7 @@ pub mod game_component {
             to: ContractAddress,
         ) -> u64 {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace(),
             );
             let mut store: Store = StoreTrait::new(world);
 
@@ -91,7 +90,7 @@ pub mod game_component {
 
         fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace.read(),
             );
             let store: Store = StoreTrait::new(world);
             store.get_game_metadata(get_contract_address())
@@ -99,7 +98,7 @@ pub mod game_component {
 
         fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace.read(),
             );
             let store: Store = StoreTrait::new(world);
             store.get_token_metadata(token_id)
@@ -107,18 +106,30 @@ pub mod game_component {
 
         fn game_count(self: @ComponentState<TContractState>) -> u64 {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace.read(),
             );
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
         }
 
         fn namespace(self: @ComponentState<TContractState>) -> ByteArray {
-            self._namespace.read()
+            self.namespace.read()
         }
 
         fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64) {
             self.emit(MetadataUpdateEvent { token_id: game_id.into() });
+        }
+
+        fn score_model(self: @ComponentState<TContractState>) -> ByteArray {
+            self.score_model.read()
+        }
+
+        fn score_attribute(self: @ComponentState<TContractState>) -> ByteArray {
+            self.score_attribute.read()
+        }
+
+        fn settings_model(self: @ComponentState<TContractState>) -> ByteArray {
+            self.settings_model.read()
         }
     }
     #[generate_trait]
@@ -142,6 +153,9 @@ pub mod game_component {
             genre: felt252,
             image: ByteArray,
             namespace: ByteArray,
+            score_model: ByteArray,
+            score_attribute: ByteArray,
+            settings_model: ByteArray,
         ) {
             let mut world = WorldTrait::storage(self.get_contract().world_dispatcher(), @namespace);
             let mut store: Store = StoreTrait::new(world);
@@ -158,7 +172,10 @@ pub mod game_component {
             store.set_game_metadata(game_metadata);
             self.mint_creator_token(ref store, creator_address);
             self.register_src5_interfaces();
-            self._namespace.write(namespace);
+            self.namespace.write(namespace);
+            self.score_model.write(score_model);
+            self.score_attribute.write(score_attribute);
+            self.settings_model.write(settings_model);
         }
 
         fn register_src5_interfaces(ref self: ComponentState<TContractState>) {
@@ -192,7 +209,7 @@ pub mod game_component {
 
         fn get_game_count(self: @ComponentState<TContractState>) -> u64 {
             let world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace.read(),
             );
             let store: Store = StoreTrait::new(world);
             store.get_game_count()
@@ -205,7 +222,7 @@ pub mod game_component {
             description: ByteArray,
         ) {
             let mut world = WorldTrait::storage(
-                self.get_contract().world_dispatcher(), self.get_namespace(),
+                self.get_contract().world_dispatcher(), @self.namespace.read(),
             );
             let mut store: Store = StoreTrait::new(world);
             store
@@ -221,30 +238,25 @@ pub mod game_component {
             let mut erc721 = get_dep_component_mut!(ref self, ERC721);
 
             // increment and get next token id
-            let token_id = store.increment_and_get_game_count();
+            let game_id = store.increment_and_get_game_count();
 
             // mint new game token
-            erc721.mint(to, token_id.into());
+            erc721.mint(to, game_id.into());
 
             // return new game token id
-            token_id
+            game_id
         }
 
         fn assert_setting_exists(self: @ComponentState<TContractState>, settings_id: u32) {
             let setting_exists = self.get_contract().setting_exists(settings_id);
             if !setting_exists {
                 let world = WorldTrait::storage(
-                    self.get_contract().world_dispatcher(), self.get_namespace(),
+                    self.get_contract().world_dispatcher(), @self.namespace.read(),
                 );
                 let store: Store = StoreTrait::new(world);
                 let game_metadata = store.get_game_metadata(get_contract_address());
                 panic!("{}: Setting ID {} does not exist", game_metadata.name, settings_id);
             }
-        }
-
-        fn get_namespace(self: @ComponentState<TContractState>) -> @ByteArray {
-            let namespace = self._namespace.read();
-            @namespace
         }
     }
 }
