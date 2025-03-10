@@ -40,20 +40,6 @@ pub struct TokenMetadata {
 
 #[dojo::model]
 #[derive(Copy, Drop, Serde)]
-pub struct Quest {
-    #[key]
-    pub quest_id: u32,
-    #[key]
-    pub game_id: u64,
-    pub name: felt252,
-    pub description: ByteArray,
-    pub target_score: u32,
-    pub reward_type: Option<u32>,
-    pub reward_amount: Option<u32>,
-}
-
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
 pub struct Score {
     #[key]
     pub game_id: u64,
