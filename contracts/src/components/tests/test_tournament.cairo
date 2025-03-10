@@ -2505,3 +2505,92 @@ fn malicious_score_submission() {
     // position above it.
     contracts.tournament.submit_score(tournament.id, first_place, 3);
 }
+
+#[test]
+#[should_panic(
+    expected: (
+        "Tournament: Tie goes to game with lower id. Submitted game id 3 is higher than current game id 2",
+        'ENTRYPOINT_FAILED',
+    ),
+)]
+fn test_submit_score_tie_higher_game_id() {
+    // Setup
+    let contracts = setup();
+
+    // Create tournament with 5 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+
+    // Tournament has 3 prize spots
+    game_config.prize_spots = 3;
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    let (player1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
+
+    let (player2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
+
+    // Set both players to have the same score
+    contracts.game.end_game(player1, 100);
+    contracts.game.end_game(player2, 100);
+
+    // Move to submission phase
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // First player submits score - should succeed
+    contracts.tournament.submit_score(tournament.id, player1, 1);
+
+    // Second player also tries to submit as position 1 (tie)
+    // This should fail since player2's game id is higher than player1's
+    contracts.tournament.submit_score(tournament.id, player2, 1);
+}
+
+#[test]
+fn test_submit_score_tie_lower_game_id() {
+    // Setup
+    let contracts = setup();
+
+    // Create tournament with 5 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+
+    // Tournament has 3 prize spots
+    game_config.prize_spots = 3;
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    let (player1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
+
+    let (player2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
+
+    // Set both players to have the same score
+    contracts.game.end_game(player1, 100);
+    contracts.game.end_game(player2, 100);
+
+    // Move to submission phase
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // First player submits score - should succeed
+    contracts.tournament.submit_score(tournament.id, player2, 1);
+
+    // Second player also tries to submit as position 1 (tie)
+    // This should succeed since player1's game id is lower than player2's
+    contracts.tournament.submit_score(tournament.id, player1, 1);
+
+    // get leaderboard
+    let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
+    assert!(*leaderboard.at(0) == player1, "Player1 should be first place");
+    assert!(*leaderboard.at(1) == player2, "Player2 should be second place");
+}
