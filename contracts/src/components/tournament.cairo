@@ -1442,9 +1442,10 @@ pub mod tournament_component {
 
             // if score is being submitted for any position other than first
             if submitted_position > 1 {
-                // validate it is less than the score above it.
-                let current_score_above_position = game_dispatcher
-                    .score(*current_leaderboard.at(position_index - 1));
+                // validate it is less than or equal to the score above it
+                let position_above = position_index - 1;
+                let game_id_above = *current_leaderboard.at(position_above);
+                let current_score_above_position = game_dispatcher.score(game_id_above);
 
                 assert!(
                     submitted_score <= current_score_above_position,
@@ -1452,6 +1453,16 @@ pub mod tournament_component {
                     submitted_score,
                     submitted_position,
                 );
+
+                // If scores are equal, ensure the game ID is higher (lower priority in case of tie)
+                if submitted_score == current_score_above_position {
+                    assert!(
+                        token_id > game_id_above,
+                        "Tournament: For equal scores, game id {} should be higher than game id above {}",
+                        token_id,
+                        game_id_above,
+                    );
+                }
             }
         }
 

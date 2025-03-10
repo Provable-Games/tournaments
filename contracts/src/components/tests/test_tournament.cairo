@@ -2594,3 +2594,115 @@ fn test_submit_score_tie_lower_game_id() {
     assert!(*leaderboard.at(0) == player1, "Player1 should be first place");
     assert!(*leaderboard.at(1) == player2, "Player2 should be second place");
 }
+
+#[test]
+fn test_submit_score_tie_higher_game_id_for_lower_position() {
+    // Setup
+    let contracts = setup();
+    utils::impersonate(OWNER());
+
+    // Create tournament with 3 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+    game_config.prize_spots = 3;
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter tournament with three players
+    let (token_id1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
+    let (token_id2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
+    let (token_id3, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player3', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // Set scores - player1 and player2 have the same score, player3 has lower score
+    contracts.game.end_game(token_id1, 100); // First player (lower ID)
+    contracts.game.end_game(token_id2, 100); // Second player (higher ID)
+    contracts.game.end_game(token_id3, 50); // Third player
+
+    // Submit scores in order
+    contracts
+        .tournament
+        .submit_score(tournament.id, token_id1, 1); // First place (ID: 1, Score: 100)
+    contracts
+        .tournament
+        .submit_score(tournament.id, token_id2, 2); // Second place (ID: 2, Score: 100)
+    contracts
+        .tournament
+        .submit_score(tournament.id, token_id3, 3); // Third place (ID: 3, Score: 50)
+
+    // Verify leaderboard
+    let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
+    assert!(leaderboard.len() == 3, "Invalid leaderboard length");
+    assert!(*leaderboard.at(0) == token_id1, "Invalid first place");
+    assert!(*leaderboard.at(1) == token_id2, "Invalid second place");
+    assert!(*leaderboard.at(2) == token_id3, "Invalid third place");
+
+    // Verify registrations are marked as submitted
+    let reg1 = contracts.tournament.get_registration(tournament.id, token_id1);
+    let reg2 = contracts.tournament.get_registration(tournament.id, token_id2);
+    let reg3 = contracts.tournament.get_registration(tournament.id, token_id3);
+
+    assert!(reg1.has_submitted, "Player 1 should be marked as submitted");
+    assert!(reg2.has_submitted, "Player 2 should be marked as submitted");
+    assert!(reg3.has_submitted, "Player 3 should be marked as submitted");
+}
+
+#[test]
+#[should_panic(
+    expected: (
+        "Tournament: For equal scores, game id 2 should be higher than game id above 3",
+        'ENTRYPOINT_FAILED',
+    ),
+)]
+fn test_submit_score_tie_lower_game_id_for_lower_position() {
+    // Setup
+    let contracts = setup();
+    utils::impersonate(OWNER());
+
+    // Create tournament with 3 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+    game_config.prize_spots = 3;
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter tournament with three players
+    let (token_id1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
+    let (token_id2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // Set equal scores for both players
+    contracts.game.end_game(token_id1, 100); // First player (lower ID)
+    contracts.game.end_game(token_id2, 100); // Second player (higher ID)
+
+    // Submit higher ID first
+    contracts
+        .tournament
+        .submit_score(tournament.id, token_id2, 1); // First place (ID: 3, Score: 100)
+
+    // Try to submit lower ID for second place with same score
+    // This should fail because for equal scores, the game ID in lower positions should be higher
+    contracts
+        .tournament
+        .submit_score(tournament.id, token_id1, 2); // Second place (ID: 2, Score: 100)
+}
