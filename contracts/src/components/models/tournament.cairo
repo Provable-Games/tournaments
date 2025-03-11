@@ -129,6 +129,7 @@ pub struct Prize {
     pub payout_position: u8,
     pub token_address: ContractAddress,
     pub token_type: TokenType,
+    pub sponsor_address: ContractAddress,
 }
 
 //TODO: Remove name and symbol from the model

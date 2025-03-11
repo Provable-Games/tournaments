@@ -128,6 +128,7 @@ fn test_distribute_many_prizes() {
                     token_address: contracts.erc20.contract_address,
                     token_type: TokenType::erc20(ERC20Data { amount: 1 }),
                     payout_position: (i + 1).try_into().unwrap(),
+                    sponsor_address: OWNER(),
                 },
             );
         i += 1;

@@ -2,7 +2,7 @@
 
 use starknet::ContractAddress;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, TokenType, Registration, PrizeType, Metadata, GameConfig,
+    Tournament as TournamentModel, TokenType, Registration, Prize, PrizeType, Metadata, GameConfig,
     EntryFee, EntryRequirement, QualificationProof,
 };
 use tournaments::components::models::schedule::{Schedule, Phase};
@@ -41,6 +41,7 @@ trait ITournament<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn get_registration(self: @TState, tournament_id: u64, token_id: u64) -> Registration;
+    fn get_prize(self: @TState, prize_id: u64) -> Prize;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u32;
     fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
     fn register_token(ref self: TState, address: ContractAddress, token_type: TokenType);
@@ -174,6 +175,12 @@ pub mod tournament_component {
             let store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
             tournament.schedule.current_phase(get_block_timestamp())
+        }
+
+        fn get_prize(self: @ComponentState<TContractState>, prize_id: u64) -> Prize {
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.get_prize(prize_id)
         }
 
         /// @title Create tournament
@@ -423,7 +430,12 @@ pub mod tournament_component {
             store
                 .set_prize(
                     @Prize {
-                        id, tournament_id, token_address, token_type, payout_position: position,
+                        id,
+                        tournament_id,
+                        token_address,
+                        token_type,
+                        payout_position: position,
+                        sponsor_address: get_caller_address(),
                     },
                 );
 

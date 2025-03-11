@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use tournaments::components::models::tournament::{
-    Tournament as TournamentModel, TokenType, Registration, PrizeType, Metadata, GameConfig,
+    Tournament as TournamentModel, TokenType, Registration, Prize, PrizeType, Metadata, GameConfig,
     QualificationProof, EntryFee, EntryRequirement,
 };
 use tournaments::components::models::schedule::{Schedule, Phase};
@@ -29,6 +29,7 @@ pub trait ITournamentMock<TState> {
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
     fn get_registration(self: @TState, token_id: u64) -> Registration;
+    fn get_prize(self: @TState, prize_id: u64) -> Prize;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
     fn current_phase(self: @TState, tournament_id: u64) -> Phase;

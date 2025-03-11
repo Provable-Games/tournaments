@@ -21,7 +21,7 @@ use tournaments::components::models::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
         m_PrizeClaim, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement, TournamentType,
-        PrizeType, Role, QualificationProof, TournamentQualification, NFTQualification,
+        Prize, PrizeType, Role, QualificationProof, TournamentQualification, NFTQualification,
     },
 };
 
@@ -2705,4 +2705,41 @@ fn test_submit_score_tie_lower_game_id_for_lower_position() {
     contracts
         .tournament
         .submit_score(tournament.id, token_id1, 2); // Second place (ID: 2, Score: 100)
+}
+
+#[test]
+fn test_add_prize_records_sponsor_address() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create tournament
+    let tournament = create_basic_tournament(contracts.tournament, contracts.game.contract_address);
+
+    // Create and impersonate sponsor address
+    let sponsor = starknet::contract_address_const::<0x456>();
+    utils::impersonate(sponsor);
+
+    // Approve tokens as sponsor
+    contracts.erc20.mint(sponsor, STARTING_BALANCE);
+    contracts.erc20.approve(contracts.tournament.contract_address, STARTING_BALANCE);
+
+    // Add prize as sponsor
+    let prize_id = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: STARTING_BALANCE.low }),
+            1,
+        );
+
+    // Get prize from tournament
+    let prize: Prize = contracts.tournament.get_prize(prize_id);
+
+    // Assert sponsor address is correctly recorded
+    assert(prize.sponsor_address == sponsor, 'Incorrect sponsor address');
+    assert(prize.tournament_id == tournament.id, 'Incorrect tournament id');
+    assert(prize.token_address == contracts.erc20.contract_address, 'Incorrect token address');
+    assert(prize.payout_position == 1, 'Incorrect payout position');
 }
