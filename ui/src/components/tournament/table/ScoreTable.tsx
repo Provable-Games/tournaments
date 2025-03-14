@@ -41,10 +41,14 @@ const ScoreTable = ({
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
   const { nameSpace } = useDojo();
-
+  const [prevEntryCount, setPrevEntryCount] = useState<number | null>(null);
   const offset = (currentPage - 1) * 10;
 
-  const { data: leaderboard, loading } = useGetTournamentLeaderboard({
+  const {
+    data: leaderboard,
+    refetch: refetchLeaderboard,
+    loading,
+  } = useGetTournamentLeaderboard({
     namespace: nameSpace,
     tournamentId: tournamentId,
     gameNamespace: gameNamespace,
@@ -61,8 +65,18 @@ const ScoreTable = ({
   );
 
   useEffect(() => {
+    if (prevEntryCount !== null && prevEntryCount !== entryCount) {
+      const timer = setTimeout(() => {
+        refetchLeaderboard();
+        console.log("refetching leaderboard");
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+
+    setPrevEntryCount(entryCount);
     setShowParticipants(entryCount > 0);
-  }, [entryCount]);
+  }, [entryCount, prevEntryCount]);
 
   const { usernames } = useGetUsernames(ownerAddresses ?? []);
 

@@ -141,7 +141,9 @@ const MyEntries = ({
     <Card
       variant="outline"
       className={`sm:w-1/2 transition-all duration-300 ease-in-out ${
-        showMyEntries ? "h-[200px]" : "h-[60px]"
+        showMyEntries
+          ? "h-[210px] 3xl:h-[270px]"
+          : "h-[45px] sm:h-[60px] 3xl:h-[80px]"
       }`}
     >
       <div className="flex flex-col justify-between">
@@ -185,7 +187,7 @@ const MyEntries = ({
         >
           <div className="w-full h-0.5 bg-brand/25 mt-2" />
           <div className="p-2 h-auto">
-            <div className="flex flex-row gap-5 overflow-x-auto">
+            <div className="flex flex-row gap-5 overflow-x-auto pb-2">
               {mergedEntries?.map((mergedEntry, index) => (
                 <EntryCard
                   key={index}

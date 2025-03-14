@@ -52,8 +52,10 @@ const formSchema = z.object({
   enableGating: z.boolean().default(false),
   enableEntryFees: z.boolean().default(false),
   enableBonusPrizes: z.boolean().default(false),
+  enableEntryLimit: z.boolean().default(false),
   gatingOptions: z
     .object({
+      entry_limit: z.number().min(1).max(100).optional(),
       type: z.enum(["token", "tournament", "addresses"]).optional(),
       token: z.string().optional(),
       tournament: z
@@ -137,7 +139,9 @@ const CreateTournament = () => {
       enableGating: false,
       enableEntryFees: false,
       enableBonusPrizes: false,
+      enableEntryLimit: false,
       gatingOptions: {
+        entry_limit: 1,
         addresses: [],
         tournament: {
           tournaments: [],

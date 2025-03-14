@@ -20,8 +20,9 @@ use tournaments::components::models::{
     tournament::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
-        m_PrizeClaim, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement, TournamentType,
-        Prize, PrizeType, Role, QualificationProof, TournamentQualification, NFTQualification,
+        m_PrizeClaim, m_QualificationEntries, ERC20Data, ERC721Data, EntryFee, TokenType,
+        EntryRequirement, EntryRequirementType, TournamentType, Prize, PrizeType, Role,
+        QualificationProof, TournamentQualification, NFTQualification,
     },
 };
 
@@ -129,6 +130,7 @@ fn setup_uninitialized() -> WorldStorage {
             TestResource::Model(m_PlatformMetrics::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TournamentTokenMetrics::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_PrizeClaim::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(m_QualificationEntries::TEST_CLASS_HASH.try_into().unwrap()),
             // contracts
             TestResource::Contract(tournament_mock::TEST_CLASS_HASH),
             TestResource::Contract(game_mock::TEST_CLASS_HASH),
@@ -615,9 +617,11 @@ fn create_gated_tournament_with_unsettled_tournament() {
         .tournament
         .enter_tournament(first_tournament.id, 'test_player', OWNER(), Option::None);
 
-    let entry_requirement = EntryRequirement::tournament(
+    let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id].span()),
     );
+
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -690,9 +694,11 @@ fn create_tournament_gated_by_multiple_tournaments() {
     testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
 
     // Create tournament gated by both previous tournaments
-    let entry_requirement = EntryRequirement::tournament(
+    let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id, second_tournament.id].span()),
     );
+
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -753,6 +759,118 @@ fn create_tournament_gated_by_multiple_tournaments() {
 }
 
 #[test]
+#[should_panic(
+    expected: (
+        "Tournament: Maximum qualified entries reached for tournament 3", 'ENTRYPOINT_FAILED',
+    ),
+)]
+fn create_tournament_gated_by_multiple_tournaments_with_limited_entry() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create first tournament
+    let first_tournament = create_basic_tournament(
+        contracts.tournament, contracts.game.contract_address,
+    );
+
+    // Create second tournament
+    let second_tournament = create_basic_tournament(
+        contracts.tournament, contracts.game.contract_address,
+    );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter and complete first tournament
+    let (first_entry_token_id, _) = contracts
+        .tournament
+        .enter_tournament(first_tournament.id, 'test_player1', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+    contracts.game.end_game(first_entry_token_id, 10);
+    contracts.tournament.submit_score(first_tournament.id, first_entry_token_id, 1);
+
+    // Enter and complete second tournament
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+    let (second_entry_token_id, _) = contracts
+        .tournament
+        .enter_tournament(second_tournament.id, 'test_player2', OWNER(), Option::None);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+    contracts.game.end_game(second_entry_token_id, 20);
+    contracts.tournament.submit_score(second_tournament.id, second_entry_token_id, 1);
+
+    // Settle tournaments
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    // Create tournament gated by both previous tournaments
+    let entry_requirement_type = EntryRequirementType::tournament(
+        TournamentType::winners(array![first_tournament.id, second_tournament.id].span()),
+    );
+
+    let entry_requirement = EntryRequirement {
+        entry_limit: Option::Some(1), entry_requirement_type,
+    };
+
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
+
+    let current_time = get_block_timestamp();
+
+    let schedule = Schedule {
+        registration: Option::Some(
+            Period { start: current_time, end: current_time + MIN_REGISTRATION_PERIOD.into() },
+        ),
+        game: Period {
+            start: current_time + MIN_REGISTRATION_PERIOD.into(),
+            end: current_time + MIN_REGISTRATION_PERIOD.into() + MIN_TOURNAMENT_LENGTH.into(),
+        },
+        submission_duration: MIN_SUBMISSION_PERIOD.into(),
+    };
+
+    let gated_tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            schedule,
+            test_game_config(contracts.game.contract_address),
+            entry_fee,
+            entry_requirement,
+        );
+
+    assert(gated_tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
+
+    testing::set_block_timestamp(current_time + MIN_REGISTRATION_PERIOD.into() - 1);
+
+    let first_qualifying_token_id = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: first_tournament.id, token_id: first_entry_token_id, position: 1,
+            },
+        ),
+    );
+    let second_qualifying_token_id = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: second_tournament.id, token_id: second_entry_token_id, position: 1,
+            },
+        ),
+    );
+    // This should succeed since we completed both required tournaments
+    contracts
+        .tournament
+        .enter_tournament(gated_tournament.id, 'test_player3', OWNER(), first_qualifying_token_id);
+    contracts
+        .tournament
+        .enter_tournament(gated_tournament.id, 'test_player4', OWNER(), second_qualifying_token_id);
+    // this is the failing case, should only be able to enter once with the same qualification proof
+    contracts
+        .tournament
+        .enter_tournament(gated_tournament.id, 'test_player5', OWNER(), second_qualifying_token_id);
+}
+
+#[test]
 fn allowlist_gated_tournament() {
     let contracts = setup();
 
@@ -764,7 +882,9 @@ fn allowlist_gated_tournament() {
     let allowed_accounts = array![OWNER(), allowed_player1, allowed_player2].span();
 
     // Create tournament gated by account list
-    let entry_requirement = EntryRequirement::allowlist(allowed_accounts);
+    let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
+
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -801,6 +921,56 @@ fn allowlist_gated_tournament() {
 }
 
 #[test]
+#[should_panic(expected: ("Tournament: Maximum qualified entries reached for tournament 1", 'ENTRYPOINT_FAILED'))]
+fn allowlist_gated_tournament_with_entry_limit() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create array of allowed accounts
+    let allowed_player1 = starknet::contract_address_const::<0x456>();
+    let allowed_accounts = array![OWNER(), allowed_player1].span();
+
+    // Create tournament gated by account list
+    let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
+
+    let entry_requirement = EntryRequirement { entry_limit: Option::Some(1), entry_requirement_type };
+
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
+
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(contracts.game.contract_address),
+            entry_fee,
+            entry_requirement,
+        );
+
+    // Verify tournament was created with correct gating
+    assert(tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
+
+    // Start tournament entries
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Allowed account (owner) can enter
+    contracts.tournament.enter_tournament(tournament.id, 'test_player1', OWNER(), Option::None);
+
+    // Allowed player can enter
+    utils::impersonate(allowed_player1);
+    contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player2', allowed_player1, Option::None);
+    // this should fail because we have an entry limit of 1
+    contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player3', allowed_player1, Option::None);
+}
+
+#[test]
 #[should_panic(expected: ("Tournament: Player not in allowlist", 'ENTRYPOINT_FAILED'))]
 fn allowlist_gated_tournament_unauthorized() {
     let contracts = setup();
@@ -812,7 +982,9 @@ fn allowlist_gated_tournament_unauthorized() {
     let allowed_accounts = array![OWNER(), allowed_player].span();
 
     // Create tournament gated by account list
-    let entry_requirement = Option::Some(EntryRequirement::allowlist(allowed_accounts));
+    let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 
@@ -1038,9 +1210,11 @@ fn use_host_token_to_qualify_into_tournament_gated_tournament() {
     );
 
     // Create a tournament gated by the previous tournament
-    let entry_requirement = Option::Some(
-        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
+    let entry_requirement_type = EntryRequirementType::tournament(
+        TournamentType::winners(array![first_tournament.id].span()),
     );
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 
@@ -1131,9 +1305,11 @@ fn enter_tournament_wrong_submission_type() {
     );
 
     // Create a tournament gated by the previous tournament
-    let entry_requirement = Option::Some(
-        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
+    let entry_requirement_type = EntryRequirementType::tournament(
+        TournamentType::winners(array![first_tournament.id].span()),
     );
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 
@@ -1746,9 +1922,9 @@ fn claim_prizes_with_gated_tokens_criteria() {
 
     utils::impersonate(OWNER());
 
-    let entry_requirement = Option::Some(
-        EntryRequirement::token(contracts.erc721.contract_address),
-    );
+    let entry_requirement_type = EntryRequirementType::token(contracts.erc721.contract_address);
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 
@@ -1793,9 +1969,9 @@ fn claim_prizes_with_gated_tokens_uniform() {
 
     utils::impersonate(OWNER());
 
-    let entry_requirement = Option::Some(
-        EntryRequirement::token(contracts.erc721.contract_address),
-    );
+    let entry_requirement_type = EntryRequirementType::token(contracts.erc721.contract_address);
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 
@@ -1866,9 +2042,11 @@ fn claim_prizes_with_gated_tournaments() {
     );
 
     // create a new tournament that is restricted to winners of the first tournament
-    let entry_requirement = Option::Some(
-        EntryRequirement::tournament(TournamentType::winners(array![first_tournament.id].span())),
+    let entry_requirement_type = EntryRequirementType::tournament(
+        TournamentType::winners(array![first_tournament.id].span()),
     );
+    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
 

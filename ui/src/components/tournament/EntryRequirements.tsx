@@ -34,18 +34,25 @@ const EntryRequirements = ({
     [tournamentModel]
   );
   const activeVariant = useMemo(
-    () => entryRequirement?.activeVariant(),
+    () => entryRequirement?.entry_requirement_type.activeVariant(),
     [entryRequirement]
   );
 
   const token = useMemo(
     () =>
-      tokens.find((token) => token.address === entryRequirement?.variant.token),
+      tokens.find(
+        (token) =>
+          token.address ===
+          entryRequirement?.entry_requirement_type?.variant.token
+      ),
     [tokens, entryRequirement]
   );
 
   const tournament = useMemo(
-    () => entryRequirement?.variant?.tournament as CairoCustomEnum | undefined,
+    () =>
+      entryRequirement?.entry_requirement_type?.variant?.tournament as
+        | CairoCustomEnum
+        | undefined,
     [entryRequirement]
   );
 
@@ -55,7 +62,7 @@ const EntryRequirements = ({
   );
 
   const allowlist = useMemo(
-    () => entryRequirement?.variant?.allowlist,
+    () => entryRequirement?.entry_requirement_type?.variant?.allowlist,
     [entryRequirement]
   );
 

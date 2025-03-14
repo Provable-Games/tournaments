@@ -41,18 +41,18 @@ export const processTournamentData = (
   const endTimestamp = startTimestamp + formData.duration;
 
   // Process entry requirement based on type and requirement
-  let entryRequirement;
+  let entryRequirementType;
   if (formData.enableGating && formData.gatingOptions?.type) {
     switch (formData.gatingOptions.type) {
       case "token":
-        entryRequirement = new CairoCustomEnum({
+        entryRequirementType = new CairoCustomEnum({
           token: formData.gatingOptions.token,
           tournament: undefined,
           allowlist: undefined,
         });
         break;
       case "tournament":
-        entryRequirement = new CairoCustomEnum({
+        entryRequirementType = new CairoCustomEnum({
           token: undefined,
           tournament: new CairoCustomEnum({
             winners:
@@ -68,13 +68,26 @@ export const processTournamentData = (
         });
         break;
       case "addresses":
-        entryRequirement = new CairoCustomEnum({
+        entryRequirementType = new CairoCustomEnum({
           token: undefined,
           tournament: undefined,
           allowlist: formData.gatingOptions.addresses,
         });
         break;
     }
+  }
+
+  let entryRequirement;
+  if (formData.enableGating && entryRequirementType) {
+    entryRequirement = {
+      entry_limit: formData.enableEntryLimit
+        ? new CairoOption<BigNumberish>(
+            CairoOptionVariant.Some,
+            formData.gatingOptions?.entry_limit
+          )
+        : new CairoOption<BigNumberish>(CairoOptionVariant.None),
+      entry_requirement_type: entryRequirementType,
+    };
   }
 
   return {
@@ -505,38 +518,68 @@ export const countTotalNFTs = (groupedPrizes: TokenPrizes) => {
 export const processTournamentFromSql = (tournament: any): Tournament => {
   let entryRequirement;
   if (tournament["entry_requirement"] === "Some") {
+    let entryRequirementType: CairoCustomEnum;
+
+    console.log(
+      tournament[
+        "entry_requirement.Some.entry_requirement_type.tournament.winners"
+      ]
+    );
     switch (tournament["entry_requirement.Some"]) {
       case "token":
-        entryRequirement = new CairoCustomEnum({
-          token: tournament["entry_requirement.Some.token"],
+        entryRequirementType = new CairoCustomEnum({
+          token:
+            tournament["entry_requirement.Some.entry_requirement_type.token"],
           tournament: undefined,
           allowlist: undefined,
         });
         break;
       case "tournament":
-        entryRequirement = new CairoCustomEnum({
+        entryRequirementType = new CairoCustomEnum({
           token: undefined,
-          tournament: {
+          tournament: new CairoCustomEnum({
             winners:
-              tournament["entry_requirement.Some.tournament"] === "winners"
-                ? tournament["entry_requirement.Some.tournament.winners"]
-                : [],
+              tournament[
+                "entry_requirement.Some.entry_requirement_type.tournament"
+              ] === "winners"
+                ? tournament[
+                    "entry_requirement.Some.entry_requirement_type.tournament.winners"
+                  ]
+                : undefined,
             participants:
-              tournament["entry_requirement.Some.tournament"] === "participants"
-                ? tournament["entry_requirement.Some.tournament.participants"]
-                : [],
-          },
+              tournament[
+                "entry_requirement.Some.entry_requirement_type.tournament"
+              ] === "participants"
+                ? tournament[
+                    "entry_requirement.Some.entry_requirement_type.tournament.participants"
+                  ]
+                : undefined,
+          }),
           allowlist: undefined,
         });
         break;
       case "allowlist":
-        entryRequirement = new CairoCustomEnum({
+        entryRequirementType = new CairoCustomEnum({
           token: undefined,
           tournament: undefined,
-          allowlist: tournament["entry_requirement.Some.allowlist"],
+          allowlist:
+            tournament[
+              "entry_requirement.Some.entry_requirement_type.allowlist"
+            ],
         });
         break;
+      default:
+        entryRequirementType = new CairoCustomEnum({
+          token: undefined,
+          tournament: undefined,
+          allowlist: [],
+        });
     }
+
+    entryRequirement = {
+      entry_limit: tournament["entry_requirement.Some.entry_limit"],
+      entry_requirement_type: entryRequirementType,
+    };
   }
 
   return {
@@ -635,62 +678,28 @@ export const processPrizesFromSql = (
 
 export const processQualificationProof = (
   requirementVariant: string,
-  ownedTokenIds: string[],
-  tournamentRequirementVariant: string,
-  hasWonTournamentMap: Record<
-    string,
-    { tokenId: string; position: number } | undefined
-  >,
-  hasParticipatedInTournamentMap: Record<string, string | undefined>
+  proof: any
 ): CairoOption<QualificationProofEnum> => {
   if (requirementVariant === "tournament") {
-    // Find the first tournament ID that has a value in the appropriate map
-    let tournamentId: string | undefined;
-
-    if (tournamentRequirementVariant === "winners") {
-      // Find first tournament ID where user has won
-      tournamentId = Object.keys(hasWonTournamentMap).find(
-        (id) => hasWonTournamentMap[id] !== undefined
-      );
-    } else {
-      // Find first tournament ID where user has participated
-      tournamentId = Object.keys(hasParticipatedInTournamentMap).find(
-        (id) => hasParticipatedInTournamentMap[id] !== undefined
-      );
-    }
-
-    // If we found a valid tournament ID
-    if (tournamentId) {
-      const qualificationProof = new CairoCustomEnum({
-        Tournament: {
-          tournament_id: tournamentId,
-          token_id:
-            tournamentRequirementVariant === "winners"
-              ? hasWonTournamentMap[tournamentId]?.tokenId
-              : hasParticipatedInTournamentMap[tournamentId],
-          position:
-            tournamentRequirementVariant === "winners"
-              ? hasWonTournamentMap[tournamentId]?.position
-              : 1,
-        },
-        NFT: undefined,
-      }) as QualificationProofEnum;
-      return new CairoOption(CairoOptionVariant.Some, qualificationProof);
-    }
+    const qualificationProof = new CairoCustomEnum({
+      Tournament: {
+        tournament_id: proof.tournamentId,
+        token_id: proof.tokenId,
+        position: proof.position,
+      },
+      NFT: undefined,
+    }) as QualificationProofEnum;
+    return new CairoOption(CairoOptionVariant.Some, qualificationProof);
   }
 
   if (requirementVariant === "token") {
-    if (!ownedTokenIds || ownedTokenIds.length === 0) {
-      return new CairoOption(CairoOptionVariant.None);
-    }
-
     return new CairoOption(
       CairoOptionVariant.Some,
       new CairoCustomEnum({
         Tournament: undefined,
         NFT: {
           token_id: {
-            low: ownedTokenIds[0],
+            low: proof.tokenId,
             high: "0",
           },
         },

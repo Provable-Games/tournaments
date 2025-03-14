@@ -135,6 +135,8 @@ const Tournament = () => {
     ModelsMapping.EntryCount
   ) as unknown as EntryCount;
 
+  console.log(entryCountModel);
+
   const leaderboardModel = useModel(
     tournamentEntityId,
     ModelsMapping.Leaderboard
@@ -331,17 +333,18 @@ const Tournament = () => {
   // handle fetching of tournament data if there is a tournament entry requirement
 
   const tournament: CairoCustomEnum =
-    tournamentModel?.entry_requirement.Some?.variant?.tournament;
+    tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
+      ?.tournament;
 
   const tournamentVariant = tournament?.activeVariant();
 
   const tournamentIdsQuery = useMemo(() => {
     if (tournamentVariant === "winners") {
-      return tournamentModel.entry_requirement.Some?.variant?.tournament?.variant?.winners?.map(
+      return tournamentModel.entry_requirement.Some?.entry_requirement_type?.variant?.tournament?.variant?.winners?.map(
         (winner: any) => addAddressPadding(bigintToHex(winner))
       );
     } else if (tournamentVariant === "participants") {
-      return tournamentModel.entry_requirement.Some?.variant?.tournament?.variant?.participants?.map(
+      return tournamentModel.entry_requirement.Some?.entry_requirement_type?.variant?.tournament?.variant?.participants?.map(
         (participant: any) => addAddressPadding(bigintToHex(participant))
       );
     }

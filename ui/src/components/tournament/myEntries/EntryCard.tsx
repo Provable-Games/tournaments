@@ -8,6 +8,7 @@ import { feltToString } from "@/lib/utils";
 import { TokenMetadata } from "@/generated/models.gen";
 import { BigNumberish } from "starknet";
 import { Button } from "@/components/ui/button";
+import { getGameUrl } from "@/assets/games";
 
 interface EntryCardProps {
   gameAddress: string;
@@ -28,6 +29,8 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
   const isActive =
     !!mergedEntry.gameMetadata?.lifecycle.start.Some &&
     BigInt(mergedEntry.gameMetadata?.lifecycle.start.Some) < currentDate;
+
+  const gameUrl = getGameUrl(gameAddress);
 
   if (!mergedEntry.entry_number) {
     return null;
@@ -61,7 +64,7 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
           <Button
             size="sm"
             onClick={() => {
-              console.log("Play clicked for entry:", mergedEntry.entry_number);
+              window.open(gameUrl, "_blank");
             }}
           >
             PLAY
