@@ -563,8 +563,8 @@ export const useGetTournamentLeaderboard = ({
       gameScoreAttribute,
     ]
   );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data, loading, error };
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data, loading, error, refetch };
 };
 
 export const useGetTournamentLeaderboards = ({
@@ -631,6 +631,82 @@ export const useGetTournamentRegistrants = ({
   `
         : null,
     [namespace, gameIdsKey, offset, limit, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data, loading, error };
+};
+
+const getTournamentQualificationWhereClause = (
+  requirements: Array<{
+    type: string;
+    tokenId?: string;
+    tournamentId?: string;
+    gameId?: string;
+    position?: number;
+    address?: string;
+  }>
+) => {
+  if (!requirements || requirements.length === 0) {
+    return "";
+  }
+
+  const conditions = requirements
+    .map((req) => {
+      const { type, tokenId, tournamentId, gameId, position, address } = req;
+
+      switch (type) {
+        case "token":
+          return `(qe.'qualification.token.token_id' = '${tokenId}')`;
+        case "tournament":
+          return `(qe.'qualification.tournament.tournament_id' = '${tournamentId}' AND qe.'qualification.tournament.token_id' = '${gameId}' AND qe.'qualification.tournament.position' = ${position})`;
+        case "allowlist":
+          return `(qe.'qualification.allowlist' = '${address}')`;
+        default:
+          return null;
+      }
+    })
+    .filter(Boolean);
+
+  if (conditions.length === 0) {
+    return "";
+  }
+
+  return `AND (${conditions.join(" OR ")})`;
+};
+
+export const useGetTournamentQualificationEntries = ({
+  namespace,
+  tournamentId,
+  qualifications,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  qualifications: Array<{
+    type: string;
+    tokenId?: string;
+    tournamentId?: string;
+    gameId?: string;
+    position?: number;
+    address?: string;
+  }>;
+  active?: boolean;
+}) => {
+  const qualificationsKey = useMemo(
+    () => JSON.stringify(qualifications),
+    [qualifications]
+  );
+
+  const query = useMemo(
+    () =>
+      active
+        ? `
+    SELECT * FROM '${namespace}-QualificationEntries' qe
+    WHERE qe.tournament_id = '${addAddressPadding(tournamentId)}'
+    ${getTournamentQualificationWhereClause(qualifications)}
+  `
+        : null,
+    [namespace, tournamentId, qualificationsKey, active]
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data, loading, error };

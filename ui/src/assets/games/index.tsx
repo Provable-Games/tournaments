@@ -12,7 +12,14 @@ import { useDojo } from "@/context/dojo";
 export interface Game {
   name: string;
   Icon: FunctionComponent<ImgHTMLAttributes<HTMLImageElement>>;
+  url: string;
 }
+
+export const getGameUrl = (gameAddress: string): string => {
+  const games = getGames();
+  const game = games[gameAddress];
+  return game?.url || "";
+};
 
 export const getGames = (): Record<string, Game> => {
   const { selectedChainConfig } = useDojo();
@@ -29,6 +36,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={lootSurvivor} {...props} />;
         },
+        url: "https://lootsurvivor.io",
       },
     };
   } else if (isSepolia) {
@@ -40,6 +48,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={darkShuffle} {...props} />;
         },
+        url: "https://darkshuffle.io",
       },
     };
   } else if (isMainnet) {
@@ -51,6 +60,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={darkShuffle} {...props} />;
         },
+        url: "https://darkshuffle.io",
       },
       "0x072e1affe9a2d0a1852238073bc2f81e059ad7ab500e788046ac2f0b89b0c94a": {
         name: "Loot Survivor",
@@ -59,6 +69,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={lootSurvivor} {...props} />;
         },
+        url: "https://lootsurvivor.io",
       },
       "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d": {
         name: "Jokers of Neon",
@@ -67,6 +78,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={jokersOfNeon} {...props} />;
         },
+        url: "https://jokersofneon.com",
       },
     };
   } else {
@@ -78,6 +90,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={lootSurvivor} {...props} />;
         },
+        url: "https://lootsurvivor.io",
       },
       "0x075bd3616602ebec162c920492e4d032155fd0d199f1ed44edcb2eec120feb3d": {
         name: "Dark Shuffle",
@@ -86,12 +99,14 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={darkShuffle} {...props} />;
         },
+        url: "https://darkshuffle.io",
       },
       "0x075bd3616602ebec142c920492e4d042155fd0d199f1ed44edcb2eec120feb3d": {
         name: "zKube",
         Icon: function ZkubeIcon(props: ImgHTMLAttributes<HTMLImageElement>) {
           return <img src={zkube} {...props} />;
         },
+        url: "https://zkube.io",
       },
       "0x075bd3616652ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d": {
         name: "Dope Wars",
@@ -100,6 +115,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={dopeWars} {...props} />;
         },
+        url: "https://dopewars.gg",
       },
       "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d": {
         name: "Jokers of Neon",
@@ -108,6 +124,7 @@ export const getGames = (): Record<string, Game> => {
         ) {
           return <img src={jokersOfNeon} {...props} />;
         },
+        url: "https://jokersofneon.com",
       },
     };
   }

@@ -49,6 +49,9 @@ import useUIStore from "@/hooks/useUIStore";
 // import { tokens } from "@/lib/tokensMeta";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
 import { getChecksumAddress, validateChecksumAddress } from "starknet";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 const EntryRequirements = ({ form }: StepProps) => {
   const { nameSpace } = useDojo();
@@ -59,6 +62,14 @@ const EntryRequirements = ({ form }: StepProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const { gameData } = useUIStore();
   const [addressError, setAddressError] = useState("");
+
+  const ENTRY_LIMIT_OPTIONS = [
+    { value: 1, label: "1" },
+    { value: 2, label: "2" },
+    { value: 3, label: "3" },
+    { value: 5, label: "5" },
+    { value: 10, label: "10" },
+  ];
 
   const { data: tournaments } = useGetTournaments({
     namespace: nameSpace,
@@ -125,41 +136,139 @@ const EntryRequirements = ({ form }: StepProps) => {
             <>
               <div className="w-full h-0.5 bg-brand/25" />
               <div className="space-y-4 p-4">
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant={
-                      form.watch("gatingOptions.type") === "token"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => handleGatingTypeChange("token")}
-                  >
-                    Token
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={
-                      form.watch("gatingOptions.type") === "tournament"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => handleGatingTypeChange("tournament")}
-                  >
-                    Tournaments
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={
-                      form.watch("gatingOptions.type") === "addresses"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => handleGatingTypeChange("addresses")}
-                  >
-                    Whitelist{" "}
-                    <span className="hidden sm:inline">Addresses</span>
-                  </Button>
+                <div className="flex flex-row gap-4">
+                  <div className="space-y-4 w-1/2">
+                    <div className="flex flex-row items-center gap-5">
+                      <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                        Requirement Type
+                      </FormLabel>
+                      <FormDescription className="hidden sm:block">
+                        Choose the requirement type for the tournament
+                      </FormDescription>
+                    </div>
+                    <div className="flex gap-4">
+                      <Button
+                        type="button"
+                        variant={
+                          form.watch("gatingOptions.type") === "token"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handleGatingTypeChange("token")}
+                      >
+                        Token
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          form.watch("gatingOptions.type") === "tournament"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handleGatingTypeChange("tournament")}
+                      >
+                        Tournaments
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          form.watch("gatingOptions.type") === "addresses"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handleGatingTypeChange("addresses")}
+                      >
+                        Whitelist{" "}
+                        <span className="hidden sm:inline">Addresses</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="enableEntryLimit"
+                    render={({ field }) => (
+                      <FormItem className="w-1/2">
+                        <div className="flex flex-col">
+                          <div className="flex flex-row items-center gap-5">
+                            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                              Entry Limit
+                            </FormLabel>
+                            <FormDescription className="hidden sm:block">
+                              Set an entry limit for the tournament
+                            </FormDescription>
+                            <FormControl className="hidden sm:flex">
+                              <div className="flex flex-row items-center gap-2">
+                                <span className="uppercase text-neutral font-bold">
+                                  Optional
+                                </span>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </div>
+                            </FormControl>
+                          </div>
+                        </div>
+                        {field.value && (
+                          <FormField
+                            control={form.control}
+                            name="gatingOptions.entry_limit"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <div className="flex flex-row items-center gap-5">
+                                    <div
+                                      className={`flex flex-row items-center justify-center sm:justify-start gap-2 w-1/2`}
+                                    >
+                                      {ENTRY_LIMIT_OPTIONS.map(
+                                        ({ value, label }) => (
+                                          <Button
+                                            key={value}
+                                            type="button"
+                                            variant={
+                                              field.value === value
+                                                ? "default"
+                                                : "outline"
+                                            }
+                                            className="px-2"
+                                            onClick={() => {
+                                              field.onChange(value);
+                                            }}
+                                          >
+                                            {label}
+                                          </Button>
+                                        )
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-2 w-1/2">
+                                      <div className="flex justify-between items-center">
+                                        <Label className="xl:text-xs 2xl:text-sm font-medium">
+                                          Entries
+                                        </Label>
+                                        <span className="text-sm text-muted-foreground xl:text-xs 2xl:text-sm">
+                                          {field.value ?? 0}
+                                        </span>
+                                      </div>
+                                      <Slider
+                                        value={[field.value ?? 0]}
+                                        onValueChange={([entries]) => {
+                                          field.onChange(entries);
+                                        }}
+                                        max={100}
+                                        min={1}
+                                        step={1}
+                                      />
+                                    </div>
+                                  </div>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 {form.watch("gatingOptions.type") === "token" && (

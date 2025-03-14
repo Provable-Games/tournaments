@@ -35,6 +35,7 @@ private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 "budokan_v_1_0_2-Token" = ["budokan_v_1_0_2-tournament_mock"]
 "budokan_v_1_0_2-TournamentConfig" = ["budokan_v_1_0_2-tournament_mock"]
 "budokan_v_1_0_2-PrizeClaim" = ["budokan_v_1_0_2-tournament_mock"]
+"budokan_v_1_0_2-QualificationEntries" = ["budokan_v_1_0_2-tournament_mock"]
 # Game
 "budokan_v_1_0_2-GameMetadata" = ["budokan_v_1_0_2-game_mock"]
 "budokan_v_1_0_2-GameCounter" = ["budokan_v_1_0_2-game_mock"]
