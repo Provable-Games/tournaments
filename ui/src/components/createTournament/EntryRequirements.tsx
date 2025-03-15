@@ -136,8 +136,8 @@ const EntryRequirements = ({ form }: StepProps) => {
             <>
               <div className="w-full h-0.5 bg-brand/25" />
               <div className="space-y-4 p-4">
-                <div className="flex flex-row gap-4">
-                  <div className="space-y-4 w-1/2">
+                <div className="flex flex-col sm:flex-row gap-4 sm:h-24">
+                  <div className="flex flex-col gap-4 sm:w-1/2">
                     <div className="flex flex-row items-center gap-5">
                       <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
                         Requirement Type
@@ -183,26 +183,30 @@ const EntryRequirements = ({ form }: StepProps) => {
                       </Button>
                     </div>
                   </div>
-
+                  <div className="hidden sm:block w-0.5 h-full bg-brand/25" />
+                  <div className="sm:hidden w-full h-0.5 bg-brand/25" />
                   <FormField
                     control={form.control}
                     name="enableEntryLimit"
                     render={({ field }) => (
-                      <FormItem className="w-1/2">
+                      <FormItem className="space-y-0 flex flex-col gap-4 sm:w-1/2">
                         <div className="flex flex-col">
-                          <div className="flex flex-row items-center gap-5">
-                            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                              Entry Limit
-                            </FormLabel>
-                            <FormDescription className="hidden sm:block">
-                              Set an entry limit for the tournament
-                            </FormDescription>
-                            <FormControl className="hidden sm:flex">
+                          <div className="flex flex-row justify-between">
+                            <div className="flex flex-row items-center gap-5">
+                              <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                Entry Limit
+                              </FormLabel>
+                              <FormDescription className="hidden sm:block">
+                                Set an entry limit for the tournament
+                              </FormDescription>
+                            </div>
+                            <FormControl>
                               <div className="flex flex-row items-center gap-2">
-                                <span className="uppercase text-neutral font-bold">
+                                <span className="uppercase text-neutral text-xs font-bold">
                                   Optional
                                 </span>
                                 <Switch
+                                  size="sm"
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
                                 />
@@ -217,9 +221,9 @@ const EntryRequirements = ({ form }: StepProps) => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <div className="flex flex-row items-center gap-5">
+                                  <div className="flex flex-col sm:flex-row items-center gap-5">
                                     <div
-                                      className={`flex flex-row items-center justify-center sm:justify-start gap-2 w-1/2`}
+                                      className={`flex flex-row items-center justify-center sm:justify-start gap-2 sm:w-1/2`}
                                     >
                                       {ENTRY_LIMIT_OPTIONS.map(
                                         ({ value, label }) => (
@@ -231,7 +235,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                                                 ? "default"
                                                 : "outline"
                                             }
-                                            className="px-2"
+                                            className="px-2 w-10 h-10 flex items-center justify-center"
                                             onClick={() => {
                                               field.onChange(value);
                                             }}
@@ -243,10 +247,10 @@ const EntryRequirements = ({ form }: StepProps) => {
                                     </div>
                                     <div className="flex flex-col gap-2 w-1/2">
                                       <div className="flex justify-between items-center">
-                                        <Label className="xl:text-xs 2xl:text-sm font-medium">
+                                        <Label className="xl:text-xs 2xl:text-lg">
                                           Entries
                                         </Label>
-                                        <span className="text-sm text-muted-foreground xl:text-xs 2xl:text-sm">
+                                        <span className="text-sm text-muted-foreground text-xl">
                                           {field.value ?? 0}
                                         </span>
                                       </div>

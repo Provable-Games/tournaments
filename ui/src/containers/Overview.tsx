@@ -216,7 +216,7 @@ const Overview = () => {
     <div className="flex flex-row gap-5">
       <GameFilters />
       <div className="flex flex-col gap-2 sm:gap-0 w-full sm:w-4/5 p-1 sm:p-2">
-        <div className="flex flex-row justify-between w-full sm:border-b-4 border-brand">
+        <div className="flex flex-row items-center justify-between w-full border-b-4 border-brand h-[44px]">
           {/* Hide TournamentTabs on mobile when selectedTab is "my" */}
           <div className={selectedTab === "my" ? "hidden sm:block" : "block"}>
             <TournamentTabs
@@ -301,7 +301,7 @@ const Overview = () => {
           </div>
           <div
             ref={scrollContainerRef}
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 gap-4 transition-all duration-300 ease-in-out sm:py-2 overflow-y-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 gap-2 sm:gap-4 transition-all duration-300 ease-in-out sm:py-2 overflow-y-auto"
           >
             {selectedTab === "my" && !address ? (
               <NoAccount />

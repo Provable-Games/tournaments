@@ -135,7 +135,6 @@ const EntrantsTable = ({
                 <Switch
                   checked={showParticipants}
                   onCheckedChange={setShowParticipants}
-                  className="h-4 sm:h-6"
                 />
               </>
             )}

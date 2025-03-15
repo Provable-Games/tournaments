@@ -142,6 +142,8 @@ const Tournament = () => {
     ModelsMapping.Leaderboard
   ) as unknown as Leaderboard;
 
+  console.log("leaderboardModel", leaderboardModel);
+
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 
   const totalSubmissions = leaderboardModel?.token_ids.length ?? 0;
@@ -404,8 +406,8 @@ const Tournament = () => {
   }
 
   return (
-    <div className="lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 sm:mx-auto flex flex-col gap-5">
-      <div className="flex flex-row justify-between">
+    <div className="lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 sm:mx-auto flex flex-col gap-5 h-full">
+      <div className="flex flex-row items-center justify-between h-12">
         <Button
           variant="outline"
           className="px-2"
@@ -529,137 +531,140 @@ const Tournament = () => {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-1 sm:gap-2">
-        <div className="flex flex-row items-center h-8 sm:h-12 justify-between">
-          <div className="flex flex-row gap-5">
-            <span className="font-brand text-xl xl:text-2xl 2xl:text-4xl 3xl:text-5xl">
-              {feltToString(tournamentModel?.metadata?.name ?? "")}
-            </span>
-            <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg">
-              <div className="flex flex-row gap-2">
-                <span className="hidden sm:block">Winners:</span>
-                <span className="text-brand">Top {leaderboardSize}</span>
-              </div>
-              <div className="flex flex-row gap-2">
-                <span className="hidden sm:block">Registration:</span>
-                <span className="text-brand">
-                  {registrationType.charAt(0).toUpperCase() +
-                    registrationType.slice(1)}
-                </span>
+      <div className="flex flex-col overflow-y-auto pb-5 sm:pb-0">
+        <div className="flex flex-col gap-1 sm:gap-2">
+          <div className="flex flex-row items-center h-8 sm:h-12 justify-between">
+            <div className="flex flex-row gap-5">
+              <span className="font-brand text-xl xl:text-2xl 2xl:text-4xl 3xl:text-5xl">
+                {feltToString(tournamentModel?.metadata?.name ?? "")}
+              </span>
+              <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg">
+                <div className="flex flex-row gap-2">
+                  <span className="hidden sm:block">Winners:</span>
+                  <span className="text-brand">Top {leaderboardSize}</span>
+                </div>
+                <div className="flex flex-row gap-2">
+                  <span className="hidden sm:block">Registration:</span>
+                  <span className="text-brand">
+                    {registrationType.charAt(0).toUpperCase() +
+                      registrationType.slice(1)}
+                  </span>
+                </div>
               </div>
             </div>
+            <div className="hidden sm:flex flex-row 3xl:text-lg">
+              {!isStarted ? (
+                <div>
+                  <span className="text-brand-muted">Starts In: </span>
+                  <span className="text-brand">{formatTime(startsIn)}</span>
+                </div>
+              ) : !isEnded ? (
+                <div>
+                  <span className="text-brand-muted">Ends In: </span>
+                  <span className="text-brand">{formatTime(endsIn)}</span>
+                </div>
+              ) : !isSubmitted ? (
+                <div>
+                  <span className="text-brand-muted">Submission Ends In: </span>
+                  <span className="text-brand">
+                    {formatTime(submissionEndsIn)}
+                  </span>
+                </div>
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
-          <div className="hidden sm:flex flex-row 3xl:text-lg">
-            {!isStarted ? (
-              <div>
-                <span className="text-brand-muted">Starts In: </span>
-                <span className="text-brand">{formatTime(startsIn)}</span>
-              </div>
-            ) : !isEnded ? (
-              <div>
-                <span className="text-brand-muted">Ends In: </span>
-                <span className="text-brand">{formatTime(endsIn)}</span>
-              </div>
-            ) : !isSubmitted ? (
-              <div>
-                <span className="text-brand-muted">Submission Ends In: </span>
-                <span className="text-brand">
-                  {formatTime(submissionEndsIn)}
-                </span>
-              </div>
-            ) : (
-              <></>
-            )}
-          </div>
-        </div>
-        <div
-          className={`flex ${
-            isExpanded ? "flex-col" : "flex-row items-center"
-          }`}
-        >
           <div
-            className={`
+            className={`flex ${
+              isExpanded ? "flex-col" : "flex-row items-center"
+            }`}
+          >
+            <div
+              className={`
           relative overflow-hidden transition-[height] duration-300
           ${isExpanded ? "h-auto w-full" : "h-6 w-3/4"}
         `}
-          >
-            <p
-              ref={textRef}
-              className={`${
-                isExpanded
-                  ? "whitespace-pre-wrap text-xs sm:text-base"
-                  : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
-              }`}
             >
-              {tournamentModel?.metadata?.description}
-            </p>
-          </div>
-          {isOverflowing && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="self-start text-brand hover:text-brand-muted font-bold text-sm sm:text-base"
-            >
-              {isExpanded ? "See Less" : "See More"}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-col gap-5 sm:gap-10">
-        <div className="flex flex-col sm:flex-row sm:h-[150px] 3xl:h-[200px] gap-5">
-          <div className="sm:w-1/2 flex justify-center items-center pt-4 sm:pt-0">
-            <TournamentTimeline
-              type={registrationType}
-              createdTime={Number(tournamentModel?.created_at ?? 0)}
-              startTime={Number(tournamentModel?.schedule.game.start ?? 0)}
-              duration={durationSeconds ?? 0}
-              submissionPeriod={Number(
-                tournamentModel?.schedule.submission_duration ?? 0
-              )}
-              pulse={true}
-            />
-          </div>
-          <div className="sm:w-1/2">
-            <PrizesContainer
-              prizesExist={hasPrizes}
-              lowestPrizePosition={lowestPrizePosition}
-              groupedPrizes={groupedPrizes}
-              totalPrizesValueUSD={totalPrizesValueUSD}
-              totalPrizeNFTs={totalPrizeNFTs}
-              prices={prices}
-              pricesLoading={pricesLoading}
-              allPricesFound={allPricesFound}
-            />
+              <p
+                ref={textRef}
+                className={`${
+                  isExpanded
+                    ? "whitespace-pre-wrap text-xs sm:text-base"
+                    : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
+                }`}
+              >
+                {tournamentModel?.metadata?.description}
+              </p>
+            </div>
+            {isOverflowing && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="self-start text-brand hover:text-brand-muted font-bold text-sm sm:text-base"
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </button>
+            )}
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-5">
-          {!isStarted ? (
-            <EntrantsTable
+        <div className="flex flex-col gap-5 sm:gap-10">
+          <div className="flex flex-col sm:flex-row sm:h-[150px] 3xl:h-[200px] gap-5">
+            <div className="sm:w-1/2 flex justify-center items-center pt-4 sm:pt-0">
+              <TournamentTimeline
+                type={registrationType}
+                createdTime={Number(tournamentModel?.created_at ?? 0)}
+                startTime={Number(tournamentModel?.schedule.game.start ?? 0)}
+                duration={durationSeconds ?? 0}
+                submissionPeriod={Number(
+                  tournamentModel?.schedule.submission_duration ?? 0
+                )}
+                pulse={true}
+              />
+            </div>
+            <div className="sm:w-1/2">
+              <PrizesContainer
+                prizesExist={hasPrizes}
+                lowestPrizePosition={lowestPrizePosition}
+                groupedPrizes={groupedPrizes}
+                totalPrizesValueUSD={totalPrizesValueUSD}
+                totalPrizeNFTs={totalPrizeNFTs}
+                prices={prices}
+                pricesLoading={pricesLoading}
+                allPricesFound={allPricesFound}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-5">
+            {!isStarted ? (
+              <EntrantsTable
+                tournamentId={tournamentModel?.id}
+                entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
+                gameAddress={tournamentModel?.game_config?.address}
+                gameNamespace={gameNamespace ?? ""}
+              />
+            ) : isStarted ? (
+              <ScoreTable
+                tournamentId={tournamentModel?.id}
+                entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
+                gameAddress={tournamentModel?.game_config?.address}
+                gameNamespace={gameNamespace ?? ""}
+                gameScoreModel={gameScoreModel ?? ""}
+                gameScoreAttribute={gameScoreAttribute ?? ""}
+                isEnded={isEnded}
+                // leaderboardModel={leaderboardModel}
+              />
+            ) : (
+              <></>
+            )}
+            <MyEntries
               tournamentId={tournamentModel?.id}
-              entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
-              gameAddress={tournamentModel?.game_config?.address}
-              gameNamespace={gameNamespace ?? ""}
-            />
-          ) : isStarted ? (
-            <ScoreTable
-              tournamentId={tournamentModel?.id}
-              entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
               gameAddress={tournamentModel?.game_config?.address}
               gameNamespace={gameNamespace ?? ""}
               gameScoreModel={gameScoreModel ?? ""}
               gameScoreAttribute={gameScoreAttribute ?? ""}
-              isEnded={isEnded}
+              ownedTokens={ownedTokens}
             />
-          ) : (
-            <></>
-          )}
-          <MyEntries
-            tournamentId={tournamentModel?.id}
-            gameAddress={tournamentModel?.game_config?.address}
-            gameNamespace={gameNamespace ?? ""}
-            gameScoreModel={gameScoreModel ?? ""}
-            gameScoreAttribute={gameScoreAttribute ?? ""}
-            ownedTokens={ownedTokens}
-          />
+          </div>
         </div>
       </div>
     </div>

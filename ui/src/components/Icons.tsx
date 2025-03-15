@@ -521,3 +521,14 @@ export const EXTERNAL_LINK: React.FC = () => (
     />
   </svg>
 );
+
+export const LOCK: React.FC = () => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M7 11V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V11C18.1046 11 19 11.8954 19 13V18C19 19.1046 18.1046 20 17 20H7C5.89543 20 5 19.1046 5 18V13C5 11.8954 5.89543 11 7 11ZM15 9V11H9V9C9 7.34315 10.3431 6 12 6C13.6569 6 15 7.34315 15 9Z"
+      fill="currentColor"
+    />
+  </svg>
+);

@@ -227,61 +227,54 @@ const CreateTournament = () => {
     }
   };
 
+  const getStepIndex = (step: string): number => {
+    const steps = ["details", "schedule", "gating", "fees", "prizes"];
+    return steps.indexOf(step);
+  };
+
   // Render the current step's content
-  const renderStep = () => (
-    <>
-      <div
-        className={cn(
-          "transition-all duration-300 transform",
-          currentStep === "details"
-            ? "translate-x-0 opacity-100"
-            : "-translate-x-full opacity-0 absolute"
-        )}
-      >
-        <Card
-          variant="outline"
-          className={`h-auto ${currentStep === "details" ? "block" : "hidden"}`}
-        >
-          <Details form={form} />
-        </Card>
+  const renderStep = () => {
+    const steps = ["details", "schedule", "gating", "fees", "prizes"];
+    const currentIndex = getStepIndex(currentStep);
+
+    // Only render current step and adjacent steps (previous and next)
+    const visibleSteps = steps.filter((_, index) => {
+      return Math.abs(index - currentIndex) <= 1;
+    });
+
+    return (
+      <div className="relative h-full">
+        {visibleSteps.map((step) => {
+          const index = getStepIndex(step);
+          const isActive = currentStep === step;
+          const isPrevious = currentIndex > index;
+          const isNext = currentIndex < index;
+
+          return (
+            <div
+              key={step}
+              className={cn(
+                "transition-all duration-300 transform absolute w-full h-full overflow-y-auto pb-5 sm:pb-0",
+                isActive &&
+                  "translate-x-0 opacity-100 z-10 pointer-events-auto",
+                isPrevious &&
+                  "-translate-x-full opacity-0 z-0 pointer-events-none",
+                isNext && "translate-x-full opacity-0 z-0 pointer-events-none"
+              )}
+            >
+              <Card variant="outline" className="h-auto w-full">
+                {step === "details" && <Details form={form} />}
+                {step === "schedule" && <Schedule form={form} />}
+                {step === "gating" && <EntryRequirements form={form} />}
+                {step === "fees" && <EntryFees form={form} />}
+                {step === "prizes" && <BonusPrizes form={form} />}
+              </Card>
+            </div>
+          );
+        })}
       </div>
-      <div
-        className={cn(
-          "transition-all duration-300 transform",
-          currentStep === "schedule"
-            ? "translate-x-0 opacity-100"
-            : "-translate-x-full opacity-0 absolute"
-        )}
-      >
-        <Card
-          variant="outline"
-          className={`h-auto ${
-            currentStep === "schedule" ? "block" : "hidden"
-          }`}
-        >
-          <Schedule form={form} />
-        </Card>
-      </div>
-      <Card
-        variant="outline"
-        className={`h-auto ${currentStep === "gating" ? "block" : "hidden"}`}
-      >
-        <EntryRequirements form={form} />
-      </Card>
-      <Card
-        variant="outline"
-        className={`h-auto ${currentStep === "fees" ? "block" : "hidden"}`}
-      >
-        <EntryFees form={form} />
-      </Card>
-      <Card
-        variant="outline"
-        className={`h-auto ${currentStep === "prizes" ? "block" : "hidden"}`}
-      >
-        <BonusPrizes form={form} />
-      </Card>
-    </>
-  );
+    );
+  };
 
   const getSectionStatus = (form: any) => {
     // Helper function to safely check nested values
@@ -422,8 +415,8 @@ const CreateTournament = () => {
   };
 
   return (
-    <div className="flex flex-col gap-5 lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 mx-auto">
-      <div className="space-y-5">
+    <div className="flex flex-col gap-5 lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 h-full mx-auto">
+      <div className="flex flex-col gap-2 sm:gap-5">
         <div className="flex flex-row justify-between items-center">
           <Button variant="outline" onClick={() => navigate("/")}>
             <ARROW_LEFT />
@@ -486,7 +479,9 @@ const CreateTournament = () => {
       </div>
 
       <Form {...form}>
-        <form className="flex flex-col gap-10 pb-10">{renderStep()}</form>
+        <form className="flex flex-col gap-10 sm:pb-10 h-5/6 overflow-hidden">
+          {renderStep()}
+        </form>
       </Form>
     </div>
   );

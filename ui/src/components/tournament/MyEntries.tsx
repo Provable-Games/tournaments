@@ -141,9 +141,7 @@ const MyEntries = ({
     <Card
       variant="outline"
       className={`sm:w-1/2 transition-all duration-300 ease-in-out ${
-        showMyEntries
-          ? "h-[210px] 3xl:h-[270px]"
-          : "h-[45px] sm:h-[60px] 3xl:h-[80px]"
+        showMyEntries ? "h-[210px] 3xl:h-[270px]" : "h-[60px] 3xl:h-[80px]"
       }`}
     >
       <div className="flex flex-col justify-between">
@@ -161,7 +159,6 @@ const MyEntries = ({
                   <Switch
                     checked={showMyEntries}
                     onCheckedChange={setShowMyEntries}
-                    className="h-4 sm:h-6"
                   />
                 </>
               ) : (

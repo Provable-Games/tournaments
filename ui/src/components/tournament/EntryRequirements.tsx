@@ -3,7 +3,7 @@ import { CairoCustomEnum } from "starknet";
 import { Token, Tournament } from "@/generated/models.gen";
 import { displayAddress, feltToString } from "@/lib/utils";
 import { useDojo } from "@/context/dojo";
-import { COIN, CHECK, TROPHY, CLOCK } from "@/components/Icons";
+import { COIN, CHECK, TROPHY, CLOCK, LOCK, COUNTER } from "@/components/Icons";
 import {
   HoverCard,
   HoverCardContent,
@@ -12,7 +12,8 @@ import {
 import { Tournament as TournamentModel } from "@/generated/models.gen";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 const EntryRequirements = ({
   tournamentModel,
@@ -69,6 +70,8 @@ const EntryRequirements = ({
   const blockExplorerExists =
     selectedChainConfig.blockExplorerUrl !== undefined;
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const renderContent = () => {
     if (activeVariant === "token") {
       return (
@@ -76,7 +79,7 @@ const EntryRequirements = ({
           <span className="w-8">
             <COIN />
           </span>
-          <span className="text-xs">{token?.name}</span>
+          <span className="hidden sm:block text-xs">{token?.name}</span>
         </div>
       );
     } else if (activeVariant === "tournament") {
@@ -85,7 +88,9 @@ const EntryRequirements = ({
           <span className="w-6">
             <TROPHY />
           </span>
-          <span className="capitalize">{tournamentVariant}</span>
+          <span className="hidden sm:block capitalize">
+            {tournamentVariant}
+          </span>
         </div>
       );
     } else {
@@ -94,7 +99,7 @@ const EntryRequirements = ({
           <span className="w-8">
             <CHECK />
           </span>
-          <span>Allowlist</span>
+          <span className="hidden sm:block">Allowlist</span>
         </div>
       );
     }
@@ -177,28 +182,67 @@ const EntryRequirements = ({
     }
   };
 
-  return (
-    <HoverCard openDelay={50} closeDelay={0}>
-      <HoverCardTrigger asChild>
-        <Card
-          variant="outline"
-          className="relative flex flex-row items-center justify-between w-36 h-full p-1 px-2 hover:cursor-pointer"
-        >
-          <span className="absolute left-0 -top-5 text-xs whitespace-nowrap uppercase text-brand-muted font-bold">
-            Entry Requirements:
+  const TriggerCard = ({ onClick = () => {} }) => (
+    <Card
+      variant="outline"
+      className="relative flex flex-row items-center justify-between sm:w-36 h-full p-1 px-2 hover:cursor-pointer"
+      onClick={onClick}
+    >
+      <span className="hidden sm:block absolute left-0 -top-5 text-xs whitespace-nowrap uppercase text-brand-muted font-bold">
+        Entry Requirements:
+      </span>
+      <span className="absolute -top-2 -right-1 flex items-center justify-center text-brand-subtle h-6 w-6 2xl:h-7 2xl:w-7 text-xs">
+        <COUNTER />
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex items-center justify-center text-brand w-4 h-4 2xl:w-5 2xl:h-5">
+            <LOCK />
           </span>
-          {renderContent()}
-        </Card>
-      </HoverCardTrigger>
-      <HoverCardContent
-        className="w-80 max-h-[150px] p-4 text-sm z-50 overflow-hidden"
-        align="start"
-        side="bottom"
-        sideOffset={5}
-      >
-        <div className="flex flex-col gap-2 h-full">{renderHoverContent()}</div>
-      </HoverCardContent>
-    </HoverCard>
+        </span>
+      </span>
+      {renderContent()}
+    </Card>
+  );
+
+  const ContentSection = () => (
+    <div className="flex flex-col gap-2 h-full">{renderHoverContent()}</div>
+  );
+
+  return (
+    <>
+      {/* Mobile: Dialog (visible below sm breakpoint) */}
+      <div className="sm:hidden">
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <div>
+              <TriggerCard />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="p-4">
+            <h3 className="text-lg font-semibold mb-2">Entry Requirements</h3>
+            <ContentSection />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Desktop: HoverCard (visible at sm breakpoint and above) */}
+      <div className="hidden sm:block">
+        <HoverCard openDelay={50} closeDelay={0}>
+          <HoverCardTrigger asChild>
+            <div>
+              <TriggerCard />
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent
+            className="w-80 max-h-[150px] p-4 text-sm z-50 overflow-hidden"
+            align="start"
+            side="bottom"
+            sideOffset={5}
+          >
+            <ContentSection />
+          </HoverCardContent>
+        </HoverCard>
+      </div>
+    </>
   );
 };
 

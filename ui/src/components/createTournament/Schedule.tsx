@@ -208,9 +208,13 @@ const Schedule = ({ form }: StepProps) => {
                                 className="w-24 px-1"
                                 type="number"
                                 value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
-                                }
+                                onChange={(e) => {
+                                  field.onChange(Number(e.target.value));
+                                  form.setValue(
+                                    "submissionPeriod",
+                                    Number(e.target.value)
+                                  );
+                                }}
                                 min={900}
                               />
                             </div>

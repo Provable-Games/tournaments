@@ -76,11 +76,7 @@ const PrizesContainer = ({
                 <span className="text-sm xl:text-base 3xl:text-lg text-neutral">
                   {showPrizes ? "Hide" : "Show Prizes"}
                 </span>
-                <Switch
-                  checked={showPrizes}
-                  onCheckedChange={setShowPrizes}
-                  className="h-4 xl:h-6"
-                />
+                <Switch checked={showPrizes} onCheckedChange={setShowPrizes} />
               </>
             ) : (
               <span className="text-neutral">No Prizes Added</span>

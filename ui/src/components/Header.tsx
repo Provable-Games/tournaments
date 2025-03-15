@@ -120,15 +120,19 @@ const Header = () => {
 
       {/* Logo - hidden on small screens */}
       <div
-        className="hidden sm:block font-brand hover:cursor-pointer hover:text-brand-muted transition-colors duration-200"
+        className="font-brand hover:cursor-pointer hover:text-brand-muted transition-colors duration-200 h-full flex items-center"
         onClick={() => {
           navigate("/");
         }}
       >
-        <img src="/logo.svg" alt="Budokan" width={200} height={60} />
+        <img
+          className="h-8 sm:h-10 xl:h-12 hover:opacity-80 transition-opacity duration-200 object-contain"
+          src="/logo.svg"
+          alt="logo"
+        />
       </div>
 
-      <div className="flex flex-row items-center gap-2 ml-auto">
+      <div className="flex flex-row items-center gap-2">
         {/* Navigation buttons - only visible on larger screens */}
         <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-2">
           {!isMainnet && location.pathname !== "/play" && (

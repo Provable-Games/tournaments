@@ -73,7 +73,7 @@ export const MobilePlayerCard = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:hidden bg-black border border-brand p-4 rounded-lg max-w-[90vw] mx-auto">
+      <DialogContent className="sm:hidden">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-brand text-lg text-brand">Player Details</h3>
         </div>
