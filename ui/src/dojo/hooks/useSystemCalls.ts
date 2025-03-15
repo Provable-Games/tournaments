@@ -19,7 +19,7 @@ import {
   AccountInterface,
 } from "starknet";
 import { useToast } from "@/hooks/useToast";
-import { useOptimisticUpdates } from "@/dojo/hooks/useOptimisticUpdates";
+// import { useOptimisticUpdates } from "@/dojo/hooks/useOptimisticUpdates";
 import { feltToString } from "@/lib/utils";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { ChainId } from "@/dojo/config";
@@ -48,11 +48,11 @@ export const useSystemCalls = () => {
   const { client, selectedChainConfig } = useDojo();
   const { account, address } = useAccount();
   const { toast } = useToast();
-  const {
-    applyTournamentEntryUpdate,
-    applyTournamentPrizesUpdate,
-    applyTournamentCreateAndAddPrizesUpdate,
-  } = useOptimisticUpdates();
+  // const {
+  //   applyTournamentEntryUpdate,
+  //   applyTournamentPrizesUpdate,
+  //   applyTournamentCreateAndAddPrizesUpdate,
+  // } = useOptimisticUpdates();
   const { tournamentAddress } = useTournamentContracts();
 
   const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
@@ -63,17 +63,17 @@ export const useSystemCalls = () => {
     entryFeeToken: CairoOption<EntryFee>,
     tournamentId: BigNumberish,
     tournamentName: string,
-    newEntryCount: BigNumberish,
+    // newEntryCount: BigNumberish,
     player_name: BigNumberish,
     player_address: BigNumberish,
-    qualification: CairoOption<QualificationProofEnum>,
-    gameCount: BigNumberish
+    qualification: CairoOption<QualificationProofEnum>
+    // gameCount: BigNumberish
   ) => {
-    const { wait, revert, confirm } = applyTournamentEntryUpdate(
-      tournamentId,
-      newEntryCount,
-      gameCount
-    );
+    // const { wait, revert, confirm } = applyTournamentEntryUpdate(
+    //   tournamentId,
+    //   newEntryCount,
+    //   gameCount
+    // );
 
     try {
       let calls = [];
@@ -103,7 +103,7 @@ export const useSystemCalls = () => {
         ? await account?.execute(calls)
         : account?.execute(calls);
 
-      await wait();
+      // await wait();
 
       if (tx) {
         toast({
@@ -112,11 +112,11 @@ export const useSystemCalls = () => {
         });
       }
     } catch (error) {
-      revert();
+      // revert();
       console.error("Error executing enter tournament:", error);
       throw error;
     } finally {
-      confirm();
+      // confirm();
     }
   };
 
@@ -172,7 +172,7 @@ export const useSystemCalls = () => {
       description: `Adding prize for tournament ${tournamentName}`,
     });
 
-    const { revert, confirm } = applyTournamentPrizesUpdate(prizes);
+    // const { revert, confirm } = applyTournamentPrizesUpdate(prizes);
 
     try {
       let calls = [];
@@ -213,11 +213,11 @@ export const useSystemCalls = () => {
         });
       }
     } catch (error) {
-      revert();
+      // revert();
       console.error("Error executing add prize:", error);
       throw error;
     } finally {
-      confirm();
+      // confirm();
     }
   };
 
@@ -225,10 +225,10 @@ export const useSystemCalls = () => {
     tournament: Tournament,
     prizes: Prize[]
   ) => {
-    const { revert, confirm } = applyTournamentCreateAndAddPrizesUpdate(
-      tournament,
-      prizes
-    );
+    // const { revert, confirm } = applyTournamentCreateAndAddPrizesUpdate(
+    //   tournament,
+    //   prizes
+    // );
 
     const executableTournament = prepareForExecution(tournament);
 
@@ -286,11 +286,11 @@ export const useSystemCalls = () => {
         });
       }
     } catch (error) {
-      revert();
+      // revert();
       console.error("Error executing create tournament:", error);
       throw error;
     } finally {
-      confirm();
+      // confirm();
     }
   };
 

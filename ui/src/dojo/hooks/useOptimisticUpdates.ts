@@ -38,7 +38,7 @@ const applyModelUpdate = <T extends { [key: string]: any }>(
 };
 
 export const useOptimisticUpdates = () => {
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
   const { nameSpace } = useDojo();
 
   const applyTournamentEntryUpdate = (

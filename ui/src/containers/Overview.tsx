@@ -30,6 +30,10 @@ import { TournamentCard } from "@/components/overview/TournamanentCard";
 import TournamentSkeletons from "@/components/overview/TournamentSkeletons";
 import NoAccount from "@/components/overview/tournaments/NoAccount";
 import { useAccount } from "@starknet-react/core";
+import { useSubscribeTournamentsQuery } from "@/dojo/hooks/useSdkQueries";
+import { useDojoStore } from "@/dojo/hooks/useDojoStore";
+import { ParsedEntity } from "@dojoengine/sdk";
+import { SchemaType } from "@/generated/models.gen";
 
 const SORT_OPTIONS = {
   upcoming: [
@@ -55,11 +59,22 @@ const Overview = () => {
   const { nameSpace } = useDojo();
   const { address } = useAccount();
   const { selectedTab, setSelectedTab } = useUIStore();
-  const [page, setPage] = useState(0);
+  const [page, _setPage] = useState(0);
   const { gameFilters, setGameFilters, gameData } = useUIStore();
   const [sortBy, setSortBy] = useState<string>(
     SORT_OPTIONS[selectedTab][0].value
   );
+  const subscribedTournaments = useDojoStore((state) =>
+    state.getEntitiesByModel(nameSpace, "Tournament")
+  );
+  const subscribedTournamentsKey = useMemo(
+    () => JSON.stringify(subscribedTournaments),
+    [subscribedTournaments]
+  );
+
+  const [prevSubscribedTournaments, setPrevSubscribedTournaments] = useState<
+    ParsedEntity<SchemaType>[] | null
+  >(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -67,7 +82,10 @@ const Overview = () => {
     return addAddressPadding(bigintToHex(BigInt(Date.now()) / 1000n));
   }, []);
 
-  const { data: upcomingTournamentsCount } = useGetUpcomingTournamentsCount({
+  const {
+    data: upcomingTournamentsCount,
+    refetch: refetchUpcomingTournamentsCount,
+  } = useGetUpcomingTournamentsCount({
     namespace: nameSpace,
     currentTime: currentTime,
   });
@@ -130,7 +148,11 @@ const Overview = () => {
     []
   );
 
-  const { data: tournaments, loading: tournamentsLoading } = useGetTournaments({
+  const {
+    data: tournaments,
+    loading: tournamentsLoading,
+    refetch: refetchTournaments,
+  } = useGetTournaments({
     namespace: nameSpace,
     currentTime: hexTimestamp,
     gameFilters: gameFilters,
@@ -143,6 +165,26 @@ const Overview = () => {
       selectedTab === "live" ||
       selectedTab === "ended",
   });
+
+  useSubscribeTournamentsQuery();
+
+  useEffect(() => {
+    if (
+      prevSubscribedTournaments !== null &&
+      prevSubscribedTournaments !== subscribedTournaments
+    ) {
+      const timer = setTimeout(() => {
+        refetchUpcomingTournamentsCount();
+        refetchTournaments();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+
+    setPrevSubscribedTournaments(subscribedTournaments);
+  }, [subscribedTournamentsKey, prevSubscribedTournaments]);
+
+  console.log(subscribedTournaments);
 
   const { data: myTournaments, loading: myTournamentsLoading } =
     useGetMyTournaments({
@@ -170,34 +212,44 @@ const Overview = () => {
     };
   });
 
+  // useEffect(() => {
+  //   const observer = new IntersectionObserver(
+  //     (entries) => {
+  //       if (
+  //         entries[0].isIntersecting &&
+  //         !(tournamentsLoading || myTournamentsLoading) &&
+  //         tournamentCounts[selectedTab] > tournamentsData.length
+  //       ) {
+  //         setPage((prevPage) => prevPage + 1);
+  //       }
+  //     },
+  //     { threshold: 0.1 }
+  //   );
+
+  //   if (loadingRef.current) {
+  //     if (!(tournamentsLoading || myTournamentsLoading)) {
+  //       observer.observe(loadingRef.current);
+  //     } else {
+  //       observer.disconnect();
+  //     }
+  //   }
+
+  //   return () => observer.disconnect();
+  // }, [
+  //   tournamentsLoading,
+  //   myTournamentsLoading,
+  //   tournamentCounts,
+  //   tournamentsData.length,
+  //   selectedTab,
+  // ]);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          !(tournamentsLoading || myTournamentsLoading) &&
-          tournamentCounts[selectedTab] > 12
-        ) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [tournamentsLoading, myTournamentsLoading, tournamentCounts]);
-
-  useEffect(() => {
-    if (myTournamentsCount > 0) {
-      setSelectedTab("my");
-    } else if (upcomingTournamentsCount > 0) {
+    if (upcomingTournamentsCount > 0) {
       setSelectedTab("upcoming");
     } else if (liveTournamentsCount > 0) {
       setSelectedTab("live");
+    } else if (myTournamentsCount > 0) {
+      setSelectedTab("my");
     } else if (endedTournamentsCount > 0) {
       setSelectedTab("ended");
     }
@@ -213,7 +265,7 @@ const Overview = () => {
   );
 
   return (
-    <div className="flex flex-row gap-5">
+    <div className="flex flex-row gap-5 h-full">
       <GameFilters />
       <div className="flex flex-col gap-2 sm:gap-0 w-full sm:w-4/5 p-1 sm:p-2">
         <div className="flex flex-row items-center justify-between w-full border-b-4 border-brand h-[44px]">
@@ -324,7 +376,7 @@ const Overview = () => {
               <EmptyResults gameFilters={gameFilters} />
             )}
           </div>
-          <div ref={loadingRef} className="w-full py-4 flex justify-center">
+          <div ref={loadingRef} className="w-full h-10 flex justify-center">
             {(tournamentsLoading || myTournamentsLoading) && <LoadingSpinner />}
           </div>
         </div>

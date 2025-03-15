@@ -41,7 +41,7 @@ export const TournamentCard = ({
 }: TournamentCardProps) => {
   const { nameSpace } = useDojo();
   const navigate = useNavigate();
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
   const { gameData } = useUIStore();
   const [allPricesFound, setAllPricesFound] = useState(false);
 

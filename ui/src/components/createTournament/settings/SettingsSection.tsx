@@ -33,12 +33,12 @@ const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
     form.watch("game")
   );
   useGetGameSettingsQuery(gameNamespace ?? "", gameSettingsModel ?? "");
-  const settingsDetails = useDojoStore
-    .getState()
-    .getEntitiesByModel(gameNamespace ?? "", "SettingsDetails");
-  const settings = useDojoStore
-    .getState()
-    .getEntitiesByModel(gameNamespace ?? "", "Settings");
+  const settingsDetails = useDojoStore((state) =>
+    state.getEntitiesByModel(gameNamespace ?? "", "SettingsDetails")
+  );
+  const settings = useDojoStore((state) =>
+    state.getEntitiesByModel(gameNamespace ?? "", "Settings")
+  );
 
   const settingsEntities = [...settingsDetails, ...settings];
 

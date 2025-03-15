@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useAccount } from "@starknet-react/core";
-import { Tournament, EntryCount, Token } from "@/generated/models.gen";
+import { Tournament, Token } from "@/generated/models.gen";
 import {
   stringToFelt,
   feltToString,
@@ -37,8 +37,8 @@ interface EnterTournamentDialogProps {
   hasEntryFee?: boolean;
   entryFee?: string;
   tournamentModel: Tournament;
-  entryCountModel: EntryCount;
-  gameCount: BigNumberish;
+  // entryCountModel: EntryCount;
+  // gameCount: BigNumberish;
   tokens: Token[];
   tournamentsData: Tournament[];
 }
@@ -49,8 +49,8 @@ export function EnterTournamentDialog({
   hasEntryFee,
   entryFee,
   tournamentModel,
-  entryCountModel,
-  gameCount,
+  // entryCountModel,
+  // gameCount,
   tokens,
   tournamentsData,
 }: EnterTournamentDialogProps) {
@@ -73,11 +73,11 @@ export function EnterTournamentDialog({
       tournamentModel?.entry_fee,
       tournamentModel?.id,
       feltToString(tournamentModel?.metadata.name),
-      (Number(entryCountModel?.count) ?? 0) + 1,
+      // (Number(entryCountModel?.count) ?? 0) + 1,
       stringToFelt(playerName.trim()),
       addAddressPadding(address!),
-      qualificationProof,
-      gameCount
+      qualificationProof
+      // gameCount
     );
 
     setPlayerName("");

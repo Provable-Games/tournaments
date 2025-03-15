@@ -48,10 +48,9 @@ const TokenDialog = ({ selectedToken, onSelect, type }: TokenDialogProps) => {
 
   const tokens = isSepolia
     ? sepoliaTokens
-    : useDojoStore
-        .getState()
-        .getEntitiesByModel(nameSpace, "Token")
-        .map((token) => token.models[nameSpace].Token as Token);
+    : useDojoStore((state) => state.getEntitiesByModel(nameSpace, "Token")).map(
+        (token) => token.models[nameSpace].Token as Token
+      );
 
   const typeFilteredTokens = type
     ? tokens.filter((token) => token.token_type.activeVariant() === type)

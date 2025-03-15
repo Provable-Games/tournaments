@@ -14,7 +14,7 @@ import { addAddressPadding, CairoCustomEnum } from "starknet";
 import { useAccount } from "@starknet-react/core";
 import {
   useSubscribeGamesQuery,
-  useGetGameCounterQuery,
+  // useGetGameCounterQuery,
   useGetTournamentQuery,
   useSubscribeTournamentQuery,
   useSubscribeScoresQuery,
@@ -46,7 +46,7 @@ import useModel from "@/dojo/hooks/useModel";
 import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
 import { EnterTournamentDialog } from "@/components/dialogs/EnterTournament";
 import ScoreTable from "@/components/tournament/table/ScoreTable";
-import { ADMIN_ADDRESS, TOURNAMENT_VERSION_KEY } from "@/lib/constants";
+import { ADMIN_ADDRESS } from "@/lib/constants";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import MyEntries from "@/components/tournament/MyEntries";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
@@ -75,7 +75,7 @@ const Tournament = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const { nameSpace, selectedChainConfig } = useDojo();
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
   const { gameData } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
@@ -211,12 +211,12 @@ const Tournament = () => {
   );
   useGetScoresQuery(gameNamespace ?? "", gameScoreModel ?? "");
 
-  const { entity: gameCounterEntity } = useGetGameCounterQuery({
-    key: addAddressPadding(BigInt(TOURNAMENT_VERSION_KEY)),
-    nameSpace: gameNamespace ?? "",
-  });
+  // const { entity: gameCounterEntity } = useGetGameCounterQuery({
+  //   key: addAddressPadding(BigInt(TOURNAMENT_VERSION_KEY)),
+  //   nameSpace: gameNamespace ?? "",
+  // });
 
-  const gameCount = gameCounterEntity?.GameCounter?.count ?? 0;
+  // const gameCount = gameCounterEntity?.GameCounter?.count ?? 0;
 
   useSubscribeGamesQuery({
     gameNamespace: gameNamespace ?? "",
@@ -498,8 +498,8 @@ const Tournament = () => {
             hasEntryFee={hasEntryFee}
             entryFee={entryFee}
             tournamentModel={tournamentModel}
-            entryCountModel={entryCountModel}
-            gameCount={gameCount}
+            // entryCountModel={entryCountModel}
+            // gameCount={gameCount}
             tokens={tokens}
             tournamentsData={tournamentsData}
           />

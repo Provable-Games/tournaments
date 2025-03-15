@@ -25,7 +25,7 @@ const RegisterToken = () => {
   const [tokenBalance, setTokenBalance] = useState<Record<string, bigint>>({});
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
 
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
   const tokens = state.getEntitiesByModel(nameSpace, "Token");
 
   useSubscribeTokensQuery();

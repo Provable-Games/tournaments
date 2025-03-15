@@ -14,10 +14,15 @@ function useModel<
 >(entityId: string, model: `${N}-${M}`): SchemaType[N][M] {
   const [namespace, modelName] = model.split("-") as [N, M];
 
-  // Select only the specific model data for the given entityId
-  const modelData = useDojoStore.getState().entities[entityId]?.models?.[
-    namespace
-  ]?.[modelName] as unknown as SchemaType[N][M] as unknown as SchemaType[N][M];
+  // Subscribe to the store and select the specific model data
+  const modelData = useDojoStore(
+    (state) =>
+      state.entities[entityId]?.models?.[namespace]?.[
+        modelName
+      ] as unknown as SchemaType[N][M]
+  );
+
+  console.log("modelData", modelData);
 
   return modelData;
 }

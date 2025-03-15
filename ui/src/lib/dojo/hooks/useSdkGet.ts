@@ -35,7 +35,7 @@ export const useSdkGetEntities = ({
 
   const [isLoading, setIsLoading] = useState(false);
   const [entities, setEntities] = useState<EntityResult[] | null>(null);
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
 
   const memoizedQuery = useMemo(() => query, [JSON.stringify(query)]);
 

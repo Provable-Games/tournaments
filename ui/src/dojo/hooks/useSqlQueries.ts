@@ -63,8 +63,8 @@ export const useGetUpcomingTournamentsCount = ({
   `,
     [namespace, currentTime]
   );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data: data?.[0]?.count, loading, error };
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error, refetch };
 };
 
 export const useGetLiveTournamentsCount = ({
@@ -82,8 +82,8 @@ export const useGetLiveTournamentsCount = ({
   `,
     [namespace, currentTime]
   );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data: data?.[0]?.count, loading, error };
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error, refetch };
 };
 
 export const useGetEndedTournamentsCount = ({
@@ -101,8 +101,8 @@ export const useGetEndedTournamentsCount = ({
   `,
     [namespace, currentTime]
   );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data: data?.[0]?.count, loading, error };
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error, refetch };
 };
 
 export const useGetMyTournamentsCount = ({
@@ -144,8 +144,8 @@ export const useGetMyTournamentsCount = ({
   `,
     [namespace, address, gameAddresses]
   );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data: data?.[0]?.count, loading, error };
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error, refetch };
 };
 
 const getTournamentWhereClause = (

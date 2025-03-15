@@ -32,7 +32,7 @@ export const useSdkSubscribeEntities = ({
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [entities, setEntities] = useState<EntityResult[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
 
   const memoizedQuery = useMemo(() => {
     return query;
@@ -73,6 +73,7 @@ export const useSdkSubscribeEntities = ({
                     entity as Partial<ParsedEntity<SchemaType>>
                   );
                 });
+                console.log("entities", state.getEntities());
               }
             },
           }

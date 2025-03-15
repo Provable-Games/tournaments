@@ -33,7 +33,7 @@ const MyEntries = ({
   ownedTokens,
 }: MyEntriesProps) => {
   const { address } = useAccount();
-  const state = useDojoStore.getState();
+  const state = useDojoStore((state) => state);
   const { nameSpace } = useDojo();
   const [showMyEntries, setShowMyEntries] = useState(false);
 
