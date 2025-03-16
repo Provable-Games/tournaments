@@ -50,7 +50,7 @@ const SORT_OPTIONS = {
   ],
   my: [
     { value: "start_time", label: "Start Time" },
-    { value: "status", label: "Status" },
+    { value: "end_time", label: "End Time" },
   ],
 } as const;
 
@@ -227,6 +227,7 @@ const Overview = () => {
       limit: 12,
       offset: currentPage * 12,
       active: selectedTab === "my",
+      sortBy: currentSortBy,
     });
 
   // Process and store tournaments when data is loaded

@@ -90,7 +90,6 @@ export const formatTime = (seconds: number): string => {
     return `${seconds} Sec${seconds > 1 ? "s" : ""}`;
   }
 };
-
 // Add a utility function to check if a date is before another date
 export function isBefore(date1: Date, date2: Date) {
   return date1.getTime() < date2.getTime();

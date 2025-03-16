@@ -9,6 +9,7 @@ import TournamentGames from "@/components/play/TournamentGames";
 import { processPrizesFromSql } from "@/lib/utils/formatting";
 import { processTournamentFromSql } from "@/lib/utils/formatting";
 import { Tournament } from "@/generated/models.gen";
+import { Card } from "@/components/ui/card";
 
 const Play = () => {
   const navigate = useNavigate();
@@ -50,33 +51,49 @@ const Play = () => {
       <div className="flex flex-col gap-5">
         <div className="flex flex-row items-center h-12 justify-between">
           <div className="flex flex-row gap-5">
-            <span className="font-brand text-4xl">Game Simulator</span>
+            <span className="font-brand text-4xl font-bold">
+              Game Simulator
+            </span>
           </div>
         </div>
-        <div className="flex flex-row gap-2">
-          {tournamentsData?.map((tournament) => {
-            return (
-              <Button
-                key={tournament.tournament.id}
-                variant={
-                  selectedTournament?.id === tournament.tournament.id
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() => setSelectedTournament(tournament.tournament)}
-              >
-                <div className="flex flex-row items-center gap-2">
-                  <p>{feltToString(tournament.tournament.metadata.name)}</p>-
-                  <p>{Number(tournament.tournament.id).toString()}</p>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
+        <Card variant="outline" className="h-auto w-full">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col justify-between h-24">
+              <span className="font-brand text-2xl">Tournaments</span>
+              <div className="flex flex-row gap-2 overflow-x-auto pb-2">
+                {tournamentsData?.map((tournament) => {
+                  return (
+                    <Button
+                      key={tournament.tournament.id}
+                      variant={
+                        selectedTournament?.id === tournament.tournament.id
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() =>
+                        setSelectedTournament(tournament.tournament)
+                      }
+                    >
+                      <div className="flex flex-row items-center gap-2">
+                        <p>
+                          {feltToString(tournament.tournament.metadata.name)}
+                        </p>
+                        -<p>{Number(tournament.tournament.id).toString()}</p>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+            {selectedTournament && (
+              <>
+                <div className="w-full h-0.5 bg-brand/25" />
+                <TournamentGames tournament={selectedTournament} />
+              </>
+            )}
+          </div>
+        </Card>
       </div>
-      {selectedTournament && (
-        <TournamentGames tournament={selectedTournament} />
-      )}
     </div>
   );
 };

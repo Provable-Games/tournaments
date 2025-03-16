@@ -1,4 +1,4 @@
-import { TROPHY, PLUS } from "@/components/Icons";
+import { TROPHY, TROPHY_LINE } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { getGames } from "@/assets/games";
 import { useNavigate } from "react-router-dom";
@@ -32,7 +32,7 @@ const EmptyResults = ({ gameFilters }: EmptyResultsProps) => {
         onClick={() => navigate("/create-tournament")}
         className="flex items-center gap-2"
       >
-        <PLUS />
+        <TROPHY_LINE />
         Create Tournament
       </Button>
     </div>

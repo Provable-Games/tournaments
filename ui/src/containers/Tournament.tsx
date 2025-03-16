@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { ARROW_LEFT, TROPHY, MONEY, GIFT } from "@/components/Icons";
+import {
+  ARROW_LEFT,
+  TROPHY,
+  MONEY,
+  GIFT,
+  SPACE_INVADER_SOLID,
+} from "@/components/Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import EntrantsTable from "@/components/tournament/table/EntrantsTable";
 import TournamentTimeline from "@/components/TournamentTimeline";
@@ -452,10 +458,11 @@ const Tournament = () => {
           {(registrationType === "fixed" && !isStarted) ||
           (registrationType === "open" && !isEnded) ? (
             <Button
-              className="uppercase"
+              className="uppercase [&_svg]:w-6 [&_svg]:h-6"
               onClick={() => setEnterDialogOpen(true)}
             >
-              <TROPHY />
+              <SPACE_INVADER_SOLID />
+
               <span>Enter</span>
               <span className="hidden sm:block">|</span>
               <span className="hidden sm:block font-bold text-xs sm:text-base 3xl:text-lg">

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { USER, PLUS, GLOBE } from "@/components/Icons";
+import { USER, GLOBE, TROPHY } from "@/components/Icons";
 import useUIStore from "@/hooks/useUIStore";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -95,7 +95,7 @@ const MobileFooter = () => {
         onClick={() => navigate("/create-tournament")}
       >
         <span className="h-10 w-10">
-          <PLUS />
+          <TROPHY />
         </span>
       </button>
     </div>

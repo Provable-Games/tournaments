@@ -10,7 +10,7 @@ const PressableBorderImage = ({
     if (typeof window !== "undefined" && document.documentElement) {
       try {
         const style = getComputedStyle(document.documentElement);
-        const varName = `--border-${variant}${isPressed ? "-hover" : ""}`;
+        const varName = `--border-${variant}`;
         const rgbValues = style.getPropertyValue(varName).trim();
 
         if (rgbValues) {

@@ -284,6 +284,7 @@ export const useGetMyTournaments = ({
   gameAddresses,
   gameFilters,
   active = false,
+  sortBy = "start_time",
   offset = 0,
   limit = 5,
 }: {
@@ -292,6 +293,7 @@ export const useGetMyTournaments = ({
   gameAddresses: string[];
   gameFilters: string[];
   active?: boolean;
+  sortBy?: string;
   offset?: number;
   limit?: number;
 }) => {
@@ -362,7 +364,7 @@ export const useGetMyTournaments = ({
         : ""
     }
     GROUP BY t.id
-    ORDER BY t.'schedule.game.start' ASC
+    ${getSortClause(sortBy)}
     LIMIT ${limit}
     OFFSET ${offset}
     `
@@ -372,6 +374,7 @@ export const useGetMyTournaments = ({
       address,
       gameAddressesKey,
       gameFiltersKey,
+      sortBy,
       offset,
       limit,
       active,
