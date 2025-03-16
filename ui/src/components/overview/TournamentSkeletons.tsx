@@ -2,14 +2,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface TournamentSkeletonsProps {
   tournamentsCount: number;
+  count?: number; // Optional count parameter to override tournamentsCount
 }
 
 const TournamentSkeletons = ({
   tournamentsCount,
+  count,
 }: TournamentSkeletonsProps) => {
+  // Use count if provided, otherwise use tournamentsCount (up to 12 for pagination)
+  // Also ensure we have a valid number (default to 3 if undefined or invalid)
+  const skeletonCount =
+    count ||
+    (isFinite(tournamentsCount) && tournamentsCount > 0
+      ? Math.min(tournamentsCount, 12)
+      : 3);
+
+  // Create an array of the appropriate length safely
+  const skeletons = Array.from({ length: skeletonCount }, (_, i) => i);
+
   return (
     <>
-      {[...Array(tournamentsCount)].map((_, index) => (
+      {skeletons.map((index) => (
         <div
           key={index}
           className="w-full p-4 space-y-4 border border-brand-muted rounded-lg bg-background"
