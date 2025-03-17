@@ -211,7 +211,7 @@ pub enum QualificationProof {
 pub struct TournamentQualification {
     pub tournament_id: u64,
     pub token_id: u64,
-    pub position: u8, // 1-based position in leaderboard
+    pub position: u8,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

@@ -921,7 +921,11 @@ fn allowlist_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Maximum qualified entries reached for tournament 1", 'ENTRYPOINT_FAILED'))]
+#[should_panic(
+    expected: (
+        "Tournament: Maximum qualified entries reached for tournament 1", 'ENTRYPOINT_FAILED',
+    ),
+)]
 fn allowlist_gated_tournament_with_entry_limit() {
     let contracts = setup();
 
@@ -934,7 +938,9 @@ fn allowlist_gated_tournament_with_entry_limit() {
     // Create tournament gated by account list
     let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
 
-    let entry_requirement = EntryRequirement { entry_limit: Option::Some(1), entry_requirement_type };
+    let entry_requirement = EntryRequirement {
+        entry_limit: Option::Some(1), entry_requirement_type,
+    };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
