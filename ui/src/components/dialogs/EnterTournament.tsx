@@ -43,6 +43,20 @@ interface EnterTournamentDialogProps {
   tournamentsData: Tournament[];
 }
 
+// Update the proof type to make tournamentId and position optional
+type Proof = {
+  tournamentId?: string;
+  tokenId?: string;
+  position?: number;
+};
+
+// Update the entriesLeftByTournament type to include either tournamentId or token
+type EntryCount = {
+  tournamentId?: string;
+  token?: string;
+  entriesLeft: number;
+};
+
 export function EnterTournamentDialog({
   open,
   onOpenChange,
@@ -294,6 +308,15 @@ export function EnterTournamentDialog({
 
     if (!hasEntryRequirement) return [];
 
+    if (requirementVariant === "token") {
+      for (const tokenId of ownedTokenIds) {
+        methods.push({
+          type: "token",
+          tokenId: tokenId,
+        });
+      }
+    }
+
     if (requirementVariant === "tournament") {
       if (tournamentRequirementVariant === "winners") {
         for (const tournament of tournamentsData) {
@@ -343,6 +366,8 @@ export function EnterTournamentDialog({
     tournamentsData,
   ]);
 
+  console.log(qualificationMethods);
+
   const { data: qualificationEntries } = useGetTournamentQualificationEntries({
     namespace: nameSpace ?? "",
     tournamentId: addAddressPadding(bigintToHex(tournamentModel?.id ?? 0n)),
@@ -350,158 +375,77 @@ export function EnterTournamentDialog({
     active: qualificationMethods.length > 0,
   });
 
-  const { meetsEntryRequirements, proof, entriesLeftByTournament } =
-    useMemo(() => {
-      let canEnter = false;
-      let proof = { tournamentId: "", tokenId: "", position: 0 };
-      let entriesLeftByTournament: Array<{
-        tournamentId: string;
-        entriesLeft: number;
-      }> = [];
+  console.log(qualificationEntries);
 
-      if (!hasEntryRequirement) {
+  const { meetsEntryRequirements, proof, entriesLeftByTournament } = useMemo<{
+    meetsEntryRequirements: boolean;
+    proof: Proof;
+    entriesLeftByTournament: EntryCount[];
+  }>(() => {
+    let canEnter = false;
+    let proof: Proof = { tokenId: "" };
+    let entriesLeftByTournament: EntryCount[] = [];
+
+    // If no entry requirement, user can always enter
+    if (!hasEntryRequirement) {
+      return {
+        meetsEntryRequirements: true,
+        proof,
+        entriesLeftByTournament: [{ entriesLeft: Infinity }],
+      };
+    }
+
+    // Handle token-based entry requirements
+    if (requirementVariant === "token") {
+      // If no owned tokens, can't enter
+      if (!ownedTokenIds || ownedTokenIds.length === 0) {
         return {
-          meetsEntryRequirements: true,
+          meetsEntryRequirements: false,
           proof,
-          entriesLeftByTournament: [
-            { tournamentId: "", entriesLeft: Infinity },
-          ],
+          entriesLeftByTournament: [],
         };
       }
 
-      if (requirementVariant === "token") {
-        canEnter = ownedTokenIds?.length > 0;
-        if (canEnter && ownedTokenIds?.length) {
-          proof = { tournamentId: "", tokenId: ownedTokenIds[0], position: 0 };
-          entriesLeftByTournament = [
-            { tournamentId: "", entriesLeft: Number(entryLimit) ?? 0 },
-          ];
+      // Track best token proof
+      let bestTokenProof = { tokenId: "" };
+      let maxTokenEntriesLeft = 0;
+      let totalTokenEntriesLeft = 0;
+
+      // Check each owned token
+      for (const tokenId of ownedTokenIds) {
+        // Get current entry count for this token
+        const currentEntryCount =
+          qualificationEntries?.find(
+            (entry) => entry["qualification.token.token_id"] === tokenId
+          )?.entry_count ?? 0;
+
+        // Calculate remaining entries
+        const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
+
+        // If this token has entries left
+        if (remaining > 0) {
+          canEnter = true;
+          totalTokenEntriesLeft += remaining;
+
+          // If this is the best token so far
+          if (remaining > maxTokenEntriesLeft) {
+            bestTokenProof = {
+              tokenId,
+            };
+            maxTokenEntriesLeft = remaining;
+          }
         }
       }
 
-      if (requirementVariant === "tournament") {
-        if (!tournamentsData || tournamentsData.length === 0) {
-          return {
-            meetsEntryRequirements: false,
-            proof,
-            entriesLeftByTournament: [],
-          };
-        }
-
-        // Track best proof across all tournaments
-        let bestProof = { tournamentId: "", tokenId: "", position: 0 };
-        let maxEntriesLeft = 0;
-
-        // Check if the user meets at least one tournament requirement
-        for (const tournament of tournamentsData) {
-          const tournamentId = tournament.id.toString();
-          let tournamentCanEnter = false;
-          let tournamentTotalEntriesLeft = 0;
-          let tournamentBestProof = {
-            tournamentId: "",
-            tokenId: "",
-            position: 0,
-          };
-          let tournamentBestProofEntriesLeft = 0;
-
-          // If requirement is for winners, check hasWonTournamentMap
-          if (tournamentRequirementVariant === "winners") {
-            const wonInfoArray = hasWonTournamentMap[tournamentId] || [];
-
-            // Check each winning token
-            for (const wonInfo of wonInfoArray) {
-              // get the current entry count from the qualification data
-              const currentEntryCount =
-                qualificationEntries?.find(
-                  (entry) =>
-                    entry["qualification.tournament.tournament_id"] ===
-                      tournamentId &&
-                    entry["qualification.tournament.position"] ===
-                      wonInfo.position &&
-                    entry["qualification.tournament.token_id"] ===
-                      wonInfo.tokenId
-                )?.entry_count ?? 0;
-
-              const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
-
-              // If this token has entries left
-              if (remaining > 0) {
-                tournamentCanEnter = true;
-                // Add to total entries left for this tournament
-                tournamentTotalEntriesLeft += remaining;
-
-                // If this is the best proof for this tournament so far
-                if (remaining > tournamentBestProofEntriesLeft) {
-                  tournamentBestProof = {
-                    tournamentId,
-                    tokenId: wonInfo.tokenId,
-                    position: wonInfo.position,
-                  };
-                  tournamentBestProofEntriesLeft = remaining;
-                }
-              }
-            }
-          }
-          // If requirement is for participants, check hasParticipatedInTournamentMap
-          else if (tournamentRequirementVariant === "participants") {
-            const gameIds = hasParticipatedInTournamentMap[tournamentId] || [];
-
-            // Check each participated token
-            for (const gameId of gameIds) {
-              // get the current entry count from the qualification data
-              const currentEntryCount =
-                qualificationEntries?.find(
-                  (entry) =>
-                    entry["qualification.tournament.tournament_id"] ===
-                      tournamentId &&
-                    entry["qualification.tournament.position"] === 1 &&
-                    entry["qualification.tournament.token_id"] === gameId
-                )?.entry_count ?? 0;
-
-              const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
-
-              // If this token has entries left
-              if (remaining > 0) {
-                tournamentCanEnter = true;
-                // Add to total entries left for this tournament
-                tournamentTotalEntriesLeft += remaining;
-
-                // If this is the best proof for this tournament so far
-                if (remaining > tournamentBestProofEntriesLeft) {
-                  tournamentBestProof = {
-                    tournamentId,
-                    tokenId: gameId,
-                    position: 1,
-                  };
-                  tournamentBestProofEntriesLeft = remaining;
-                }
-              }
-            }
-          }
-
-          // If this tournament has valid entries
-          if (tournamentCanEnter) {
-            // Add to our entries left array with the total entries left
-            entriesLeftByTournament.push({
-              tournamentId,
-              entriesLeft: tournamentTotalEntriesLeft,
-            });
-
-            // Update overall can enter status
-            canEnter = true;
-
-            // Update best proof if this tournament has more entries left for a single token
-            if (tournamentBestProofEntriesLeft > maxEntriesLeft) {
-              bestProof = tournamentBestProof;
-              maxEntriesLeft = tournamentBestProofEntriesLeft;
-            }
-          }
-        }
-
-        // Set the best proof we found
-        if (canEnter) {
-          proof = bestProof;
-        }
+      // If we found valid tokens with entries left
+      if (canEnter) {
+        proof = bestTokenProof;
+        entriesLeftByTournament = [
+          {
+            token: requiredTokenAddresses[0],
+            entriesLeft: totalTokenEntriesLeft,
+          },
+        ];
       }
 
       return {
@@ -509,17 +453,151 @@ export function EnterTournamentDialog({
         proof,
         entriesLeftByTournament,
       };
-    }, [
-      tournamentsData,
-      tournamentRequirementVariant,
-      hasWonTournamentMap,
-      hasParticipatedInTournamentMap,
-      hasEntryRequirement,
-      qualificationEntries,
-      ownedTokenIds,
-      entryLimit,
-      requirementVariant,
-    ]);
+    }
+
+    // Handle tournament-based entry requirements
+    if (requirementVariant === "tournament") {
+      if (!tournamentsData || tournamentsData.length === 0) {
+        return {
+          meetsEntryRequirements: false,
+          proof,
+          entriesLeftByTournament: [],
+        };
+      }
+
+      // Track best proof across all tournaments
+      let bestProof = { tournamentId: "", tokenId: "", position: 0 };
+      let maxEntriesLeft = 0;
+
+      // Check if the user meets at least one tournament requirement
+      for (const tournament of tournamentsData) {
+        const tournamentId = tournament.id.toString();
+        let tournamentCanEnter = false;
+        let tournamentTotalEntriesLeft = 0;
+        let tournamentBestProof = {
+          tournamentId: "",
+          tokenId: "",
+          position: 0,
+        };
+        let tournamentBestProofEntriesLeft = 0;
+
+        // If requirement is for winners, check hasWonTournamentMap
+        if (tournamentRequirementVariant === "winners") {
+          const wonInfoArray = hasWonTournamentMap[tournamentId] || [];
+
+          // Check each winning token
+          for (const wonInfo of wonInfoArray) {
+            // get the current entry count from the qualification data
+            const currentEntryCount =
+              qualificationEntries?.find(
+                (entry) =>
+                  entry["qualification.tournament.tournament_id"] ===
+                    tournamentId &&
+                  entry["qualification.tournament.position"] ===
+                    wonInfo.position &&
+                  entry["qualification.tournament.token_id"] === wonInfo.tokenId
+              )?.entry_count ?? 0;
+
+            const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
+
+            // If this token has entries left
+            if (remaining > 0) {
+              tournamentCanEnter = true;
+              // Add to total entries left for this tournament
+              tournamentTotalEntriesLeft += remaining;
+
+              // If this is the best proof for this tournament so far
+              if (remaining > tournamentBestProofEntriesLeft) {
+                tournamentBestProof = {
+                  tournamentId,
+                  tokenId: wonInfo.tokenId,
+                  position: wonInfo.position,
+                };
+                tournamentBestProofEntriesLeft = remaining;
+              }
+            }
+          }
+        }
+        // If requirement is for participants, check hasParticipatedInTournamentMap
+        else if (tournamentRequirementVariant === "participants") {
+          const gameIds = hasParticipatedInTournamentMap[tournamentId] || [];
+
+          // Check each participated token
+          for (const gameId of gameIds) {
+            // get the current entry count from the qualification data
+            const currentEntryCount =
+              qualificationEntries?.find(
+                (entry) =>
+                  entry["qualification.tournament.tournament_id"] ===
+                    tournamentId &&
+                  entry["qualification.tournament.position"] === 1 &&
+                  entry["qualification.tournament.token_id"] === gameId
+              )?.entry_count ?? 0;
+
+            const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
+
+            // If this token has entries left
+            if (remaining > 0) {
+              tournamentCanEnter = true;
+              // Add to total entries left for this tournament
+              tournamentTotalEntriesLeft += remaining;
+
+              // If this is the best proof for this tournament so far
+              if (remaining > tournamentBestProofEntriesLeft) {
+                tournamentBestProof = {
+                  tournamentId,
+                  tokenId: gameId,
+                  position: 1,
+                };
+                tournamentBestProofEntriesLeft = remaining;
+              }
+            }
+          }
+        }
+
+        // If this tournament has valid entries
+        if (tournamentCanEnter) {
+          // Add to our entries left array with the total entries left
+          entriesLeftByTournament.push({
+            tournamentId,
+            entriesLeft: tournamentTotalEntriesLeft,
+          });
+
+          // Update overall can enter status
+          canEnter = true;
+
+          // Update best proof if this tournament has more entries left for a single token
+          if (tournamentBestProofEntriesLeft > maxEntriesLeft) {
+            bestProof = tournamentBestProof;
+            maxEntriesLeft = tournamentBestProofEntriesLeft;
+          }
+        }
+      }
+
+      // Set the best proof we found
+      if (canEnter) {
+        proof = bestProof;
+      }
+    }
+
+    return {
+      meetsEntryRequirements: canEnter,
+      proof,
+      entriesLeftByTournament,
+    };
+  }, [
+    tournamentsData,
+    tournamentRequirementVariant,
+    hasWonTournamentMap,
+    hasParticipatedInTournamentMap,
+    hasEntryRequirement,
+    qualificationEntries,
+    ownedTokenIds,
+    entryLimit,
+    requirementVariant,
+  ]);
+
+  console.log(meetsEntryRequirements, proof, entriesLeftByTournament);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -582,12 +660,26 @@ export function EnterTournamentDialog({
                   <span>{token?.name}</span>
                   <span className="text-neutral">{token?.symbol}</span>
                   {address ? (
-                    ownedTokenIds?.length > 0 ? (
+                    meetsEntryRequirements ? (
                       <div className="flex flex-row items-center gap-2">
                         <span className="w-5">
                           <CHECK />
                         </span>
-                        <span>You own {ownedTokenIds.length} tokens</span>
+                        <span>
+                          {`${
+                            entriesLeftByTournament.find(
+                              (entry) =>
+                                entry.token === requiredTokenAddresses[0]
+                            )?.entriesLeft
+                          } ${
+                            entriesLeftByTournament.find(
+                              (entry) =>
+                                entry.token === requiredTokenAddresses[0]
+                            )?.entriesLeft === 1
+                              ? "entry"
+                              : "entries"
+                          } left`}
+                        </span>
                       </div>
                     ) : (
                       <span className="w-5">

@@ -22,7 +22,7 @@ import {
 } from "@/lib/utils";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
-import { Settings } from "@/generated/models.gen";
+import { Settings, Token } from "@/generated/models.gen";
 import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
 import { useGetGameSettingsQuery } from "@/dojo/hooks/useSdkQueries";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
@@ -46,7 +46,7 @@ const TournamentConfirmation = ({
 }: TournamentConfirmationProps) => {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
-  const { selectedChainConfig } = useDojo();
+  const { nameSpace, selectedChainConfig } = useDojo();
   const { gameData } = useUIStore();
   const { gameNamespace, gameSettingsModel } = useGameEndpoints(formData.game);
   useGetGameSettingsQuery(gameNamespace ?? "", gameSettingsModel ?? "");
@@ -55,6 +55,13 @@ const TournamentConfirmation = ({
   );
   const settings = useDojoStore((state) =>
     state.getEntitiesByModel(gameNamespace ?? "", "Settings")
+  );
+  const tokens = useDojoStore((state) =>
+    state.getEntitiesByModel(nameSpace, "Token")
+  ).map((token) => token.models[nameSpace].Token as Token);
+
+  const token = tokens.find(
+    (token) => token.address === formData?.gatingOptions?.token
   );
 
   const settingsEntities = [...settingsDetails, ...settings];
@@ -234,8 +241,29 @@ const TournamentConfirmation = ({
                     <span className="capitalize">
                       {formData.gatingOptions.type}
                     </span>
+                    {formData.enableEntryLimit && (
+                      <>
+                        <span className="text-muted-foreground">
+                          Entry Limit:
+                        </span>
+                        <span>{formData.gatingOptions.entry_limit}</span>
+                      </>
+                    )}
                     {formData.gatingOptions.type === "token" ? (
-                      <></>
+                      <>
+                        <span className="text-muted-foreground">
+                          Token Details:
+                        </span>
+                        <div className="flex flex-row gap-2">
+                          <img
+                            src={getTokenLogoUrl(token?.address ?? "")}
+                            alt={token?.address ?? ""}
+                            className="w-4 h-4"
+                          />
+                          <span>{token?.symbol}</span>
+                          <span>{displayAddress(token?.address ?? "")}</span>
+                        </div>
+                      </>
                     ) : formData.gatingOptions.type === "tournament" ? (
                       <>
                         <span className="text-muted-foreground">

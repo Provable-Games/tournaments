@@ -22,8 +22,6 @@ function useModel<
       ] as unknown as SchemaType[N][M]
   );
 
-  console.log("modelData", modelData);
-
   return modelData;
 }
 

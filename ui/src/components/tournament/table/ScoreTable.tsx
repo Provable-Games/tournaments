@@ -3,9 +3,9 @@ import Pagination from "@/components/table/Pagination";
 import { USER, VERIFIED } from "@/components/Icons";
 import { useState, useEffect, useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
-import { BigNumberish } from "starknet";
+import { addAddressPadding, BigNumberish } from "starknet";
 import { useGetTournamentLeaderboard } from "@/dojo/hooks/useSqlQueries";
-import { feltToString, indexAddress } from "@/lib/utils";
+import { feltToString, indexAddress, bigintToHex } from "@/lib/utils";
 import { useDojo } from "@/context/dojo";
 import { useGetUsernames } from "@/hooks/useController";
 import { HoverCardContent } from "@/components/ui/hover-card";
@@ -53,7 +53,7 @@ ScoreTableProps) => {
     loading,
   } = useGetTournamentLeaderboard({
     namespace: nameSpace,
-    tournamentId: tournamentId,
+    tournamentId: addAddressPadding(bigintToHex(tournamentId)),
     gameNamespace: gameNamespace,
     gameAddress: indexAddress(gameAddress?.toString() ?? "0x0"),
     gameScoreModel: gameScoreModel,

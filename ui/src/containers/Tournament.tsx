@@ -141,14 +141,10 @@ const Tournament = () => {
     ModelsMapping.EntryCount
   ) as unknown as EntryCount;
 
-  console.log(entryCountModel);
-
   const leaderboardModel = useModel(
     tournamentEntityId,
     ModelsMapping.Leaderboard
   ) as unknown as Leaderboard;
-
-  console.log("leaderboardModel", leaderboardModel);
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 

@@ -3,9 +3,14 @@ import Pagination from "@/components/table/Pagination";
 import { USER } from "@/components/Icons";
 import { useState, useEffect, useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
-import { BigNumberish } from "starknet";
+import { addAddressPadding, BigNumberish } from "starknet";
 import { useGetTournamentEntrants } from "@/dojo/hooks/useSqlQueries";
-import { displayAddress, feltToString, indexAddress } from "@/lib/utils";
+import {
+  bigintToHex,
+  displayAddress,
+  feltToString,
+  indexAddress,
+} from "@/lib/utils";
 import { useDojo } from "@/context/dojo";
 import { useGetUsernames } from "@/hooks/useController";
 import TableSkeleton from "@/components/tournament/table/Skeleton";
@@ -47,21 +52,12 @@ const EntrantsTable = ({
     loading,
   } = useGetTournamentEntrants({
     namespace: nameSpace,
-    tournamentId: tournamentId,
+    tournamentId: addAddressPadding(bigintToHex(tournamentId)),
     gameNamespace: gameNamespace,
     gameAddress: indexAddress(gameAddress?.toString() ?? "0x0"),
     limit: 10,
     offset: offset,
   });
-
-  // useEffect(() => {
-  //   // Use a timeout to ensure the UI has time to update
-  //   const timer = setTimeout(() => {
-  //     refetchEntrants();
-  //   }, 100);
-
-  //   return () => clearTimeout(timer);
-  // }, [tournamentId, offset]);
 
   const ownerAddresses = useMemo(
     () => entrants?.map((registration) => registration?.account_address),
