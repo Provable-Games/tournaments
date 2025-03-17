@@ -11,13 +11,13 @@ world_address = "0x06a9e4c6f0799160ea8ddc43ff982a5f83d7f633e9732ce42701de1288ff7
 world_block = 948010
 
 [namespace]
-default = "budokan_v_1_0_2"
+default = "budokan_v_1_0_4"
 
 [writers]
-"budokan_v_1_0_2" = ["budokan_v_1_0_2-Budokan"]
+"budokan_v_1_0_4" = ["budokan_v_1_0_4-Budokan"]
 
 [init_call_args]
-"budokan_v_1_0_2-Budokan" = [
+"budokan_v_1_0_4-Budokan" = [
     "1", # safe_mode
     "0" # test_mode
 ]
@@ -25,8 +25,8 @@ default = "budokan_v_1_0_2"
 [migration]
 order_inits = []
 skip_contracts = [
-    "budokan_v_1_0_2-tournament_mock", 
-    "budokan_v_1_0_2-game_mock", 
-    "budokan_v_1_0_2-erc20_mock", 
-    "budokan_v_1_0_2-erc721_mock", 
+    "budokan_v_1_0_4-tournament_mock", 
+    "budokan_v_1_0_4-game_mock", 
+    "budokan_v_1_0_4-erc20_mock", 
+    "budokan_v_1_0_4-erc721_mock", 
 ]

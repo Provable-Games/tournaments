@@ -1808,7 +1808,7 @@
         }
       ],
       "init_calldata": [],
-      "tag": "budokan_v_1_0_2-erc20_mock",
+      "tag": "budokan_v_1_0_4-erc20_mock",
       "selector": "0x15dcc1b1767bef0de1a0b207f8285dc179c1bc917cf355c1309cb63719c6028",
       "systems": [
         "dojo_init",
@@ -2512,7 +2512,7 @@
         }
       ],
       "init_calldata": [],
-      "tag": "budokan_v_1_0_2-erc721_mock",
+      "tag": "budokan_v_1_0_4-erc721_mock",
       "selector": "0x24ef1be301b381ff4430644478f1b6bb26704c0f5c92916f05972322c9da25b",
       "systems": [
         "dojo_init",
@@ -3589,7 +3589,7 @@
         }
       ],
       "init_calldata": [],
-      "tag": "budokan_v_1_0_2-game_mock",
+      "tag": "budokan_v_1_0_4-game_mock",
       "selector": "0x3af5d0656cae2829f92f0f41d94bb8731fec13de92ba7582f93ddbee899da6f",
       "systems": [
         "start_game",
@@ -5083,7 +5083,7 @@
         }
       ],
       "init_calldata": [],
-      "tag": "budokan_v_1_0_2-tournament_mock",
+      "tag": "budokan_v_1_0_4-tournament_mock",
       "selector": "0x21bb87b248f02c1b09c5cbde6d9f44fbabf6c8004e5a46895510746e8d6be7d",
       "systems": [
         "initializer",
@@ -5109,115 +5109,115 @@
     {
       "members": [],
       "class_hash": "0x1b369f3dcff3afd5d63a2efd2b7f585772306924ad4f0055804e519e9852b",
-      "tag": "budokan_v_1_0_2-EntryCount",
+      "tag": "budokan_v_1_0_4-EntryCount",
       "selector": "0x57d20552d3af91fbc491891fa1e8d9fe62d968b40fdd941ca62830b2fdc9aa2"
     },
     {
       "members": [],
       "class_hash": "0x2942c6bc2a7c32e8fc6388074538f83c5cd92006b120012fbf8d4a47d6aef1",
-      "tag": "budokan_v_1_0_2-GameCounter",
+      "tag": "budokan_v_1_0_4-GameCounter",
       "selector": "0x7d8f622100baba7a5225a4900d4671f540eb0f5bf047dc809633c123efa468c"
     },
     {
       "members": [],
       "class_hash": "0x7b821ba31e4a384100d02c71e21bc12f2c6b809dc28dd313d9b2fee2d7e78fb",
-      "tag": "budokan_v_1_0_2-GameMetadata",
+      "tag": "budokan_v_1_0_4-GameMetadata",
       "selector": "0x1b3996a6416ac01cfa518a2fac7a6349c908d7d6763f357115dbb105ede1088"
     },
     {
       "members": [],
       "class_hash": "0x1d42aea2184b68f4a2392875726a13ebaf2c32bcd17768e513640b6585517de",
-      "tag": "budokan_v_1_0_2-Leaderboard",
+      "tag": "budokan_v_1_0_4-Leaderboard",
       "selector": "0x1603e193e112ee98ea7dfdc72d7cb9a746834be2e3b99b16e5aa12046c34396"
     },
     {
       "members": [],
       "class_hash": "0x43fb3ed9dda938fffc97d0b6f429595752fd8458e83586ed6bbc575af0c9454",
-      "tag": "budokan_v_1_0_2-PlatformMetrics",
+      "tag": "budokan_v_1_0_4-PlatformMetrics",
       "selector": "0x6aa3343040fcb1a23ad36357e0fba94e8d5c2c1ff8bdaaa1887927b5d69d8d7"
     },
     {
       "members": [],
       "class_hash": "0x5fb3a5f9e9e2769e610ec882d8c1cfe66de6f982d538a6d3df3933893380ba6",
-      "tag": "budokan_v_1_0_2-Prize",
+      "tag": "budokan_v_1_0_4-Prize",
       "selector": "0x46d96c7863871d02af31f4a94473faf967c1f92abc2948d5c78540376a3ca2d"
     },
     {
       "members": [],
       "class_hash": "0x14f8576c205eb3078dfe4151d195ac9bb4a540418249577c0a798a3c97a1bf1",
-      "tag": "budokan_v_1_0_2-PrizeClaim",
+      "tag": "budokan_v_1_0_4-PrizeClaim",
       "selector": "0x295ed21c79f3db09105bcc29372b660fe431fe7f92b2b76db13d337d5230938"
     },
     {
       "members": [],
       "class_hash": "0x75c07fa9145001d591777e221419b551acdd0da0e2c30483d91da2aed16d9a9",
-      "tag": "budokan_v_1_0_2-PrizeMetrics",
+      "tag": "budokan_v_1_0_4-PrizeMetrics",
       "selector": "0xebf4b6c8a89232062f89907af1f029d9a3dcb1667adaf454b0ea7a159fa79b"
     },
     {
       "members": [],
       "class_hash": "0x2fa32243b81a35c918e176d4c986d6a8c1cf7ffc78c29de0424f25903245d88",
-      "tag": "budokan_v_1_0_2-QualificationEntries",
+      "tag": "budokan_v_1_0_4-QualificationEntries",
       "selector": "0x70df21660a106d903c87c0cd2b4dc5f97497993e5f3485a63dec94ee46b93fe"
     },
     {
       "members": [],
       "class_hash": "0x2e6a3ae3dbb2d2151edd5999c059faf8ec2215cff0cb7e5b6cbda9db65fc966",
-      "tag": "budokan_v_1_0_2-Registration",
+      "tag": "budokan_v_1_0_4-Registration",
       "selector": "0x2d28450bec3e1eff8ae506b4fe31e3359e647802234290a3fe269043d2afe9"
     },
     {
       "members": [],
       "class_hash": "0xd4b859cbf8bef2d1e9f81a3e598e281ed855009341058328b10f43204f00ec",
-      "tag": "budokan_v_1_0_2-Score",
+      "tag": "budokan_v_1_0_4-Score",
       "selector": "0x131d1ae51fbb03f87c125d8f98acd22eafbabb27c5c08e86b63665b0839618a"
     },
     {
       "members": [],
       "class_hash": "0x3f82fa61272a7c7513cf48e89ca431820f62a1560de657608aca5c8e6a58b9",
-      "tag": "budokan_v_1_0_2-Settings",
+      "tag": "budokan_v_1_0_4-Settings",
       "selector": "0xad6fe73beb4e7991acb027600922b76fa800238599691249ba029cdfb68c4f"
     },
     {
       "members": [],
       "class_hash": "0x5d31167fd55c0fdc83b6d51549b117981a395a6c0d8738eae62061ee33c3df1",
-      "tag": "budokan_v_1_0_2-SettingsCounter",
+      "tag": "budokan_v_1_0_4-SettingsCounter",
       "selector": "0x2982d7ddefc26e17684adcd828e7ab5c54719bae71ddf02530be481607cdd50"
     },
     {
       "members": [],
       "class_hash": "0x4d2afc0312d98dc2223a44ae88223336bb0a59a1bf2bcdc50b6f3d8875fb66a",
-      "tag": "budokan_v_1_0_2-SettingsDetails",
+      "tag": "budokan_v_1_0_4-SettingsDetails",
       "selector": "0x578b12f6c6b33237b7ca3224348afc59b548c40f3aa6042eae847ff79c76bbd"
     },
     {
       "members": [],
       "class_hash": "0x6c0307f09e89edfc3516908d7cfe07d598d12d49a2a2875dee27a9026652481",
-      "tag": "budokan_v_1_0_2-Token",
+      "tag": "budokan_v_1_0_4-Token",
       "selector": "0x52c4e9080494b0379a8576c39215996c1d1f3ea03a0b737565da1333d60b0aa"
     },
     {
       "members": [],
       "class_hash": "0x6d1a541f4d6ccf4dce9c6f60a6e40c24dbc3a60b925a80eb0c9a924c7491f9f",
-      "tag": "budokan_v_1_0_2-TokenMetadata",
+      "tag": "budokan_v_1_0_4-TokenMetadata",
       "selector": "0x69f737bf387adea6ffb750b1ca1ec9574e00e5a57e1fdd02a761197aee038ac"
     },
     {
       "members": [],
       "class_hash": "0x4655e9e085581c0476ee908f2a7276f392ef72be400d9de644aca3711406724",
-      "tag": "budokan_v_1_0_2-Tournament",
+      "tag": "budokan_v_1_0_4-Tournament",
       "selector": "0x3e2e77a2ed17261f1606dc3f5aac9bc5332e3630b89bda27ae787d56b1c0269"
     },
     {
       "members": [],
       "class_hash": "0x34593c72d1af0eb1035327fe6c201ee82e01ab1f604e362f2741661800682a0",
-      "tag": "budokan_v_1_0_2-TournamentConfig",
+      "tag": "budokan_v_1_0_4-TournamentConfig",
       "selector": "0x7109d42d7172e31132ed1d0894b0d4f2a8843f96a0e55c59bb0b615354aadc"
     },
     {
       "members": [],
       "class_hash": "0x291a4b7fe26bbb68ddd2f803e09bac6178d3132c37ca88efc9178781f6abacc",
-      "tag": "budokan_v_1_0_2-TournamentTokenMetrics",
+      "tag": "budokan_v_1_0_4-TournamentTokenMetrics",
       "selector": "0x532cbe8f29299891acb33b5e9dd125a00c8095c35a706c229b1ad2993fa093"
     }
   ],
