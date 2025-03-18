@@ -42,7 +42,7 @@ pub struct EntryFee {
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub struct EntryRequirement {
-    pub entry_limit: Option<u32>,
+    pub entry_limit: u8,
     pub entry_requirement_type: EntryRequirementType,
 }
 
@@ -59,15 +59,8 @@ pub struct QualificationEntries {
     #[key]
     pub tournament_id: u64,
     #[key]
-    pub qualification: Qualification,
-    pub entry_count: u32,
-}
-
-#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
-pub enum Qualification {
-    token: NFTQualification,
-    tournament: TournamentQualification,
-    allowlist: ContractAddress,
+    pub qualification_proof: QualificationProof,
+    pub entry_count: u8,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
@@ -205,6 +198,7 @@ pub enum QualificationProof {
     Tournament: TournamentQualification,
     // For qualifying via NFT ownership
     NFT: NFTQualification,
+    Address: ContractAddress,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

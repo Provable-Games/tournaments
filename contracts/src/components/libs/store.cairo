@@ -4,7 +4,7 @@ use dojo::model::{ModelStorage};
 use tournaments::components::models::tournament::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
     TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
-    GameConfig, EntryFee, EntryRequirement, QualificationEntries, Qualification,
+    GameConfig, EntryFee, EntryRequirement, QualificationEntries, QualificationProof,
 };
 use tournaments::components::models::schedule::Schedule;
 use tournaments::components::constants::{VERSION};
@@ -92,9 +92,9 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn get_qualification_entries(
-        self: Store, tournament_id: u64, qualification: Qualification,
+        self: Store, tournament_id: u64, qualification_proof: QualificationProof,
     ) -> QualificationEntries {
-        (self.world.read_model((tournament_id, qualification)))
+        (self.world.read_model((tournament_id, qualification_proof)))
     }
 
     //

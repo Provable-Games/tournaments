@@ -621,7 +621,7 @@ fn create_gated_tournament_with_unsettled_tournament() {
         TournamentType::winners(array![first_tournament.id].span()),
     );
 
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -698,7 +698,7 @@ fn create_tournament_gated_by_multiple_tournaments() {
         TournamentType::winners(array![first_tournament.id, second_tournament.id].span()),
     );
 
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -808,9 +808,7 @@ fn create_tournament_gated_by_multiple_tournaments_with_limited_entry() {
         TournamentType::winners(array![first_tournament.id, second_tournament.id].span()),
     );
 
-    let entry_requirement = EntryRequirement {
-        entry_limit: Option::Some(1), entry_requirement_type,
-    };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -884,7 +882,7 @@ fn allowlist_gated_tournament() {
     // Create tournament gated by account list
     let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
 
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -907,13 +905,17 @@ fn allowlist_gated_tournament() {
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
     // Allowed account (owner) can enter
-    contracts.tournament.enter_tournament(tournament.id, 'test_player1', OWNER(), Option::None);
+    let player1_qualification = Option::Some(QualificationProof::Address(OWNER()));
+    contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player1', OWNER(), player1_qualification);
 
     // Allowed player can enter
     utils::impersonate(allowed_player1);
+    let player2_qualification = Option::Some(QualificationProof::Address(allowed_player1));
     contracts
         .tournament
-        .enter_tournament(tournament.id, 'test_player2', allowed_player1, Option::None);
+        .enter_tournament(tournament.id, 'test_player2', allowed_player1, player2_qualification);
 
     // Verify entries were successful
     let entries = contracts.tournament.tournament_entries(tournament.id);
@@ -932,15 +934,13 @@ fn allowlist_gated_tournament_with_entry_limit() {
     utils::impersonate(OWNER());
 
     // Create array of allowed accounts
-    let allowed_player1 = starknet::contract_address_const::<0x456>();
-    let allowed_accounts = array![OWNER(), allowed_player1].span();
+    let allowed_player2 = starknet::contract_address_const::<0x456>();
+    let allowed_accounts = array![OWNER(), allowed_player2].span();
 
     // Create tournament gated by account list
     let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
 
-    let entry_requirement = EntryRequirement {
-        entry_limit: Option::Some(1), entry_requirement_type,
-    };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
 
     let entry_fee = Option::None;
     let entry_requirement = Option::Some(entry_requirement);
@@ -963,21 +963,27 @@ fn allowlist_gated_tournament_with_entry_limit() {
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
     // Allowed account (owner) can enter
-    contracts.tournament.enter_tournament(tournament.id, 'test_player1', OWNER(), Option::None);
-
-    // Allowed player can enter
-    utils::impersonate(allowed_player1);
+    let player1_qualification = Option::Some(QualificationProof::Address(OWNER()));
     contracts
         .tournament
-        .enter_tournament(tournament.id, 'test_player2', allowed_player1, Option::None);
+        .enter_tournament(tournament.id, 'test_player1', OWNER(), player1_qualification);
+
+    // Allowed player can enter
+    utils::impersonate(allowed_player2);
+    let player2_qualification = Option::Some(QualificationProof::Address(allowed_player2));
+    contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player2', allowed_player2, player2_qualification);
     // this should fail because we have an entry limit of 1
     contracts
         .tournament
-        .enter_tournament(tournament.id, 'test_player3', allowed_player1, Option::None);
+        .enter_tournament(tournament.id, 'test_player3', allowed_player2, player2_qualification);
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Player not in allowlist", 'ENTRYPOINT_FAILED'))]
+#[should_panic(
+    expected: ("Tournament: Qualifying address is not in allowlist", 'ENTRYPOINT_FAILED'),
+)]
 fn allowlist_gated_tournament_unauthorized() {
     let contracts = setup();
 
@@ -989,7 +995,7 @@ fn allowlist_gated_tournament_unauthorized() {
 
     // Create tournament gated by account list
     let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
@@ -1011,13 +1017,66 @@ fn allowlist_gated_tournament_unauthorized() {
     // Try to enter with unauthorized account
     let unauthorized_player = starknet::contract_address_const::<0x789>();
     utils::impersonate(unauthorized_player);
-
+    let unauthorized_player_qualification = Option::Some(
+        QualificationProof::Address(unauthorized_player),
+    );
     // This should panic since unauthorized_player is not in the allowed accounts list
     contracts
         .tournament
         .enter_tournament(
-            tournament.id, 'test_player_unauthorized', unauthorized_player, Option::None,
+            tournament.id,
+            'test_player_unauthorized',
+            unauthorized_player,
+            unauthorized_player_qualification,
         );
+}
+
+#[test]
+#[should_panic(
+    expected: (
+        "Tournament: Caller address is different than qualifying address", 'ENTRYPOINT_FAILED',
+    ),
+)]
+fn allowlist_gated_caller_different_from_qualification_address() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Only player1 is allowed to enter
+    let allowed_player1 = starknet::contract_address_const::<0x456>();
+    let allowed_accounts = array![allowed_player1].span();
+
+    // Create tournament gated by account list
+    let entry_requirement_type = EntryRequirementType::allowlist(allowed_accounts);
+
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
+
+    let entry_fee = Option::None;
+    let entry_requirement = Option::Some(entry_requirement);
+
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(contracts.game.contract_address),
+            entry_fee,
+            entry_requirement,
+        );
+
+    // Verify tournament was created with correct gating
+    assert(tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
+
+    // Start tournament entries
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Owner tries to enter tournament using player1s address
+    // should panic
+    let player1_qualification = Option::Some(QualificationProof::Address(allowed_player1));
+    contracts
+        .tournament
+        .enter_tournament(tournament.id, 'test_player1', OWNER(), player1_qualification);
 }
 
 #[test]
@@ -1219,7 +1278,7 @@ fn use_host_token_to_qualify_into_tournament_gated_tournament() {
     let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id].span()),
     );
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
@@ -1314,7 +1373,7 @@ fn enter_tournament_wrong_submission_type() {
     let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id].span()),
     );
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
@@ -1929,7 +1988,7 @@ fn claim_prizes_with_gated_tokens_criteria() {
     utils::impersonate(OWNER());
 
     let entry_requirement_type = EntryRequirementType::token(contracts.erc721.contract_address);
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
@@ -1976,7 +2035,7 @@ fn claim_prizes_with_gated_tokens_uniform() {
     utils::impersonate(OWNER());
 
     let entry_requirement_type = EntryRequirementType::token(contracts.erc721.contract_address);
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
@@ -2051,7 +2110,7 @@ fn claim_prizes_with_gated_tournaments() {
     let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id].span()),
     );
-    let entry_requirement = EntryRequirement { entry_limit: Option::None, entry_requirement_type };
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
     let entry_fee = Option::None;
