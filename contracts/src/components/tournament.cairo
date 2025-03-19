@@ -254,7 +254,7 @@ pub mod tournament_component {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
-            
+
             let mut store: Store = StoreTrait::new(world);
 
             let tournament = store.get_tournament(tournament_id);
