@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait IGameTokenMock<TContractState> {
+pub trait IGameTokenMock<TContractState> {
     fn start_game(ref self: TContractState, game_id: u64);
     fn end_game(ref self: TContractState, game_id: u64, score: u32);
     fn set_settings(
