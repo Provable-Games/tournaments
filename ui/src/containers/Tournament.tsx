@@ -80,7 +80,7 @@ const Tournament = () => {
   const { address } = useAccount();
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const { nameSpace, selectedChainConfig } = useDojo();
+  const { nameSpace, selectedChainConfig, sdk } = useDojo();
   const state = useDojoStore((state) => state);
   const { gameData } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
@@ -381,6 +381,29 @@ const Tournament = () => {
     [queryGameAddress ?? "0x0"],
     true
   );
+
+  const getOwnedTokens = async () => {
+    // console.log(queryAddress, queryGameAddress);
+    const formattedQueryAddress = BigInt(queryAddress ?? "0x0")
+      .toString(16)
+      .padStart(64, "0");
+    const formattedQueryGameAddress = BigInt(queryGameAddress ?? "0x0")
+      .toString(16)
+      .padStart(64, "0");
+    console.log(queryAddress, queryGameAddress);
+    if (queryAddress && queryGameAddress) {
+      const ownedTokens = await sdk.getTokenBalances(
+        [queryGameAddress],
+        [queryAddress],
+        []
+      );
+      console.log(ownedTokens);
+    }
+  };
+
+  useEffect(() => {
+    getOwnedTokens();
+  }, [queryAddress, queryGameAddress]);
 
   if (loading) {
     return (
