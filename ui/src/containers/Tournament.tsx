@@ -74,6 +74,9 @@ import {
 import useUIStore from "@/hooks/useUIStore";
 import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { ChainId } from "@/dojo/setup/networks";
+import { useTokenStore } from "@/hooks/tokenStore";
+import { useSdkGetTokens } from "@/lib/dojo/hooks/useSdkGetTokens";
+import { useSdkSubscribeTokens } from "@/lib/dojo/hooks/useSdkSubTokens";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
@@ -367,43 +370,38 @@ const Tournament = () => {
   // get owned game tokens
 
   const queryAddress = useMemo(() => {
-    if (!address || address === "0x0") return null;
+    if (!address || address === "0x0") return undefined;
     return indexAddress(address);
   }, [address]);
 
   const queryGameAddress = useMemo(() => {
-    if (!gameAddress || gameAddress === "0x0") return null;
+    if (!gameAddress || gameAddress === "0x0") return undefined;
     return indexAddress(gameAddress);
   }, [gameAddress]);
 
   const { data: ownedTokens } = useGetAccountTokenIds(
-    queryAddress,
+    queryAddress ?? null,
     [queryGameAddress ?? "0x0"],
     true
   );
 
-  const getOwnedTokens = async () => {
-    // console.log(queryAddress, queryGameAddress);
-    const formattedQueryAddress = BigInt(queryAddress ?? "0x0")
-      .toString(16)
-      .padStart(64, "0");
-    const formattedQueryGameAddress = BigInt(queryGameAddress ?? "0x0")
-      .toString(16)
-      .padStart(64, "0");
-    console.log(queryAddress, queryGameAddress);
-    if (queryAddress && queryGameAddress) {
-      const ownedTokens = await sdk.getTokenBalances(
-        [queryGameAddress],
-        [queryAddress],
-        []
-      );
-      console.log(ownedTokens);
-    }
-  };
+  useSdkGetTokens({
+    accountAddress: queryAddress,
+    contractAddress: queryGameAddress,
+    enabled: !!queryGameAddress && !!queryAddress,
+  });
 
-  useEffect(() => {
-    getOwnedTokens();
-  }, [queryAddress, queryGameAddress]);
+  useSdkSubscribeTokens({
+    accountAddress: queryAddress,
+    contractAddress: queryGameAddress,
+    enabled: !!queryGameAddress && !!queryAddress,
+  });
+
+  const storedTokens = useTokenStore((state) =>
+    state.getTokens(queryGameAddress, queryAddress)
+  );
+
+  console.log(storedTokens);
 
   if (loading) {
     return (
