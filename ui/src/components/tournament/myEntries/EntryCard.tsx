@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { HoverCard } from "@/components/ui/hover-card";
 import { INFO } from "@/components/Icons";
 import EntryInfo from "@/components/tournament/myEntries/EntryInfo";
-import { feltToString } from "@/lib/utils";
+import { feltToString, formatScore } from "@/lib/utils";
 import { TokenMetadata } from "@/generated/models.gen";
 import { BigNumberish } from "starknet";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,15 @@ interface EntryCardProps {
 
 const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
   const currentDate = BigInt(new Date().getTime()) / 1000n;
-  const isActive =
+  const hasStarted =
     !!mergedEntry.gameMetadata?.lifecycle.start.Some &&
     BigInt(mergedEntry.gameMetadata?.lifecycle.start.Some) < currentDate;
+
+  const hasEnded =
+    !!mergedEntry.gameMetadata?.lifecycle.end.Some &&
+    BigInt(mergedEntry.gameMetadata?.lifecycle.end.Some) < currentDate;
+
+  const isActive = hasStarted && !hasEnded;
 
   const gameUrl = getGameUrl(gameAddress);
 
@@ -41,7 +47,7 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
   return (
     <Card
       variant="outline"
-      className="flex-none flex flex-col items-center gap-2 h-[120px] w-[80px] p-1 pt-5 relative group"
+      className="flex-none flex flex-col items-center gap-2 h-[120px] w-[80px] p-1 relative group"
     >
       <TokenGameIcon game={gameAddress} size={"sm"} />
       <div className="absolute top-1 left-1 text-xs">
@@ -58,7 +64,7 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
           tokenMetadata={mergedEntry.tokenMetadata ?? ""}
         />
       </HoverCard>
-      <p className="text-xs overflow-x-hidden text-ellipsis whitespace-nowrap text-brand-muted">
+      <p className="text-xs truncate text-brand-muted w-full">
         {feltToString(mergedEntry.gameMetadata?.player_name ?? "")}
       </p>
       {isActive && (
@@ -80,16 +86,21 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
           </Button>
         </div>
       )}
-      <div className="absolute flex flex-row items-center justify-between bottom-1 w-full px-2">
+      {hasStarted && (
+        <div className="flex flex-row items-center justify-center gap-1 w-full px-0.5">
+          <span className="text-[10px] text-neutral">Score:</span>
+          <span>{formatScore(Number(mergedEntry.score))}</span>
+        </div>
+      )}
+      <div className="flex flex-row items-center justify-center w-full px-2">
         {isActive ? (
           <>
-            <p className="text-[10px] text-neutral">Score:</p>
-            <p className="text-xs text-brand">{mergedEntry.score}</p>
+            <p className="text-xs text-neutral">Active</p>
           </>
+        ) : hasEnded ? (
+          <p className="text-xs text-warning">Ended</p>
         ) : (
-          <>
-            <p className="text-xs text-neutral">Not Active</p>
-          </>
+          <p className="text-xs text-warning">Not Started</p>
         )}
       </div>
     </Card>

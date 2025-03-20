@@ -61,7 +61,6 @@ import PrizesContainer from "@/components/tournament/prizes/PrizesContainer";
 import { ClaimPrizesDialog } from "@/components/dialogs/ClaimPrizes";
 import { SubmitScoresDialog } from "@/components/dialogs/SubmitScores";
 import {
-  useGetAccountTokenIds,
   useGetTournaments,
   useGetTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
@@ -380,12 +379,6 @@ const Tournament = () => {
     return indexAddress(gameAddress);
   }, [gameAddress]);
 
-  const { data: ownedTokens } = useGetAccountTokenIds(
-    queryAddress ?? null,
-    [queryGameAddress ?? "0x0"],
-    true
-  );
-
   useSdkGetTokens({
     accountAddress: queryAddress,
     contractAddress: queryGameAddress,
@@ -401,8 +394,6 @@ const Tournament = () => {
   const storedTokens = useTokenStore((state) =>
     state.getTokens(queryGameAddress, queryAddress)
   );
-
-  console.log(storedTokens);
 
   if (loading) {
     return (
@@ -680,7 +671,7 @@ const Tournament = () => {
               gameNamespace={gameNamespace ?? ""}
               gameScoreModel={gameScoreModel ?? ""}
               gameScoreAttribute={gameScoreAttribute ?? ""}
-              ownedTokens={ownedTokens}
+              ownedTokens={storedTokens}
             />
           </div>
         </div>

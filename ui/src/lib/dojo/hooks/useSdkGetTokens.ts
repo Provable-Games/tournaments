@@ -69,7 +69,7 @@ export const useSdkGetTokens = ({
     } finally {
       setIsLoading(false);
     }
-  }, [sdk, accountAddress, contractAddress, updateStore, setTokens]);
+  }, [sdk, accountAddress, contractAddress]);
 
   useEffect(() => {
     if (enabled) {

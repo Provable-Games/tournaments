@@ -37,14 +37,15 @@ const MyEntries = ({
   const { nameSpace } = useDojo();
   const [showMyEntries, setShowMyEntries] = useState(false);
 
-  const ownedTokenIds = useMemo(() => {
-    return ownedTokens
-      ?.map((token) => {
-        const parts = token.token_id?.split(":");
-        return parts?.[1] ?? null;
-      })
-      .filter(Boolean);
+  const ownedTokensKey = useMemo(() => {
+    return ownedTokens?.map((token) => token.token_id).join(",");
   }, [ownedTokens]);
+
+  console.log(ownedTokensKey);
+
+  const ownedTokenIds = useMemo(() => {
+    return ownedTokens?.map((token) => token.token_id);
+  }, [ownedTokensKey]);
 
   useGetRegistrationsForTournamentInTokenListQuery({
     tournamentId: addAddressPadding(bigintToHex(tournamentId)),
