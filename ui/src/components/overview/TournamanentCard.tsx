@@ -57,13 +57,13 @@ export const TournamentCard = ({
     (t) => t.address === entryFeeToken
   )?.symbol;
 
-  const entryFeePrizes = extractEntryFeePrizes(
+  const { distributionPrizes } = extractEntryFeePrizes(
     tournament?.id,
     tournament?.entry_fee,
     entryCount
   );
 
-  const allPrizes = [...entryFeePrizes, ...(prizes ?? [])];
+  const allPrizes = [...distributionPrizes, ...(prizes ?? [])];
 
   const groupedPrizes = groupPrizesByTokens(allPrizes, tokens);
 
@@ -82,7 +82,7 @@ export const TournamentCard = ({
   );
 
   useEffect(() => {
-    const allPricesExist = Object.keys(prizes ?? []).every(
+    const allPricesExist = Object.keys(groupedPrizes ?? []).every(
       (symbol) => prices[symbol] !== undefined
     );
 

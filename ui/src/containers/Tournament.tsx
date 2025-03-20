@@ -167,13 +167,14 @@ const Tournament = () => {
     .map((detail) => detail.models[nameSpace].Prize) ??
     []) as unknown as Prize[];
 
-  const entryFeePrizes = extractEntryFeePrizes(
-    tournamentModel?.id,
-    tournamentModel?.entry_fee,
-    entryCountModel?.count ?? 0
-  );
+  const { tournamentCreatorShare, gameCreatorShare, distributionPrizes } =
+    extractEntryFeePrizes(
+      tournamentModel?.id,
+      tournamentModel?.entry_fee,
+      entryCountModel?.count ?? 0
+    );
 
-  const allPrizes = [...entryFeePrizes, ...prizes];
+  const allPrizes = [...distributionPrizes, ...prizes];
 
   const tournamentClaimedPrizes = state.getEntitiesByModel(
     nameSpace,
@@ -189,7 +190,7 @@ const Tournament = () => {
     []) as unknown as PrizeClaim[];
 
   const { claimablePrizes, claimablePrizeTypes } = getClaimablePrizes(
-    allPrizes,
+    [...allPrizes, ...tournamentCreatorShare, ...gameCreatorShare],
     claimedPrizes,
     totalSubmissions
   );
@@ -272,12 +273,12 @@ const Tournament = () => {
   });
 
   useEffect(() => {
-    const allPricesExist = Object.keys(prizes).every(
+    const allPricesExist = Object.keys(groupedByTokensPrizes).every(
       (symbol) => prices[symbol] !== undefined
     );
 
     setAllPricesFound(allPricesExist);
-  }, [prices, prizes]);
+  }, [prices, groupedByTokensPrizes]);
 
   const totalPrizesValueUSD = calculateTotalValue(
     groupedByTokensPrizes,

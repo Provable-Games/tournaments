@@ -422,7 +422,7 @@ export const useGetAccountTokenIds = (
     SELECT tb.*, t.metadata
     FROM token_balances tb
     LEFT JOIN tokens t ON tb.token_id = t.id
-    WHERE (tb.account_address = "${address}" AND tb.contract_address IN (${tokenAddresses
+    WHERE (tb.account_address = "${address}" AND tb.balance != '0x0000000000000000000000000000000000000000000000000000000000000000' AND tb.contract_address IN (${tokenAddresses
             .map((address) => `"${address}"`)
             .join(",")}));
   `
@@ -453,6 +453,7 @@ export const useGetTournamentEntrants = ({
       namespace &&
         tournamentId &&
         gameNamespace &&
+        gameAddress &&
         typeof offset === "number" &&
         typeof limit === "number"
     );
@@ -473,15 +474,25 @@ export const useGetTournamentEntrants = ({
     FROM '${namespace}-Registration' r
     LEFT JOIN '${gameNamespace}-TokenMetadata' m 
       ON r.game_token_id = m.token_id
-    LEFT JOIN token_balances t 
+    INNER JOIN token_balances t
       ON ('${gameAddress}' || ':' || r.game_token_id) = t.token_id
+      AND t.contract_address = '${gameAddress}'
+      AND t.balance != '0x0000000000000000000000000000000000000000000000000000000000000000'
     WHERE r.tournament_id = "${addAddressPadding(tournamentId)}"
     ORDER BY r.entry_number DESC
     LIMIT ${limit}
     OFFSET ${offset}
   `
         : null,
-    [isValidInput, namespace, tournamentId, offset, limit, gameNamespace]
+    [
+      isValidInput,
+      namespace,
+      tournamentId,
+      offset,
+      limit,
+      gameNamespace,
+      gameAddress,
+    ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data, loading, error, refetch };
@@ -513,6 +524,7 @@ export const useGetTournamentLeaderboard = ({
         gameNamespace &&
         gameScoreModel &&
         gameScoreAttribute &&
+        gameAddress &&
         typeof offset === "number" &&
         typeof limit === "number"
     );
@@ -524,6 +536,7 @@ export const useGetTournamentLeaderboard = ({
     gameScoreAttribute,
     offset,
     limit,
+    gameAddress,
   ]);
 
   const query = useMemo(
@@ -546,8 +559,10 @@ export const useGetTournamentLeaderboard = ({
       ON r.game_token_id = s.game_id
     LEFT JOIN '${gameNamespace}-TokenMetadata' m 
       ON r.game_token_id = m.token_id
-    LEFT JOIN token_balances t 
-      ON token_balance_id = t.token_id
+    INNER JOIN token_balances t 
+      ON ('${gameAddress}' || ':' || r.game_token_id) = t.token_id
+      AND t.contract_address = '${gameAddress}'
+      AND t.balance != '0x0000000000000000000000000000000000000000000000000000000000000000'
     LEFT JOIN tokens t2 ON t.token_id = t2.id
     WHERE r.tournament_id = "${addAddressPadding(tournamentId)}"
     ORDER BY s.${gameScoreAttribute} DESC, r.entry_number ASC
@@ -564,6 +579,7 @@ export const useGetTournamentLeaderboard = ({
       gameNamespace,
       gameScoreModel,
       gameScoreAttribute,
+      gameAddress,
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
