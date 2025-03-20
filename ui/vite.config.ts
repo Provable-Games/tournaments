@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    // process.env.VITE_CHAIN_ID !== "KATANA_LOCAL" && mkcert(),
+    process.env.VITE_CHAIN_ID !== "KATANA_LOCAL" && mkcert(),
     topLevelAwait(),
   ],
   resolve: {

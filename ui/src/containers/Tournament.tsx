@@ -83,7 +83,7 @@ const Tournament = () => {
   const { address } = useAccount();
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const { nameSpace, selectedChainConfig, sdk } = useDojo();
+  const { nameSpace, selectedChainConfig } = useDojo();
   const state = useDojoStore((state) => state);
   const { gameData } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
@@ -668,7 +668,7 @@ const Tournament = () => {
                 gameScoreModel={gameScoreModel ?? ""}
                 gameScoreAttribute={gameScoreAttribute ?? ""}
                 isEnded={isEnded}
-                // leaderboardModel={leaderboardModel}
+                leaderboardModel={leaderboardModel}
               />
             ) : (
               <></>
