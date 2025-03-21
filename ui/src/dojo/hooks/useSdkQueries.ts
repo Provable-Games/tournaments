@@ -146,6 +146,10 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
   offset: number;
   nameSpace: string;
 }) => {
+  const tokenIdsKey = useMemo(() => {
+    return tokenIds.join(",");
+  }, [tokenIds]);
+
   const query = useMemo(
     () =>
       new ToriiQueryBuilder()
@@ -179,7 +183,7 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
         .addOrderBy(ModelsMapping.Registration, "entry_number", "Asc")
         .withEntityModels([ModelsMapping.Registration])
         .includeHashedKeys(),
-    [tournamentId, tokenIds, limit, offset]
+    [tournamentId, tokenIdsKey, limit, offset]
   );
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
@@ -313,7 +317,7 @@ export const useSubscribeTournamentQuery = (tournamentId: BigNumberish) => {
                 ModelsMapping.EntryCount,
                 ModelsMapping.Registration,
               ],
-              []
+              [undefined]
             ),
             MemberClause(
               ModelsMapping.Tournament,
@@ -405,35 +409,21 @@ export const useSubscribeTokensQuery = () => {
   return { entities, isSubscribed };
 };
 
-export const useSubscribeGamesQuery = ({
+export const useSubscribeGamesMetadataQuery = ({
   gameNamespace,
 }: {
   gameNamespace: string;
 }) => {
-  const isValidInput = useMemo(() => {
-    return Boolean(gameNamespace);
-  }, [gameNamespace]);
   const query = useMemo(
     () =>
-      isValidInput
-        ? new ToriiQueryBuilder()
-            .withClause(
-              KeysClause(
-                [`${gameNamespace}-Game`, `${gameNamespace}-TokenMetadata`],
-                []
-              ).build()
-            )
-            .withEntityModels([
-              `${gameNamespace}-Game`,
-              `${gameNamespace}-TokenMetadata`,
-            ])
-            .includeHashedKeys()
-        : null,
-    [gameNamespace, isValidInput]
+      new ToriiQueryBuilder()
+        .withClause(KeysClause([`${gameNamespace}-TokenMetadata`], []).build())
+        .withEntityModels([`${gameNamespace}-TokenMetadata`])
+        .includeHashedKeys(),
+    [gameNamespace]
   );
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    enabled: isValidInput,
   });
   return { entities, isSubscribed };
 };

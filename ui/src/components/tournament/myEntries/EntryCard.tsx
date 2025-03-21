@@ -9,6 +9,9 @@ import { TokenMetadata } from "@/generated/models.gen";
 import { BigNumberish } from "starknet";
 import { Button } from "@/components/ui/button";
 import { getGameName, getGameUrl } from "@/assets/games";
+import { TooltipContent } from "@/components/ui/tooltip";
+import { TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface EntryCardProps {
   gameAddress: string;
@@ -64,9 +67,22 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
           tokenMetadata={mergedEntry.tokenMetadata ?? ""}
         />
       </HoverCard>
-      <p className="text-xs truncate text-brand-muted w-full">
-        {feltToString(mergedEntry.gameMetadata?.player_name ?? "")}
-      </p>
+      <Tooltip delayDuration={50}>
+        <TooltipTrigger asChild>
+          <p className="text-xs truncate text-brand-muted w-full text-center cursor-pointer">
+            {feltToString(mergedEntry.gameMetadata?.player_name ?? "")}
+          </p>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          align="center"
+          className="max-w-[300px] break-words"
+        >
+          <p className="text-sm font-medium">
+            {feltToString(mergedEntry.gameMetadata?.player_name ?? "")}
+          </p>
+        </TooltipContent>
+      </Tooltip>
       {isActive && (
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
           <Button

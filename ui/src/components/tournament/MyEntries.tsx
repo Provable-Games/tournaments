@@ -1,9 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { DOLLAR } from "@/components/Icons";
-import {
-  useGetGameMetadataInListQuery,
-  useGetRegistrationsForTournamentInTokenListQuery,
-} from "@/dojo/hooks/useSdkQueries";
+import { useGetRegistrationsForTournamentInTokenListQuery } from "@/dojo/hooks/useSdkQueries";
 import { indexAddress } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount } from "@starknet-react/core";
@@ -41,49 +38,30 @@ const MyEntries = ({
     return ownedTokens?.map((token) => token.token_id).join(",");
   }, [ownedTokens]);
 
-  console.log(ownedTokensKey);
-
   const ownedTokenIds = useMemo(() => {
     return ownedTokens?.map((token) => token.token_id);
   }, [ownedTokensKey]);
 
-  useGetRegistrationsForTournamentInTokenListQuery({
-    tournamentId: addAddressPadding(bigintToHex(tournamentId)),
-    tokenIds: ownedTokenIds ?? [],
-    limit: 1000,
-    offset: 0,
-    nameSpace,
-  });
+  const registrations = state.getEntitiesByModel(nameSpace, "Registration");
 
-  const myRegistrations = state
-    .getEntitiesByModel(nameSpace ?? "", "Registration")
-    .filter(
+  const myRegistrations = useMemo(() => {
+    return registrations.filter(
       (entity) =>
         entity.models[nameSpace ?? ""].Registration?.tournament_id ===
-        tournamentId
+          tournamentId &&
+        ownedTokenIds?.includes(
+          addAddressPadding(
+            bigintToHex(
+              entity.models[nameSpace ?? ""].Registration?.game_token_id ?? 0n
+            )
+          )
+        )
     );
+  }, [registrations, tournamentId, address]);
 
   const myEntriesCount = useMemo(() => {
     return myRegistrations?.length ?? 0;
   }, [myRegistrations]);
-
-  const tokenIds = useMemo(
-    () =>
-      myRegistrations?.map((registration) =>
-        addAddressPadding(
-          bigintToHex(
-            registration?.models[nameSpace ?? ""].Registration?.game_token_id ??
-              0n
-          )
-        )
-      ),
-    [myRegistrations]
-  );
-
-  const { entities: metadata } = useGetGameMetadataInListQuery({
-    gameNamespace: gameNamespace ?? "",
-    gameIds: tokenIds ?? [],
-  });
 
   const entities = state.getEntities();
 
@@ -91,45 +69,60 @@ const MyEntries = ({
     (entity) => (entity.models as any)?.[gameNamespace]?.[gameScoreModel]
   );
 
+  const gamesMetadata = state.getEntitiesByModel(
+    gameNamespace ?? "",
+    "TokenMetadata"
+  );
+
   const mergedEntries = useMemo(() => {
-    if (!myRegistrations || !metadata) return [];
+    if (!myRegistrations || !gamesMetadata) return [];
 
-    return myRegistrations.map((registration) => {
-      const gameTokenId =
-        registration?.models[nameSpace ?? ""].Registration?.game_token_id ?? 0n;
+    return myRegistrations
+      .map((registration) => {
+        const gameTokenId =
+          registration?.models[nameSpace ?? ""].Registration?.game_token_id ??
+          0n;
 
-      // Find matching metadata for this token
-      const gameMetadata = metadata.find(
-        (m) => m?.TokenMetadata?.token_id === gameTokenId
-      );
+        // Find matching metadata for this token
+        const gameMetadata = gamesMetadata.find(
+          (metadata) =>
+            metadata?.models?.[gameNamespace]?.TokenMetadata?.token_id ===
+            gameTokenId
+        );
 
-      // Find matching score for this token
-      const score = scoreEntities.find(
-        (s) =>
-          (s?.models as any)?.[gameNamespace]?.[gameScoreModel]?.game_id ===
-          gameTokenId
-      );
+        // Find matching score for this token
+        const score = scoreEntities.find(
+          (s) =>
+            (s?.models as any)?.[gameNamespace]?.[gameScoreModel]?.game_id ===
+            gameTokenId
+        );
 
-      // Find token metadata for this token
-      const tokenMetadata = ownedTokens?.find(
-        (t) =>
-          t.token_id ===
-          `${indexAddress(gameAddress)}:${addAddressPadding(
-            bigintToHex(gameTokenId)
-          )}`
-      )?.metadata;
+        // Find token metadata for this token
+        const tokenMetadata = ownedTokens?.find(
+          (t) =>
+            t.token_id ===
+            `${indexAddress(gameAddress)}:${addAddressPadding(
+              bigintToHex(gameTokenId)
+            )}`
+        )?.metadata;
 
-      return {
-        ...registration.models[nameSpace ?? ""].Registration,
-        gameMetadata: gameMetadata?.TokenMetadata as TokenMetadata | null,
-        tokenMetadata: tokenMetadata as string | null,
-        score:
-          (score?.models as any)?.[gameNamespace]?.[gameScoreModel]?.[
-            gameScoreAttribute
-          ] ?? 0,
-      };
-    });
-  }, [myRegistrations, metadata, address]);
+        return {
+          ...registration.models[nameSpace ?? ""].Registration,
+          gameMetadata: gameMetadata?.models?.[gameNamespace]
+            ?.TokenMetadata as TokenMetadata | null,
+          tokenMetadata: tokenMetadata as string | null,
+          score:
+            (score?.models as any)?.[gameNamespace]?.[gameScoreModel]?.[
+              gameScoreAttribute
+            ] ?? 0,
+        };
+      })
+      .sort((a: any, b: any) => {
+        const mintA = a.gameMetadata?.lifecycle.mint;
+        const mintB = b.gameMetadata?.lifecycle.mint;
+        return Number(mintB) - Number(mintA);
+      });
+  }, [myRegistrations, gamesMetadata, address, scoreEntities]);
 
   useEffect(() => {
     if (address) {

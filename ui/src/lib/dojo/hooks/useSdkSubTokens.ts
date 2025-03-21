@@ -34,9 +34,9 @@ export const useSdkSubscribeTokens = ({
 }: UseSdkSubTokensProps): UseSdkSubTokensResult => {
   const { sdk } = useDojo();
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [tokens, setLocalTokens] = useState<TokenResult[] | null>(null);
+  // const [tokens, setLocalTokens] = useState<TokenResult[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const setTokens = useTokenStore((state) => state.setTokens);
+  const addToken = useTokenStore((state) => state.addToken);
 
   useEffect(() => {
     let _unsubscribe: (() => void) | undefined;
@@ -44,7 +44,7 @@ export const useSdkSubscribeTokens = ({
     const _subscribe = async () => {
       if (!accountAddress || !contractAddress) {
         setIsSubscribed(false);
-        setLocalTokens(null);
+        // setLocalTokens(null);
         return;
       }
 
@@ -53,11 +53,10 @@ export const useSdkSubscribeTokens = ({
           [contractAddress],
           [accountAddress],
           [],
-          (tokenBalances: any) => {
-            if (tokenBalances.account_address !== "0x0") {
-              console.log("useSdkSubscribeTokens() response:", tokenBalances);
-              setTokens(contractAddress, accountAddress, tokenBalances);
-              setLocalTokens(tokenBalances.data);
+          (tokenBalance: TokenResult) => {
+            if (tokenBalance.account_address !== "0x0") {
+              addToken(contractAddress, accountAddress, tokenBalance);
+              // setLocalTokens(tokenBalance);
             }
           }
         );
@@ -69,7 +68,7 @@ export const useSdkSubscribeTokens = ({
         console.error("Failed to subscribe to entity query:", err);
         setError(err instanceof Error ? err : new Error(String(err)));
         setIsSubscribed(false);
-        setLocalTokens(null);
+        // setLocalTokens(null);
       }
     };
 
@@ -77,7 +76,7 @@ export const useSdkSubscribeTokens = ({
     if (enabled && accountAddress && contractAddress) {
       _subscribe();
     } else {
-      setLocalTokens(null);
+      // setLocalTokens(null);
     }
 
     return () => {
@@ -94,7 +93,7 @@ export const useSdkSubscribeTokens = ({
   }, [sdk, accountAddress, contractAddress, enabled]);
 
   return {
-    tokens,
+    tokens: [],
     isSubscribed,
     error,
   };
