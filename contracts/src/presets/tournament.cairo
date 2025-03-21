@@ -8,7 +8,6 @@ use tournaments::components::models::schedule::{Phase, Schedule};
 
 #[starknet::interface]
 pub trait ITournament<TState> {
-    // IWorldProvider
     fn world_dispatcher(self: @TState) -> IWorldDispatcher;
 
     fn total_tournaments(self: @TState) -> u64;
@@ -64,7 +63,6 @@ pub mod Budokan {
     use tournaments::components::tournament::tournament_component;
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
-
     #[abi(embed_v0)]
     impl TournamentComponentImpl =
         tournament_component::TournamentImpl<ContractState>;
