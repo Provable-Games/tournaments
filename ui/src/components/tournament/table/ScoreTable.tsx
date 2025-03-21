@@ -16,7 +16,7 @@ import {
   PlayerDetails,
 } from "@/components/tournament/table/PlayerCard";
 import TableSkeleton from "@/components/tournament/table/Skeleton";
-// import { Leaderboard } from "@/generated/models.gen";
+import { Leaderboard } from "@/generated/models.gen";
 
 interface ScoreTableProps {
   tournamentId: BigNumberish;
@@ -26,7 +26,7 @@ interface ScoreTableProps {
   gameScoreModel: string;
   gameScoreAttribute: string;
   isEnded: boolean;
-  // leaderboardModel: Leaderboard;
+  leaderboardModel: Leaderboard;
 }
 
 const ScoreTable = ({
@@ -37,14 +37,17 @@ const ScoreTable = ({
   gameScoreModel,
   gameScoreAttribute,
   isEnded,
-}: // leaderboardModel,
-ScoreTableProps) => {
+  leaderboardModel,
+}: ScoreTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showParticipants, setShowParticipants] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
   const { nameSpace } = useDojo();
   const [prevEntryCount, setPrevEntryCount] = useState<number | null>(null);
+  const [prevSubmissionsKey, setPrevSubmissionsKey] = useState<string | null>(
+    null
+  );
   const offset = (currentPage - 1) * 10;
 
   const {
@@ -67,8 +70,18 @@ ScoreTableProps) => {
     [leaderboard]
   );
 
+  const submissionsKey = useMemo(
+    () => leaderboardModel?.token_ids.join(","),
+    [leaderboardModel]
+  );
+
   useEffect(() => {
-    if (prevEntryCount !== null && prevEntryCount !== entryCount) {
+    if (
+      prevEntryCount !== null &&
+      prevEntryCount !== entryCount &&
+      prevSubmissionsKey !== null &&
+      submissionsKey !== prevSubmissionsKey
+    ) {
       const timer = setTimeout(() => {
         refetchLeaderboard();
         console.log("refetching leaderboard");
@@ -78,8 +91,9 @@ ScoreTableProps) => {
     }
 
     setPrevEntryCount(entryCount);
+    setPrevSubmissionsKey(submissionsKey);
     setShowParticipants(entryCount > 0);
-  }, [entryCount, prevEntryCount]);
+  }, [entryCount, prevEntryCount, submissionsKey]);
 
   const { usernames } = useGetUsernames(ownerAddresses ?? []);
 

@@ -105,7 +105,7 @@ const EntrantsTable = ({
     <Card
       variant="outline"
       className={`sm:w-1/2 transition-all duration-300 ease-in-out ${
-        showParticipants ? "h-[200px]" : "h-[45px] sm:h-[60px]"
+        showParticipants ? "h-[210px] 3xl:h-[270px]" : "h-[60px] 3xl:h-[80px]"
       }`}
     >
       <div className="flex flex-col justify-between">

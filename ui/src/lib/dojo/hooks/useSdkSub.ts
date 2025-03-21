@@ -73,7 +73,6 @@ export const useSdkSubscribeEntities = ({
                     entity as Partial<ParsedEntity<SchemaType>>
                   );
                 });
-                console.log("entities", state.getEntities());
               }
             },
           }

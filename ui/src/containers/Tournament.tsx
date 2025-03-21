@@ -19,12 +19,14 @@ import {
 import { addAddressPadding, CairoCustomEnum } from "starknet";
 import { useAccount } from "@starknet-react/core";
 import {
-  useSubscribeGamesQuery,
+  useSubscribeGamesMetadataQuery,
   // useGetGameCounterQuery,
   useGetTournamentQuery,
   useSubscribeTournamentQuery,
   useSubscribeScoresQuery,
   useGetScoresQuery,
+  useGetGameMetadataInListQuery,
+  useGetRegistrationsForTournamentInTokenListQuery,
 } from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import {
@@ -61,7 +63,7 @@ import PrizesContainer from "@/components/tournament/prizes/PrizesContainer";
 import { ClaimPrizesDialog } from "@/components/dialogs/ClaimPrizes";
 import { SubmitScoresDialog } from "@/components/dialogs/SubmitScores";
 import {
-  useGetAccountTokenIds,
+  useGetTournamentRegistrants,
   useGetTournaments,
   useGetTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
@@ -74,6 +76,9 @@ import {
 import useUIStore from "@/hooks/useUIStore";
 import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { ChainId } from "@/dojo/setup/networks";
+import { useTokensByAddresses } from "@/hooks/tokenStore";
+import { useSdkGetTokens } from "@/lib/dojo/hooks/useSdkGetTokens";
+import { useSdkSubscribeTokens } from "@/lib/dojo/hooks/useSdkSubTokens";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
@@ -126,7 +131,6 @@ const Tournament = () => {
 
   useGetTournamentQuery(addAddressPadding(bigintToHex(id!)), nameSpace);
   useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)));
-  // useSubscribePrizesQuery();
 
   const tournamentEntityId = useMemo(
     () => getEntityIdFromKeys([BigInt(id!)]),
@@ -213,10 +217,6 @@ const Tournament = () => {
     gameScoreModel ?? undefined
   );
   useGetScoresQuery(gameNamespace ?? "", gameScoreModel ?? "");
-
-  useSubscribeGamesQuery({
-    gameNamespace: gameNamespace ?? "",
-  });
 
   const [isOverflowing, setIsOverflowing] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -368,20 +368,51 @@ const Tournament = () => {
   // get owned game tokens
 
   const queryAddress = useMemo(() => {
-    if (!address || address === "0x0") return null;
+    if (!address || address === "0x0") return undefined;
     return indexAddress(address);
   }, [address]);
 
   const queryGameAddress = useMemo(() => {
-    if (!gameAddress || gameAddress === "0x0") return null;
+    if (!gameAddress || gameAddress === "0x0") return undefined;
     return indexAddress(gameAddress);
   }, [gameAddress]);
 
-  const { data: ownedTokens } = useGetAccountTokenIds(
-    queryAddress,
-    [queryGameAddress ?? "0x0"],
-    true
+  useSdkGetTokens({
+    accountAddress: queryAddress,
+    contractAddress: queryGameAddress,
+    enabled: !!queryGameAddress && !!queryAddress,
+  });
+
+  useSdkSubscribeTokens({
+    accountAddress: queryAddress,
+    contractAddress: queryGameAddress,
+    enabled: !!queryGameAddress && !!queryAddress,
+  });
+
+  const storedTokens = useTokensByAddresses(queryGameAddress, queryAddress);
+
+  useSubscribeGamesMetadataQuery({
+    gameNamespace: gameNamespace ?? "",
+  });
+
+  const initialGameIds = useMemo(
+    () => storedTokens.map((token) => token.token_id),
+    // Only recompute when storedTokens changes AND it's not empty
+    [storedTokens.length > 0]
   );
+
+  useGetGameMetadataInListQuery({
+    gameNamespace: gameNamespace ?? "",
+    gameIds: initialGameIds,
+  });
+
+  useGetRegistrationsForTournamentInTokenListQuery({
+    tournamentId: addAddressPadding(bigintToHex(id!)),
+    tokenIds: initialGameIds ?? [],
+    limit: 1000,
+    offset: 0,
+    nameSpace,
+  });
 
   if (loading) {
     return (
@@ -648,7 +679,7 @@ const Tournament = () => {
                 gameScoreModel={gameScoreModel ?? ""}
                 gameScoreAttribute={gameScoreAttribute ?? ""}
                 isEnded={isEnded}
-                // leaderboardModel={leaderboardModel}
+                leaderboardModel={leaderboardModel}
               />
             ) : (
               <></>
@@ -659,7 +690,7 @@ const Tournament = () => {
               gameNamespace={gameNamespace ?? ""}
               gameScoreModel={gameScoreModel ?? ""}
               gameScoreAttribute={gameScoreAttribute ?? ""}
-              ownedTokens={ownedTokens}
+              ownedTokens={storedTokens}
             />
           </div>
         </div>
