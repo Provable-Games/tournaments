@@ -101,9 +101,7 @@ mod game_mock {
     #[abi(embed_v0)]
     impl SettingsImpl of ISettings<ContractState> {
         fn setting_exists(self: @ContractState, settings_id: u32) -> bool {
-            let world = self.world(@DEFAULT_NS());
-            let store: Store = StoreTrait::new(world);
-            store.get_settings_details(settings_id).exists
+            true
         }
     }
 
