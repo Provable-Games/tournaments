@@ -13,7 +13,7 @@ pub trait IGameTokenMock<TContractState> {
 
 #[starknet::interface]
 pub trait IGameTokenMockInit<TContractState> {
-    fn initializer(ref self: TContractState);
+    fn initializer(ref self: TContractState, namespace: ByteArray);
 }
 
 #[dojo::contract]
@@ -26,8 +26,6 @@ mod game_mock {
     use tournaments::components::interfaces::{WorldImpl};
     use tournaments::components::libs::game_store::{Store, StoreTrait};
     use tournaments::components::models::game::{SettingsDetails, Score};
-
-    use tournaments::components::constants::{DEFAULT_NS};
 
     use starknet::{ContractAddress, contract_address_const};
 
@@ -108,7 +106,7 @@ mod game_mock {
     #[abi(embed_v0)]
     impl GameDetailsImpl of IGameDetails<ContractState> {
         fn score(self: @ContractState, game_id: u64) -> u32 {
-            let world = self.world(@DEFAULT_NS());
+            let world = self.world(@self.namespace());
             let store: Store = StoreTrait::new(world);
             store.get_score(game_id)
         }
@@ -117,14 +115,14 @@ mod game_mock {
     #[abi(embed_v0)]
     impl GameMockImpl of super::IGameTokenMock<ContractState> {
         fn start_game(ref self: ContractState, game_id: u64) {
-            let mut world = self.world(@DEFAULT_NS());
+            let mut world = self.world(@self.namespace());
             let mut store: Store = StoreTrait::new(world);
 
             store.set_score(@Score { game_id, score: 0 });
         }
 
         fn end_game(ref self: ContractState, game_id: u64, score: u32) {
-            let mut world = self.world(@DEFAULT_NS());
+            let mut world = self.world(@self.namespace());
             let mut store: Store = StoreTrait::new(world);
             store.set_score(@Score { game_id, score });
         }
@@ -136,7 +134,7 @@ mod game_mock {
             description: ByteArray,
             exists: bool,
         ) {
-            let mut world = self.world(@DEFAULT_NS());
+            let mut world = self.world(@self.namespace());
             let mut store: Store = StoreTrait::new(world);
             store
                 .set_settings_details(
@@ -147,7 +145,7 @@ mod game_mock {
 
     #[abi(embed_v0)]
     impl GameInitializerImpl of super::IGameTokenMockInit<ContractState> {
-        fn initializer(ref self: ContractState) {
+        fn initializer(ref self: ContractState, namespace: ByteArray) {
             self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI());
             self
                 .game
@@ -159,7 +157,7 @@ mod game_mock {
                     GAME_PUBLISHER(),
                     GAME_GENRE(),
                     GAME_IMAGE(),
-                    DEFAULT_NS(),
+                    namespace,
                     "Score",
                     "score",
                     "SettingsDetails",
