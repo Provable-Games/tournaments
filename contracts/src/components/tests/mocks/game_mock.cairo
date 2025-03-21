@@ -12,7 +12,7 @@ pub trait IGameTokenMock<TContractState> {
 }
 
 #[starknet::interface]
-trait IGameTokenMockInit<TContractState> {
+pub trait IGameTokenMockInit<TContractState> {
     fn initializer(ref self: TContractState);
 }
 
