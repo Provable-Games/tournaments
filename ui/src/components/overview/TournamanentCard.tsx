@@ -8,7 +8,7 @@ import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useDojo } from "@/context/dojo";
 import {
   groupPrizesByTokens,
-  getErc20TokenSymbols,
+  getErc20TokenAddresses,
   calculateTotalValue,
   countTotalNFTs,
   extractEntryFeePrizes,
@@ -53,9 +53,9 @@ export const TournamentCard = ({
   ) as Token[];
 
   const entryFeeToken = tournament?.entry_fee.Some?.token_address;
-  const entryFeeTokenSymbol = tokens.find(
+  const entryFeeTokenAddress = tokens.find(
     (t) => t.address === entryFeeToken
-  )?.symbol;
+  )?.address;
 
   const { distributionPrizes } = extractEntryFeePrizes(
     tournament?.id,
@@ -67,11 +67,11 @@ export const TournamentCard = ({
 
   const groupedPrizes = groupPrizesByTokens(allPrizes, tokens);
 
-  const erc20TokenSymbols = getErc20TokenSymbols(groupedPrizes);
+  const erc20TokenAddresses = getErc20TokenAddresses(groupedPrizes);
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
-      ...erc20TokenSymbols,
-      ...(entryFeeTokenSymbol ? [entryFeeTokenSymbol] : []),
+      ...erc20TokenAddresses,
+      ...(entryFeeTokenAddress ? [entryFeeTokenAddress] : []),
     ],
   });
 
@@ -83,7 +83,7 @@ export const TournamentCard = ({
 
   useEffect(() => {
     const allPricesExist = Object.keys(groupedPrizes ?? []).every(
-      (symbol) => prices[symbol] !== undefined
+      (address) => prices[address] !== undefined
     );
 
     setAllPricesFound(allPricesExist);
@@ -118,7 +118,7 @@ export const TournamentCard = ({
   const entryFee = tournament?.entry_fee.isSome()
     ? (
         Number(BigInt(tournament?.entry_fee.Some?.amount!) / 10n ** 18n) *
-        Number(prices[entryFeeTokenSymbol ?? ""])
+        Number(prices[entryFeeTokenAddress ?? ""])
       ).toFixed(2)
     : "Free";
 

@@ -41,7 +41,10 @@ const PrizesContainer = ({
   }, [prizesExist]);
 
   return (
-    <TournamentCard showCard={showPrizes}>
+    <TournamentCard
+      showCard={showPrizes}
+      className={showPrizes ? "!h-full" : "h-[60px] 3xl:h-[80px]"}
+    >
       <TournamentCardHeader>
         <TournamentCardTitle>
           <div className="flex flex-row items-center gap-2">

@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import AmountInput from "@/components/createTournament/inputs/Amount";
 import TokenDialog from "@/components/dialogs/Token";
-import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { Token } from "@/generated/models.gen";
 import { X } from "@/components/Icons";
 import { Slider } from "@/components/ui/slider";
@@ -47,27 +47,24 @@ const BonusPrizes = ({ form }: StepProps) => {
 
   const { getBalanceGeneral } = useSystemCalls();
 
-  const uniqueTokenSymbols = useMemo(() => {
+  const uniqueTokenAddresses = useMemo(() => {
     const bonusPrizes = form.watch("bonusPrizes") || [];
 
-    // First map to get symbols, then filter out undefined values, then create a Set
-    const symbols = bonusPrizes
-      .map((prize) => getTokenSymbol(prize.tokenAddress))
+    const addresses = bonusPrizes
+      .map((prize) => prize.tokenAddress)
       .filter(
-        (symbol): symbol is string =>
-          typeof symbol === "string" && symbol !== ""
+        (address): address is string =>
+          typeof address === "string" && address !== ""
       );
 
     // Create a Set from the filtered array to get unique values
-    return [...new Set(symbols)];
+    return [...new Set(addresses)];
   }, [form.watch("bonusPrizes")]);
 
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
-      ...uniqueTokenSymbols,
-      ...(newPrize.tokenAddress
-        ? [getTokenSymbol(newPrize.tokenAddress) ?? ""]
-        : []),
+      ...uniqueTokenAddresses,
+      ...(newPrize.tokenAddress ? [newPrize.tokenAddress] : []),
     ],
   });
 
@@ -110,9 +107,7 @@ const BonusPrizes = ({ form }: StepProps) => {
   useEffect(() => {
     setNewPrize((prev) => ({
       ...prev,
-      amount:
-        (prev.value ?? 0) /
-        (prices?.[getTokenSymbol(prev.tokenAddress) ?? ""] ?? 1),
+      amount: (prev.value ?? 0) / (prices?.[prev.tokenAddress ?? ""] ?? 1),
     }));
   }, [prices, newPrize.value]);
 
@@ -443,9 +438,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                                   className="w-4"
                                 />
                               </div>
-                              {prices?.[
-                                getTokenSymbol(newPrize.tokenAddress) ?? ""
-                              ] && (
+                              {prices?.[newPrize.tokenAddress] && (
                                 <span className="text-xs text-neutral">
                                   ~$
                                   {(
@@ -502,18 +495,10 @@ const BonusPrizes = ({ form }: StepProps) => {
                                     <span className="text-sm text-neutral">
                                       {pricesLoading
                                         ? "Loading..."
-                                        : prices?.[
-                                            getTokenSymbol(
-                                              prize.tokenAddress
-                                            ) ?? ""
-                                          ] &&
+                                        : prices?.[prize.tokenAddress] &&
                                           `~$${(
                                             (prize.amount ?? 0) *
-                                            (prices?.[
-                                              getTokenSymbol(
-                                                prize.tokenAddress
-                                              ) ?? ""
-                                            ] ?? 0)
+                                            (prices?.[prize.tokenAddress] ?? 0)
                                           ).toFixed(2)}`}
                                     </span>
                                   </div>

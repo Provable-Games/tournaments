@@ -24,7 +24,7 @@ import { addAddressPadding, BigNumberish } from "starknet";
 import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 import { CairoCustomEnum } from "starknet";
 import { useGetMetricsQuery } from "@/dojo/hooks/useSdkQueries";
-import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { ALERT, CHECK, X } from "@/components/Icons";
 import { useAccount } from "@starknet-react/core";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
@@ -250,34 +250,29 @@ export function AddPrizesDialog({
     return sum;
   }, 0);
 
-  const uniqueTokenSymbols = useMemo(() => {
-    // First map to get symbols, then filter out undefined values, then create a Set
-    const symbols = currentPrizes
-      .map((prize) => getTokenSymbol(prize.tokenAddress))
+  const uniqueTokenAddresses = useMemo(() => {
+    const addresses = currentPrizes
+      .map((prize) => prize.tokenAddress)
       .filter(
-        (symbol): symbol is string =>
-          typeof symbol === "string" && symbol !== ""
+        (address): address is string =>
+          typeof address === "string" && address !== ""
       );
 
     // Create a Set from the filtered array to get unique values
-    return [...new Set(symbols)];
+    return [...new Set(addresses)];
   }, [currentPrizes]);
 
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
-      ...uniqueTokenSymbols,
-      ...(newPrize.tokenAddress
-        ? [getTokenSymbol(newPrize.tokenAddress) ?? ""]
-        : []),
+      ...uniqueTokenAddresses,
+      ...(newPrize.tokenAddress ? [newPrize.tokenAddress] : []),
     ],
   });
 
   useEffect(() => {
     setNewPrize((prev) => ({
       ...prev,
-      amount:
-        (prev.value ?? 0) /
-        (prices?.[getTokenSymbol(prev.tokenAddress) ?? ""] ?? 1),
+      amount: (prev.value ?? 0) / (prices?.[prev.tokenAddress ?? ""] ?? 1),
     }));
   }, [prices, newPrize.value]);
 
@@ -645,9 +640,7 @@ export function AddPrizesDialog({
                                 className="w-4"
                               />
                             </div>
-                            {prices?.[
-                              getTokenSymbol(newPrize.tokenAddress) ?? ""
-                            ] && (
+                            {prices?.[newPrize.tokenAddress] && (
                               <span className="text-xs text-neutral">
                                 ~$
                                 {(
@@ -697,14 +690,10 @@ export function AddPrizesDialog({
                         <span className="text-sm text-neutral">
                           {pricesLoading
                             ? "Loading..."
-                            : prices?.[
-                                getTokenSymbol(prize.tokenAddress) ?? ""
-                              ] &&
+                            : prices?.[prize.tokenAddress] &&
                               `~$${(
                                 (prize.amount ?? 0) *
-                                (prices?.[
-                                  getTokenSymbol(prize.tokenAddress) ?? ""
-                                ] ?? 0)
+                                (prices?.[prize.tokenAddress] ?? 0)
                               ).toFixed(2)}`}
                         </span>
                       </div>

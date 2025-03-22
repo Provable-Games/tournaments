@@ -43,7 +43,7 @@ import {
   countTotalNFTs,
   extractEntryFeePrizes,
   getClaimablePrizes,
-  getErc20TokenSymbols,
+  getErc20TokenAddresses,
   groupPrizesByPositions,
   groupPrizesByTokens,
   processTournamentFromSql,
@@ -236,7 +236,7 @@ const Tournament = () => {
 
   const groupedByTokensPrizes = groupPrizesByTokens(allPrizes, tokens);
 
-  const erc20TokenSymbols = getErc20TokenSymbols(groupedByTokensPrizes);
+  const erc20TokenAddresses = getErc20TokenAddresses(groupedByTokensPrizes);
 
   const durationSeconds = Number(
     BigInt(tournamentModel?.schedule?.game?.end ?? 0n) -
@@ -257,20 +257,20 @@ const Tournament = () => {
   const hasEntryFee = tournamentModel?.entry_fee.isSome();
 
   const entryFeeToken = tournamentModel?.entry_fee.Some?.token_address;
-  const entryFeeTokenSymbol = tokens.find(
+  const entryFeeTokenAddress = tokens.find(
     (t) => t.address === entryFeeToken
-  )?.symbol;
+  )?.address;
 
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
-      ...erc20TokenSymbols,
-      ...(entryFeeTokenSymbol ? [entryFeeTokenSymbol] : []),
+      ...erc20TokenAddresses,
+      ...(entryFeeTokenAddress ? [entryFeeTokenAddress] : []),
     ],
   });
 
   useEffect(() => {
     const allPricesExist = Object.keys(groupedByTokensPrizes).every(
-      (symbol) => prices[symbol] !== undefined
+      (address) => prices[address] !== undefined
     );
 
     setAllPricesFound(allPricesExist);
@@ -284,7 +284,7 @@ const Tournament = () => {
 
   const totalPrizeNFTs = countTotalNFTs(groupedByTokensPrizes);
 
-  const entryFeePrice = prices[entryFeeTokenSymbol ?? ""];
+  const entryFeePrice = prices[entryFeeTokenAddress ?? ""];
 
   const entryFee = hasEntryFee
     ? (

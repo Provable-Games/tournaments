@@ -34,7 +34,7 @@ const Prize = ({ position, prizes, prices }: PrizeProps) => {
 
   useEffect(() => {
     const allPricesExist = Object.keys(prizes).every(
-      (symbol) => prices[symbol] !== undefined
+      (address) => prices[address] !== undefined
     );
 
     setAllPricesFound(allPricesExist);
@@ -48,12 +48,12 @@ const Prize = ({ position, prizes, prices }: PrizeProps) => {
         <sup>{getOrdinalSuffix(position)}</sup> Prize
       </h4>
       <div className="space-y-3">
-        {Object.entries(prizes).map(([symbol, prize]) => {
-          const hasPrice = prices[symbol];
-          const USDValue = calculatePrizeValue(prize, symbol, prices);
+        {Object.entries(prizes).map(([address, prize]) => {
+          const hasPrice = prices[address];
+          const USDValue = calculatePrizeValue(prize, address, prices);
           return (
             <div
-              key={symbol}
+              key={address}
               className="flex justify-between items-center px-4"
             >
               {prize.type === "erc20" ? (

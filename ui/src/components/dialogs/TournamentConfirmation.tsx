@@ -20,7 +20,7 @@ import {
   getOrdinalSuffix,
   displayAddress,
 } from "@/lib/utils";
-import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import { Settings, Token } from "@/generated/models.gen";
 import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
@@ -109,9 +109,7 @@ const TournamentConfirmation = ({
 
   const { prices, isLoading: _pricesLoading } = useEkuboPrices({
     tokens: [
-      ...(formData.bonusPrizes?.map(
-        (prize) => getTokenSymbol(prize.tokenAddress) ?? ""
-      ) ?? []),
+      ...(formData.bonusPrizes?.map((prize) => prize.tokenAddress) ?? []),
       ...(formData.entryFees?.tokenAddress
         ? [formData.entryFees.tokenAddress]
         : []),
@@ -414,14 +412,10 @@ const TournamentConfirmation = ({
                               className="w-4 h-4"
                             />
                             <span className="text-neutral">
-                              {prices?.[
-                                getTokenSymbol(prize.tokenAddress) ?? ""
-                              ] &&
+                              {prices?.[prize.tokenAddress] &&
                                 `~$${(
                                   prize.amount *
-                                  (prices?.[
-                                    getTokenSymbol(prize.tokenAddress) ?? ""
-                                  ] ?? 0)
+                                  (prices?.[prize.tokenAddress] ?? 0)
                                 ).toFixed(2)}`}
                             </span>
                           </div>
@@ -465,14 +459,10 @@ const TournamentConfirmation = ({
                               className="w-4 h-4"
                             />
                             <span className="text-neutral">
-                              {prices?.[
-                                getTokenSymbol(prize.tokenAddress) ?? ""
-                              ] &&
+                              {prices?.[prize.tokenAddress] &&
                                 `~$${(
                                   prize.amount *
-                                  (prices?.[
-                                    getTokenSymbol(prize.tokenAddress) ?? ""
-                                  ] ?? 0)
+                                  (prices?.[prize.tokenAddress] ?? 0)
                                 ).toFixed(2)}`}
                             </span>
                           </div>

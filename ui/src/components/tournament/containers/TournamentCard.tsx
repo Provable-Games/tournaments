@@ -4,15 +4,20 @@ import { Switch } from "@/components/ui/switch";
 interface TournamentCardProps {
   showCard: boolean;
   children: React.ReactNode;
+  className?: string;
 }
 
-export const TournamentCard = ({ showCard, children }: TournamentCardProps) => {
+export const TournamentCard = ({
+  showCard,
+  children,
+  className,
+}: TournamentCardProps) => {
   return (
     <Card
       variant="outline"
       className={`sm:w-1/2 transition-all duration-300 ease-in-out ${
         showCard ? "h-[210px] 3xl:h-[270px]" : "h-[60px] 3xl:h-[80px]"
-      }`}
+      } ${className}`}
     >
       <div className="flex flex-col justify-between">{children}</div>
     </Card>

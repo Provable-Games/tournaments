@@ -407,19 +407,19 @@ export const groupPrizesByPositions = (prizes: Prize[], tokens: Token[]) => {
       const position = prize.payout_position.toString();
       const tokenModel = tokens.find((t) => t.address === prize.token_address);
 
-      if (!tokenModel?.symbol) {
+      if (!tokenModel?.address) {
         console.warn(`No token model found for address ${prize.token_address}`);
         return acc;
       }
 
-      const tokenSymbol = tokenModel.symbol;
+      const tokenAddress = tokenModel.address;
 
       if (!acc[position]) {
         acc[position] = {};
       }
 
-      if (!acc[position][tokenSymbol]) {
-        acc[position][tokenSymbol] = {
+      if (!acc[position][tokenAddress]) {
+        acc[position][tokenAddress] = {
           type: prize.token_type.activeVariant() as "erc20" | "erc721",
           payout_position: position,
           address: prize.token_address,
@@ -428,13 +428,13 @@ export const groupPrizesByPositions = (prizes: Prize[], tokens: Token[]) => {
       }
 
       if (prize.token_type.activeVariant() === "erc721") {
-        (acc[position][tokenSymbol].value as bigint[]).push(
+        (acc[position][tokenAddress].value as bigint[]).push(
           BigInt(prize.token_type.variant.erc721.id!)
         );
       } else if (prize.token_type.activeVariant() === "erc20") {
-        const currentAmount = acc[position][tokenSymbol].value as bigint;
+        const currentAmount = acc[position][tokenAddress].value as bigint;
         const newAmount = BigInt(prize.token_type.variant.erc20.amount);
-        acc[position][tokenSymbol].value = currentAmount + newAmount;
+        acc[position][tokenAddress].value = currentAmount + newAmount;
       }
 
       return acc;
@@ -444,15 +444,15 @@ export const groupPrizesByPositions = (prizes: Prize[], tokens: Token[]) => {
 export const groupPrizesByTokens = (prizes: Prize[], tokens: Token[]) => {
   return prizes.reduce((acc, prize) => {
     const tokenModel = tokens.find((t) => t.address === prize.token_address);
-    const tokenSymbol = tokenModel?.symbol;
+    const tokenAddress = tokenModel?.address;
 
-    if (!tokenSymbol) {
+    if (!tokenAddress) {
       console.warn(`No token model found for address ${prize.token_address}`);
       return acc;
     }
 
-    if (!acc[tokenSymbol]) {
-      acc[tokenSymbol] = {
+    if (!acc[tokenAddress]) {
+      acc[tokenAddress] = {
         type: prize.token_type.activeVariant() as "erc20" | "erc721",
         address: prize.token_address,
         value: prize.token_type.activeVariant() === "erc721" ? [] : 0n,
@@ -461,21 +461,21 @@ export const groupPrizesByTokens = (prizes: Prize[], tokens: Token[]) => {
 
     if (prize.token_type.activeVariant() === "erc721") {
       // For ERC721, push the token ID to the array
-      (acc[tokenSymbol].value as bigint[]).push(
+      (acc[tokenAddress].value as bigint[]).push(
         BigInt(prize.token_type.variant.erc721.id!)
       );
     } else if (prize.token_type.activeVariant() === "erc20") {
       // For ERC20, sum up the values
-      const currentAmount = acc[tokenSymbol].value as bigint;
+      const currentAmount = acc[tokenAddress].value as bigint;
       const newAmount = BigInt(prize.token_type.variant.erc20.amount);
-      acc[tokenSymbol].value = currentAmount + newAmount;
+      acc[tokenAddress].value = currentAmount + newAmount;
     }
 
     return acc;
   }, {} as TokenPrizes);
 };
 
-export const getErc20TokenSymbols = (
+export const getErc20TokenAddresses = (
   groupedPrizes: Record<
     string,
     { type: "erc20" | "erc721"; value: bigint | bigint[] }
@@ -483,7 +483,7 @@ export const getErc20TokenSymbols = (
 ) => {
   return Object.entries(groupedPrizes)
     .filter(([_, prize]) => prize.type === "erc20")
-    .map(([symbol, _]) => symbol);
+    .map(([address, _]) => address);
 };
 
 export const calculatePrizeValue = (
@@ -491,12 +491,12 @@ export const calculatePrizeValue = (
     type: "erc20" | "erc721";
     value: bigint[] | bigint;
   },
-  symbol: string,
+  address: string,
   prices: Record<string, number | undefined>
 ): number => {
   if (prize.type !== "erc20") return 0;
 
-  const price = prices[symbol];
+  const price = prices[address];
   const amount = Number(prize.value) / 10 ** 18;
 
   // If no price is available, just return the token amount
@@ -517,8 +517,8 @@ export const calculateTotalValue = (
 
   return Object.entries(groupedPrizes)
     .filter(([_, prize]) => prize.type === "erc20")
-    .reduce((total, [symbol, prize]) => {
-      const price = prices[symbol];
+    .reduce((total, [address, prize]) => {
+      const price = prices[address];
       const amount = Number(prize.value) / 10 ** 18;
 
       if (price === undefined) return total;

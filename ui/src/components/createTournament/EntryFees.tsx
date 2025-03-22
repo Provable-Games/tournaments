@@ -19,7 +19,6 @@ import {
   formatNumber,
   getOrdinalSuffix,
 } from "@/lib/utils";
-import { getTokenSymbol } from "@/lib/tokensMeta";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
@@ -37,7 +36,7 @@ const EntryFees = ({ form }: StepProps) => {
   const [distributionWeight, setDistributionWeight] = React.useState(1);
 
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
-    tokens: [selectedToken?.symbol ?? ""],
+    tokens: [selectedToken?.address ?? ""],
   });
 
   const creatorFee = form.watch("entryFees.creatorFeePercentage") || 0;
@@ -71,7 +70,7 @@ const EntryFees = ({ form }: StepProps) => {
     form.setValue(
       "entryFees.amount",
       (form.watch("entryFees.value") ?? 0) /
-        (prices?.[selectedToken?.symbol ?? ""] ?? 1)
+        (prices?.[selectedToken?.address ?? ""] ?? 1)
     );
   }, [form.watch("entryFees.value"), prices]);
 
@@ -442,11 +441,8 @@ const EntryFees = ({ form }: StepProps) => {
                                         />
                                       </div>
                                       {prices?.[
-                                        getTokenSymbol(
-                                          form.watch(
-                                            "entryFees.tokenAddress"
-                                          ) ?? ""
-                                        ) ?? ""
+                                        form.watch("entryFees.tokenAddress") ??
+                                          ""
                                       ] && (
                                         <span className="text-xs text-neutral">
                                           ~$
