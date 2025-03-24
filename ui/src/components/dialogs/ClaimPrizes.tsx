@@ -12,7 +12,7 @@ import { Tournament, PrizeTypeEnum } from "@/generated/models.gen";
 import { feltToString, formatNumber, getOrdinalSuffix } from "@/lib/utils";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
-import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
 
 interface ClaimPrizesDialogProps {
   open: boolean;
@@ -53,8 +53,7 @@ export function ClaimPrizesDialog({
           {claimablePrizes.map((prize, index) => {
             const prizeAmount =
               Number(prize.token_type.variant.erc20.amount) / 10 ** 18;
-            const tokenPrice =
-              prices[getTokenSymbol(prize.token_address) ?? ""] ?? 0;
+            const tokenPrice = prices[prize.token_address] ?? 0;
             return (
               <div
                 className="flex flex-row items-center justify-between"
