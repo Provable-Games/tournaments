@@ -61,7 +61,7 @@ const EntryRequirements = ({ form }: StepProps) => {
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [gameFilters, setGameFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const { gameData } = useUIStore();
+  const { gameData, getGameImage } = useUIStore();
   const [addressError, setAddressError] = useState("");
 
   const ENTRY_LIMIT_OPTIONS = [
@@ -476,7 +476,9 @@ const EntryRequirements = ({ form }: StepProps) => {
                                               <span className="flex items-center justify-center">
                                                 <TokenGameIcon
                                                   size="xs"
-                                                  game={game.contract_address}
+                                                  image={getGameImage(
+                                                    game.contract_address
+                                                  )}
                                                 />
                                               </span>
                                             </div>
@@ -592,12 +594,12 @@ const EntryRequirements = ({ form }: StepProps) => {
                                                       <div className="flex items-center justify-center">
                                                         <TokenGameIcon
                                                           size="sm"
-                                                          game={
+                                                          image={getGameImage(
                                                             tournament
                                                               .tournament
                                                               .game_config
                                                               .address
-                                                          }
+                                                          )}
                                                         />
                                                       </div>
                                                     </TooltipTrigger>

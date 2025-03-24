@@ -8,11 +8,11 @@ import { feltToString, formatScore } from "@/lib/utils";
 import { TokenMetadata } from "@/generated/models.gen";
 import { BigNumberish } from "starknet";
 import { Button } from "@/components/ui/button";
-import { getGameName, getGameUrl } from "@/assets/games";
+import { getGameUrl } from "@/assets/games";
 import { TooltipContent } from "@/components/ui/tooltip";
 import { TooltipTrigger } from "@/components/ui/tooltip";
 import { Tooltip } from "@/components/ui/tooltip";
-
+import useUIStore from "@/hooks/useUIStore";
 interface EntryCardProps {
   gameAddress: string;
   mergedEntry: {
@@ -28,6 +28,7 @@ interface EntryCardProps {
 }
 
 const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
+  const { getGameImage, getGameName } = useUIStore();
   const currentDate = BigInt(new Date().getTime()) / 1000n;
   const hasStarted =
     !!mergedEntry.gameMetadata?.lifecycle.start.Some &&
@@ -42,7 +43,7 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
   const gameUrl = getGameUrl(gameAddress);
 
   const gameName = getGameName(gameAddress);
-
+  const gameImage = getGameImage(gameAddress);
   if (!mergedEntry.entry_number) {
     return null;
   }
@@ -53,7 +54,7 @@ const EntryCard = ({ gameAddress, mergedEntry }: EntryCardProps) => {
       className="flex-none flex flex-col items-center justify-between h-full w-[100px] 3xl:w-[120px] p-1 relative group"
     >
       <div className="flex flex-col items-center justify-between w-full h-full pt-2">
-        <TokenGameIcon game={gameAddress} size={"sm"} />
+        <TokenGameIcon image={gameImage} size={"sm"} />
         <div className="absolute top-1 left-1 text-xs 3xl:text-sm">
           #{mergedEntry.entry_number?.toString()}
         </div>

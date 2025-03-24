@@ -34,15 +34,18 @@ export const useGetGamesMetadata = ({
 
 export const useGetTournamentsCount = ({
   namespace,
+  fromTournamentId,
 }: {
   namespace: string;
+  fromTournamentId?: string;
 }) => {
   const query = useMemo(
     () => `
     SELECT COUNT(*) as count 
     FROM '${namespace}-Tournament' m
+    ${fromTournamentId ? `WHERE m.id > '${fromTournamentId}'` : ""}
   `,
-    [namespace]
+    [namespace, fromTournamentId]
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error };
@@ -51,17 +54,20 @@ export const useGetTournamentsCount = ({
 export const useGetUpcomingTournamentsCount = ({
   namespace,
   currentTime,
+  fromTournamentId,
 }: {
   namespace: string;
   currentTime: string;
+  fromTournamentId?: string;
 }) => {
   const query = useMemo(
     () => `
     SELECT COUNT(*) as count 
     FROM '${namespace}-Tournament' m
     WHERE m.'schedule.game.start' > '${currentTime}'
+    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
   `,
-    [namespace, currentTime]
+    [namespace, currentTime, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -70,17 +76,20 @@ export const useGetUpcomingTournamentsCount = ({
 export const useGetLiveTournamentsCount = ({
   namespace,
   currentTime,
+  fromTournamentId,
 }: {
   namespace: string;
   currentTime: string;
+  fromTournamentId?: string;
 }) => {
   const query = useMemo(
     () => `
     SELECT COUNT(*) as count 
     FROM '${namespace}-Tournament' m
     WHERE (m.'schedule.game.start' <= '${currentTime}' AND m.'schedule.game.end' > '${currentTime}')
+    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
   `,
-    [namespace, currentTime]
+    [namespace, currentTime, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -89,17 +98,20 @@ export const useGetLiveTournamentsCount = ({
 export const useGetEndedTournamentsCount = ({
   namespace,
   currentTime,
+  fromTournamentId,
 }: {
   namespace: string;
   currentTime: string;
+  fromTournamentId?: string;
 }) => {
   const query = useMemo(
     () => `
     SELECT COUNT(*) as count 
     FROM '${namespace}-Tournament' m
     WHERE m.'schedule.game.end' <= '${currentTime}'
+    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
   `,
-    [namespace, currentTime]
+    [namespace, currentTime, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -109,10 +121,12 @@ export const useGetMyTournamentsCount = ({
   namespace,
   address,
   gameAddresses,
+  fromTournamentId,
 }: {
   namespace: string;
   address: string;
   gameAddresses: string[];
+  fromTournamentId?: string;
 }) => {
   const query = useMemo(
     () => `
@@ -138,11 +152,12 @@ export const useGetMyTournamentsCount = ({
       JOIN '${namespace}-Tournament' t 
         ON rt.tournament_id = t.id
           AND rt.parsed_game_address = t.'game_config.address'
+          ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
     )
     SELECT COUNT(DISTINCT tournament_id) as count
     FROM filtered_tournaments
   `,
-    [namespace, address, gameAddresses]
+    [namespace, address, gameAddresses, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -151,22 +166,38 @@ export const useGetMyTournamentsCount = ({
 const getTournamentWhereClause = (
   status: string,
   currentTime: string,
-  tournamentIds?: string[]
+  tournamentIds?: string[],
+  fromTournamentId?: string
 ) => {
+  let whereClause = "";
+
   switch (status) {
     case "upcoming":
-      return `WHERE t.'schedule.game.start' > '${currentTime}'`;
+      whereClause = `WHERE t.'schedule.game.start' > '${currentTime}'`;
+      break;
     case "live":
-      return `WHERE t.'schedule.game.start' <= '${currentTime}' AND t.'schedule.game.end' > '${currentTime}'`;
+      whereClause = `WHERE t.'schedule.game.start' <= '${currentTime}' AND t.'schedule.game.end' > '${currentTime}'`;
+      break;
     case "ended":
-      return `WHERE t.'schedule.game.end' <= '${currentTime}'`;
+      whereClause = `WHERE t.'schedule.game.end' <= '${currentTime}'`;
+      break;
     case "all":
-      return "";
+      whereClause = "WHERE 1=1"; // Use a true condition to make it easier to add more conditions
+      break;
     case "tournaments":
-      return `WHERE t.id IN (${tournamentIds
+      whereClause = `WHERE t.id IN (${tournamentIds
         ?.map((id) => `'${id}'`)
         .join(",")})`;
+      break;
   }
+
+  // Add fromTournamentId filter if provided
+  if (fromTournamentId && status !== "tournaments") {
+    // If we already have a WHERE clause, use AND
+    whereClause += ` AND t.id > '${fromTournamentId}'`;
+  }
+
+  return whereClause;
 };
 
 const getSortClause = (sort: string) => {
@@ -193,6 +224,7 @@ export const useGetTournaments = ({
   gameFilters,
   status,
   tournamentIds,
+  fromTournamentId,
   sortBy = "start_time",
   offset = 0,
   limit = 5,
@@ -202,6 +234,7 @@ export const useGetTournaments = ({
   gameFilters: string[];
   status: string;
   tournamentIds?: string[];
+  fromTournamentId?: string;
   currentTime?: string;
   sortBy?: string;
   offset?: number;
@@ -248,7 +281,12 @@ export const useGetTournaments = ({
     FROM '${namespace}-Tournament' as t
     LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
     LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
-    ${getTournamentWhereClause(status, currentTime ?? "", tournamentIds)}
+    ${getTournamentWhereClause(
+      status,
+      currentTime ?? "",
+      tournamentIds,
+      fromTournamentId
+    )}
         ${
           gameFilters.length > 0
             ? `AND t.'game_config.address' IN (${gameFilters
@@ -272,6 +310,7 @@ export const useGetTournaments = ({
       limit,
       active,
       tournamentIdsKey,
+      fromTournamentId,
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
@@ -283,6 +322,7 @@ export const useGetMyTournaments = ({
   address,
   gameAddresses,
   gameFilters,
+  fromTournamentId,
   active = false,
   sortBy = "start_time",
   offset = 0,
@@ -292,6 +332,7 @@ export const useGetMyTournaments = ({
   address: string | null;
   gameAddresses: string[];
   gameFilters: string[];
+  fromTournamentId?: string;
   active?: boolean;
   sortBy?: string;
   offset?: number;
@@ -356,9 +397,11 @@ export const useGetMyTournaments = ({
         AND rt.parsed_game_address = t.'game_config.address'
     LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
     LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
+    WHERE 1=1
+    ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
     ${
       gameFilters.length > 0
-        ? `WHERE t.'game_config.address' IN (${gameFilters
+        ? `AND t.'game_config.address' IN (${gameFilters
             .map((address) => `'${address}'`)
             .join(",")})`
         : ""
@@ -374,6 +417,7 @@ export const useGetMyTournaments = ({
       address,
       gameAddressesKey,
       gameFiltersKey,
+      fromTournamentId,
       sortBy,
       offset,
       limit,

@@ -47,7 +47,7 @@ const TournamentConfirmation = ({
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
   const { nameSpace, selectedChainConfig } = useDojo();
-  const { gameData } = useUIStore();
+  const { gameData, getGameImage } = useUIStore();
   const { gameNamespace, gameSettingsModel } = useGameEndpoints(formData.game);
   useGetGameSettingsQuery(gameNamespace ?? "", gameSettingsModel ?? "");
   const settingsDetails = useDojoStore((state) =>
@@ -170,7 +170,7 @@ const TournamentConfirmation = ({
                 </span>
                 <span className="text-muted-foreground">Game:</span>
                 <div className="flex flex-row items-center gap-2">
-                  <TokenGameIcon game={formData.game} />
+                  <TokenGameIcon image={getGameImage(formData.game)} />
                   <span>
                     {feltToString(
                       gameData.find(
@@ -296,7 +296,9 @@ const TournamentConfirmation = ({
                                   <td className="px-4 capitalize">
                                     <div className="flex flex-row items-center gap-2">
                                       <TokenGameIcon
-                                        game={tournament.game_config.address}
+                                        image={getGameImage(
+                                          tournament.game_config.address
+                                        )}
                                       />
                                       {feltToString(
                                         gameData.find(

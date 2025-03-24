@@ -43,7 +43,7 @@ export const TournamentCard = ({
   const { nameSpace } = useDojo();
   const navigate = useNavigate();
   const state = useDojoStore((state) => state);
-  const { gameData } = useUIStore();
+  const { gameData, getGameImage } = useUIStore();
   const [allPricesFound, setAllPricesFound] = useState(false);
 
   // token entities
@@ -112,6 +112,7 @@ export const TournamentCard = ({
   const gameName = gameData.find(
     (game) => game.contract_address === gameAddress
   )?.name;
+  const gameImage = getGameImage(gameAddress);
 
   const hasEntryFee = tournament?.entry_fee.isSome();
 
@@ -186,7 +187,7 @@ export const TournamentCard = ({
     >
       <div className="flex flex-col justify-between h-full">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-betweentext-lg 2xl:text-xl h-6">
+          <div className="flex flex-row justify-between text-lg 2xl:text-xl h-6">
             <p className="truncate w-2/3 font-brand">
               {feltToString(tournament?.metadata?.name!)}
             </p>
@@ -289,7 +290,7 @@ export const TournamentCard = ({
             <Tooltip delayDuration={50}>
               <TooltipTrigger asChild>
                 <div className="flex items-center justify-center">
-                  <TokenGameIcon key={index} game={gameAddress} size={"md"} />
+                  <TokenGameIcon key={index} image={gameImage} size={"md"} />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" align="center" sideOffset={-10}>

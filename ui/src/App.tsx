@@ -13,44 +13,30 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useGetTokensQuery } from "@/dojo/hooks/useSdkQueries";
-import {
-  useGetGameNamespaces,
-  useGetGamesMetadata,
-} from "@/dojo/hooks/useSqlQueries";
 import { Toaster } from "@/components/ui/toaster";
-import useUIStore from "@/hooks/useUIStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/containers/NotFound";
 import { useNetwork } from "@starknet-react/core";
 import { useDojo } from "@/context/dojo";
+import useUIStore from "./hooks/useUIStore";
+import {
+  useGetGameNamespaces,
+  useGetGamesMetadata,
+} from "./dojo/hooks/useSqlQueries";
+import { processGameMetadataFromSql } from "./lib/utils/formatting";
+import { getGames } from "./assets/games";
 
 function App() {
   const { nameSpace } = useDojo();
-  const { setGameData } = useUIStore();
   const { chain } = useNetwork();
   const navigate = useNavigate();
   const location = useLocation();
   const previousChainRef = useRef<string | undefined>(chain?.id.toString());
+  const { setGameData, setGameDataLoading } = useUIStore();
 
   useGetTokensQuery(nameSpace);
-
-  const { data: gameNamespaces } = useGetGameNamespaces();
-
-  const formattedGameNamespaces = gameNamespaces?.map(
-    (namespace) => namespace.namespace
-  );
-
-  const { data: gamesMetadata } = useGetGamesMetadata({
-    gameNamespaces: formattedGameNamespaces || [],
-  });
-
-  useEffect(() => {
-    if (gamesMetadata) {
-      setGameData(gamesMetadata);
-    }
-  }, [gamesMetadata]);
 
   useEffect(() => {
     if (chain) {
@@ -71,6 +57,96 @@ function App() {
       previousChainRef.current = currentChainId;
     }
   }, [chain, navigate, location.pathname]);
+
+  const { data: gameNamespaces } = useGetGameNamespaces();
+
+  const formattedGameNamespaces = gameNamespaces?.map(
+    (namespace) => namespace.namespace
+  );
+
+  const { data: gamesMetadata, loading: isGamesMetadataLoading } =
+    useGetGamesMetadata({
+      gameNamespaces: formattedGameNamespaces || [],
+    });
+
+  const formattedGamesMetadata = useMemo(
+    () => gamesMetadata?.map((game) => processGameMetadataFromSql(game)),
+    [gamesMetadata]
+  );
+
+  const whitelistedGames = getGames();
+
+  // Create a unified array of all games with flags
+  const allGames = useMemo(() => {
+    if (!formattedGamesMetadata) return [];
+
+    // Create maps for faster lookups
+    const metadataMap = new Map();
+    formattedGamesMetadata.forEach((game) => {
+      metadataMap.set(game.contract_address, game);
+    });
+
+    const whitelistedMap = new Map();
+    whitelistedGames.forEach((game) => {
+      whitelistedMap.set(game.contract_address, game);
+    });
+
+    // Collect all unique contract addresses
+    const allAddresses = new Set([
+      ...metadataMap.keys(),
+      ...whitelistedMap.keys(),
+    ]);
+
+    // Create the unified array
+    return Array.from(allAddresses).map((address) => {
+      const metadata = metadataMap.get(address);
+      const whitelisted = whitelistedMap.get(address);
+
+      return {
+        ...whitelisted,
+        ...metadata,
+        // TODO: Remove this once we have a proper image for the dark shuffle game
+        image: metadata?.image
+          ? metadata?.contract_address ===
+            "0x0320f977f47f0885e376b781d9e244d9f59f10154ce844ae1815c919f0374726"
+            ? "https://darkshuffle.io/favicon.svg"
+            : metadata?.image
+          : whitelisted?.image,
+        // Add flags
+        isWhitelisted: !!whitelisted,
+        existsInMetadata: !!metadata,
+      };
+    });
+  }, [formattedGamesMetadata, whitelistedGames]);
+
+  // Store the stringified version of allGames to detect actual changes
+  const allGamesStringified = useMemo(() => {
+    try {
+      return JSON.stringify(allGames);
+    } catch (e) {
+      return "";
+    }
+  }, [allGames]);
+
+  // Store the previous stringified version to compare
+  const prevAllGamesStringifiedRef = useRef("");
+
+  // // Use a separate effect for loading state
+  useEffect(() => {
+    setGameDataLoading(isGamesMetadataLoading);
+  }, [isGamesMetadataLoading, setGameDataLoading]);
+
+  // Use a separate effect for setting game data
+  useEffect(() => {
+    // Only update if allGames has changed (by comparing stringified versions)
+    if (
+      allGames.length > 0 &&
+      allGamesStringified !== prevAllGamesStringifiedRef.current
+    ) {
+      prevAllGamesStringifiedRef.current = allGamesStringified;
+      setGameData(allGames);
+    }
+  }, [allGamesStringified, allGames, setGameData]);
 
   return (
     <TooltipProvider>

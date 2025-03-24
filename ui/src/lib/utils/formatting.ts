@@ -15,6 +15,7 @@ import {
   PrizeClaim,
   Leaderboard,
   QualificationProofEnum,
+  GameMetadata,
 } from "@/generated/models.gen";
 import { PositionPrizes, TokenPrizes } from "@/lib/types";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
@@ -730,4 +731,17 @@ export const processQualificationProof = (
 
   // Default return for all other cases
   return new CairoOption(CairoOptionVariant.None);
+};
+
+export const processGameMetadataFromSql = (gameMetadata: any): GameMetadata => {
+  return {
+    contract_address: gameMetadata.contract_address,
+    creator_address: gameMetadata.creator_address,
+    name: gameMetadata.name,
+    description: gameMetadata.description,
+    developer: gameMetadata.developer,
+    publisher: gameMetadata.publisher,
+    genre: gameMetadata.genre,
+    image: gameMetadata.image,
+  };
 };

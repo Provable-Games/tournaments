@@ -33,8 +33,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import useUIStore from "@/hooks/useUIStore";
-import { getGames } from "@/assets/games";
-import TokenGameIcon from "@/components/icons/TokenGameIcon";
+import { GameButton } from "@/components/overview/gameFilters/GameButton";
 
 const Header = () => {
   const { account } = useAccount();
@@ -49,7 +48,6 @@ const Header = () => {
   const { selectedChainConfig } = useDojo();
   const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
   const isHomeScreen = location.pathname === "/";
-  const games = getGames();
   const isLocal = selectedChainConfig.chainId === ChainId.KATANA_LOCAL;
 
   return (
@@ -71,59 +69,30 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="left" className="w-[250px] sm:w-[300px]">
               <div className="flex flex-col gap-4 py-4">
-                <SheetClose asChild>
-                  <div
-                    className="text-3xl font-brand hover:cursor-pointer hover:text-brand-muted transition-colors duration-200"
-                    onClick={() => navigate("/")}
-                  >
-                    Games
-                  </div>
-                </SheetClose>
-                {Object.entries(games).map(([key, game]) => {
-                  const isDisabled = !gameData.find(
-                    (game) => game.contract_address === key
-                  );
+                <div
+                  className="text-3xl font-brand hover:cursor-pointer hover:text-brand-muted transition-colors duration-200"
+                  onClick={() => navigate("/")}
+                >
+                  Games
+                </div>
+
+                {gameData.map((game) => {
+                  const isDisabled = !game.existsInMetadata;
 
                   // Create the button element
                   const buttonElement = (
-                    <div className="relative w-full">
-                      <Button
-                        size={"xl"}
-                        variant="outline"
-                        className="justify-start w-full"
-                        onClick={() => {
-                          if (gameFilters.includes(key)) {
-                            // Remove the key if it exists
-                            setGameFilters(
-                              gameFilters.filter((filter) => filter !== key)
-                            );
-                          } else {
-                            // Add the key if it doesn't exist
-                            setGameFilters([...gameFilters, key]);
-                          }
-                        }}
-                        disabled={isDisabled}
-                      >
-                        <span className="flex flex-row items-center gap-2 font-brand">
-                          <TokenGameIcon game={key} />
-                          {game.name}
-                        </span>
-                      </Button>
-                      {isDisabled && (
-                        <div className="absolute top-1 right-2 flex items-center justify-center rounded-md">
-                          <span className="text-xs font-brand uppercase">
-                            Coming Soon
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <GameButton
+                      game={game}
+                      gameFilters={gameFilters}
+                      setGameFilters={setGameFilters}
+                    />
                   );
 
                   // Only wrap with SheetClose if the button is not disabled
                   return isDisabled ? (
-                    <div key={key}>{buttonElement}</div>
+                    <div key={game.contract_address}>{buttonElement}</div>
                   ) : (
-                    <SheetClose asChild key={key}>
+                    <SheetClose asChild key={game.contract_address}>
                       {buttonElement}
                     </SheetClose>
                   );

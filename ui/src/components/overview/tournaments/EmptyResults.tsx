@@ -1,7 +1,7 @@
 import { TROPHY, TROPHY_LINE } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
-import { getGames } from "@/assets/games";
 import { useNavigate } from "react-router-dom";
+import useUIStore from "@/hooks/useUIStore";
 
 interface EmptyResultsProps {
   gameFilters: string[];
@@ -9,7 +9,7 @@ interface EmptyResultsProps {
 
 const EmptyResults = ({ gameFilters }: EmptyResultsProps) => {
   const navigate = useNavigate();
-  const games = getGames();
+  const { getGameName } = useUIStore();
   return (
     <div className="col-span-3 flex flex-col items-center justify-center gap-6 py-20">
       <div className="flex flex-col items-center gap-4">
@@ -22,7 +22,7 @@ const EmptyResults = ({ gameFilters }: EmptyResultsProps) => {
         <p className="text-brand-muted text-center max-w-md">
           {gameFilters.length > 0
             ? `No tournaments currently available for ${gameFilters
-                .map((f) => games[f].name)
+                .map((f) => getGameName(f))
                 .join(", ")}.`
             : "No tournaments currently available."}
         </p>

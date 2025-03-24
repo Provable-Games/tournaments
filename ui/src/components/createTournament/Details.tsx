@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StepProps } from "@/containers/CreateTournament";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
-import { getGames } from "@/assets/games";
 import { Slider } from "@/components/ui/slider";
 import { INFO } from "@/components/Icons";
 import {
@@ -29,6 +28,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { feltToString } from "@/lib/utils";
 
 const Details = ({ form }: StepProps) => {
   const { gameData } = useUIStore();
@@ -44,8 +44,6 @@ const Details = ({ form }: StepProps) => {
 
     return () => subscription.unsubscribe();
   }, [form]);
-
-  const games = getGames();
 
   return (
     <>
@@ -73,29 +71,30 @@ const Details = ({ form }: StepProps) => {
                   </div>
                   <FormControl>
                     <div className="flex flex-row gap-5 overflow-x-auto pb-2">
-                      {Object.entries(games).map(([key, game]) => (
+                      {gameData.map((game) => (
                         <Card
-                          key={key}
-                          variant={field.value === key ? "default" : "outline"}
-                          className={`flex flex-col justify-between sm:h-[100px] 3xl:h-[120px] w-[100px] 3xl:w-[120px] flex-shrink-0 p-2 hover:cursor-pointer ${
-                            field.value === key && "bg-brand-muted"
-                          }`}
-                          onClick={() => field.onChange(key)}
-                          disabled={
-                            !gameData.find(
-                              (game) => game.contract_address === key
-                            )
+                          key={game.contract_address}
+                          variant={
+                            field.value === game.contract_address
+                              ? "default"
+                              : "outline"
                           }
+                          className={`flex flex-col justify-between sm:h-[100px] 3xl:h-[120px] w-[100px] 3xl:w-[120px] flex-shrink-0 p-2 hover:cursor-pointer ${
+                            field.value === game.contract_address &&
+                            "bg-brand-muted"
+                          }`}
+                          onClick={() => field.onChange(game.contract_address)}
+                          disabled={!game.existsInMetadata}
                         >
-                          <TokenGameIcon size="md" game={key} />
+                          <TokenGameIcon size="md" image={game.image} />
                           <Tooltip delayDuration={50}>
                             <TooltipTrigger asChild>
                               <p className="font-brand text-center truncate w-full 3xl:text-lg">
-                                {game.name}
+                                {feltToString(game.name)}
                               </p>
                             </TooltipTrigger>
                             <TooltipContent className="border-brand bg-black text-neutral 3xl:text-lg">
-                              {game.name}
+                              {feltToString(game.name)}
                             </TooltipContent>
                           </Tooltip>
                         </Card>

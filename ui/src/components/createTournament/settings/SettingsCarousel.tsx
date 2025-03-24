@@ -5,7 +5,7 @@ import { WEDGE_LEFT, WEDGE_RIGHT } from "@/components/Icons";
 import SettingsTable from "@/components/createTournament/settings/SettingsTable";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { Settings, SettingsDetails } from "@/generated/models.gen";
-
+import useUIStore from "@/hooks/useUIStore";
 interface SettingsCarouselProps {
   game: string;
   settings: Record<
@@ -25,6 +25,7 @@ const SettingsCarousel = ({
   value,
   onChange,
 }: SettingsCarouselProps) => {
+  const { getGameImage } = useUIStore();
   const [currentIndex, setCurrentIndex] = React.useState(() => {
     if (!Object.values(settings)?.length) return 0;
     return Math.max(
@@ -37,7 +38,7 @@ const SettingsCarousel = ({
     return (
       <div className="space-y-4">
         <div className="flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
-          <TokenGameIcon size="lg" game={game} />
+          <TokenGameIcon size="lg" image={getGameImage(game)} />
           <div className="text-sm">No settings available for this game yet</div>
           <div className="text-xs">Default configuration will be used</div>
         </div>
@@ -51,7 +52,7 @@ const SettingsCarousel = ({
     <div className="space-y-4">
       <div className="relative px-6 min-h-[200px]">
         <div className="flex flex-col items-center w-full">
-          <TokenGameIcon size="lg" game={game} />
+          <TokenGameIcon size="lg" image={getGameImage(game)} />
           <h3 className="text-2xl font-brand">
             {feltToString(currentSetting.name)}
           </h3>

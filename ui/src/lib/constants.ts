@@ -32,3 +32,5 @@ export const EKUBO_PRICE_CONTRACT_ADDRESS =
 
 export const USDC_ADDRESS =
   "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+
+export const STARTING_TOURNAMENT_ID = 9;
