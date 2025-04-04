@@ -89,9 +89,10 @@ pub enum TokenType {
 #[derive(Copy, Drop, Serde, IntrospectPacked)]
 pub struct Registration {
     #[key]
-    pub tournament_id: u64,
+    pub game_address: ContractAddress,
     #[key]
     pub game_token_id: u64,
+    pub tournament_id: u64,
     pub entry_number: u32,
     pub has_submitted: bool,
 }

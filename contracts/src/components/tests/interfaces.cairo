@@ -145,7 +145,9 @@ pub trait ITournamentMock<TState> {
     // ITournament
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn get_registration(self: @TState, tournament_id: u64, token_id: u64) -> Registration;
+    fn get_registration(
+        self: @TState, game_address: ContractAddress, token_id: u64,
+    ) -> Registration;
     fn get_prize(self: @TState, prize_id: u64) -> Prize;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u64;
     fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;

@@ -40,13 +40,18 @@ trait ITournament<TState> {
     ) -> u64;
     fn total_tournaments(self: @TState) -> u64;
     fn tournament(self: @TState, tournament_id: u64) -> TournamentModel;
-    fn get_registration(self: @TState, tournament_id: u64, token_id: u64) -> Registration;
+    fn get_registration(
+        self: @TState, game_address: ContractAddress, token_id: u64,
+    ) -> Registration;
     fn get_prize(self: @TState, prize_id: u64) -> Prize;
     fn tournament_entries(self: @TState, tournament_id: u64) -> u32;
     fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
     fn register_token(ref self: TState, address: ContractAddress, token_type: TokenType);
     fn get_leaderboard(self: @TState, tournament_id: u64) -> Array<u64>;
     fn current_phase(self: @TState, tournament_id: u64) -> Phase;
+    fn get_tournament_id_for_token_id(
+        self: @TState, game_address: ContractAddress, token_id: u64,
+    ) -> u64;
 }
 
 ///
@@ -123,11 +128,11 @@ pub mod tournament_component {
             store.get_tournament(tournament_id)
         }
         fn get_registration(
-            self: @ComponentState<TContractState>, tournament_id: u64, token_id: u64,
+            self: @ComponentState<TContractState>, game_address: ContractAddress, token_id: u64,
         ) -> Registration {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            store.get_registration(tournament_id, token_id)
+            store.get_registration(game_address, token_id)
         }
         fn tournament_entries(self: @ComponentState<TContractState>, tournament_id: u64) -> u32 {
             let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
@@ -176,6 +181,14 @@ pub mod tournament_component {
             let store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
             tournament.schedule.current_phase(get_block_timestamp())
+        }
+
+        fn get_tournament_id_for_token_id(
+            self: @ComponentState<TContractState>, game_address: ContractAddress, token_id: u64,
+        ) -> u64 {
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.get_registration(game_address, token_id).tournament_id
         }
 
         fn get_prize(self: @ComponentState<TContractState>, prize_id: u64) -> Prize {
@@ -290,7 +303,11 @@ pub mod tournament_component {
             store
                 .set_registration(
                     @Registration {
-                        game_token_id, tournament_id, entry_number, has_submitted: false,
+                        game_token_id,
+                        game_address: tournament.game_config.address,
+                        tournament_id,
+                        entry_number,
+                        has_submitted: false,
                     },
                 );
 
@@ -328,7 +345,7 @@ pub mod tournament_component {
             let tournament = store.get_tournament(tournament_id);
 
             // get registration details for provided game token
-            let registration = store.get_registration(tournament_id, token_id);
+            let registration = store.get_registration(tournament.game_config.address, token_id);
 
             // get current leaderboard
             let mut leaderboard = store.get_leaderboard(tournament_id);
@@ -1038,7 +1055,7 @@ pub mod tournament_component {
                 let tournament = store.get_tournament(tournament_id);
                 let game_address = tournament.game_config.address;
                 let leaderboard = store.get_leaderboard(tournament_id);
-                let registration = store.get_registration(tournament.id, token_id);
+                let registration = store.get_registration(game_address, token_id);
                 let owner = self._get_owner(game_address, token_id.into());
 
                 if owner == get_caller_address()
@@ -1568,16 +1585,10 @@ pub mod tournament_component {
             tournament_id: u64,
             token_id: u64,
         ) {
-            let registration = store.get_registration(tournament_id, token_id);
-            store
-                .set_registration(
-                    @Registration {
-                        tournament_id,
-                        game_token_id: token_id,
-                        entry_number: registration.entry_number,
-                        has_submitted: true,
-                    },
-                );
+            let game_address = store.get_tournament(tournament_id).game_config.address;
+            let mut registration = store.get_registration(game_address, token_id);
+            registration.has_submitted = true;
+            store.set_registration(@registration);
         }
 
         fn _process_entry_requirement(

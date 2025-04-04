@@ -55,8 +55,8 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_registration(self: Store, tournament_id: u64, token_id: u64) -> Registration {
-        (self.world.read_model((tournament_id, token_id)))
+    fn get_registration(self: Store, game_address: ContractAddress, token_id: u64) -> Registration {
+        (self.world.read_model((game_address, token_id)))
     }
 
     #[inline(always)]

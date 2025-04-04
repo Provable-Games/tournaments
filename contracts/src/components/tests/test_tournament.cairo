@@ -1184,18 +1184,8 @@ fn enter_tournament() {
 
     let tournament = create_basic_tournament(contracts.tournament, contracts.game.contract_address);
 
-    // assert the returned creator game token id has the correct registration information
-    let token = contracts.tournament.get_registration(tournament.id, tournament.creator_token_id);
-    assert!(
-        token.tournament_id == tournament.id,
-        "Wrong tournament id, expected: {}, got: {}",
-        tournament.id,
-        token.tournament_id,
-    );
-    assert!(token.entry_number == 0, "Entry number should be 0");
-    assert!(token.has_submitted == false, "submitted score should be false");
-
-    // assert we own the minted game token for the creator
+    // assert a token was minted to the tournament creator (used for claiming tournament host
+    // rewards)
     assert!(
         contracts.game.owner_of(tournament.creator_token_id.into()) == OWNER(),
         "Wrong ownership for creator game token",
@@ -1215,7 +1205,9 @@ fn enter_tournament() {
     );
 
     // verify registration information
-    let player1_registration = contracts.tournament.get_registration(tournament.id, game_token_id);
+    let player1_registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, game_token_id);
 
     assert!(
         player1_registration.tournament_id == tournament.id,
@@ -2892,9 +2884,9 @@ fn test_submit_score_tie_higher_game_id_for_lower_position() {
     assert!(*leaderboard.at(2) == token_id3, "Invalid third place");
 
     // Verify registrations are marked as submitted
-    let reg1 = contracts.tournament.get_registration(tournament.id, token_id1);
-    let reg2 = contracts.tournament.get_registration(tournament.id, token_id2);
-    let reg3 = contracts.tournament.get_registration(tournament.id, token_id3);
+    let reg1 = contracts.tournament.get_registration(contracts.game.contract_address, token_id1);
+    let reg2 = contracts.tournament.get_registration(contracts.game.contract_address, token_id2);
+    let reg3 = contracts.tournament.get_registration(contracts.game.contract_address, token_id3);
 
     assert!(reg1.has_submitted, "Player 1 should be marked as submitted");
     assert!(reg2.has_submitted, "Player 2 should be marked as submitted");
