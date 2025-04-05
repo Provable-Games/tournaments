@@ -168,7 +168,7 @@ pub fn setup() -> TestContracts {
 
     // initialize contracts
     tournament.initializer(false, false, erc20.contract_address, erc721.contract_address);
-    game.initializer();
+    game.initializer(DEFAULT_NS());
 
     // mint tokens
     utils::impersonate(OWNER());

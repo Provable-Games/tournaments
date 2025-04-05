@@ -258,7 +258,7 @@ pub trait IGameTokenMock<TState> {
         ref self: TState, settings_id: u32, name: felt252, description: ByteArray, exists: bool,
     );
 
-    fn initializer(ref self: TState);
+    fn initializer(ref self: TState, namespace: ByteArray);
 }
 
 #[generate_trait]

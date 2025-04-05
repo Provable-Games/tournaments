@@ -16,7 +16,7 @@ pub mod components {
         pub mod tournament;
     }
     pub mod tournament;
-    mod tests {
+    pub mod tests {
         pub mod libs {
             pub mod store;
         }
