@@ -1595,10 +1595,14 @@ pub mod tournament_component {
                         store, tournament_id, entry_requirement, player_address, qualifier,
                     );
 
-                self
-                    ._update_qualification_entries(
-                        ref store, tournament_id, qualifier, entry_requirement.entry_limit,
-                    );
+                // if entry limit was specified
+                if entry_requirement.entry_limit != 0 {
+                    // check and update limit requirements
+                    self
+                        ._update_qualification_entries(
+                            ref store, tournament_id, qualifier, entry_requirement.entry_limit,
+                        );
+                }
             } else {
                 panic!(
                     "Tournament: Tournament {} has an entry requirement but no qualification was provided",
