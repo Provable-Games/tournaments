@@ -61,9 +61,7 @@ pub trait ITournament<TState> {
 pub mod Budokan {
     use starknet::{contract_address_const};
     use tournaments::components::tournament::tournament_component;
-    use tournaments::components::constants::{
-        MAINNET_CHAIN_ID,
-    };
+    use tournaments::components::constants::{MAINNET_CHAIN_ID};
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
     #[abi(embed_v0)]
