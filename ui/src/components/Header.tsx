@@ -40,6 +40,7 @@ import { GameButton } from "@/components/overview/gameFilters/GameButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ALERT } from "@/components/Icons";
 import { useState, useEffect } from "react";
+import WalletsDialog from "@/components/dialogs/Wallets";
 import logoImage from "@/assets/images/logo.svg";
 
 const Header = () => {
@@ -60,6 +61,8 @@ const Header = () => {
 
   // State to control the visibility of the warning banner
   const [showWarning, setShowWarning] = useState(true);
+
+  const [showWallets, setShowWallets] = useState(false);
 
   // Optional: Hide the warning after a certain time or store in localStorage to not show again
   useEffect(() => {
@@ -103,6 +106,8 @@ const Header = () => {
           </div>
         </Alert>
       )}
+
+      <WalletsDialog open={showWallets} onOpenChange={setShowWallets} />
 
       <div className="flex flex-row items-center justify-between px-5 sm:py-5 sm:px-10 h-[60px] sm:h-[80px]">
         {/* Hamburger menu for small screens */}
@@ -275,7 +280,7 @@ const Header = () => {
           <Button
             onClick={() => {
               if (!account) {
-                connect();
+                setShowWallets(true);
               }
             }}
             className="px-2"
