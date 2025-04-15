@@ -1,0 +1,1 @@
+// Enter a token gated tournament

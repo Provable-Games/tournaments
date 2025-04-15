@@ -4,6 +4,7 @@ rpc = "https://api.cartridge.gg/x/starknet/mainnet"
 
 [indexing]
 index_pending = true
+transactions = true
 world_block = 1237265 # dark shuffle deployment block
 contracts = [
   "ERC721:0x0320f977f47f0885e376b781d9e244d9f59f10154ce844ae1815c919f0374726", # dark shuffle
@@ -11,3 +12,4 @@ contracts = [
 
 [events]
 raw = true
+historical = ["ds_v1_2_0-TrophyCreation", "ds_v1_2_0-TrophyProgression"]

@@ -8,12 +8,17 @@ edition = "2024_07"
 
 [[target.starknet-contract]]
 sierra = true
-build-external-contracts = ["dojo::world::world_contract::world"]
+build-external-contracts = [
+    "dojo::world::world_contract::world",
+    "achievement::events::index::e_TrophyCreation",
+    "achievement::events::index::e_TrophyProgression",
+]
 
 [dependencies]
 openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.20.0"}
 openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.20.0"}
 dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.3.0" }
+achievement = { git = "https://github.com/cartridge-gg/arcade", tag = "v1.2.1" }
 starknet = "2.9.2"
 
 [dev-dependencies]
