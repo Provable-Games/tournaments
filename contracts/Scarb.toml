@@ -15,11 +15,11 @@ build-external-contracts = [
 ]
 
 [dependencies]
-openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.20.0"}
-openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.20.0"}
-dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.3.0" }
+openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
+openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
+dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.4.0" }
 achievement = { git = "https://github.com/cartridge-gg/arcade", tag = "v1.4.0" }
-starknet = "2.9.2"
+starknet = "2.9.4"
 
 [dev-dependencies]
 dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.4.0" }
