@@ -26,7 +26,7 @@ import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 import { addAddressPadding } from "starknet";
 import { Tournament } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
-
+import { FormToken } from "@/lib/types";
 export type TournamentFormData = z.infer<typeof formSchema>;
 
 export interface StepProps {
@@ -60,7 +60,7 @@ const formSchema = z.object({
     .object({
       entry_limit: z.number().min(1).max(100).optional(),
       type: z.enum(["token", "tournament", "addresses"]).optional(),
-      token: z.string().optional(),
+      token: z.custom<FormToken>().optional(),
       tournament: z
         .object({
           tournaments: z.array(z.custom<Tournament>()),
@@ -72,7 +72,7 @@ const formSchema = z.object({
     .optional(),
   entryFees: z
     .object({
-      tokenAddress: z.string().optional(),
+      token: z.custom<FormToken>().optional(),
       amount: z.number().min(0).optional(),
       value: z.number().min(0).optional(),
       creatorFeePercentage: z.number().min(0).max(100).optional(),
@@ -92,13 +92,13 @@ const formSchema = z.object({
       z.discriminatedUnion("type", [
         z.object({
           type: z.literal("ERC20"),
-          tokenAddress: z.string(),
+          token: z.custom<FormToken>(),
           amount: z.number().min(0),
           position: z.number().min(1),
         }),
         z.object({
           type: z.literal("ERC721"),
-          tokenAddress: z.string(),
+          token: z.custom<FormToken>(),
           tokenId: z.number().min(1),
           position: z.number().min(1),
         }),
@@ -339,7 +339,7 @@ const CreateTournament = () => {
         complete:
           getValue("enableEntryFees") === true
             ? !!(
-                getValue("entryFees.tokenAddress") &&
+                getValue("entryFees.token") &&
                 getValue("entryFees.amount") &&
                 getValue("entryFees.amount") > 0
               )
@@ -420,6 +420,8 @@ const CreateTournament = () => {
       console.error("Error creating tournament:", error);
     }
   };
+
+  console.log(form.getValues());
 
   return (
     <div className="flex flex-col gap-2 sm:gap-5 lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 h-full mx-auto">

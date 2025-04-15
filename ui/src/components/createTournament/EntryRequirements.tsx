@@ -24,7 +24,6 @@ import { displayAddress, feltToString } from "@/lib/utils";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { Search } from "lucide-react";
 import TokenDialog from "@/components/dialogs/Token";
-import { Token } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
 import {
   useGetTournaments,
@@ -58,7 +57,6 @@ const EntryRequirements = ({ form }: StepProps) => {
   const { namespace } = useDojo();
   const [newAddress, setNewAddress] = React.useState("");
   const [tournamentSearchQuery, setTournamentSearchQuery] = useState("");
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [gameFilters, setGameFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const { gameData, getGameImage } = useUIStore();
@@ -288,10 +286,9 @@ const EntryRequirements = ({ form }: StepProps) => {
                             <FormControl>
                               <div className="flex flex-row items-center gap-5">
                                 <TokenDialog
-                                  selectedToken={selectedToken}
+                                  selectedToken={field.value}
                                   onSelect={(token) => {
-                                    setSelectedToken(token);
-                                    field.onChange(token.address);
+                                    field.onChange(token);
                                   }}
                                   type="erc721"
                                 />

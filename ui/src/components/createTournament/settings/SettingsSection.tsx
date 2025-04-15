@@ -20,6 +20,7 @@ import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
 import { useGetGameSettings } from "@/dojo/hooks/useSqlQueries";
 import { feltToString } from "@/lib/utils";
 import { mergeGameSettings } from "@/lib/utils/formatting";
+import { useState } from "react";
 
 interface GameSettingsFieldProps {
   form: UseFormReturn<any>;
@@ -27,6 +28,7 @@ interface GameSettingsFieldProps {
 }
 
 const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
+  const [open, setOpen] = useState(false);
   const { gameNamespace, gameSettingsModel } = useGameEndpoints(
     form.watch("game")
   );
@@ -82,7 +84,7 @@ const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
                     : "No settings available"}
                 </p>
               </div>
-              <Dialog>
+              <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
@@ -101,6 +103,7 @@ const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
                       settings={mergedGameSettings}
                       value={field.value}
                       onChange={field.onChange}
+                      setOpen={setOpen}
                     />
                   )}
                 </DialogContent>

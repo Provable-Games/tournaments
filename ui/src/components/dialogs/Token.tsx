@@ -18,11 +18,14 @@ import { ChainId } from "@/dojo/setup/networks";
 import { QUESTION } from "@/components/Icons";
 import { sepoliaTokens } from "@/lib/sepoliaTokens";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
-import { bigintToHex } from "@/lib/utils";
+import { bigintToHex, indexAddress } from "@/lib/utils";
+import { useTokenUris } from "@/hooks/useTokenUris";
+import { FormToken } from "@/lib/types";
+import { mainnetNFTs } from "@/lib/nfts";
 
 interface TokenDialogProps {
-  selectedToken: Token | null;
-  onSelect: (token: Token) => void;
+  selectedToken: FormToken | undefined;
+  onSelect: (token: FormToken) => void;
   type?: "erc20" | "erc721";
 }
 
@@ -65,6 +68,32 @@ const TokenDialog = ({ selectedToken, onSelect, type }: TokenDialogProps) => {
     token.name.toLowerCase().includes(tokenSearchQuery.toLowerCase())
   );
 
+  const erc721Tokens = searchFilteredTokens.filter(
+    (token) => token.token_type.activeVariant() === "erc721"
+  );
+
+  const whitelistedNFTTokens = mainnetNFTs.filter((nft) =>
+    erc721Tokens.some(
+      (token) => indexAddress(nft.address) === indexAddress(token.address)
+    )
+  );
+
+  const tokenUris = useTokenUris(erc721Tokens.map((token) => token.address));
+
+  const getTokenImage = (token: Token) => {
+    if (token.token_type.activeVariant() === "erc20") {
+      return getTokenLogoUrl(selectedChainConfig?.chainId ?? "", token.address);
+    } else {
+      const whitelistedImage = whitelistedNFTTokens.find(
+        (nft) => indexAddress(nft.address) === indexAddress(token.address)
+      )?.image;
+      if (whitelistedImage) {
+        return whitelistedImage;
+      }
+      return tokenUris[token.address]?.image ?? null;
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -72,10 +101,7 @@ const TokenDialog = ({ selectedToken, onSelect, type }: TokenDialogProps) => {
           {selectedToken ? (
             <div className="flex items-center gap-2">
               <img
-                src={getTokenLogoUrl(
-                  selectedChainConfig?.chainId ?? "",
-                  selectedToken.address
-                )}
+                src={selectedToken.image ?? undefined}
                 className="w-6 h-6 rounded-full"
                 alt="Token logo"
               />
@@ -106,10 +132,7 @@ const TokenDialog = ({ selectedToken, onSelect, type }: TokenDialogProps) => {
         {searchFilteredTokens.length > 0 ? (
           <div className="flex-1 overflow-y-auto">
             {searchFilteredTokens.map((token, index) => {
-              const tokenLogo = getTokenLogoUrl(
-                selectedChainConfig?.chainId ?? "",
-                token.address
-              );
+              const tokenLogo = getTokenImage(token);
               const isHidden = getTokenHidden(
                 selectedChainConfig?.chainId ?? "",
                 token.address
@@ -122,7 +145,12 @@ const TokenDialog = ({ selectedToken, onSelect, type }: TokenDialogProps) => {
                         ? "bg-terminal-green/75 text-terminal-black"
                         : ""
                     } ${isHidden ? "hidden" : ""}`}
-                    onClick={() => onSelect(token)}
+                    onClick={() =>
+                      onSelect({
+                        ...token,
+                        image: getTokenImage(token) ?? undefined,
+                      })
+                    }
                   >
                     <div className="flex flex-row gap-5 items-center">
                       {tokenLogo ? (

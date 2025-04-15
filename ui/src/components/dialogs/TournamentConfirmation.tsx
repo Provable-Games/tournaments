@@ -22,9 +22,7 @@ import {
 } from "@/lib/utils";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
-import { Token } from "@/generated/models.gen";
 import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useMemo } from "react";
 import { useDojo } from "@/context/dojo";
 // import { calculateTotalValue } from "@/lib/utils/formatting";
@@ -46,7 +44,7 @@ const TournamentConfirmation = ({
 }: TournamentConfirmationProps) => {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
-  const { namespace, selectedChainConfig } = useDojo();
+  const { selectedChainConfig } = useDojo();
   const { gameData, getGameImage } = useUIStore();
   const { gameNamespace, gameSettingsModel } = useGameEndpoints(formData.game);
 
@@ -60,14 +58,6 @@ const TournamentConfirmation = ({
     settingsModel: "GameSettingsMetadata",
   });
 
-  const tokens = useDojoStore((state) =>
-    state.getEntitiesByModel(namespace, "Token")
-  ).map((token) => token.models[namespace].Token as Token);
-
-  const token = tokens.find(
-    (token) => token.address === formData?.gatingOptions?.token
-  );
-
   const mergedGameSettings = mergeGameSettings(settingsDetails, settings);
 
   const hasBonusPrizes =
@@ -79,11 +69,11 @@ const TournamentConfirmation = ({
         (prize) =>
           getTokenSymbol(
             selectedChainConfig.chainId ?? "",
-            prize.tokenAddress
+            prize.token.address
           ) ?? ""
       ) ?? []),
-      ...(formData.entryFees?.tokenAddress
-        ? [formData.entryFees.tokenAddress]
+      ...(formData.entryFees?.token?.address
+        ? [formData.entryFees.token.address]
         : []),
     ],
   });
@@ -97,16 +87,23 @@ const TournamentConfirmation = ({
     formData.type === "fixed" ? startTime - currentTime >= 900n : true;
   const isDurationValid = formData.duration >= 900n;
 
+  // Then convert the full prize distribution to JSON
+  const prizeDistributionString = useMemo(
+    () => JSON.stringify(formData.entryFees?.prizeDistribution || []),
+    [formData.entryFees?.prizeDistribution]
+  );
+
   const convertedEntryFees = useMemo(() => {
     return formData.entryFees?.prizeDistribution?.map((prize) => {
       return {
         type: "ERC20",
-        tokenAddress: formData.entryFees?.tokenAddress ?? "",
+        tokenAddress: formData.entryFees?.token?.address ?? "",
         position: prize.position,
         amount: (prize.percentage * (formData.entryFees?.amount ?? 0)) / 100,
+        value: (prize.percentage * (formData.entryFees?.value ?? 0)) / 100,
       };
     });
-  }, [formData.entryFees]);
+  }, [prizeDistributionString]);
 
   // const totalPrizesValueUSD = calculateTotalValue(
   //   groupedByTokensPrizes,
@@ -150,6 +147,14 @@ const TournamentConfirmation = ({
                       )?.name ?? ""
                     )}
                   </span>
+                  <a
+                    href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.game}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-6 text-neutral"
+                  >
+                    <EXTERNAL_LINK />
+                  </a>
                 </div>
                 <span className="text-muted-foreground">Settings:</span>
                 <span>
@@ -224,17 +229,26 @@ const TournamentConfirmation = ({
                         <span className="text-muted-foreground">
                           Token Details:
                         </span>
-                        <div className="flex flex-row gap-2">
+                        <div className="flex flex-row items-center gap-2">
                           <img
-                            src={getTokenLogoUrl(
-                              selectedChainConfig.chainId ?? "",
-                              token?.address ?? ""
-                            )}
-                            alt={token?.address ?? ""}
-                            className="w-4 h-4"
+                            src={formData.gatingOptions.token?.image ?? ""}
+                            alt={formData.gatingOptions.token?.address ?? ""}
+                            className="w-8 h-8 rounded-full"
                           />
-                          <span>{token?.symbol}</span>
-                          <span>{displayAddress(token?.address ?? "")}</span>
+                          <span>{formData.gatingOptions.token?.symbol}</span>
+                          <span className="text-neutral">
+                            {displayAddress(
+                              formData.gatingOptions.token?.address ?? ""
+                            )}
+                          </span>
+                          <a
+                            href={`${selectedChainConfig.blockExplorerUrl}/nft-contract/${formData.gatingOptions.token?.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-6 text-neutral"
+                          >
+                            <EXTERNAL_LINK />
+                          </a>
                         </div>
                       </>
                     ) : formData.gatingOptions.type === "tournament" ? (
@@ -337,6 +351,11 @@ const TournamentConfirmation = ({
                         <span>
                           {formatNumber(formData.entryFees.amount ?? 0)}
                         </span>
+                        <img
+                          src={formData.entryFees.token?.image ?? ""}
+                          alt={formData.entryFees.token?.address ?? ""}
+                          className="w-6 h-6 rounded-full"
+                        />
                         <span className="text-neutral">
                           ~${formData.entryFees.value?.toFixed(2) ?? "0.00"}
                         </span>
@@ -347,6 +366,18 @@ const TournamentConfirmation = ({
                     <span className="text-muted-foreground">Creator Fee:</span>
                     <div className="flex flex-row items-center gap-2">
                       <span>{formData.entryFees.creatorFeePercentage}%</span>
+                      <span>
+                        {formatNumber(
+                          ((formData.entryFees.creatorFeePercentage ?? 0) *
+                            (formData.entryFees.amount ?? 0)) /
+                            100
+                        )}
+                      </span>
+                      <img
+                        src={formData.entryFees.token?.image ?? ""}
+                        alt={formData.entryFees.token?.address ?? ""}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-neutral">
                         ~$
                         {(
@@ -359,6 +390,18 @@ const TournamentConfirmation = ({
                     <span className="text-muted-foreground">Game Fee:</span>
                     <div className="flex flex-row items-center gap-2">
                       <span>{formData.entryFees.gameFeePercentage}%</span>
+                      <span>
+                        {formatNumber(
+                          ((formData.entryFees.gameFeePercentage ?? 0) *
+                            (formData.entryFees.amount ?? 0)) /
+                            100
+                        )}
+                      </span>
+                      <img
+                        src={formData.entryFees.token?.image ?? ""}
+                        alt={formData.entryFees.token?.address ?? ""}
+                        className="w-6 h-6 rounded-full"
+                      />
                       <span className="text-neutral">
                         ~$
                         {(
@@ -389,24 +432,11 @@ const TournamentConfirmation = ({
                                 prize.tokenAddress
                               )}
                               alt={prize.tokenAddress}
-                              className="w-4 h-4"
+                              className="w-6 h-6 rounded-full"
                             />
                             <span className="text-neutral">
-                              {prices?.[
-                                getTokenSymbol(
-                                  selectedChainConfig.chainId ?? "",
-                                  prize.tokenAddress
-                                ) ?? ""
-                              ] &&
-                                `~$${(
-                                  prize.amount *
-                                  (prices?.[
-                                    getTokenSymbol(
-                                      selectedChainConfig.chainId ?? "",
-                                      prize.tokenAddress
-                                    ) ?? ""
-                                  ] ?? 0)
-                                ).toFixed(2)}`}
+                              ~$
+                              {(prize.value ?? 0)?.toFixed(2) ?? "0.00"}
                             </span>
                           </div>
                         </div>
@@ -444,18 +474,15 @@ const TournamentConfirmation = ({
                           <div className="flex flex-row gap-2 items-center">
                             <span>{formatNumber(prize.amount)}</span>
                             <img
-                              src={getTokenLogoUrl(
-                                selectedChainConfig.chainId ?? "",
-                                prize.tokenAddress
-                              )}
-                              alt={prize.tokenAddress}
-                              className="w-4 h-4"
+                              src={prize.token.image ?? ""}
+                              alt={prize.token.address}
+                              className="w-6 h-6 rounded-full"
                             />
                             <span className="text-neutral">
                               {prices?.[
                                 getTokenSymbol(
                                   selectedChainConfig.chainId ?? "",
-                                  prize.tokenAddress
+                                  prize.token.address
                                 ) ?? ""
                               ] &&
                                 `~$${(
@@ -463,14 +490,21 @@ const TournamentConfirmation = ({
                                   (prices?.[
                                     getTokenSymbol(
                                       selectedChainConfig.chainId ?? "",
-                                      prize.tokenAddress
+                                      prize.token.address
                                     ) ?? ""
                                   ] ?? 0)
                                 ).toFixed(2)}`}
                             </span>
                           </div>
                         ) : (
-                          <span>NFT ID: {prize.tokenId}</span>
+                          <div className="flex flex-row gap-2 items-center">
+                            <img
+                              src={prize.token.image ?? ""}
+                              alt={prize.token.address}
+                              className="w-6 h-6 rounded-full"
+                            />
+                            <span>#{prize.tokenId}</span>
+                          </div>
                         )}
                       </div>
                     ))}

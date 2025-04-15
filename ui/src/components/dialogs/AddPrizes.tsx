@@ -17,8 +17,8 @@ import {
   formatNumber,
   getOrdinalSuffix,
 } from "@/lib/utils";
-import { NewPrize } from "@/lib/types";
-import { Prize, Token } from "@/generated/models.gen";
+import { NewPrize, FormToken } from "@/lib/types";
+import { Prize } from "@/generated/models.gen";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { addAddressPadding, BigNumberish } from "starknet";
 import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
@@ -53,7 +53,9 @@ export function AddPrizesDialog({
   const { namespace, selectedChainConfig } = useDojo();
   const { connect } = useConnectToSelectedChain();
   const { approveAndAddPrizes, getBalanceGeneral } = useSystemCalls();
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [selectedToken, setSelectedToken] = useState<FormToken | undefined>(
+    undefined
+  );
   const [newPrize, setNewPrize] = useState<NewPrize>({
     tokenAddress: "",
     tokenType: "",
@@ -168,7 +170,7 @@ export function AddPrizesDialog({
       ]);
     }
     setNewPrize({ tokenAddress: "", tokenType: "" });
-    setSelectedToken(null);
+    setSelectedToken(undefined);
   };
 
   const submitPrizes = async () => {
@@ -209,7 +211,7 @@ export function AddPrizesDialog({
       );
 
       setCurrentPrizes([]);
-      setSelectedToken(null);
+      setSelectedToken(undefined);
       setOnConfirmation(false);
       onOpenChange(false);
     } catch (error) {

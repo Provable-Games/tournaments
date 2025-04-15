@@ -128,7 +128,7 @@ const snSepoliaConfig: DojoChainConfig = {
   toriiTokensUrl: "",
   relayUrl: undefined,
   blastRpc: undefined,
-  blockExplorerUrl: "https://sepolia.voyager.online/",
+  blockExplorerUrl: "https://sepolia.voyager.online",
   ekuboPriceAPI: "https://sepolia-api.ekubo.org/price",
   // masterAddress: KATANA_PREFUNDED_ADDRESS,
   // masterPrivateKey: KATANA_PREFUNDED_PRIVATE_KEY,
@@ -149,7 +149,7 @@ const snMainnetConfig: DojoChainConfig = {
   relayUrl: undefined,
   blastRpc:
     "https://starknet-mainnet.blastapi.io/5ef61753-e7c1-4593-bc62-97fdf96f8de5",
-  blockExplorerUrl: "https://voyager.online/",
+  blockExplorerUrl: "https://voyager.online",
   ekuboPriceAPI: "https://mainnet-api.ekubo.org/price",
   masterAddress: undefined,
   masterPrivateKey: undefined,

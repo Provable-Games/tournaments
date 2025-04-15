@@ -13,7 +13,6 @@ import AmountInput from "@/components/createTournament/inputs/Amount";
 import TokenDialog from "@/components/dialogs/Token";
 import { Slider } from "@/components/ui/slider";
 import React from "react";
-import { Token } from "@/generated/models.gen";
 import {
   calculateDistribution,
   formatNumber,
@@ -25,8 +24,8 @@ import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
 import { TokenValue } from "@/components/createTournament/containers/TokenValue";
 import { useDojo } from "@/context/dojo";
+
 const EntryFees = ({ form }: StepProps) => {
-  const [selectedToken, setSelectedToken] = React.useState<Token | null>(null);
   const { selectedChainConfig } = useDojo();
 
   const chainId = selectedChainConfig?.chainId ?? "";
@@ -40,7 +39,7 @@ const EntryFees = ({ form }: StepProps) => {
   const [distributionWeight, setDistributionWeight] = React.useState(1);
 
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
-    tokens: [selectedToken?.symbol ?? ""],
+    tokens: [form.watch("entryFees.token")?.symbol ?? ""],
   });
 
   const creatorFee = form.watch("entryFees.creatorFeePercentage") || 0;
@@ -74,7 +73,7 @@ const EntryFees = ({ form }: StepProps) => {
     form.setValue(
       "entryFees.amount",
       (form.watch("entryFees.value") ?? 0) /
-        (prices?.[selectedToken?.symbol ?? ""] ?? 1)
+        (prices?.[form.watch("entryFees.token")?.symbol ?? ""] ?? 1)
     );
   }, [form.watch("entryFees.value"), prices]);
 
@@ -100,16 +99,15 @@ const EntryFees = ({ form }: StepProps) => {
                 <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="entryFees.tokenAddress"
+                    name="entryFees.token"
                     render={({ field: tokenField }) => (
                       <FormItem>
                         <FormControl>
                           <div className="flex justify-center sm:justify-start pt-4 sm:pt-6">
                             <TokenDialog
-                              selectedToken={selectedToken}
+                              selectedToken={form.watch("entryFees.token")}
                               onSelect={(token) => {
-                                setSelectedToken(token);
-                                tokenField.onChange(token.address);
+                                tokenField.onChange(token);
                               }}
                               type="erc20"
                             />
@@ -135,7 +133,9 @@ const EntryFees = ({ form }: StepProps) => {
                             <TokenValue
                               className="sm:hidden"
                               amount={form.watch("entryFees.amount") ?? 0}
-                              tokenAddress={selectedToken?.address ?? ""}
+                              tokenAddress={
+                                form.watch("entryFees.token")?.address ?? ""
+                              }
                               usdValue={form.watch("entryFees.value") ?? 0}
                               isLoading={pricesLoading}
                             />
@@ -150,7 +150,9 @@ const EntryFees = ({ form }: StepProps) => {
                             <TokenValue
                               className="hidden sm:flex"
                               amount={form.watch("entryFees.amount") ?? 0}
-                              tokenAddress={selectedToken?.address ?? ""}
+                              tokenAddress={
+                                form.watch("entryFees.token")?.address ?? ""
+                              }
                               usdValue={form.watch("entryFees.value") ?? 0}
                               isLoading={pricesLoading}
                             />
@@ -181,7 +183,9 @@ const EntryFees = ({ form }: StepProps) => {
                                 (field.value ?? 0)) /
                               100
                             }
-                            tokenAddress={selectedToken?.address ?? ""}
+                            tokenAddress={
+                              form.watch("entryFees.token")?.address ?? ""
+                            }
                             usdValue={
                               ((form.watch("entryFees.value") ?? 0) *
                                 (field.value ?? 0)) /
@@ -229,7 +233,9 @@ const EntryFees = ({ form }: StepProps) => {
                                   (field.value ?? 0)) /
                                 100
                               }
-                              tokenAddress={selectedToken?.address ?? ""}
+                              tokenAddress={
+                                form.watch("entryFees.token")?.address ?? ""
+                              }
                               usdValue={
                                 ((form.watch("entryFees.value") ?? 0) *
                                   (field.value ?? 0)) /
@@ -262,7 +268,9 @@ const EntryFees = ({ form }: StepProps) => {
                                 (field.value ?? 0)) /
                               100
                             }
-                            tokenAddress={selectedToken?.address ?? ""}
+                            tokenAddress={
+                              form.watch("entryFees.token")?.address ?? ""
+                            }
                             usdValue={
                               ((form.watch("entryFees.value") ?? 0) *
                                 (field.value ?? 0)) /
@@ -309,7 +317,9 @@ const EntryFees = ({ form }: StepProps) => {
                                   (field.value ?? 0)) /
                                 100
                               }
-                              tokenAddress={selectedToken?.address ?? ""}
+                              tokenAddress={
+                                form.watch("entryFees.token")?.address ?? ""
+                              }
                               usdValue={
                                 ((form.watch("entryFees.value") ?? 0) *
                                   (field.value ?? 0)) /
@@ -438,9 +448,8 @@ const EntryFees = ({ form }: StepProps) => {
                                         <img
                                           src={getTokenLogoUrl(
                                             chainId,
-                                            form.watch(
-                                              "entryFees.tokenAddress"
-                                            ) ?? ""
+                                            form.watch("entryFees.token")
+                                              ?.address ?? ""
                                           )}
                                           className="w-3"
                                         />
@@ -448,9 +457,8 @@ const EntryFees = ({ form }: StepProps) => {
                                       {prices?.[
                                         getTokenSymbol(
                                           chainId,
-                                          form.watch(
-                                            "entryFees.tokenAddress"
-                                          ) ?? ""
+                                          form.watch("entryFees.token")
+                                            ?.address ?? ""
                                         ) ?? ""
                                       ] && (
                                         <span className="text-xs text-neutral">

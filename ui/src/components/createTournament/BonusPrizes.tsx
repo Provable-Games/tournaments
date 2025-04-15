@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import AmountInput from "@/components/createTournament/inputs/Amount";
 import TokenDialog from "@/components/dialogs/Token";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
-import { Token } from "@/generated/models.gen";
 import { X } from "@/components/Icons";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -24,8 +23,11 @@ import { OptionalSection } from "@/components/createTournament/containers/Option
 import { TokenValue } from "@/components/createTournament/containers/TokenValue";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useDojo } from "@/context/dojo";
+import { FormToken } from "@/lib/types";
+import { CairoCustomEnum } from "starknet";
+
 interface NewPrize {
-  tokenAddress: string;
+  token: FormToken;
   tokenType: "ERC20" | "ERC721" | "";
   amount?: number;
   value?: number;
@@ -34,9 +36,22 @@ interface NewPrize {
 }
 
 const BonusPrizes = ({ form }: StepProps) => {
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [selectedToken, setSelectedToken] = useState<FormToken | undefined>(
+    undefined
+  );
   const [newPrize, setNewPrize] = useState<NewPrize>({
-    tokenAddress: "",
+    token: {
+      address: "",
+      token_type: new CairoCustomEnum({
+        erc20: {
+          amount: "",
+        },
+        erc721: undefined,
+      }),
+      name: "",
+      symbol: "",
+      is_registered: false,
+    },
     tokenType: "",
   });
   const [distributionWeight, setDistributionWeight] = useState(1);
@@ -55,7 +70,7 @@ const BonusPrizes = ({ form }: StepProps) => {
 
     // First map to get symbols, then filter out undefined values, then create a Set
     const symbols = bonusPrizes
-      .map((prize) => getTokenSymbol(chainId, prize.tokenAddress))
+      .map((prize) => getTokenSymbol(chainId, prize.token.address))
       .filter(
         (symbol): symbol is string =>
           typeof symbol === "string" && symbol !== ""
@@ -68,8 +83,8 @@ const BonusPrizes = ({ form }: StepProps) => {
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
       ...uniqueTokenSymbols,
-      ...(newPrize.tokenAddress
-        ? [getTokenSymbol(chainId, newPrize.tokenAddress) ?? ""]
+      ...(newPrize.token
+        ? [getTokenSymbol(chainId, newPrize.token.address) ?? ""]
         : []),
     ],
   });
@@ -82,7 +97,7 @@ const BonusPrizes = ({ form }: StepProps) => {
   }, [prizeDistributions]);
 
   const isValidPrize = () => {
-    if (!newPrize.tokenAddress) return false;
+    if (!newPrize.token) return false;
 
     if (newPrize.tokenType === "ERC20") {
       return !!newPrize.amount && totalDistributionPercentage === 100;
@@ -115,13 +130,14 @@ const BonusPrizes = ({ form }: StepProps) => {
       ...prev,
       amount:
         (prev.value ?? 0) /
-        (prices?.[getTokenSymbol(chainId, prev.tokenAddress) ?? ""] ?? 1),
+        (prices?.[getTokenSymbol(chainId, prev.token?.address ?? "") ?? ""] ??
+          1),
     }));
   }, [prices, newPrize.value]);
 
   useEffect(() => {
     const checkBalances = async () => {
-      const balances = await getBalanceGeneral(newPrize.tokenAddress);
+      const balances = await getBalanceGeneral(newPrize.token?.address ?? "");
       const amount = (newPrize.amount ?? 0) * 10 ** 18;
       if (balances < BigInt(amount)) {
         setHasInsufficientBalance(true);
@@ -130,7 +146,9 @@ const BonusPrizes = ({ form }: StepProps) => {
       }
     };
     checkBalances();
-  }, [newPrize.tokenAddress, newPrize.amount]);
+  }, [newPrize.token?.address, newPrize.amount]);
+
+  console.log(form.watch("bonusPrizes"));
 
   return (
     <FormField
@@ -158,7 +176,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                           setSelectedToken(token);
                           setNewPrize((prev) => ({
                             ...prev,
-                            tokenAddress: token.address,
+                            token: token,
                             tokenType:
                               token.token_type.activeVariant() === "erc20"
                                 ? "ERC20"
@@ -185,7 +203,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                               ...currentPrizes,
                               ...prizeDistributions.map((prize) => ({
                                 type: "ERC20" as const,
-                                tokenAddress: newPrize.tokenAddress,
+                                token: newPrize.token,
                                 amount:
                                   ((newPrize.amount ?? 0) * prize.percentage) /
                                   100,
@@ -201,14 +219,28 @@ const BonusPrizes = ({ form }: StepProps) => {
                               ...currentPrizes,
                               {
                                 type: "ERC721",
-                                tokenAddress: newPrize.tokenAddress,
+                                token: newPrize.token,
                                 tokenId: newPrize.tokenId,
                                 position: newPrize.position,
                               },
                             ]);
                           }
-                          setNewPrize({ tokenAddress: "", tokenType: "" });
-                          setSelectedToken(null);
+                          setNewPrize({
+                            token: {
+                              address: "",
+                              token_type: new CairoCustomEnum({
+                                erc20: {
+                                  amount: "",
+                                },
+                                erc721: undefined,
+                              }),
+                              name: "",
+                              symbol: "",
+                              is_registered: false,
+                            },
+                            tokenType: "",
+                          });
+                          setSelectedToken(undefined);
                         }}
                       >
                         {hasInsufficientBalance
@@ -216,24 +248,32 @@ const BonusPrizes = ({ form }: StepProps) => {
                           : "Add Prize"}
                       </Button>
                     </div>
-                    {newPrize.tokenAddress && (
+                    {newPrize.token.address !== "" && (
                       <>
                         <div className="w-full h-0.5 bg-brand/25 sm:hidden" />
                         <div className="flex flex-col gap-2">
                           <div className="flex flex-row items-center gap-5">
-                            <FormLabel className="text-lg font-brand">
-                              Amount ($)
-                            </FormLabel>
-                            <FormDescription className="hidden sm:block sm:text-xs xl:text-sm">
-                              Prize amount in USD
-                            </FormDescription>
-                            <TokenValue
-                              className="sm:hidden"
-                              amount={newPrize.amount ?? 0}
-                              tokenAddress={newPrize.tokenAddress}
-                              usdValue={newPrize.value ?? 0}
-                              isLoading={pricesLoading}
-                            />
+                            {newPrize.tokenType === "ERC20" ? (
+                              <>
+                                <FormLabel className="text-lg font-brand">
+                                  Amount ($)
+                                </FormLabel>
+                                <FormDescription className="hidden sm:block sm:text-xs xl:text-sm">
+                                  Prize amount in USD
+                                </FormDescription>
+                                <TokenValue
+                                  className="sm:hidden"
+                                  amount={newPrize.amount ?? 0}
+                                  tokenAddress={newPrize.token.address}
+                                  usdValue={newPrize.value ?? 0}
+                                  isLoading={pricesLoading}
+                                />
+                              </>
+                            ) : (
+                              <FormLabel className="text-lg font-brand">
+                                Token ID
+                              </FormLabel>
+                            )}
                           </div>
                           <div className="flex items-center gap-4">
                             {newPrize.tokenType === "ERC20" ? (
@@ -250,7 +290,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                                 <TokenValue
                                   className="hidden sm:flex"
                                   amount={newPrize.amount ?? 0}
-                                  tokenAddress={newPrize.tokenAddress}
+                                  tokenAddress={newPrize.token.address}
                                   usdValue={newPrize.value ?? 0}
                                   isLoading={pricesLoading}
                                 />
@@ -306,7 +346,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                           ...currentPrizes,
                           ...prizeDistributions.map((prize) => ({
                             type: "ERC20" as const,
-                            tokenAddress: newPrize.tokenAddress,
+                            token: newPrize.token,
                             amount:
                               ((newPrize.amount ?? 0) * prize.percentage) / 100,
                             position: prize.position,
@@ -321,14 +361,28 @@ const BonusPrizes = ({ form }: StepProps) => {
                           ...currentPrizes,
                           {
                             type: "ERC721",
-                            tokenAddress: newPrize.tokenAddress,
+                            token: newPrize.token,
                             tokenId: newPrize.tokenId,
                             position: newPrize.position,
                           },
                         ]);
                       }
-                      setNewPrize({ tokenAddress: "", tokenType: "" });
-                      setSelectedToken(null);
+                      setNewPrize({
+                        token: {
+                          address: "",
+                          token_type: new CairoCustomEnum({
+                            erc20: {
+                              amount: "",
+                            },
+                            erc721: undefined,
+                          }),
+                          name: "",
+                          symbol: "",
+                          is_registered: false,
+                        },
+                        tokenType: "",
+                      });
+                      setSelectedToken(undefined);
                     }}
                   >
                     {hasInsufficientBalance
@@ -444,7 +498,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                                 <img
                                   src={getTokenLogoUrl(
                                     chainId,
-                                    newPrize.tokenAddress
+                                    newPrize.token.address
                                   )}
                                   className="w-4"
                                 />
@@ -452,7 +506,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                               {prices?.[
                                 getTokenSymbol(
                                   chainId,
-                                  newPrize.tokenAddress
+                                  newPrize.token.address
                                 ) ?? ""
                               ] && (
                                 <span className="text-xs text-neutral">
@@ -500,11 +554,8 @@ const BonusPrizes = ({ form }: StepProps) => {
                                         {formatNumber(prize.amount ?? 0)}
                                       </span>
                                       <img
-                                        src={getTokenLogoUrl(
-                                          chainId,
-                                          prize.tokenAddress
-                                        )}
-                                        className="w-6 h-6 flex-shrink-0"
+                                        src={prize.token.image}
+                                        className="w-6 h-6 flex-shrink-0 rounded-full"
                                         alt="Token logo"
                                       />
                                     </div>
@@ -515,7 +566,7 @@ const BonusPrizes = ({ form }: StepProps) => {
                                         : prices?.[
                                             getTokenSymbol(
                                               chainId,
-                                              prize.tokenAddress
+                                              prize.token.address
                                             ) ?? ""
                                           ] &&
                                           `~$${(
@@ -523,16 +574,23 @@ const BonusPrizes = ({ form }: StepProps) => {
                                             (prices?.[
                                               getTokenSymbol(
                                                 chainId,
-                                                prize.tokenAddress
+                                                prize.token.address
                                               ) ?? ""
                                             ] ?? 0)
                                           ).toFixed(2)}`}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="whitespace-nowrap">
-                                    #{prize.tokenId}
-                                  </span>
+                                  <div className="flex flex-row items-center gap-1">
+                                    <img
+                                      src={prize.token.image}
+                                      className="w-6 h-6 flex-shrink-0 rounded-full"
+                                      alt="Token logo"
+                                    />
+                                    <span className="whitespace-nowrap text-neutral">
+                                      #{prize.tokenId}
+                                    </span>
+                                  </div>
                                 )}
 
                                 {/* Delete button */}

@@ -42,6 +42,7 @@ import {
   calculateTotalValue,
   countTotalNFTs,
   extractEntryFeePrizes,
+  formatTokens,
   getClaimablePrizes,
   getErc20TokenSymbols,
   groupPrizesByPositions,
@@ -74,13 +75,14 @@ import useUIStore from "@/hooks/useUIStore";
 import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadingPage from "@/containers/LoadingPage";
+import { ChainId } from "@/dojo/setup/networks";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
   const { address } = useAccount();
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const { namespace } = useDojo();
+  const { namespace, selectedChainConfig } = useDojo();
   const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
@@ -191,9 +193,13 @@ const Tournament = () => {
   const allClaimed = claimablePrizes.length === 0;
 
   const tokenModels = state.getEntitiesByModel(namespace, "Token");
-  const tokens = tokenModels.map(
+  const registeredTokens = tokenModels.map(
     (model) => model.models[namespace].Token
   ) as Token[];
+
+  const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
+  const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
+  const tokens = formatTokens(registeredTokens, isMainnet, isSepolia);
 
   const { gameNamespace, gameScoreModel, gameScoreAttribute } =
     useGameEndpoints(tournamentModel?.game_config?.address);

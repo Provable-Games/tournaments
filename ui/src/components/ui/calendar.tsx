@@ -35,6 +35,43 @@ function Calendar({
       className={cn("p-3", className)}
       fromMonth={fromMonth} // Disable navigation to previous months
       disabled={{ before: today }} // Disable selection of past dates
+      onSelect={(date, selectedDay, activeModifiers, e) => {
+        if (date && props.onSelect) {
+          // When a new date is selected, adjust time if needed
+          let adjustedTime = new Date(date);
+
+          // If the selected date is the same as minTime's date, ensure time is valid
+          if (
+            minTime &&
+            date.getDate() === minTime.getDate() &&
+            date.getMonth() === minTime.getMonth() &&
+            date.getFullYear() === minTime.getFullYear()
+          ) {
+            // Set time to at least minTime
+            if (
+              adjustedTime.getHours() < minTime.getHours() ||
+              (adjustedTime.getHours() === minTime.getHours() &&
+                adjustedTime.getMinutes() < minTime.getMinutes())
+            ) {
+              adjustedTime.setHours(
+                minTime.getHours(),
+                minTime.getMinutes(),
+                0,
+                0
+              );
+
+              // Also update the parent's selectedTime
+              if (onTimeChange) {
+                onTimeChange(minTime.getHours(), minTime.getMinutes());
+              }
+            }
+          }
+
+          props.onSelect(date, selectedDay, activeModifiers, e);
+
+          console.log("Selected day with adjusted time:", adjustedTime);
+        }
+      }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -74,11 +111,22 @@ function Calendar({
           <ChevronRight className="h-4 w-4" {...props} />
         ),
         CaptionLabel: ({ displayMonth }) => {
-          const now = new Date();
-          const currentHour = now.getHours();
-          const currentMinute = now.getMinutes();
-          const minHour = minTime ? minTime.getHours() : currentHour;
-          const minMinute = minTime ? minTime.getMinutes() : currentMinute;
+          const selectedDay = props.selected as Date | undefined;
+
+          // Determine if time restrictions should apply
+          const shouldRestrictTime = minTime && selectedDay;
+
+          // Function to check if a specific hour/minute should be disabled
+          const isTimeDisabled = (hour: number, minute: number): boolean => {
+            if (!shouldRestrictTime || !selectedDay || !minTime) return false;
+
+            // Create date objects with the same date but different times for comparison
+            const selectedDate = new Date(selectedDay);
+            selectedDate.setHours(hour, minute, 0, 0);
+
+            // Compare the full datetime, not just hours and minutes
+            return selectedDate < minTime;
+          };
 
           return (
             <div className="flex flex-row items-center">
@@ -98,7 +146,10 @@ function Calendar({
                         <SelectItem
                           key={i}
                           value={i.toString().padStart(2, "0")}
-                          disabled={i < minHour}
+                          disabled={isTimeDisabled(
+                            i,
+                            selectedTime.getMinutes()
+                          )}
                         >
                           {i.toString().padStart(2, "0")}
                         </SelectItem>
@@ -121,10 +172,10 @@ function Calendar({
                           <SelectItem
                             key={minute}
                             value={minute.toString().padStart(2, "0")}
-                            disabled={
-                              selectedTime.getHours() === minHour &&
-                              minute <= minMinute
-                            }
+                            disabled={isTimeDisabled(
+                              selectedTime.getHours(),
+                              minute
+                            )}
                           >
                             {minute.toString().padStart(2, "0")}
                           </SelectItem>

@@ -19,6 +19,8 @@ import {
 } from "@/generated/models.gen";
 import { PositionPrizes, TokenPrizes } from "@/lib/types";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
+import { mainnetTokens } from "@/lib/mainnetTokens";
+import { sepoliaTokens } from "@/lib/sepoliaTokens";
 
 export const processTournamentData = (
   formData: TournamentFormData,
@@ -118,7 +120,7 @@ export const processTournamentData = (
     },
     entry_fee: formData.enableEntryFees
       ? new CairoOption(CairoOptionVariant.Some, {
-          token_address: formData.entryFees?.tokenAddress!,
+          token_address: formData.entryFees?.token?.address!,
           amount: addAddressPadding(
             bigintToHex(formData.entryFees?.amount! * 10 ** 18)
           ),
@@ -153,7 +155,7 @@ export const processPrizes = (
   return formData.bonusPrizes.map((prize, _) => ({
     id: prizeCount + 1,
     tournament_id: tournamentCount + 1,
-    token_address: prize.tokenAddress,
+    token_address: prize.token.address,
     token_type:
       prize.type === "ERC20"
         ? new CairoCustomEnum({
@@ -852,4 +854,40 @@ export const formatGameSettings = (settings: any[]) => {
   formattedSettings.sort((a, b) => a.key.localeCompare(b.key));
 
   return formattedSettings;
+};
+
+export const formatTokens = (
+  registeredTokens: Token[],
+  isMainnet: boolean,
+  isSepolia: boolean
+) => {
+  return isMainnet
+    ? mainnetTokens.map((token) => ({
+        address: token.l2_token_address,
+        name: token.name,
+        symbol: token.symbol,
+        token_type: new CairoCustomEnum({
+          erc20: "1",
+          erc721: undefined,
+        }),
+        is_registered: registeredTokens.some(
+          (registeredToken) =>
+            registeredToken.address === token.l2_token_address
+        ),
+      }))
+    : isSepolia
+    ? sepoliaTokens.map((token) => ({
+        address: token.l2_token_address,
+        name: token.name,
+        symbol: token.symbol,
+        token_type: new CairoCustomEnum({
+          erc20: "1",
+          erc721: undefined,
+        }),
+        is_registered: registeredTokens.some(
+          (registeredToken) =>
+            registeredToken.address === token.l2_token_address
+        ),
+      }))
+    : [];
 };

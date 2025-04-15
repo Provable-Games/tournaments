@@ -11,6 +11,7 @@ interface SettingsCarouselProps {
   settings: any[];
   value: string;
   onChange: (value: string) => void;
+  setOpen: (value: boolean) => void;
 }
 
 const SettingsCarousel = ({
@@ -18,6 +19,7 @@ const SettingsCarousel = ({
   settings,
   value,
   onChange,
+  setOpen,
 }: SettingsCarouselProps) => {
   const { getGameImage } = useUIStore();
   const [currentIndex, setCurrentIndex] = React.useState(() => {
@@ -115,11 +117,8 @@ const SettingsCarousel = ({
         )}
         <Button
           onClick={() => {
-            onChange(currentSetting.id.toString());
-            const dialogClose = document.querySelector("[data-dialog-close]");
-            if (dialogClose instanceof HTMLElement) {
-              dialogClose.click();
-            }
+            onChange(currentSetting.settings_id.toString());
+            setOpen(false);
           }}
           disabled={currentIndex === Number(value)}
         >

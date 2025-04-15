@@ -12,6 +12,7 @@ import {
   calculateTotalValue,
   countTotalNFTs,
   extractEntryFeePrizes,
+  formatTokens,
 } from "@/lib/utils/formatting";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import { TabType } from "@/components/overview/TournamentTabs";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import useUIStore from "@/hooks/useUIStore";
 import { Badge } from "@/components/ui/badge";
+import { ChainId } from "@/dojo/setup/networks";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -39,16 +41,19 @@ export const TournamentCard = ({
   prizes,
   entryCount,
 }: TournamentCardProps) => {
-  const { namespace } = useDojo();
+  const { namespace, selectedChainConfig } = useDojo();
   const navigate = useNavigate();
   const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
 
   // token entities
   const tokenModels = state.getEntitiesByModel(namespace, "Token");
-  const tokens = tokenModels.map(
+  const registeredTokens = tokenModels.map(
     (model) => model.models[namespace].Token
   ) as Token[];
+  const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
+  const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
+  const tokens = formatTokens(registeredTokens, isMainnet, isSepolia);
 
   const entryFeeToken = tournament?.entry_fee.Some?.token_address;
   const entryFeeTokenSymbol = tokens.find(

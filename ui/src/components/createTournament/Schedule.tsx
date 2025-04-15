@@ -36,13 +36,11 @@ const Schedule = ({ form }: StepProps) => {
   const { selectedChainConfig } = useDojo();
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
   const [minStartTime, setMinStartTime] = useState<Date>(() => {
-    // Initialize with current time + 15 minutes
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
     return now;
   });
   const [minEndTime, setMinEndTime] = useState<Date>(() => {
-    // Initialize with current start time + 15 minutes
     const startTime = form.watch("startTime");
     startTime.setMinutes(startTime.getMinutes() + 15);
     return startTime;
@@ -123,21 +121,19 @@ const Schedule = ({ form }: StepProps) => {
 
     // Only update the end time if it's before the minimum required time
     if (!currentEndTime || currentEndTime < minRequiredEndTime) {
-      // Calculate minutes to the next 5-minute interval
-      const currentMinutes = startTime.getMinutes();
-      const remainder = currentMinutes % 5;
-      const minutesToAdd = remainder === 0 ? 15 : 5 - remainder + 15;
+      // Set default end time to EXACTLY 1 day ahead
+      const oneDayFromStartTime = new Date(startTime);
 
-      // Create new date with rounded minutes plus 15 minutes
-      const roundedFifteenMinutesFromStartTime = new Date(startTime);
-      roundedFifteenMinutesFromStartTime.setMinutes(
-        startTime.getMinutes() + minutesToAdd
-      );
-      roundedFifteenMinutesFromStartTime.setSeconds(0);
-      roundedFifteenMinutesFromStartTime.setMilliseconds(0);
+      // Instead of using setDate which might add extra time, use exact time calculation
+      // Set to exactly 24 hours (1 day) later
+      oneDayFromStartTime.setTime(startTime.getTime() + 24 * 60 * 60 * 1000);
+
+      // Ensure seconds and milliseconds are zero
+      oneDayFromStartTime.setSeconds(0);
+      oneDayFromStartTime.setMilliseconds(0);
 
       // Update the form's end time
-      form.setValue("endTime", roundedFifteenMinutesFromStartTime);
+      form.setValue("endTime", oneDayFromStartTime);
     }
   }, [startTime]);
 
@@ -151,6 +147,8 @@ const Schedule = ({ form }: StepProps) => {
       const durationInSeconds = Math.floor(
         (endTime.getTime() - startTime.getTime()) / 1000
       );
+
+      console.log("durationInSeconds", durationInSeconds);
 
       // Only update if it's a valid duration (at least 15 minutes)
       if (durationInSeconds >= 900) {
