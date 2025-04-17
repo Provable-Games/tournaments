@@ -18,12 +18,11 @@ import {
   getOrdinalSuffix,
 } from "@/lib/utils";
 import { NewPrize, FormToken } from "@/lib/types";
-import { Prize } from "@/generated/models.gen";
+import { getModelsMapping, Prize, PrizeMetrics } from "@/generated/models.gen";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { addAddressPadding, BigNumberish } from "starknet";
 import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 import { CairoCustomEnum } from "starknet";
-import { useGetMetricsQuery } from "@/dojo/hooks/useSdkQueries";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { ALERT, CHECK, QUESTION, X } from "@/components/Icons";
 import { useAccount } from "@starknet-react/core";
@@ -35,6 +34,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { LoadingSpinner } from "@/components/ui/spinner";
+import useModel from "@/dojo/hooks/useModel";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
 
 export function AddPrizesDialog({
   open,
@@ -76,10 +78,15 @@ export function AddPrizesDialog({
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
-  const { entity: metricsEntity } = useGetMetricsQuery(
-    addAddressPadding(TOURNAMENT_VERSION_KEY),
-    namespace
+  const metricsKeyId = useMemo(
+    () => getEntityIdFromKeys([BigInt(TOURNAMENT_VERSION_KEY)]),
+    []
   );
+
+  const prizeMetricsModel = useModel(
+    metricsKeyId,
+    getModelsMapping(namespace).PrizeMetrics
+  ) as unknown as PrizeMetrics;
 
   const totalDistributionPercentage = useMemo(() => {
     return (
@@ -135,7 +142,7 @@ export function AddPrizesDialog({
     }
   };
 
-  const prizeCount = metricsEntity?.PrizeMetrics?.total_prizes ?? 0;
+  const prizeCount = prizeMetricsModel?.total_prizes ?? 0;
 
   const handleAddPrizes = async () => {
     if (
@@ -207,16 +214,17 @@ export function AddPrizesDialog({
         tournamentName,
         prizesToAdd,
         true,
-        totalValue
+        totalValue,
+        Number(prizeCount)
       );
 
       setCurrentPrizes([]);
       setSelectedToken(undefined);
       setOnConfirmation(false);
       onOpenChange(false);
+      setIsSubmitting(false);
     } catch (error) {
       console.error("Failed to add prizes:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -469,7 +477,14 @@ export function AddPrizesDialog({
                 onClick={submitPrizes}
                 disabled={isSubmitting || hasInsufficientBalance}
               >
-                {isSubmitting ? "Processing..." : "Confirm & Submit"}
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner />
+                    <span>Adding...</span>
+                  </div>
+                ) : (
+                  "Confirm & Submit"
+                )}
               </Button>
             </div>
           </DialogFooter>
@@ -766,10 +781,10 @@ export function AddPrizesDialog({
           <div className="w-1/2 flex justify-end items-center gap-2">
             <Button
               type="button"
-              disabled={!isValidPrize() || isSubmitting}
+              disabled={!isValidPrize()}
               onClick={handleAddPrizes}
             >
-              {isSubmitting ? "Adding..." : "Add Prize"}
+              Add Prize
             </Button>
             {currentPrizes.length > 0 &&
               (address ? (

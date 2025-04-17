@@ -4,6 +4,7 @@ import { QueryType, ParsedEntity } from "@dojoengine/sdk";
 import { useDojo } from "@/context/dojo";
 import { SchemaType } from "@/generated/models.gen";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
+import { useNetwork } from "@starknet-react/core";
 
 export type TournamentGetQuery = QueryType<SchemaType>;
 
@@ -33,7 +34,7 @@ export const useSdkGetEntities = ({
   enabled = true,
 }: UseSdkGetEntitiesProps): UseSdkGetEntitiesResult => {
   const { sdk } = useDojo();
-
+  const { chain } = useNetwork();
   const [isLoading, setIsLoading] = useState(false);
   const [entities, setEntities] = useState<
     EntityResult<typeof namespace>[] | null
@@ -46,9 +47,14 @@ export const useSdkGetEntities = ({
     setIsLoading(true);
     try {
       setIsLoading(true);
+      // TODO: investigate emppty results when changing network (seems state related)
       const entities = await sdk.getEntities({
         query: memoizedQuery,
       });
+      // console.log("entities", entities);
+      // console.log("query", memoizedQuery);
+      // console.log("running for chain", chain);
+      // console.log("running for namespace", namespace);
       entities.forEach((entity) => {
         state.updateEntity(entity as Partial<ParsedEntity<SchemaType>>);
       });
@@ -66,13 +72,13 @@ export const useSdkGetEntities = ({
     } finally {
       setIsLoading(false);
     }
-  }, [sdk, memoizedQuery]);
+  }, [sdk, memoizedQuery, namespace, chain]);
 
   useEffect(() => {
     if (enabled) {
       fetchEntities();
     }
-  }, [fetchEntities, enabled, namespace]);
+  }, [fetchEntities, enabled, namespace, chain]);
 
   return {
     entities,

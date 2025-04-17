@@ -23,11 +23,12 @@ import {
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDojo } from "@/context/dojo";
 // import { calculateTotalValue } from "@/lib/utils/formatting";
 import { useGetGameSettings } from "@/dojo/hooks/useSqlQueries";
 import { mergeGameSettings } from "@/lib/utils/formatting";
+import { LoadingSpinner } from "@/components/ui/spinner";
 
 interface TournamentConfirmationProps {
   formData: TournamentFormData;
@@ -47,6 +48,7 @@ const TournamentConfirmation = ({
   const { selectedChainConfig } = useDojo();
   const { gameData, getGameImage } = useUIStore();
   const { gameNamespace, gameSettingsModel } = useGameEndpoints(formData.game);
+  const [isCreating, setIsCreating] = useState(false);
 
   const { data: settings } = useGetGameSettings({
     namespace: gameNamespace ?? "",
@@ -105,11 +107,16 @@ const TournamentConfirmation = ({
     });
   }, [prizeDistributionString]);
 
-  // const totalPrizesValueUSD = calculateTotalValue(
-  //   groupedByTokensPrizes,
-  //   prices,
-  //   allPricesFound
-  // );
+  const handleConfirm = async () => {
+    setIsCreating(true);
+    try {
+      await onConfirm();
+      setIsCreating(false);
+    } catch (error) {
+      console.error("Failed to create tournament:", error);
+      setIsCreating(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -520,14 +527,19 @@ const TournamentConfirmation = ({
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           {address ? (
-            <DialogClose asChild>
-              <Button
-                onClick={onConfirm}
-                disabled={!isStartTimeValid || !isDurationValid}
-              >
-                Confirm & Create
-              </Button>
-            </DialogClose>
+            <Button
+              onClick={handleConfirm}
+              disabled={!isStartTimeValid || !isDurationValid || isCreating}
+            >
+              {isCreating ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                "Confirm & Create"
+              )}
+            </Button>
           ) : (
             <Button onClick={() => connect()}>Connect Wallet</Button>
           )}

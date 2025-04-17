@@ -19,6 +19,8 @@ import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { useGetTournamentLeaderboard } from "@/dojo/hooks/useSqlQueries";
 import { getSubmittableScores } from "@/lib/utils/formatting";
 import { addAddressPadding } from "starknet";
+import { useState } from "react";
+import { LoadingSpinner } from "@/components/ui/spinner";
 
 interface SubmitScoresDialogProps {
   open: boolean;
@@ -46,6 +48,7 @@ export function SubmitScoresDialog({
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
   const { submitScores } = useSystemCalls();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 
@@ -65,12 +68,19 @@ export function SubmitScoresDialog({
     leaderboard
   );
 
-  const handleSubmitScores = () => {
-    submitScores(
-      tournamentModel?.id,
-      feltToString(tournamentModel?.metadata.name),
-      submittableScores
-    );
+  const handleSubmitScores = async () => {
+    setIsSubmitting(true);
+    try {
+      await submitScores(
+        tournamentModel?.id,
+        feltToString(tournamentModel?.metadata.name),
+        submittableScores
+      );
+      setIsSubmitting(false);
+    } catch (error) {
+      console.error("Failed to submit scores:", error);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -116,11 +126,16 @@ export function SubmitScoresDialog({
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           {address ? (
-            <DialogClose asChild>
-              <Button disabled={!address} onClick={handleSubmitScores}>
-                Submit
-              </Button>
-            </DialogClose>
+            <Button disabled={!address} onClick={handleSubmitScores}>
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  <span>Submitting...</span>
+                </div>
+              ) : (
+                "Submit"
+              )}
+            </Button>
           ) : (
             <Button onClick={() => connect()}>Connect Wallet</Button>
           )}

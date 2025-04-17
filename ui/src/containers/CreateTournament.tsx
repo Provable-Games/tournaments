@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ARROW_LEFT } from "@/components/Icons";
@@ -18,15 +18,19 @@ import TournamentConfirmation from "@/components/dialogs/TournamentConfirmation"
 import { processPrizes, processTournamentData } from "@/lib/utils/formatting";
 import { useAccount } from "@starknet-react/core";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
+import { useSubscribeTournamentsQuery } from "@/dojo/hooks/useSdkQueries";
 import {
-  useGetMetricsQuery,
-  useSubscribeTournamentsQuery,
-} from "@/dojo/hooks/useSdkQueries";
-import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
-import { addAddressPadding } from "starknet";
-import { Tournament } from "@/generated/models.gen";
+  getModelsMapping,
+  PlatformMetrics,
+  PrizeMetrics,
+  Tournament,
+} from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
 import { FormToken } from "@/lib/types";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
+import useModel from "@/dojo/hooks/useModel";
+
 export type TournamentFormData = z.infer<typeof formSchema>;
 
 export interface StepProps {
@@ -110,13 +114,10 @@ const formSchema = z.object({
 const CreateTournament = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
-  const { createTournamentAndApproveAndAddPrizes } = useSystemCalls();
   const { namespace } = useDojo();
+  const { createTournamentAndApproveAndAddPrizes } = useSystemCalls();
+
   useSubscribeTournamentsQuery(namespace);
-  const { entity: metricsEntity } = useGetMetricsQuery(
-    addAddressPadding(TOURNAMENT_VERSION_KEY),
-    namespace
-  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -161,22 +162,36 @@ const CreateTournament = () => {
     },
   });
 
-  const tournamentCount =
-    metricsEntity?.PlatformMetrics?.total_tournaments ?? 0;
-  const prizeCount = metricsEntity?.PrizeMetrics?.total_prizes ?? 0;
+  const metricsKeyId = useMemo(
+    () => getEntityIdFromKeys([BigInt(TOURNAMENT_VERSION_KEY)]),
+    []
+  );
+
+  const platformMetricsModel = useModel(
+    metricsKeyId,
+    getModelsMapping(namespace).PlatformMetrics
+  ) as unknown as PlatformMetrics;
+
+  const prizeMetricsModel = useModel(
+    metricsKeyId,
+    getModelsMapping(namespace).PrizeMetrics
+  ) as unknown as PrizeMetrics;
+
+  const tournamentCount = platformMetricsModel?.total_tournaments ?? 0;
+  const prizeCount = prizeMetricsModel?.total_prizes ?? 0;
 
   // Add state for current step
-  const [currentStep, setCurrentStep] = React.useState<
+  const [currentStep, setCurrentStep] = useState<
     "details" | "schedule" | "gating" | "fees" | "prizes"
   >("details");
 
   // Add state to track visited sections
-  const [visitedSections, setVisitedSections] = React.useState<Set<string>>(
+  const [visitedSections, setVisitedSections] = useState<Set<string>>(
     new Set(["details"])
   );
 
   // Add state for confirmation dialog
-  const [showConfirmation, setShowConfirmation] = React.useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Helper to determine if we can proceed to next step
   const canProceed = () => {
@@ -415,13 +430,12 @@ const CreateTournament = () => {
         formData.duration
       );
       form.reset();
-      navigate("/");
+      setShowConfirmation(false);
+      navigate(`/tournament/${Number(tournamentCount) + 1}`);
     } catch (error) {
       console.error("Error creating tournament:", error);
     }
   };
-
-  console.log(form.getValues());
 
   return (
     <div className="flex flex-col gap-2 sm:gap-5 lg:w-[87.5%] xl:w-5/6 2xl:w-3/4 h-full mx-auto">

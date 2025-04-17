@@ -37,6 +37,7 @@ import {
 import { useDojo } from "@/context/dojo";
 import { processQualificationProof } from "@/lib/utils/formatting";
 import { getTokenLogoUrl } from "@/lib/tokensMeta";
+import { LoadingSpinner } from "@/components/ui/spinner";
 
 interface EnterTournamentDialogProps {
   open: boolean;
@@ -87,32 +88,42 @@ export function EnterTournamentDialog({
   const { approveAndEnterTournament, getBalanceGeneral } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
   const [balance, setBalance] = useState<BigNumberish>(0);
+  const [isEntering, setIsEntering] = useState(false);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
-  const handleEnterTournament = () => {
-    if (!playerName.trim()) return;
+  const handleEnterTournament = async () => {
+    setIsEntering(true);
+    try {
+      if (!playerName.trim()) return;
 
-    const qualificationProof = processQualificationProof(
-      requirementVariant ?? "",
-      proof
-    );
+      const qualificationProof = processQualificationProof(
+        requirementVariant ?? "",
+        proof
+      );
 
-    approveAndEnterTournament(
-      tournamentModel?.entry_fee,
-      tournamentModel?.id,
-      feltToString(tournamentModel?.metadata.name),
-      tournamentModel,
-      // (Number(entryCountModel?.count) ?? 0) + 1,
-      stringToFelt(playerName.trim()),
-      addAddressPadding(address!),
-      qualificationProof,
-      // gameCount
-      duration,
-      entryFeeUsdCost
-    );
+      await approveAndEnterTournament(
+        tournamentModel?.entry_fee,
+        tournamentModel?.id,
+        feltToString(tournamentModel?.metadata.name),
+        tournamentModel,
+        // (Number(entryCountModel?.count) ?? 0) + 1,
+        stringToFelt(playerName.trim()),
+        addAddressPadding(address!),
+        qualificationProof,
+        // gameCount
+        duration,
+        entryFeeUsdCost,
+        Number(entryCountModel?.count) ?? 0
+      );
 
-    setPlayerName("");
+      setPlayerName("");
+      onOpenChange(false);
+      setIsEntering(false);
+    } catch (error) {
+      console.error("Failed to enter tournament:", error);
+      setIsEntering(false);
+    }
   };
 
   const handleControllerLogin = async () => {
@@ -1076,18 +1087,24 @@ export function EnterTournamentDialog({
           </DialogClose>
           {address ? (
             isController ? (
-              <DialogClose asChild>
-                <Button
-                  disabled={
-                    !hasBalance ||
-                    !meetsEntryRequirements ||
-                    playerName.length === 0
-                  }
-                  onClick={handleEnterTournament}
-                >
-                  Enter Tournament
-                </Button>
-              </DialogClose>
+              <Button
+                disabled={
+                  !hasBalance ||
+                  !meetsEntryRequirements ||
+                  playerName.length === 0 ||
+                  isEntering
+                }
+                onClick={handleEnterTournament}
+              >
+                {isEntering ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner />
+                    <span>Entering...</span>
+                  </div>
+                ) : (
+                  "Enter Tournament"
+                )}
+              </Button>
             ) : (
               <Button onClick={handleControllerLogin}>Controller Login</Button>
             )

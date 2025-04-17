@@ -7,13 +7,13 @@
         "@cartridge/connector": "^0.7.11",
         "@cartridge/controller": "^0.7.11",
         "@cartridge/presets": "^0.5.4",
-        "@dojoengine/core": "1.3.0",
-        "@dojoengine/create-burner": "1.3.0",
-        "@dojoengine/predeployed-connector": "1.3.0",
-        "@dojoengine/sdk": "1.3.0",
-        "@dojoengine/torii-client": "1.3.0",
-        "@dojoengine/torii-wasm": "1.3.0",
-        "@dojoengine/utils": "1.3.0",
+        "@dojoengine/core": "1.4.3",
+        "@dojoengine/create-burner": "1.4.3",
+        "@dojoengine/predeployed-connector": "1.4.3",
+        "@dojoengine/sdk": "1.4.3",
+        "@dojoengine/torii-client": "1.4.3",
+        "@dojoengine/torii-wasm": "1.4.3",
+        "@dojoengine/utils": "1.4.3",
         "@hookform/resolvers": "^3.10.0",
         "@radix-ui/react-dialog": "^1.1.6",
         "@radix-ui/react-dropdown-menu": "^2.1.5",
@@ -140,21 +140,21 @@
 
     "@cbor-extract/cbor-extract-win32-x64": ["@cbor-extract/cbor-extract-win32-x64@2.2.0", "", { "os": "win32", "cpu": "x64" }, "sha512-l2M+Z8DO2vbvADOBNLbbh9y5ST1RY5sqkWOg/58GkUPBYou/cuNZ68SGQ644f1CvZ8kcOxyZtw06+dxWHIoN/w=="],
 
-    "@dojoengine/core": ["@dojoengine/core@1.3.0", "", { "dependencies": { "@dojoengine/recs": "2.0.13", "starknet": "6.23.1", "zod": "^3.23.8" }, "bin": { "create-components": "dist/bin/generateComponents.cjs" } }, "sha512-4VQR5wV3aLifQUV1pRclVFLTjU9CDQSiPjEJmRiIOFMHuGgg1ZcOlcHoRCQRHcqP7MbwxCd6cyM6qMHMcwBE7g=="],
+    "@dojoengine/core": ["@dojoengine/core@1.4.3", "", { "dependencies": { "@dojoengine/recs": "2.0.13", "starknet": "6.23.1", "zod": "^3.23.8" } }, "sha512-BYokW98NNO5bCchJ/q2B/pKa2XRzG+WmpFHaSCm/Y8yWV2yaRxZWsd3QeUGWGFruUkF57Gxr2UU0jCN3SRfwPQ=="],
 
-    "@dojoengine/create-burner": ["@dojoengine/create-burner@1.3.0", "", { "dependencies": { "@dojoengine/core": "1.3.0", "@scure/bip32": "^1.5.0", "@starknet-react/core": "^3.6.2", "encoding": "^0.1.13", "get-starknet-core": "^4.0.0", "js-cookie": "^3.0.5" }, "peerDependencies": { "react": "^18.2.0", "react-dom": "^18.2.0", "starknet": "6.23.1" } }, "sha512-dRp2T/NcEAu5YWH+WIGA6sFmhaxoD7nnOLbN9RAxeSpwBQ2jVhCOeZmA03GSxnB5PkKrcQOiiuY6k9bdk6kSlQ=="],
+    "@dojoengine/create-burner": ["@dojoengine/create-burner@1.4.3", "", { "dependencies": { "@dojoengine/core": "1.4.3", "@scure/bip32": "^1.5.0", "@starknet-react/core": "^3.6.2", "encoding": "^0.1.13", "get-starknet-core": "^4.0.0", "js-cookie": "^3.0.5" }, "peerDependencies": { "react": "^18.2.0", "react-dom": "^18.2.0", "starknet": "6.23.1" } }, "sha512-h2FO9b+6/oCJMkE8/J2zmji2y3eYY2Q5HWxT74LJdXCddiXOMlpUPyFH87TRAPTkKmTPkNvDmPN5sYjHlkxqXQ=="],
 
-    "@dojoengine/predeployed-connector": ["@dojoengine/predeployed-connector@1.3.0", "", { "dependencies": { "@starknet-io/types-js": "^0.7.10" }, "peerDependencies": { "@starknet-react/core": "^3.6.2", "react": "^18.3.1", "react-dom": "^18.3.1", "starknet": "6.23.1" } }, "sha512-PRvhb64SZO+R/A9iCHcUOfbojpzCybecMbzB6J0HqnUjQOK82W41UrMO52wjxdfFsXyJSmB53G7Zq0l1d4istg=="],
+    "@dojoengine/predeployed-connector": ["@dojoengine/predeployed-connector@1.4.3", "", { "dependencies": { "@starknet-io/types-js": "^0.7.10" }, "peerDependencies": { "@starknet-react/core": "^3.6.2", "react": "^18.3.1", "react-dom": "^18.3.1", "starknet": "6.23.1" } }, "sha512-iH9BPCdpZRRvqOA26gDH5VtyktF29AyN+8yE/cFBwFAq6WouNDZmmO+XqhMkwewb3yHmgRau8DeBMCWBJKr69A=="],
 
     "@dojoengine/recs": ["@dojoengine/recs@2.0.13", "", { "dependencies": { "@latticexyz/schema-type": "2.0.12", "@latticexyz/utils": "2.0.12", "mobx": "^6.7.0", "rxjs": "7.5.5" } }, "sha512-Cgz4Unlnk2FSDoFTYKrJexX/KiSYPMFMxftxQkC+9LUKS5yNGkgFQM7xu4/L1HvpDAenL7NjUmH6ynRAS7Iifw=="],
 
-    "@dojoengine/sdk": ["@dojoengine/sdk@1.3.0", "", { "dependencies": { "@dojoengine/core": "1.3.0", "@dojoengine/torii-client": "1.3.0", "@dojoengine/utils": "1.3.0", "immer": "^10.1.1", "zustand": "^4.5.6" }, "peerDependencies": { "@tanstack/react-query": "^5.62.16", "@types/react": "^18.3.1", "@types/react-dom": "^18.3.1", "react": "^18.3.1", "react-dom": "^18.3.1", "starknet": "6.23.1" } }, "sha512-sSD7dP2cc2om9N3msRcc5F5BRp+SoXN+GveDIJRNXFBOfh1ELRbdbnZwoetC5TkE5E9dpHO4x6PGRaHuDqJYiA=="],
+    "@dojoengine/sdk": ["@dojoengine/sdk@1.4.3", "", { "dependencies": { "@dojoengine/core": "1.4.3", "@dojoengine/torii-client": "1.4.3", "@dojoengine/utils": "1.4.3", "@starknet-react/chains": "^3.1.0", "@starknet-react/core": "^3.6.2", "immer": "^10.1.1", "zustand": "^4.5.6" }, "peerDependencies": { "@tanstack/react-query": "^5.62.16", "@types/react": "^18.3.1", "@types/react-dom": "^18.3.1", "react": "^18.3.1", "react-dom": "^18.3.1", "starknet": "6.23.1" } }, "sha512-4y64QXex0uDVjAHtk79zMAWpw73n1mxDNm+6VB+CP7oNB2/4WyaiMwijjivJqzfbwob7YlnkgCIMTzld9XCveQ=="],
 
-    "@dojoengine/torii-client": ["@dojoengine/torii-client@1.3.0", "", { "dependencies": { "@dojoengine/torii-wasm": "1.3.0" } }, "sha512-KzGIZGwzaQUG6f4uGFElHgF1w5W4TjiXdKlmlcX9EVqbkFpoC4JSsfkP4BqvTBrXXiy70eayvSFr/io1COFghw=="],
+    "@dojoengine/torii-client": ["@dojoengine/torii-client@1.4.3", "", { "dependencies": { "@dojoengine/torii-wasm": "1.4.3" } }, "sha512-HJk1S/bCcvgrDvykIPmnn+QEnDI3XmwV3h3enUQsNhHtnF+ZGzizcToPgmUBNNEWrwfOjU4Iw6NtrE8KD8R4nw=="],
 
-    "@dojoengine/torii-wasm": ["@dojoengine/torii-wasm@1.3.0", "", {}, "sha512-nYZUf1f65SDQNqvDUy0s21s7QPua4WE+fcxKjBrq+fn107fD+9TyTQ86SdR2Fla6wrH6abx+NDiZl8r1GtzXLQ=="],
+    "@dojoengine/torii-wasm": ["@dojoengine/torii-wasm@1.4.3", "", {}, "sha512-jexV7B/+UlZ5nJwUNywGAcXE7iamU2o69nvoE8KM/0aKnNqhnWqdZpuNWwN5ysSeZ6XHh0l3bOT/0upQGNkAnA=="],
 
-    "@dojoengine/utils": ["@dojoengine/utils@1.3.0", "", { "dependencies": { "@dojoengine/recs": "2.0.13", "@latticexyz/utils": "^2.2.8", "mathjs": "^12.4.3", "micro-starknet": "^0.2.3" }, "peerDependencies": { "starknet": "6.23.1" } }, "sha512-SW54zLEFjUiaZxW0Hpi9qVNixjXtsoiGTdFhO0udgL1jP5QaZ9izZ9pfo1luvVWuwyQ0QOKclf0XKJ4/DssWyA=="],
+    "@dojoengine/utils": ["@dojoengine/utils@1.4.3", "", { "dependencies": { "@dojoengine/recs": "2.0.13", "@latticexyz/utils": "^2.2.8", "mathjs": "^12.4.3", "micro-starknet": "^0.2.3" }, "peerDependencies": { "starknet": "6.23.1" } }, "sha512-aJ2Go2ZU8L/1vLBgnvT7jvhb9SY5G2o5l0Bf1nlnbYA90sJ8qDjOHbZhHiQnKawWu1ASy6KVh4iQkDpPTdnwxg=="],
 
     "@ecies/ciphers": ["@ecies/ciphers@0.2.3", "", { "peerDependencies": { "@noble/ciphers": "^1.0.0" } }, "sha512-tapn6XhOueMwht3E2UzY0ZZjYokdaw9XtL9kEyjhQ/Fb9vL9xTFbOaI+fV0AWvTpYu4BNloC6getKW6NtSg4mA=="],
 

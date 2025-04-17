@@ -18,7 +18,7 @@ export const useGetTokensQuery = (namespace: string) => {
         .withClause(KeysClause([getModelsMapping(namespace).Token], []).build())
         .withEntityModels([getModelsMapping(namespace).Token])
         .includeHashedKeys(),
-    []
+    [namespace]
   );
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
@@ -28,7 +28,7 @@ export const useGetTokensQuery = (namespace: string) => {
   return { entities, isLoading, refetch };
 };
 
-export const useGetMetricsQuery = (key: string, namespace: string) => {
+export const useGetMetricsQuery = (namespace: string) => {
   const query = useMemo(
     () =>
       new ToriiQueryBuilder()
@@ -38,22 +38,15 @@ export const useGetMetricsQuery = (key: string, namespace: string) => {
               getModelsMapping(namespace).PlatformMetrics,
               getModelsMapping(namespace).PrizeMetrics,
             ],
-            []
-          )
-            .where(
-              getModelsMapping(namespace).PlatformMetrics,
-              "key",
-              "Eq",
-              addAddressPadding(key)
-            )
-            .build()
+            [undefined]
+          ).build()
         )
         .withEntityModels([
           getModelsMapping(namespace).PlatformMetrics,
           getModelsMapping(namespace).PrizeMetrics,
         ])
         .includeHashedKeys(),
-    [key]
+    [namespace]
   );
   const { entities, isLoading, refetch } = useSdkGetEntities({
     query,
@@ -126,7 +119,7 @@ export const useGetTournamentQuery = (
         ])
         .includeHashedKeys()
         .withLimit(10000),
-    [tournamentId]
+    [tournamentId, namespace]
   );
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
@@ -186,7 +179,7 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
         )
         .withEntityModels([getModelsMapping(namespace).Registration])
         .includeHashedKeys(),
-    [tournamentId, tokenIds, limit, offset]
+    [tournamentId, tokenIds, limit, offset, namespace]
   );
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
@@ -330,7 +323,7 @@ export const useSubscribeTournamentQuery = (
           getModelsMapping(namespace).Prize,
         ])
         .includeHashedKeys(),
-    [tournamentId]
+    [tournamentId, namespace]
   );
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
@@ -346,7 +339,7 @@ export const useSubscribePrizesQuery = (namespace: string) => {
         .withClause(KeysClause([getModelsMapping(namespace).Prize], []).build())
         .withEntityModels([getModelsMapping(namespace).Prize])
         .includeHashedKeys(),
-    []
+    [namespace]
   );
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
@@ -367,7 +360,7 @@ export const useSubscribeTournamentsQuery = (namespace: string) => {
         )
         .withEntityModels([getModelsMapping(namespace).Tournament])
         .includeHashedKeys(),
-    []
+    [namespace]
   );
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
@@ -385,7 +378,34 @@ export const useSubscribeTokensQuery = (namespace: string) => {
         )
         .withEntityModels([getModelsMapping(namespace).Token])
         .includeHashedKeys(),
-    []
+    [namespace]
+  );
+
+  const { entities, isSubscribed } = useSdkSubscribeEntities({
+    query,
+  });
+  return { entities, isSubscribed };
+};
+
+export const useSubscribeMetricsQuery = (namespace: string) => {
+  const query = useMemo(
+    () =>
+      new ToriiQueryBuilder()
+        .withClause(
+          KeysClause(
+            [
+              getModelsMapping(namespace).PlatformMetrics,
+              getModelsMapping(namespace).PrizeMetrics,
+            ],
+            [undefined]
+          ).build()
+        )
+        .withEntityModels([
+          getModelsMapping(namespace).PlatformMetrics,
+          getModelsMapping(namespace).PrizeMetrics,
+        ])
+        .includeHashedKeys(),
+    [namespace]
   );
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
