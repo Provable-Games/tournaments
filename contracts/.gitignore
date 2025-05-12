@@ -1,5 +1,6 @@
 bindings/
 target/
+contracts/target/
 scripts/deploy_mainnet.sh
 .env
 .env.sepolia
