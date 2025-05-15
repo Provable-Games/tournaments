@@ -4,10 +4,15 @@
 
 use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
 
-impl BigHit of TrophyTrait {
+impl Create of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
-        'GAME_MASTER'
+        match level {
+            0 => 'TRAILBLAZER',
+            1 => 'EVENT_ARCHITECT',
+            2 => 'MASTERMIND',
+            _ => '',
+        }
     }
 
     #[inline]
@@ -22,12 +27,17 @@ impl BigHit of TrophyTrait {
 
     #[inline]
     fn points(level: u8) -> u16 {
-        50
+        match level {
+            0 => 50,
+            1 => 100,
+            2 => 150,
+            _ => 0,
+        }
     }
 
     #[inline]
     fn group() -> felt252 {
-        'Game Master'
+        'Create'
     }
 
     #[inline]
@@ -37,16 +47,21 @@ impl BigHit of TrophyTrait {
 
     #[inline]
     fn title(level: u8) -> felt252 {
-        'Game Master'
+        match level {
+            0 => 'Trailblazer',
+            1 => 'Event Architect',
+            2 => 'Mastermind',
+            _ => '',
+        }
     }
 
     #[inline]
     fn description(level: u8) -> ByteArray {
         match level {
-            1 => "Create your first tournament",
-            2 => "Create 5 tournaments",
-            3 => "Create 10 tournaments",
-            _ => "Create 10 tournaments",
+            0 => "Created your first tournament",
+            1 => "Created 5 tournaments",
+            2 => "Created 20 tournaments",
+            _ => "",
         }
     }
 
