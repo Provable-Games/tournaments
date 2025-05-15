@@ -31,21 +31,30 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 
 const EntryRequirements = ({
   tournamentModel,
   tournamentsData,
-  tokens,
 }: {
   tournamentModel: TournamentModel;
   tournamentsData: Tournament[];
-  tokens: Token[];
 }) => {
   if (!tournamentModel?.entry_requirement?.isSome()) {
     return null;
   }
+  const { namespace, selectedChainConfig } = useDojo();
+  const state = useDojoStore((state) => state);
+
+  const tokenModels = state.getEntitiesByModel(namespace, "Token");
+  const registeredTokens = tokenModels.map(
+    (model) => model.models[namespace].Token
+  ) as Token[];
+  const erc721Tokens = registeredTokens.filter(
+    (token) => token.token_type.activeVariant() === "erc721"
+  );
+
   const navigate = useNavigate();
-  const { selectedChainConfig } = useDojo();
 
   const entryRequirement = useMemo(
     () => tournamentModel.entry_requirement.Some,
@@ -60,12 +69,12 @@ const EntryRequirements = ({
 
   const token = useMemo(
     () =>
-      tokens.find(
+      erc721Tokens.find(
         (token) =>
           token.address ===
           entryRequirement?.entry_requirement_type?.variant.token
       ),
-    [tokens, entryRequirement]
+    [erc721Tokens, entryRequirement]
   );
 
   const tournament = useMemo(

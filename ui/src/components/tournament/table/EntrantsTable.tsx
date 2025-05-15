@@ -83,7 +83,7 @@ const EntrantsTable = ({
     if (prevEntryCount !== null && prevEntryCount !== entryCount) {
       const timer = setTimeout(() => {
         refetchEntrants();
-      }, 500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }

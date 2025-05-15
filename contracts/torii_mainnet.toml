@@ -1,13 +1,13 @@
 # Realms World
-world_address = "0x06a9e4c6f0799160ea8ddc43ff982a5f83d7f633e9732ce42701de1288ff705f"
+world_address = "0x5c6d0020a9927edca9ddc984b97305439c0b32a1ec8d3f0eaf6291074cc9799"
 rpc = "https://api.cartridge.gg/x/starknet/mainnet"
 
 [indexing]
 index_pending = true
-transactions = true
-world_block = 1237265 # dark shuffle deployment block
+world_block = 1237000 # dark shuffle deployment block
 contracts = [
-  "ERC721:0x0320f977f47f0885e376b781d9e244d9f59f10154ce844ae1815c919f0374726", # dark shuffle
+  "ERC721:0x0320f977f47f0885e376b781d9e244d9f59f10154ce844ae1815c919f0374726", # dark shuffle v1.1
+  "ERC721:0x0444834e7b71749832f0db8c64f17ed1c3af8462c1682c10dcd6068b1c57494b" # dark shuffle v1.2
 ]
 
 [events]

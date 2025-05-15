@@ -133,13 +133,11 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
   tournamentId,
   tokenIds,
   limit,
-  offset,
   namespace,
 }: {
   tournamentId: BigNumberish;
   tokenIds: BigNumberish[];
   limit: number;
-  offset: number;
   namespace: string;
 }) => {
   const query = useMemo(
@@ -171,7 +169,7 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
             .build()
         )
         .withLimit(limit)
-        .withOffset(offset)
+        .withDirection("Forward")
         .addOrderBy(
           getModelsMapping(namespace).Registration,
           "entry_number",
@@ -179,7 +177,7 @@ export const useGetRegistrationsForTournamentInTokenListQuery = ({
         )
         .withEntityModels([getModelsMapping(namespace).Registration])
         .includeHashedKeys(),
-    [tournamentId, tokenIds, limit, offset, namespace]
+    [tournamentId, tokenIds, limit, namespace]
   );
 
   const { entities, isLoading, refetch } = useSdkGetEntities({
@@ -287,6 +285,7 @@ export const useSubscribeTournamentQuery = (
                 getModelsMapping(namespace).Tournament,
                 getModelsMapping(namespace).EntryCount,
                 getModelsMapping(namespace).Registration,
+                getModelsMapping(namespace).Prize,
               ],
               []
             ),
@@ -354,11 +353,21 @@ export const useSubscribeTournamentsQuery = (namespace: string) => {
       new ToriiQueryBuilder()
         .withClause(
           KeysClause(
-            [getModelsMapping(namespace).Tournament],
-            [undefined]
+            [
+              getModelsMapping(namespace).Tournament,
+              getModelsMapping(namespace).EntryCount,
+              getModelsMapping(namespace).Registration,
+              getModelsMapping(namespace).Prize,
+            ],
+            []
           ).build()
         )
-        .withEntityModels([getModelsMapping(namespace).Tournament])
+        .withEntityModels([
+          getModelsMapping(namespace).Tournament,
+          getModelsMapping(namespace).EntryCount,
+          getModelsMapping(namespace).Registration,
+          getModelsMapping(namespace).Prize,
+        ])
         .includeHashedKeys(),
     [namespace]
   );

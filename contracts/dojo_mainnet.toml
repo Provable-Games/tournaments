@@ -7,17 +7,17 @@ seed = "DNC"
 [env]
 chain_id = "SN_MAINNET"
 rpc_url = "https://api.cartridge.gg/x/starknet/mainnet"
-world_address = "0x06a9e4c6f0799160ea8ddc43ff982a5f83d7f633e9732ce42701de1288ff705f"
-world_block = 948010
+world_address = "0x5c6d0020a9927edca9ddc984b97305439c0b32a1ec8d3f0eaf6291074cc9799"
+world_block = 1385480
 
 [namespace]
-default = "budokan_1_0_6"
+default = "budokan_1_0_7"
 
 [writers]
-"budokan_1_0_6" = ["budokan_1_0_6-Budokan"]
+"budokan_1_0_7" = ["budokan_1_0_7-Budokan"]
 
 [init_call_args]
-"budokan_1_0_6-Budokan" = [
+"budokan_1_0_7-Budokan" = [
     "0", # safe_mode
     "0" # test_mode
 ]
@@ -25,8 +25,8 @@ default = "budokan_1_0_6"
 [migration]
 order_inits = []
 skip_contracts = [
-    "budokan_1_0_6-tournament_mock", 
-    "budokan_1_0_6-game_mock", 
-    "budokan_1_0_6-erc20_mock", 
-    "budokan_1_0_6-erc721_mock", 
+    "budokan_1_0_7-tournament_mock", 
+    "budokan_1_0_7-game_mock", 
+    "budokan_1_0_7-erc20_mock", 
+    "budokan_1_0_7-erc721_mock", 
 ]

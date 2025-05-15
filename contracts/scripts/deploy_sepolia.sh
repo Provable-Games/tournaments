@@ -29,7 +29,7 @@ get_contract_address () {
   echo $RESULT
 }
 
-export TOURNAMENTS_ADDRESS=$(get_contract_address "budokan_1_0_6-Budokan")
+export TOURNAMENTS_ADDRESS=$(get_contract_address "budokan_1_0_7-Budokan")
 
 #-----------------
 # addresses

@@ -194,6 +194,24 @@ pub mod Budokan {
                     "Cash",
                     "CASH",
                 );
+            self
+                .tournament
+                .initialize_erc20(
+                    contract_address_const::<
+                        0x0264be95a4a2ace20add68cb321acdccd2f9f8440ee1c7abd85da44ddab01085,
+                    >(),
+                    "Donkey",
+                    "DONKEY",
+                );
+            self
+                .tournament
+                .initialize_erc721(
+                    contract_address_const::<
+                        0x060e8836acbebb535dfcd237ff01f20be503aae407b67bb6e3b5869afae97156,
+                    >(),
+                    "Eternum Season 1 Pass",
+                    "ESP1",
+                );
         }
     }
 }

@@ -83,10 +83,8 @@ const ScoreTable = ({
 
   useEffect(() => {
     if (
-      prevEntryCount !== null &&
-      prevEntryCount !== entryCount &&
-      prevSubmissionsKey !== null &&
-      submissionsKey !== prevSubmissionsKey
+      (prevEntryCount !== null && prevEntryCount !== entryCount) ||
+      (prevSubmissionsKey !== null && submissionsKey !== prevSubmissionsKey)
     ) {
       const timer = setTimeout(() => {
         refetchLeaderboard();

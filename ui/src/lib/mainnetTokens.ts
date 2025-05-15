@@ -781,7 +781,7 @@ export const mainnetTokens = [
       "0x264be95a4a2ace20add68cb321acdccd2f9f8440ee1c7abd85da44ddab01085",
     sort_order: 1,
     total_supply: null,
-    hidden: true,
+    hidden: false,
     logo_url:
       "https://imagedelivery.net/0xPAQaDtnQhBs8IzYRIlNg/20817378-a45e-4521-f464-10f6dd13c500/logo",
   },

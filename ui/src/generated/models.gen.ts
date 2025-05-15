@@ -349,6 +349,8 @@ export type QualificationProof = {
   Tournament: TournamentQualification;
   // For qualifying via NFT ownership
   NFT: NFTQualification;
+  // For qualifying via allowlist
+  Address: string;
 };
 export type QualificationProofEnum = CairoCustomEnum;
 

@@ -16,7 +16,7 @@ export const useEntityUpdates = () => {
     await state.waitForEntityChange(platformMetricsEntityId, (entity) => {
       return (
         entity?.models?.[namespace]?.PlatformMetrics?.total_tournaments ==
-        addAddressPadding(bigintToHex(BigInt(Number(totalTournaments) + 1)))
+        addAddressPadding(bigintToHex(BigInt(Number(totalTournaments))))
       );
     });
   };

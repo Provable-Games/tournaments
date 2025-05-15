@@ -4,38 +4,38 @@ description = "Budokan Slot World"
 seed = "budokan"
 
 [namespace]
-default = "budokan_1_0_6"
+default = "budokan_1_0_7"
 
 [env]
 chain_id = "WP_BUDOKAN"
-rpc_url = "https://api.cartridge.gg/x/budokan/katana"
+rpc_url = "https://api.cartridge.gg/x/budokan-katana/katana"
 account_address = "0x127fd5f1fe78a71f8bcd1fec63e3fe2f0486b6ecd5c86a0466c3a21fa5cfcec"
 private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 # world_address = "0x04254b770ec69289dae26a6b488cc75689b3765171423cae8d648323ae4de44a"
 
 [writers]
 # Tournament
-"budokan_1_0_6-Tournament" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-Registration" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-Leaderboard" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-PlatformMetrics" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-TournamentTokenMetrics" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-PrizeMetrics" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-EntryCount" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-Prize" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-Token" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-TournamentConfig" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-PrizeClaim" = ["budokan_1_0_6-tournament_mock"]
-"budokan_1_0_6-QualificationEntries" = ["budokan_1_0_6-tournament_mock"]
+"budokan_1_0_7-Tournament" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-Registration" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-Leaderboard" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-PlatformMetrics" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-TournamentTokenMetrics" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-PrizeMetrics" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-EntryCount" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-Prize" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-Token" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-TournamentConfig" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-PrizeClaim" = ["budokan_1_0_7-tournament_mock"]
+"budokan_1_0_7-QualificationEntries" = ["budokan_1_0_7-tournament_mock"]
 # Game
-"budokan_1_0_6-GameMetadata" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-GameCounter" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-SettingsDetails" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-SettingsCounter" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-Settings" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-TokenMetadata" = ["budokan_1_0_6-game_mock"]
-"budokan_1_0_6-Score" = ["budokan_1_0_6-game_mock"]
+"budokan_1_0_7-GameMetadata" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-GameCounter" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-SettingsDetails" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-SettingsCounter" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-Settings" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-TokenMetadata" = ["budokan_1_0_7-game_mock"]
+"budokan_1_0_7-Score" = ["budokan_1_0_7-game_mock"]
 
 [migration]
 order_inits = []
-skip_contracts = ["budokan_1_0_6-Budokan"]
+skip_contracts = ["budokan_1_0_7-Budokan"]

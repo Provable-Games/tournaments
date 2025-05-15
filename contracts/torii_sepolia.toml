@@ -11,6 +11,7 @@ max_concurrent_tasks = 100 # Maximum concurrent indexing tasks
 index_transactions = true
 contracts = [
   "ERC721:0x4359aee29873cd9603207d29b4140468bac3e042aa10daab2e1a8b2dd60ef7b", # dark shuffle
+  "ERC721:0x1e0b80823ba036c8366c2434dad9d5bb35662a7b1d0afbdc69c5f0a7fff3513", # zkube
 ]
 
 [events]

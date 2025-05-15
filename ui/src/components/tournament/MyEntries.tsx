@@ -58,7 +58,6 @@ const MyEntries = ({
     tournamentId: addAddressPadding(bigintToHex(tournamentId)),
     tokenIds: ownedTokenIds ?? [],
     limit: 1000,
-    offset: 0,
     namespace,
   });
 

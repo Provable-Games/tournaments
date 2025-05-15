@@ -49,7 +49,7 @@ export const processTournamentData = (
     switch (formData.gatingOptions.type) {
       case "token":
         entryRequirementType = new CairoCustomEnum({
-          token: formData.gatingOptions.token,
+          token: formData.gatingOptions.token?.address,
           tournament: undefined,
           allowlist: undefined,
         });
@@ -115,7 +115,7 @@ export const processTournamentData = (
     },
     game_config: {
       address: addAddressPadding(formData.game),
-      settings_id: 0,
+      settings_id: formData.settings,
       prize_spots: formData.leaderboardSize,
     },
     entry_fee: formData.enableEntryFees
@@ -688,7 +688,8 @@ export const processPrizesFromSql = (
 
 export const processQualificationProof = (
   requirementVariant: string,
-  proof: any
+  proof: any,
+  address: string
 ): CairoOption<QualificationProofEnum> => {
   if (requirementVariant === "tournament") {
     const qualificationProof = new CairoCustomEnum({
@@ -698,6 +699,7 @@ export const processQualificationProof = (
         position: proof.position,
       },
       NFT: undefined,
+      Address: undefined,
     }) as QualificationProofEnum;
     return new CairoOption(CairoOptionVariant.Some, qualificationProof);
   }
@@ -713,6 +715,18 @@ export const processQualificationProof = (
             high: "0",
           },
         },
+        Address: undefined,
+      })
+    );
+  }
+
+  if (requirementVariant === "allowlist") {
+    return new CairoOption(
+      CairoOptionVariant.Some,
+      new CairoCustomEnum({
+        Tournament: undefined,
+        NFT: undefined,
+        Address: address,
       })
     );
   }
@@ -734,29 +748,30 @@ export const processGameMetadataFromSql = (gameMetadata: any): GameMetadata => {
   };
 };
 
-export const mergeGameSettings = (settingsDetails: any[], settings: any[]) => {
-  if (!settingsDetails) return {};
+export const formatGameSettingsData = (settings: any[]) => {
+  if (!settings) return {};
 
-  return settingsDetails.reduce((acc, setting) => {
+  return settings.reduce((acc, setting) => {
     const detailsId = setting.settings_id.toString();
-    const detailsSettings = settings.find(
-      (s: any) => s.settings_id === setting.settings_id
-    );
 
     // If this details ID doesn't exist yet, create it
     if (!acc[detailsId]) {
+      const {
+        settings_id,
+        name,
+        description,
+        created_at,
+        created_by,
+        ...remainingAttributes
+      } = setting;
       acc[detailsId] = {
-        ...setting,
-        hasSettings: false,
-        settings: [],
+        settings: [remainingAttributes],
+        name: name,
+        description: description,
+        created_at: created_at,
+        created_by: created_by,
+        hasSettings: true,
       };
-    }
-
-    // If we have settings, add them to the array and set hasSettings to true
-    if (settings && detailsSettings) {
-      const { settings_id, ...settingsWithoutId } = detailsSettings;
-      acc[detailsId].settings.push(settingsWithoutId);
-      acc[detailsId].hasSettings = true;
     }
 
     return acc;

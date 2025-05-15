@@ -1,6 +1,6 @@
 # torii config for profile [dev]
 world_address = "0x7cea35eb4b77d384aaf4de98d690659a93e8e836d2f0bdc63c5db89ffdf7e3c"
-rpc = "https://api.cartridge.gg/x/budokan/katana"
+rpc = "https://api.cartridge.gg/x/budokan-katana/katana"
 [indexing]
 index_pending = true
 index_transactions = false

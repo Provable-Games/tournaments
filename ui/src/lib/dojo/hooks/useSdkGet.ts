@@ -48,18 +48,15 @@ export const useSdkGetEntities = ({
     try {
       setIsLoading(true);
       // TODO: investigate emppty results when changing network (seems state related)
-      const entities = await sdk.getEntities({
+      const response = await sdk.getEntities({
         query: memoizedQuery,
       });
-      // console.log("entities", entities);
-      // console.log("query", memoizedQuery);
-      // console.log("running for chain", chain);
-      // console.log("running for namespace", namespace);
-      entities.forEach((entity) => {
+      const items = response.getItems(); // Get the current page items
+      items.forEach((entity) => {
         state.updateEntity(entity as Partial<ParsedEntity<SchemaType>>);
       });
       setEntities(
-        entities.map(
+        items.map(
           (e: any) =>
             ({
               entityId: e.entityId,

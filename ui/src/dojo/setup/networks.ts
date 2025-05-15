@@ -100,8 +100,8 @@ const slotKatanaConfig: DojoChainConfig = {
   chain: undefined, // derive from this
   chainId: ChainId.WP_BUDOKAN,
   name: "Katana Slot",
-  rpcUrl: "https://api.cartridge.gg/x/budokan/katana",
-  toriiUrl: "https://api.cartridge.gg/x/budokan/torii",
+  rpcUrl: "https://api.cartridge.gg/x/budokan-katana/katana",
+  toriiUrl: "https://api.cartridge.gg/x/budokan-katana/torii",
   toriiTokensUrl: "",
   relayUrl: undefined,
   blastRpc: undefined,

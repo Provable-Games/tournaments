@@ -32,23 +32,79 @@ export const useGetGamesMetadata = ({
   return { data, loading, error };
 };
 
-export const useGetGameSettings = ({
+export const useGetGameSettingsCount = ({
+  namespace,
+  active = false,
+}: {
+  namespace: string;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && active
+        ? `
+    SELECT COUNT(*) as count
+    FROM '${namespace}-GameSettingsMetadata' sm
+  `
+        : null,
+    [namespace, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error };
+};
+
+export const useGetGameSetting = ({
   namespace,
   settingsModel,
+  settingsId,
   active = false,
 }: {
   namespace: string;
   settingsModel: string;
+  settingsId?: number;
   active?: boolean;
 }) => {
   const query = useMemo(
     () =>
       namespace && settingsModel && active
         ? `
-    SELECT * FROM "${namespace}-${settingsModel}"
+    SELECT s.*, sm.name, sm.description, sm.created_at, sm.created_by
+    FROM '${namespace}-${settingsModel}' s
+    LEFT JOIN '${namespace}-GameSettingsMetadata' sm ON s.settings_id = sm.settings_id
+    WHERE s.settings_id = '${settingsId}'
   `
         : null,
-    [namespace, settingsModel, active]
+    [namespace, settingsModel, active, settingsId]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data, loading, error };
+};
+
+export const useGetGameSettings = ({
+  namespace,
+  settingsModel,
+  active = false,
+  limit = 10,
+  offset = 0,
+}: {
+  namespace: string;
+  settingsModel: string;
+  active?: boolean;
+  limit?: number;
+  offset?: number;
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && settingsModel && active
+        ? `
+    SELECT s.*, sm.name, sm.description, sm.created_at, sm.created_by
+    FROM '${namespace}-${settingsModel}' s
+    LEFT JOIN '${namespace}-GameSettingsMetadata' sm ON s.settings_id = sm.settings_id
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `
+        : null,
+    [namespace, settingsModel, active, limit, offset]
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data, loading, error };

@@ -267,17 +267,15 @@ export const useSystemCalls = () => {
               entrypoint: "approve",
               calldata: CallData.compile([
                 tournamentAddress,
-                prize.token_type.variant.erc20?.token_amount!,
+                prize.token_type.variant.erc20?.amount!,
                 "0",
               ]),
-              totalAmount: BigInt(
-                prize.token_type.variant.erc20?.token_amount! || 0
-              ),
+              totalAmount: BigInt(prize.token_type.variant.erc20?.amount! || 0),
             };
           } else {
             // Sum the amounts for the same token
             acc[tokenAddress].totalAmount += BigInt(
-              prize.token_type.variant.erc20?.token_amount! || 0
+              prize.token_type.variant.erc20?.amount! || 0
             );
             // Update calldata with new total
             acc[tokenAddress].calldata = CallData.compile([
@@ -390,17 +388,15 @@ export const useSystemCalls = () => {
             entrypoint: "approve",
             calldata: CallData.compile([
               tournamentAddress,
-              token.token_type.variant.erc20?.token_amount!,
+              token.token_type.variant.erc20?.amount!,
               "0",
             ]),
-            totalAmount: BigInt(
-              token.token_type.variant.erc20?.token_amount! || 0
-            ),
+            totalAmount: BigInt(token.token_type.variant.erc20?.amount! || 0),
           };
         } else {
           // Sum the amounts for the same token
           acc[tokenAddress].totalAmount += BigInt(
-            token.token_type.variant.erc20?.token_amount! || 0
+            token.token_type.variant.erc20?.amount! || 0
           );
           // Update calldata with new total
           acc[tokenAddress].calldata = CallData.compile([

@@ -21,7 +21,7 @@ const SettingsTable = ({ hasSettings, settings }: SettingsTableProps) => {
   const formattedSettings = formatGameSettings(settings);
 
   return (
-    <div className="overflow-y-auto sm:w-3/4 flex flex-col gap-2 h-[300px] pr-2">
+    <div className="overflow-y-auto flex flex-col border border-brand rounded-lg p-5 gap-2 h-[250px]">
       {formattedSettings.map((setting, index) => (
         <div
           key={index}

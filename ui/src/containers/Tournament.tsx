@@ -22,7 +22,6 @@ import {
   useSubscribeGamesQuery,
   // useGetGameCounterQuery,
   useGetTournamentQuery,
-  useSubscribeTournamentQuery,
   useSubscribeScoresQuery,
   useGetScoresQuery,
 } from "@/dojo/hooks/useSdkQueries";
@@ -124,7 +123,7 @@ const Tournament = () => {
   }, [id, tournamentsCount]);
 
   useGetTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
-  useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
+  // useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
 
   const tournamentEntityId = useMemo(
     () => getEntityIdFromKeys([BigInt(id!)]),
@@ -453,7 +452,6 @@ const Tournament = () => {
           <EntryRequirements
             tournamentModel={tournamentModel}
             tournamentsData={tournamentsData}
-            tokens={tokens}
           />
           {!isEnded && (
             <Button
