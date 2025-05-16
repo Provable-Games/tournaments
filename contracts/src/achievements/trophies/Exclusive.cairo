@@ -1,8 +1,10 @@
 // Enter an exclusive tournament
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl Exclusive of TrophyTrait {
+pub impl Exclusive of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         'VIP'
@@ -23,6 +25,6 @@ impl Exclusive of TrophyTrait {
     fn description(level: u8) -> ByteArray { "Entered a tournament with an allowlist" }
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
-        Task::EnterExclusiveTournament.tasks(1)
+        Task::Exclusive.tasks(1)
     }
 }

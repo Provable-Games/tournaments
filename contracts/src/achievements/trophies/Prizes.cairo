@@ -1,8 +1,10 @@
 // Add prizes to a tournament
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl Prizes of TrophyTrait {
+pub impl Prizes of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         'DONATOR'
@@ -23,6 +25,6 @@ impl Prizes of TrophyTrait {
     fn description(level: u8) -> ByteArray { "Added a prize to a tournament" }
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
-        Task::AddPrize.tasks(1)
+        Task::Prizes.tasks(1)
     }
 }

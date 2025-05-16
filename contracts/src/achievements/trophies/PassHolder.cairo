@@ -1,8 +1,10 @@
 // Enter a token gated tournament
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl PassHolder of TrophyTrait {
+pub impl PassHolder of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         'PASS_HOLDER'
@@ -23,6 +25,6 @@ impl PassHolder of TrophyTrait {
     fn description(level: u8) -> ByteArray { "Enter a token gated tournament" }
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
-        Task::HoldPass.tasks(1)
+        Task::PassHolder.tasks(1)
     }
 }

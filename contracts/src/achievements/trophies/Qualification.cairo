@@ -1,8 +1,10 @@
 // Enter a tournament that required winning a previous one
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl Qualification of TrophyTrait {
+pub impl Qualification of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         'QUALIFIED'
@@ -23,6 +25,6 @@ impl Qualification of TrophyTrait {
     fn description(level: u8) -> ByteArray { "Enter a tournament that required winning a previous one" }
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
-        Task::Qualify.tasks(1)
+        Task::Qualification.tasks(1)
     }
 }

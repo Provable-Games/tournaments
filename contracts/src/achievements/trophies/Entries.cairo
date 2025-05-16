@@ -2,9 +2,11 @@
 // Enter 10 tournaments
 // Enter 20 tournaments
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl Entries of TrophyTrait {
+pub impl Entries of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         match level {
@@ -73,6 +75,6 @@ impl Entries of TrophyTrait {
             2 => 20,
             _ => 0,
         };
-        Task::EnterTournament.tasks(count)
+        Task::Entries.tasks(count)
     }
 }

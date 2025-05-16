@@ -64,6 +64,8 @@ pub mod tournament_component {
 
     use core::num::traits::Zero;
 
+    use tournaments::achievements::achievements::AchievementsUtilsImpl;
+
     use tournaments::components::constants::{
         TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID,
     };
@@ -241,6 +243,8 @@ pub mod tournament_component {
                     creator_rewards_address,
                 );
 
+            AchievementsUtilsImpl::create_tournament(ref world);
+
             store
                 .create_tournament(
                     creator_token_id, metadata, schedule, game_config, entry_fee, entry_requirement,
@@ -297,6 +301,8 @@ pub mod tournament_component {
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
+
+            AchievementsUtilsImpl::enter_tournament(ref world);
 
             // associate game token with tournament via registration
             store

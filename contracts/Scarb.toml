@@ -18,7 +18,7 @@ build-external-contracts = [
 openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
 openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
 dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.5.0" }
-achievement = { git = "https://github.com/cartridge-gg/arcade", tag = "v1.4.0" }
+achievement = { git = "https://github.com/cartridge-gg/arcade" }
 starknet = "2.10.1"
 
 [dev-dependencies]

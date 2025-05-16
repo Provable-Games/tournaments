@@ -2,9 +2,11 @@
 // Create 5 tournaments
 // Create 10 tournaments
 
-use darkshuffle::utils::trophies::interface::{BushidoTask, Task, TaskTrait, TrophyTrait};
+use tournaments::achievements::tasks::index::{Task, TaskTrait};
+use tournaments::achievements::trophies::interface::{TrophyTrait};
+use achievement::types::task::{Task as BushidoTask};
 
-impl Create of TrophyTrait {
+pub impl Create of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         match level {
@@ -68,6 +70,6 @@ impl Create of TrophyTrait {
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
         let count: u32 = 1;
-        Task::CreateTournament.tasks(count)
+        Task::Create.tasks(count)
     }
 }

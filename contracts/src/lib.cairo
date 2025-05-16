@@ -40,6 +40,32 @@ mod presets {
     pub mod tournament;
 }
 
+pub mod achievements {
+    pub mod achievements;
+    pub mod tasks {
+        pub mod Create;
+        pub mod Entries;
+        pub mod Exclusive;
+        pub mod PassHolder;
+        pub mod Prizes;
+        pub mod Qualification;
+        pub mod TopFinish;
+        pub mod index;
+        pub mod interface;
+    }
+    pub mod trophies {
+        pub mod Create;
+        pub mod Entries;
+        pub mod Exclusive;
+        pub mod PassHolder;
+        pub mod Prizes;
+        pub mod Qualification;
+        pub mod TopFinish;
+        pub mod index;
+        pub mod interface;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     pub mod constants;

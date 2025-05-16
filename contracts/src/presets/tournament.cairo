@@ -63,16 +63,23 @@ pub mod Budokan {
     use tournaments::components::tournament::tournament_component;
     use tournaments::components::constants::{MAINNET_CHAIN_ID};
 
+    use achievement::components::achievable::AchievableComponent;
+
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
     #[abi(embed_v0)]
     impl TournamentComponentImpl =
         tournament_component::TournamentImpl<ContractState>;
     impl TournamentComponentInternalImpl = tournament_component::InternalImpl<ContractState>;
 
+    component!(path: AchievableComponent, storage: achievable, event: AchievableEvent);
+    impl AchievableInternalImpl = AchievableComponent::InternalImpl<ContractState>;
+
     #[storage]
     struct Storage {
         #[substorage(v0)]
         tournament: tournament_component::Storage,
+        #[substorage(v0)]
+        achievable: AchievableComponent::Storage,
     }
 
     #[event]
@@ -80,6 +87,8 @@ pub mod Budokan {
     enum Event {
         #[flat]
         TournamentEvent: tournament_component::Event,
+        #[flat]
+        AchievableEvent: AchievableComponent::Event,
     }
 
     fn dojo_init(ref self: ContractState, safe_mode: bool, test_mode: bool) {

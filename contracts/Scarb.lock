@@ -2,6 +2,14 @@
 version = 1
 
 [[package]]
+name = "achievement"
+version = "0.0.0"
+source = "git+https://github.com/cartridge-gg/arcade#c61e7863ee35ece517a5f424e5d87f467ab4158e"
+dependencies = [
+ "dojo",
+]
+
+[[package]]
 name = "dojo"
 version = "1.5.0"
 source = "git+https://github.com/dojoengine/dojo.git?tag=v1.5.0#812f17c9c57fd057d0bf1e648a591ea0ca9ea718"
@@ -65,6 +73,7 @@ source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v1.0.0#755ce1a
 name = "tournaments"
 version = "0.0.1"
 dependencies = [
+ "achievement",
  "dojo",
  "dojo_cairo_test",
  "openzeppelin_introspection",
