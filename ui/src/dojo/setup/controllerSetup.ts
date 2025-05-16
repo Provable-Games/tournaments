@@ -35,14 +35,15 @@ const _makeControllerPolicies = (manifest: DojoManifest): SessionPolicies => {
 export const initializeController = (
   chainRpcUrls: { rpcUrl: string }[],
   defaultChainId: string,
-  manifest: DojoManifest
+  manifest: DojoManifest,
+  namespace: string
 ): Connector => {
   const policies = _makeControllerPolicies(manifest);
   return new ControllerConnector({
     chains: chainRpcUrls,
     defaultChainId: stringToFelt(defaultChainId).toString(),
     preset: "budokan",
-    slot: "pg-mainnet-tokens",
+    slot: "budokan-sepolia-achievements",
     tokens: {
       erc20: [
         "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
@@ -50,5 +51,6 @@ export const initializeController = (
       ],
     },
     policies,
+    namespace: "budokan_1_0_7",
   }) as never as Connector;
 };

@@ -61,9 +61,11 @@ pub trait ITournament<TState> {
 pub mod Budokan {
     use starknet::{contract_address_const};
     use tournaments::components::tournament::tournament_component;
-    use tournaments::components::constants::{MAINNET_CHAIN_ID};
+    use tournaments::components::constants::{MAINNET_CHAIN_ID, DEFAULT_NS};
+    use dojo::world::{WorldStorage};
 
     use achievement::components::achievable::AchievableComponent;
+    use tournaments::achievements::trophies::index::{Trophy, TrophyTrait, TROPHY_COUNT};
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
     #[abi(embed_v0)]
@@ -92,6 +94,8 @@ pub mod Budokan {
     }
 
     fn dojo_init(ref self: ContractState, safe_mode: bool, test_mode: bool) {
+        let mut world: WorldStorage = self.world(@DEFAULT_NS());
+
         self.tournament.initialize(safe_mode, test_mode);
         let chain_id = starknet::get_tx_info().unbox().chain_id;
         if chain_id == MAINNET_CHAIN_ID {
@@ -221,6 +225,30 @@ pub mod Budokan {
                     "Eternum Season 1 Pass",
                     "ESP1",
                 );
+        }
+
+        // [Event] Emit all Trophy events
+        let mut trophy_id: u8 = TROPHY_COUNT;
+        while trophy_id > 0 {
+            let trophy: Trophy = trophy_id.into();
+            self
+                .achievable
+                .create(
+                    world,
+                    id: trophy.identifier(),
+                    hidden: trophy.hidden(),
+                    index: trophy.index(),
+                    points: trophy.points(),
+                    start: trophy.start(),
+                    end: trophy.end(),
+                    group: trophy.group(),
+                    icon: trophy.icon(),
+                    title: trophy.title(),
+                    description: trophy.description(),
+                    tasks: trophy.tasks(),
+                    data: trophy.data(),
+                );
+            trophy_id -= 1;
         }
     }
 }

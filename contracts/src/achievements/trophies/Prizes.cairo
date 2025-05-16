@@ -14,7 +14,7 @@ pub impl Prizes of TrophyTrait {
     #[inline]
     fn index(level: u8) -> u8 { 0 }
     #[inline]
-    fn points(level: u8) -> u16 { 150 }
+    fn points(level: u8) -> u16 { 75 }
     #[inline]
     fn group() -> felt252 { 'Prizes' }
     #[inline]

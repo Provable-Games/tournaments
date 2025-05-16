@@ -1,15 +1,13 @@
 [world]
-name = "Realms World"
-website = "https://realms.world/"
-description = "DNC"
-seed = "DNC"
+name = "Budokan"
+description = "Budokan"
+seed = "budokan_1_0_7.2"
 
 [env]
-# account_address = "0x0"
-# private_key = "0x0"
-chain_id = "SN_SEPOLIA"
+account_address="0x065d2AB17338b5AffdEbAF95E2D79834B5f30Bac596fF55563c62C3c98700150"
+private_key="0x0625adf89082edbffac775d64e9a5bba11483f6ef97c0925fb0433cb79d88581"
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
-world_address = "0x01bfa92665fb815c9ec5f37c562a5c9a06fdf23ce022c1d33d4ac07cef5ad80c"
+# world_address = "0x01bfa92665fb815c9ec5f37c562a5c9a06fdf23ce022c1d33d4ac07cef5ad80c"
 
 [namespace]
 default = "budokan_1_0_7"

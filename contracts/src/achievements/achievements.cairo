@@ -1,6 +1,6 @@
 use achievement::store::{StoreTrait};
 use dojo::world::{WorldStorage};
-use starknet::{get_block_timestamp, get_caller_address};
+use starknet::{ContractAddress, get_block_timestamp, get_caller_address};
 use tournaments::achievements::tasks::index::{Task, TaskTrait};
 
 #[generate_trait]
@@ -53,9 +53,9 @@ pub impl AchievementsUtilsImpl of AchievementsUtilsTrait {
         store.progress(player_id, task_id, count: 1, time: time);
     }
 
-    fn top_finish(ref world: WorldStorage) {
+    fn top_finish(ref world: WorldStorage, player: ContractAddress) {
         let store = StoreTrait::new(world);
-        let player_id: felt252 = get_caller_address().into();
+        let player_id: felt252 = player.into();
         let time = get_block_timestamp();
         let task_id: felt252 = Task::TopFinish.identifier();
         store.progress(player_id, task_id, count: 1, time: time);

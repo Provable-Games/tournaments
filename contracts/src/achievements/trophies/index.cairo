@@ -1,6 +1,8 @@
 use achievement::types::task::{Task as BushidoTask};
 use tournaments::achievements::trophies;
 
+pub const TROPHY_COUNT: u8 = 11;
+
 // Types
 
 #[derive(Copy, Drop)]
@@ -198,6 +200,11 @@ pub impl TrophyImpl of TrophyTrait {
             Trophy::Qualified => trophies::Qualification::Qualification::tasks(0),
             Trophy::OnThePodium => trophies::TopFinish::TopFinish::tasks(0),
         }
+    }
+
+    #[inline]
+    fn data(self: Trophy) -> ByteArray {
+        ""
     }
 }
 

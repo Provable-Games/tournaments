@@ -31,8 +31,8 @@ pub impl Entries of TrophyTrait {
     fn points(level: u8) -> u16 {
         match level {
             0 => 50,
-            1 => 100,
-            2 => 150,
+            1 => 75,
+            2 => 100,
             _ => 0,
         }
     }

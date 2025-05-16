@@ -14,7 +14,7 @@ pub impl PassHolder of TrophyTrait {
     #[inline]
     fn index(level: u8) -> u8 { 0 }
     #[inline]
-    fn points(level: u8) -> u16 { 100 }
+    fn points(level: u8) -> u16 { 75 }
     #[inline]
     fn group() -> felt252 { 'Pass Holder' }
     #[inline]

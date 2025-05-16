@@ -1,5 +1,5 @@
 # Realms World
-world_address = "0x01bfa92665fb815c9ec5f37c562a5c9a06fdf23ce022c1d33d4ac07cef5ad80c"
+world_address = "0x052c3f637f5c15e163d9a426516f5e5b39dbdf5497870c3552e2727e2e464963"
 rpc = "https://api.cartridge.gg/x/starknet/sepolia"
 
 [indexing]
@@ -16,3 +16,4 @@ contracts = [
 
 [events]
 raw = true
+historical = ["budokan_1_0_7-TrophyCreation", "budokan_1_0_7-TrophyProgression"]

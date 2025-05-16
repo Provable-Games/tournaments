@@ -88,6 +88,7 @@ pub mod tournament_component {
     use tournaments::components::interfaces::{ISettingsDispatcher, ISettingsDispatcherTrait};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
+    use dojo::world::{WorldStorage};
 
     use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
 
@@ -282,7 +283,7 @@ pub mod tournament_component {
             if let Option::Some(entry_requirement) = tournament.entry_requirement {
                 self
                     ._process_entry_requirement(
-                        ref store, tournament_id, entry_requirement, player_address, qualification,
+                        ref world, ref store, tournament_id, entry_requirement, player_address, qualification,
                     );
             }
 
@@ -378,6 +379,10 @@ pub mod tournament_component {
 
             // mark score as submitted
             self._mark_score_submitted(ref store, tournament_id, token_id);
+
+            let player_address: ContractAddress = self._get_owner(tournament.game_config.address, token_id.into());
+            AchievementsUtilsImpl::top_finish(ref world, player_address);
+    
         }
 
         /// @title Claim prize
@@ -445,6 +450,8 @@ pub mod tournament_component {
 
             // get next prize id (updates prize count)
             let id = store.increment_and_get_prize_count();
+
+            AchievementsUtilsImpl::add_prize(ref world);
 
             // create and save new prize
             store
@@ -1598,6 +1605,7 @@ pub mod tournament_component {
 
         fn _process_entry_requirement(
             self: @ComponentState<TContractState>,
+            ref world: WorldStorage,
             ref store: Store,
             tournament_id: u64,
             entry_requirement: EntryRequirement,
@@ -1608,7 +1616,7 @@ pub mod tournament_component {
             if let Option::Some(qualifier) = qualifier {
                 self
                     ._validate_entry_requirement(
-                        store, tournament_id, entry_requirement, player_address, qualifier,
+                        ref world, store, tournament_id, entry_requirement, player_address, qualifier,
                     );
 
                 // if entry limit was specified
@@ -1649,6 +1657,7 @@ pub mod tournament_component {
 
         fn _validate_entry_requirement(
             self: @ComponentState<TContractState>,
+            ref world: WorldStorage,
             store: Store,
             tournament_id: u64,
             entry_requirement: EntryRequirement,
@@ -1661,12 +1670,15 @@ pub mod tournament_component {
                         ._validate_tournament_qualification(
                             store, tournament_id, tournament_type, qualifier, player_address,
                         );
+                    AchievementsUtilsImpl::qualify_for_tournament(ref world);
                 },
                 EntryRequirementType::token(token_address) => {
                     self._validate_nft_qualification(token_address, player_address, qualifier);
+                    AchievementsUtilsImpl::token_gated_tournament(ref world);
                 },
                 EntryRequirementType::allowlist(addresses) => {
                     self._validate_allowlist_qualification(addresses, qualifier);
+                    AchievementsUtilsImpl::allowlist_tournament(ref world);
                 },
             }
         }

@@ -71,7 +71,7 @@ export const useSwitchNetwork = () => {
 
   const switchToSlot = async () => {
     await switchChainAsync({
-      chainId: stringToFelt(ChainId.WP_BUDOKAN).toString(),
+      chainId: stringToFelt(ChainId.WP_BUDOKAN_KATANA).toString(),
     });
   };
 

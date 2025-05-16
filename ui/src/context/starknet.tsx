@@ -14,7 +14,7 @@ import {
   PredeployedAccountsConnector,
 } from "@dojoengine/predeployed-connector";
 import { initializeController } from "@/dojo/setup/controllerSetup";
-import { manifests } from "@/dojo/setup/config";
+import { manifests, namespace } from "@/dojo/setup/config";
 
 // Initialize controller outside component
 const initController = () => {
@@ -32,7 +32,8 @@ const initController = () => {
     return initializeController(
       chainRpcUrls,
       getDefaultChainId(),
-      manifests[getDefaultChainId()]
+      manifests[getDefaultChainId()],
+      namespace[getDefaultChainId()]
     );
   } catch (error) {
     console.error(
@@ -64,9 +65,10 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
           return {
             nodeUrl: CHAINS[ChainId.SN_SEPOLIA].chain?.rpcUrls.default.http[0],
           };
-        case CHAINS[ChainId.WP_BUDOKAN].chain:
+        case CHAINS[ChainId.WP_BUDOKAN_KATANA].chain:
           return {
-            nodeUrl: CHAINS[ChainId.WP_BUDOKAN].chain?.rpcUrls.default.http[0],
+            nodeUrl:
+              CHAINS[ChainId.WP_BUDOKAN_KATANA].chain?.rpcUrls.default.http[0],
           };
         case CHAINS[ChainId.KATANA_LOCAL].chain:
           return {

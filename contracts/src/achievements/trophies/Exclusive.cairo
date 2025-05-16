@@ -14,7 +14,7 @@ pub impl Exclusive of TrophyTrait {
     #[inline]
     fn index(level: u8) -> u8 { 0 }
     #[inline]
-    fn points(level: u8) -> u16 { 50 }
+    fn points(level: u8) -> u16 { 75 }
     #[inline]
     fn group() -> felt252 { 'Exclusive' }
     #[inline]
