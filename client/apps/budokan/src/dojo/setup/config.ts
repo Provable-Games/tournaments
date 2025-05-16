@@ -1,9 +1,9 @@
 import { StarknetDomain } from "starknet";
 import { DojoManifest } from "@/dojo/hooks/useDojoSystem";
-import tournament_manifest_dev from "../../../../contracts/manifest_dev.json";
-import tournament_manifest_slot from "../../../../contracts/manifest_slot.json";
-import tournament_manifest_mainnet from "../../../../contracts/manifest_mainnet.json";
-import tournament_manifest_sepolia from "../../../../contracts/manifest_sepolia.json";
+import tournament_manifest_dev from "../../../../../../contracts/manifest_dev.json";
+import tournament_manifest_slot from "../../../../../../contracts/manifest_slot.json";
+import tournament_manifest_mainnet from "../../../../../../contracts/manifest_mainnet.json";
+import tournament_manifest_sepolia from "../../../../../../contracts/manifest_sepolia.json";
 import { ChainId, CHAINS } from "@/dojo/setup/networks";
 import { DojoAppConfig } from "@/context/dojo";
 
