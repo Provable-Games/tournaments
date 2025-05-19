@@ -1,0 +1,153 @@
+---
+layout: docs
+---
+
+# Budokan Key Functions
+
+This section details the primary functions exposed by the Budokan tournament system. Each function is designed to be permissionless, composable, and secure.
+
+## `create_tournament`
+```cairo
+fn create_tournament(
+    ref self: TState,
+    creator_rewards_address: ContractAddress,
+    metadata: Metadata,
+    schedule: Schedule,
+    game_config: GameConfig,
+    entry_fee: Option<EntryFee>,
+    entry_requirement: Option<EntryRequirement>,
+) -> TournamentModel;
+```
+**Purpose:** Create a new tournament with specified metadata, schedule, game configuration, entry fee, and requirements. Mints a game token to the creator for reward distribution.
+
+**Parameters:**
+- `creator_rewards_address`: Address to receive the creator's game token.
+- `metadata`: Tournament metadata (name, description, etc.).
+- `schedule`: Tournament schedule (registration, submission, finalization phases).
+- `game_config`: Game configuration (game address, settings, prize spots).
+- `entry_fee`: Optional entry fee (ERC20/721, amount, etc.).
+- `entry_requirement`: Optional qualification requirement.
+
+**Returns:** Tournament model struct.
+
+---
+
+## `enter_tournament`
+```cairo
+fn enter_tournament(
+    ref self: TState,
+    tournament_id: u64,
+    player_name: felt252,
+    player_address: ContractAddress,
+    qualification: Option<QualificationProof>,
+) -> (u64, u32);
+```
+**Purpose:** Register a player for a tournament, minting a game token and assigning an entry number.
+
+**Parameters:**
+- `tournament_id`: ID of the tournament to enter.
+- `player_name`: Name of the player (felt252).
+- `player_address`: Address to mint the game token to.
+- `qualification`: Optional qualification proof.
+
+**Returns:** Tuple of (game token ID, entry number).
+
+---
+
+## `submit_score`
+```cairo
+fn submit_score(
+    ref self: TState,
+    tournament_id: u64,
+    token_id: u64,
+    position: u8,
+);
+```
+**Purpose:** Submit a score/position for a tournament entry. Updates the leaderboard and marks the score as submitted.
+
+**Parameters:**
+- `tournament_id`: ID of the tournament.
+- `token_id`: Game token ID for the entry.
+- `position`: Leaderboard position (1-based index).
+
+---
+
+## `claim_prize`
+```cairo
+fn claim_prize(
+    ref self: TState,
+    tournament_id: u64,
+    prize_type: PrizeType,
+);
+```
+**Purpose:** Claim a prize for a tournament after it is finalized. Handles entry fee and custom prize types.
+
+**Parameters:**
+- `tournament_id`: ID of the tournament.
+- `prize_type`: Type of prize to claim (entry fees, custom, etc.).
+
+---
+
+## `add_prize`
+```cairo
+fn add_prize(
+    ref self: TState,
+    tournament_id: u64,
+    token_address: ContractAddress,
+    token_type: TokenType,
+    position: u8,
+) -> u64;
+```
+**Purpose:** Add a new prize to a tournament for a specific leaderboard position.
+
+**Parameters:**
+- `tournament_id`: ID of the tournament.
+- `token_address`: Address of the prize token.
+- `token_type`: Type of token (ERC20, ERC721, etc.).
+- `position`: Leaderboard position for the prize.
+
+**Returns:** Prize ID.
+
+---
+
+## `register_token`
+```cairo
+fn register_token(
+    ref self: TState,
+    address: ContractAddress,
+    token_type: TokenType,
+);
+```
+**Purpose:** Register a new token (ERC20/ERC721) for use in tournaments.
+
+**Parameters:**
+- `address`: Token contract address.
+- `token_type`: Type of token.
+
+---
+
+## `get_leaderboard`
+```cairo
+fn get_leaderboard(
+    self: @TState,
+    tournament_id: u64,
+) -> Array<u64>;
+```
+**Purpose:** Retrieve the current leaderboard for a tournament.
+
+**Parameters:**
+- `tournament_id`: ID of the tournament.
+
+**Returns:** Array of game token IDs ordered by position.
+
+---
+
+## Additional Functions
+- `total_tournaments`: Returns the total number of tournaments created.
+- `tournament`: Returns the tournament model for a given ID.
+- `get_registration`: Returns registration details for a game token.
+- `get_prize`: Returns prize details for a given prize ID.
+- `tournament_entries`: Returns the number of entries for a tournament.
+- `is_token_registered`: Checks if a token is registered for tournaments.
+- `current_phase`: Returns the current phase of a tournament.
+- `get_tournament_id_for_token_id`: Returns the tournament ID for a given game token. 

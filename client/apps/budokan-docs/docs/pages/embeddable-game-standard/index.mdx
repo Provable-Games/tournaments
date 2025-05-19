@@ -1,0 +1,60 @@
+---
+layout: docs
+---
+
+# Embeddable Game Standard
+
+The Embeddable Game Standard defines a set of interfaces and data structures that games must implement to be compatible with the Budokan tournament system. This open standard enables seamless integration of games into onchain tournaments, allowing for permissionless onboarding, score tracking, and prize distribution.
+
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Key Functions](#key-functions)
+- [Implementation Guide](#implementation-guide)
+
+## Overview
+The standard provides a blueprint for game contracts to:
+- Mint game tokens (ERC721) for tournament entries
+- Store and expose game and player metadata
+- Track scores and settings in a standardized way
+- Emit events for metadata updates and lifecycle changes
+
+By adhering to this standard, games can:
+- Be listed and used in Budokan tournaments
+- Enable automated leaderboard and prize logic
+- Support composable, upgradable tournament experiences
+
+## Architecture
+- **Game Component:** Implements the core logic for minting, metadata management, and score tracking. See `contracts/src/components/game.cairo`.
+- **Models & Interfaces:** Define the data structures for game metadata, token metadata, settings, and lifecycle events.
+- **Integration Points:** Games must expose the required interfaces and implement the necessary storage and event logic.
+
+## Key Functions
+- `mint`: Mint a new game token for a player, with associated metadata and settings.
+- `game_metadata`: Retrieve metadata for the game contract.
+- `token_metadata`: Retrieve metadata for a specific game token.
+- `game_count`: Get the total number of games/tokens minted.
+- `emit_metadata_update`: Emit an event when token metadata is updated.
+- `initializer`: Initialize the game contract with metadata, settings, and storage configuration.
+
+## Implementation Guide
+1. **Implement the Game Component:**
+   - Use the provided `game_component` module as a base.
+   - Implement the required storage, events, and interface functions.
+2. **Define Metadata and Settings:**
+   - Use the standard models for game and token metadata.
+   - Store settings and score models as required by your game logic.
+3. **Integrate with Budokan:**
+   - Ensure your contract exposes the required interfaces (ERC721, metadata, settings).
+   - Test minting, metadata retrieval, and event emission with Budokan tournament flows.
+4. **Deploy and Register:**
+   - Deploy your game contract to Starknet.
+   - Register the game with Budokan for tournament use.
+
+## Games
+The current games that have implemented the standard:
+- Dark Shuffle
+- Zkube
+- Loot Survivor (coming soon)
+
+By following this standard, your game will be compatible with Budokan and other systems that adopt the Embeddable Game Standard. 

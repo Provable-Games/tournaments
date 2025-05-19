@@ -1,0 +1,108 @@
+---
+layout: docs
+---
+
+# Embeddable Game Standard: Key Functions
+
+This section details the primary functions that a game contract must implement to comply with the Embeddable Game Standard and be compatible with Budokan tournaments.
+
+## `mint`
+```cairo
+fn mint(
+    ref self: ComponentState<TContractState>,
+    player_name: felt252,
+    settings_id: u32,
+    start: Option<u64>,
+    end: Option<u64>,
+    to: ContractAddress,
+) -> u64;
+```
+**Purpose:** Mint a new game token (ERC721) for a player, with associated metadata and settings.
+
+**Parameters:**
+- `player_name`: Name of the player (felt252).
+- `settings_id`: ID of the game settings to use.
+- `start`, `end`: Optional start and end timestamps for the game session.
+- `to`: Address to mint the token to.
+
+**Returns:** Token ID of the newly minted game token.
+
+---
+
+## `game_metadata`
+```cairo
+fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata;
+```
+**Purpose:** Retrieve metadata for the game contract (name, description, developer, etc.).
+
+**Returns:** GameMetadata struct.
+
+---
+
+## `token_metadata`
+```cairo
+fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata;
+```
+**Purpose:** Retrieve metadata for a specific game token (player, settings, lifecycle, etc.).
+
+**Parameters:**
+- `token_id`: ID of the game token.
+
+**Returns:** TokenMetadata struct.
+
+---
+
+## `game_count`
+```cairo
+fn game_count(self: @ComponentState<TContractState>) -> u64;
+```
+**Purpose:** Get the total number of games/tokens minted by the contract.
+
+**Returns:** Total count (u64).
+
+---
+
+## `emit_metadata_update`
+```cairo
+fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64);
+```
+**Purpose:** Emit an event when token metadata is updated, for offchain indexing and UI updates.
+
+**Parameters:**
+- `game_id`: ID of the game token whose metadata was updated.
+
+---
+
+## `initializer`
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+);
+```
+**Purpose:** Initialize the game contract with metadata, settings, and storage configuration. Mints a creator token and registers interfaces.
+
+**Parameters:**
+- `creator_address`: Address of the game creator.
+- `name`, `description`, `developer`, `publisher`, `genre`, `image`: Metadata fields.
+- `namespace`, `score_model`, `score_attribute`, `settings_model`: Storage and configuration fields.
+
+---
+
+## Additional Functions
+- `namespace`: Returns the namespace used for storage.
+- `score_model`: Returns the score model identifier.
+- `score_attribute`: Returns the score attribute identifier.
+- `settings_model`: Returns the settings model identifier.
+- `set_settings`: Set or update game settings details.
+- `assert_setting_exists`: Ensure a settings ID exists before minting. 

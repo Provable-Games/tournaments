@@ -1,0 +1,65 @@
+---
+layout: docs
+---
+
+# Embeddable Game Standard: Implementation Guide
+
+This guide walks through the steps required for a game developer to implement the Embeddable Game Standard and integrate with Budokan tournaments.
+
+## 1. Contract Structure
+Start by creating a new Cairo contract that imports and uses the `game_component` module from Budokan.
+
+```cairo
+use tournaments::components::game::game_component;
+
+#[dojo::contract]
+pub mod MyGame {
+    component!(path: game_component, storage: game, event: GameEvent);
+    #[abi(embed_v0)]
+    impl GameComponentImpl = game_component::GameImpl<ContractState>;
+    impl GameComponentInternalImpl = game_component::InternalImpl<ContractState>;
+    // ... additional game logic ...
+}
+```
+
+## 2. Implement Required Storage and Events
+Define the required storage fields and events as specified in the standard.
+
+## 3. Expose Required Interfaces
+Ensure your contract exposes the following:
+- ERC721 interface for game tokens
+- Metadata and settings interfaces
+- Functions for minting, metadata retrieval, and event emission
+
+## 4. Implement Initialization Logic
+Implement the `initializer` function to set up game metadata, settings, and storage configuration.
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+) {
+    // ... initialization logic ...
+}
+```
+
+## 5. Integrate with Budokan
+- Test minting game tokens via Budokan tournament flows
+- Ensure metadata and events are correctly emitted and indexed
+- Register your game contract with Budokan for tournament use
+
+## 6. Test and Deploy
+- Thoroughly test your contract for compatibility and security
+- Deploy to Starknet and register with Budokan
+
+By following these steps, your game will be fully compatible with the Budokan tournament system and the Embeddable Game Standard. 

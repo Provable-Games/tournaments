@@ -1,16 +1,20 @@
 ---
 layout: landing
+content:
+  horizontalPadding: 0px
+  width: 100%
+  verticalPadding: 0px
 ---
 
 import { HomePage } from 'vocs/components'
+import { Button } from 'vocs/components'
 
 <HomePage.Root>
-  <HomePage.Logo />
-  <HomePage.Tagline>My Awesome Docs</HomePage.Tagline>
-  <HomePage.InstallPackage name="vocs" type="init" />
-  <HomePage.Description>This is a description of my documentation website.</HomePage.Description>
-  <HomePage.Buttons>
-    <HomePage.Button href="/getting-started" variant="accent">Get started</HomePage.Button>
-    <HomePage.Button href="https://github.com/wevm/vocs">GitHub</HomePage.Button>
-  </HomePage.Buttons>
+  <div className="flex items-center justify-center absolute inset-0 z-1">
+    <img src="/banner-1200x630.webp" alt="Budokan Banner" className="h-full w-auto object-cover border border-(--color-brand)" />
+  </div>
+  <div className="flex flex-row items-center gap-5 z-2 absolute top-3/4">
+    <Button href="/budokan" className="bg-blue">Get started</Button>
+    <Button href="https://github.com/wevm/vocs">GitHub</Button>
+  </div>
 </HomePage.Root>

@@ -4,8 +4,24 @@ layout: docs
 
 # Budokan
 
-- [Getting Started](/development/getting-started)
-- [Client](/development/client)
-- [Contracts](/development/contracts)
-- [SDK](/development/sdk)
-- [Collaborators](/development/collaborators)
+Budokan is a modular, extensible tournament system for onchain games, designed to support a wide range of tournament formats, entry requirements, and prize mechanisms. It leverages the Dojo world storage and event system, and is built for composability and security.
+
+## Table of Contents
+- [Overview](#overview)
+- [Key Functions](#key-functions)
+- [Guide](#guide)
+
+## Overview
+Budokan enables the creation, management, and participation in onchain tournaments. It supports flexible entry fees, qualification requirements, prize distribution, and integrates with ERC20/ERC721 tokens. The system is designed to be embeddable and upgradable, supporting a wide range of games and tournament types.
+
+## Key Functions
+- `create_tournament`: Create a new tournament with metadata, schedule, game config, entry fee, and requirements.
+- `enter_tournament`: Register a player for a tournament, minting a game token.
+- `submit_score`: Submit a score/position for a tournament entry.
+- `claim_prize`: Claim prizes for a tournament after finalization.
+- `add_prize`: Add additional prizes to a tournament.
+- `register_token`: Register a new token (ERC20/ERC721) for use in tournaments.
+- `get_leaderboard`: Retrieve the current leaderboard for a tournament.
+
+## Guide
+See the following sections for detailed explanations of how to use the app and interact with the protocol.
