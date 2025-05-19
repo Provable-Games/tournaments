@@ -1,0 +1,801 @@
+file: docs/pages/index.mdx
+meta: {
+  "layout": "landing",
+  "content": {
+    "horizontalPadding": "0px",
+    "width": "100%",
+    "verticalPadding": "0px"
+  }
+}
+
+import { HomePage } from 'vocs/components'
+import { Button } from 'vocs/components'
+
+<HomePage.Root>
+  <div className="flex items-center justify-center absolute inset-0 z-1">
+    <img src="/banner-1200x630.webp" alt="Budokan Banner" className="h-full w-auto object-cover border border-(--color-brand)" />
+  </div>
+
+  <div className="flex flex-row items-center gap-5 z-2 absolute top-3/4">
+    <Button href="/budokan" className="bg-blue">Get started</Button>
+    <Button href="https://github.com/wevm/vocs">GitHub</Button>
+  </div>
+</HomePage.Root>
+
+
+
+---
+
+file: docs/pages/budokan/index.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Budokan
+
+Budokan is a modular, extensible tournament system for onchain games, designed to support a wide range of tournament formats, entry requirements, and prize mechanisms. It leverages the Dojo world storage and event system, and is built for composability and security.
+
+## Table of Contents
+
+* [Overview](#overview)
+* [Key Functions](#key-functions)
+* [Guide](#guide)
+
+## Overview
+
+Budokan enables the creation, management, and participation in onchain tournaments. It supports flexible entry fees, qualification requirements, prize distribution, and integrates with ERC20/ERC721 tokens. The system is designed to be embeddable and upgradable, supporting a wide range of games and tournament types.
+
+## Key Functions
+
+* `create_tournament`: Create a new tournament with metadata, schedule, game config, entry fee, and requirements.
+* `enter_tournament`: Register a player for a tournament, minting a game token.
+* `submit_score`: Submit a score/position for a tournament entry.
+* `claim_prize`: Claim prizes for a tournament after finalization.
+* `add_prize`: Add additional prizes to a tournament.
+* `register_token`: Register a new token (ERC20/ERC721) for use in tournaments.
+* `get_leaderboard`: Retrieve the current leaderboard for a tournament.
+
+## Guide
+
+See the following sections for detailed explanations of how to use the app and interact with the protocol.
+
+
+
+---
+
+file: docs/pages/budokan/key-functions.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Budokan Key Functions
+
+This section details the primary functions exposed by the Budokan tournament system. Each function is designed to be permissionless, composable, and secure.
+
+## `create_tournament`
+
+```cairo
+fn create_tournament(
+    ref self: TState,
+    creator_rewards_address: ContractAddress,
+    metadata: Metadata,
+    schedule: Schedule,
+    game_config: GameConfig,
+    entry_fee: Option<EntryFee>,
+    entry_requirement: Option<EntryRequirement>,
+) -> TournamentModel;
+```
+
+**Purpose:** Create a new tournament with specified metadata, schedule, game configuration, entry fee, and requirements. Mints a game token to the creator for reward distribution.
+
+**Parameters:**
+
+* `creator_rewards_address`: Address to receive the creator's game token.
+* `metadata`: Tournament metadata (name, description, etc.).
+* `schedule`: Tournament schedule (registration, submission, finalization phases).
+* `game_config`: Game configuration (game address, settings, prize spots).
+* `entry_fee`: Optional entry fee (ERC20/721, amount, etc.).
+* `entry_requirement`: Optional qualification requirement.
+
+**Returns:** Tournament model struct.
+
+***
+
+## `enter_tournament`
+
+```cairo
+fn enter_tournament(
+    ref self: TState,
+    tournament_id: u64,
+    player_name: felt252,
+    player_address: ContractAddress,
+    qualification: Option<QualificationProof>,
+) -> (u64, u32);
+```
+
+**Purpose:** Register a player for a tournament, minting a game token and assigning an entry number.
+
+**Parameters:**
+
+* `tournament_id`: ID of the tournament to enter.
+* `player_name`: Name of the player (felt252).
+* `player_address`: Address to mint the game token to.
+* `qualification`: Optional qualification proof.
+
+**Returns:** Tuple of (game token ID, entry number).
+
+***
+
+## `submit_score`
+
+```cairo
+fn submit_score(
+    ref self: TState,
+    tournament_id: u64,
+    token_id: u64,
+    position: u8,
+);
+```
+
+**Purpose:** Submit a score/position for a tournament entry. Updates the leaderboard and marks the score as submitted.
+
+**Parameters:**
+
+* `tournament_id`: ID of the tournament.
+* `token_id`: Game token ID for the entry.
+* `position`: Leaderboard position (1-based index).
+
+***
+
+## `claim_prize`
+
+```cairo
+fn claim_prize(
+    ref self: TState,
+    tournament_id: u64,
+    prize_type: PrizeType,
+);
+```
+
+**Purpose:** Claim a prize for a tournament after it is finalized. Handles entry fee and custom prize types.
+
+**Parameters:**
+
+* `tournament_id`: ID of the tournament.
+* `prize_type`: Type of prize to claim (entry fees, custom, etc.).
+
+***
+
+## `add_prize`
+
+```cairo
+fn add_prize(
+    ref self: TState,
+    tournament_id: u64,
+    token_address: ContractAddress,
+    token_type: TokenType,
+    position: u8,
+) -> u64;
+```
+
+**Purpose:** Add a new prize to a tournament for a specific leaderboard position.
+
+**Parameters:**
+
+* `tournament_id`: ID of the tournament.
+* `token_address`: Address of the prize token.
+* `token_type`: Type of token (ERC20, ERC721, etc.).
+* `position`: Leaderboard position for the prize.
+
+**Returns:** Prize ID.
+
+***
+
+## `register_token`
+
+```cairo
+fn register_token(
+    ref self: TState,
+    address: ContractAddress,
+    token_type: TokenType,
+);
+```
+
+**Purpose:** Register a new token (ERC20/ERC721) for use in tournaments.
+
+**Parameters:**
+
+* `address`: Token contract address.
+* `token_type`: Type of token.
+
+***
+
+## `get_leaderboard`
+
+```cairo
+fn get_leaderboard(
+    self: @TState,
+    tournament_id: u64,
+) -> Array<u64>;
+```
+
+**Purpose:** Retrieve the current leaderboard for a tournament.
+
+**Parameters:**
+
+* `tournament_id`: ID of the tournament.
+
+**Returns:** Array of game token IDs ordered by position.
+
+***
+
+## Additional Functions
+
+* `total_tournaments`: Returns the total number of tournaments created.
+* `tournament`: Returns the tournament model for a given ID.
+* `get_registration`: Returns registration details for a game token.
+* `get_prize`: Returns prize details for a given prize ID.
+* `tournament_entries`: Returns the number of entries for a tournament.
+* `is_token_registered`: Checks if a token is registered for tournaments.
+* `current_phase`: Returns the current phase of a tournament.
+* `get_tournament_id_for_token_id`: Returns the tournament ID for a given game token.
+
+
+
+---
+
+file: docs/pages/budokan/overview.mdx
+meta: {
+  "layout": "docs"
+}
+
+import { getAddress } from '../../../utils/addresses'
+import { ContractLink } from '../../components/ContractLink'
+import { ContractTable } from '../../components/ContractTable'
+
+# Budokan Overview
+
+Budokan is an onchain tournament system designed to power competitive gaming experiences on Starknet. It provides a robust, modular, and extensible framework for:
+
+* Creating and managing tournaments with flexible schedules and rules
+* Supporting a variety of entry requirements and fee structures
+* Handling prize pools and distribution (ERC20, ERC721, and custom tokens)
+* Integrating with embeddable game standards for seamless game onboarding
+* Leveraging Dojo world storage and event systems for composability and upgradability
+
+## Contracts
+
+<ContractTable
+  contracts={[[
+  { name: "Budokan", namespace: "budokan_v_1_0_6" },
+  { name: "Budokan", namespace: "budokan_1_0_7" }
+]]}
+/>
+
+## Key Features
+
+* **Modular Architecture**: Components for tournaments, games, schedules, and prizes can be extended or replaced.
+* **Secure and Permissionless**: Anyone can create or enter tournaments, with robust checks for entry requirements and prize claims.
+* **Flexible Entry and Prize Logic**: Supports entry fees, qualification proofs, and multiple prize types.
+* **Leaderboard and Scoring**: Built-in leaderboard management and score submission.
+
+## Use Cases
+
+* Esports tournaments for onchain games
+* Community competitions and challenges
+* Automated prize distribution for game events
+* Open standards for game developers to integrate with tournament infrastructure
+
+Budokan is designed to be the backbone for provable, transparent, and fair onchain competitions, enabling new forms of player engagement and game design.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/games.mdx
+meta: {
+  "layout": "docs"
+}
+
+import { GameCard } from '../../components/GameCard'
+
+# Embeddable Game Standard: Games
+
+Here is a list of games that have implemented the emeddable game standard and are benefitting from the tools provided:
+
+<GameCard icon="https://darkshuffle.io/favicon.svg" name="Dark Shuffle" url="https://darkshuffle.io" description="Dark Shuffle is a turn-based, collectible card game. Build your deck, battle monsters, and explore a procedurally generated world." developer="Provable Games" />
+
+<GameCard icon="https://app.zkube.xyz/assets/pwa-512x512.png" name="zKube" url="https://app.zkube.xyz/" description="zKube is an engaging puzzle game that puts players' strategic thinking to the test. Set within a dynamic grid, the objective is simple: manipulate blocks to form solid lines and earn points.	" developer="Chain Devs" />
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/implementation.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Implementation Guide
+
+This guide walks through the steps required for a game developer to implement the Embeddable Game Standard and integrate with Budokan tournaments.
+
+## 1. Contract Structure
+
+Start by creating a new Cairo contract that imports and uses the `game_component` module from Budokan.
+
+```cairo
+use tournaments::components::game::game_component;
+
+#[dojo::contract]
+pub mod MyGame {
+    component!(path: game_component, storage: game, event: GameEvent);
+    #[abi(embed_v0)]
+    impl GameComponentImpl = game_component::GameImpl<ContractState>;
+    impl GameComponentInternalImpl = game_component::InternalImpl<ContractState>;
+    // ... additional game logic ...
+}
+```
+
+## 2. Implement Required Storage and Events
+
+Define the required storage fields and events as specified in the standard.
+
+## 3. Expose Required Interfaces
+
+Ensure your contract exposes the following:
+
+* ERC721 interface for game tokens
+* Metadata and settings interfaces
+* Functions for minting, metadata retrieval, and event emission
+
+## 4. Implement Initialization Logic
+
+Implement the `initializer` function to set up game metadata, settings, and storage configuration.
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+) {
+    // ... initialization logic ...
+}
+```
+
+## 5. Integrate with Budokan
+
+* Test minting game tokens via Budokan tournament flows
+* Ensure metadata and events are correctly emitted and indexed
+* Register your game contract with Budokan for tournament use
+
+## 6. Test and Deploy
+
+* Thoroughly test your contract for compatibility and security
+* Deploy to Starknet and register with Budokan
+
+By following these steps, your game will be fully compatible with the Budokan tournament system and the Embeddable Game Standard.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/index.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard
+
+The Embeddable Game Standard defines a set of interfaces and data structures that games must implement to be compatible with the Budokan tournament system. This open standard enables seamless integration of games into onchain tournaments, allowing for permissionless onboarding, score tracking, and prize distribution.
+
+## Table of Contents
+
+* [Overview](#overview)
+* [Architecture](#architecture)
+* [Key Functions](#key-functions)
+* [Implementation Guide](#implementation-guide)
+
+## Overview
+
+The standard provides a blueprint for game contracts to:
+
+* Mint game tokens (ERC721) for tournament entries
+* Store and expose game and player metadata
+* Track scores and settings in a standardized way
+* Emit events for metadata updates and lifecycle changes
+
+By adhering to this standard, games can:
+
+* Be listed and used in Budokan tournaments
+* Enable automated leaderboard and prize logic
+* Support composable, upgradable tournament experiences
+
+## Architecture
+
+* **Game Component:** Implements the core logic for minting, metadata management, and score tracking. See `contracts/src/components/game.cairo`.
+* **Models & Interfaces:** Define the data structures for game metadata, token metadata, settings, and lifecycle events.
+* **Integration Points:** Games must expose the required interfaces and implement the necessary storage and event logic.
+
+## Key Functions
+
+* `mint`: Mint a new game token for a player, with associated metadata and settings.
+* `game_metadata`: Retrieve metadata for the game contract.
+* `token_metadata`: Retrieve metadata for a specific game token.
+* `game_count`: Get the total number of games/tokens minted.
+* `emit_metadata_update`: Emit an event when token metadata is updated.
+* `initializer`: Initialize the game contract with metadata, settings, and storage configuration.
+
+## Implementation Guide
+
+1. **Implement the Game Component:**
+   * Use the provided `game_component` module as a base.
+   * Implement the required storage, events, and interface functions.
+2. **Define Metadata and Settings:**
+   * Use the standard models for game and token metadata.
+   * Store settings and score models as required by your game logic.
+3. **Integrate with Budokan:**
+   * Ensure your contract exposes the required interfaces (ERC721, metadata, settings).
+   * Test minting, metadata retrieval, and event emission with Budokan tournament flows.
+4. **Deploy and Register:**
+   * Deploy your game contract to Starknet.
+   * Register the game with Budokan for tournament use.
+
+## Games
+
+The current games that have implemented the standard:
+
+* Dark Shuffle
+* Zkube
+* Loot Survivor (coming soon)
+
+By following this standard, your game will be compatible with Budokan and other systems that adopt the Embeddable Game Standard.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/key-functions.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Key Functions
+
+This section details the primary functions that a game contract must implement to comply with the Embeddable Game Standard and be compatible with Budokan tournaments.
+
+## `mint`
+
+```cairo
+fn mint(
+    ref self: ComponentState<TContractState>,
+    player_name: felt252,
+    settings_id: u32,
+    start: Option<u64>,
+    end: Option<u64>,
+    to: ContractAddress,
+) -> u64;
+```
+
+**Purpose:** Mint a new game token (ERC721) for a player, with associated metadata and settings.
+
+**Parameters:**
+
+* `player_name`: Name of the player (felt252).
+* `settings_id`: ID of the game settings to use.
+* `start`, `end`: Optional start and end timestamps for the game session.
+* `to`: Address to mint the token to.
+
+**Returns:** Token ID of the newly minted game token.
+
+***
+
+## `game_metadata`
+
+```cairo
+fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata;
+```
+
+**Purpose:** Retrieve metadata for the game contract (name, description, developer, etc.).
+
+**Returns:** GameMetadata struct.
+
+***
+
+## `token_metadata`
+
+```cairo
+fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata;
+```
+
+**Purpose:** Retrieve metadata for a specific game token (player, settings, lifecycle, etc.).
+
+**Parameters:**
+
+* `token_id`: ID of the game token.
+
+**Returns:** TokenMetadata struct.
+
+***
+
+## `game_count`
+
+```cairo
+fn game_count(self: @ComponentState<TContractState>) -> u64;
+```
+
+**Purpose:** Get the total number of games/tokens minted by the contract.
+
+**Returns:** Total count (u64).
+
+***
+
+## `emit_metadata_update`
+
+```cairo
+fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64);
+```
+
+**Purpose:** Emit an event when token metadata is updated, for offchain indexing and UI updates.
+
+**Parameters:**
+
+* `game_id`: ID of the game token whose metadata was updated.
+
+***
+
+## `initializer`
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+);
+```
+
+**Purpose:** Initialize the game contract with metadata, settings, and storage configuration. Mints a creator token and registers interfaces.
+
+**Parameters:**
+
+* `creator_address`: Address of the game creator.
+* `name`, `description`, `developer`, `publisher`, `genre`, `image`: Metadata fields.
+* `namespace`, `score_model`, `score_attribute`, `settings_model`: Storage and configuration fields.
+
+***
+
+## Additional Functions
+
+* `namespace`: Returns the namespace used for storage.
+* `score_model`: Returns the score model identifier.
+* `score_attribute`: Returns the score attribute identifier.
+* `settings_model`: Returns the settings model identifier.
+* `set_settings`: Set or update game settings details.
+* `assert_setting_exists`: Ensure a settings ID exists before minting.
+
+
+
+---
+
+file: docs/pages/budokan/guide/enter.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Entering a Tournament
+
+Learn how to participate in Budokan tournaments as a player.
+
+## Prerequisites
+
+* A Cartridge controller
+* Required entry fees (if any)
+* Qualification proof (if required)
+
+## Setup
+
+<img src="/docs/controller-sign-up.png" alt="Controller Onboarding" width="200" height="100" />
+
+## Steps
+
+1. Finding Tournaments
+   * Browse active tournaments
+   * Check tournament requirements
+   * Review prize structure
+
+2. Registration Process
+   * Connect wallet
+   * Pay entry fees
+   * Submit qualification proof
+   * Receive game token
+
+3. Participating
+   * Understanding tournament phases
+   * Submitting scores
+   * Tracking leaderboard position
+
+## Example
+
+\[Include example of tournament entry process]
+
+## Tips
+
+* Wallet preparation
+* Entry fee management
+* Score submission timing
+
+
+
+---
+
+file: docs/pages/budokan/guide/guide.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Budokan Guide
+
+This guide walks you through the complete process of using Budokan, from creating tournaments to claiming prizes.
+
+## Table of Contents
+
+* [Entering a Tournament](./enter)
+* [Creating a Tournament](./create)
+* [Managing Prizes](./prizes)
+
+## Overview
+
+Budokan provides a complete tournament management system with three main phases:
+
+1. Player Registration and Participation
+2. Tournament Creation and Setup
+3. Prize Management and Distribution
+
+Each section of this guide provides detailed instructions and examples for these key processes.
+
+
+
+---
+
+file: docs/pages/budokan/guide/onboarding.mdx
+meta: {}
+
+
+
+
+---
+
+file: docs/pages/budokan/guide/prizes.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Managing Prizes
+
+Learn how to manage and distribute prizes in your tournament.
+
+## Prize Types
+
+* Entry Fee Prizes
+* Custom Token Prizes
+* Mixed Prize Pools
+
+## For Tournament Creators
+
+1. Setting Up Prizes
+   * Adding prize tokens
+   * Configuring distribution
+   * Managing prize pool
+
+2. Prize Distribution
+   * Automatic distribution
+   * Manual distribution
+   * Emergency procedures
+
+## For Players
+
+1. Prize Eligibility
+   * Understanding requirements
+   * Checking position
+   * Claiming process
+
+2. Claiming Prizes
+   * When to claim
+   * How to claim
+   * Troubleshooting
+
+## Examples
+
+\[Include examples of prize setup and claiming]
+
+## Best Practices
+
+* Prize pool management
+* Distribution timing
+* Security considerations
+
+
+
+---
+
+file: docs/pages/budokan/guide/create/create.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Creating a Tournament
+
+Learn how to set up and configure your tournament in Budokan.
+
+## Prerequisites
+
+* A Starknet wallet with sufficient funds
+* Game contract address (if using a specific game)
+* Prize tokens (if offering custom prizes)
+
+## Steps
+
+1. Configure Tournament Metadata
+   * Name and description
+   * Tournament type
+   * Game selection
+
+2. Set Tournament Schedule
+   * Registration period
+   * Submission period
+   * Finalization date
+
+3. Configure Entry Requirements
+   * Entry fees
+   * Qualification requirements
+   * Player limits
+
+4. Set Up Prize Structure
+   * Prize types (Entry fees, Custom tokens)
+   * Prize distribution
+   * Winner positions
+
+## Example Configuration
+
+\[Include example configuration with code snippets]
+
+## Best Practices
+
+* Setting appropriate timeframes
+* Prize pool management
+* Security considerations
+
+
+
+---
+
+file: docs/pages/budokan/guide/create/entry-fees.mdx
+meta: {}
+
+
+
+
+---
+
+file: docs/pages/budokan/guide/create/entry-requirements.mdx
+meta: {}
+
+
