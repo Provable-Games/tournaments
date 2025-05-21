@@ -742,200 +742,251 @@ export function EnterTournamentDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4">
           {hasEntryFee && (
-            <div className="flex flex-col gap-2">
-              <span className="text-lg font-brand">Entry Fee</span>
-              <div className="flex flex-col items-center">
-                <div className="flex flex-row items-center justify-center gap-2 border border-brand-muted rounded-md p-2 px-4">
-                  <div className="flex flex-row items-center gap-2">
+            <>
+              <div className="w-full h-0.5 bg-brand/25" />
+              <div className="flex flex-col gap-2">
+                <span className="text-lg font-brand">Entry Fee</span>
+                <div className="flex flex-col items-center">
+                  <div className="flex flex-row items-center justify-center gap-2 border border-brand-muted rounded-md p-2 px-4">
                     <div className="flex flex-row items-center gap-2">
-                      <span>
-                        {formatNumber(Number(entryAmount) / 10 ** 18)}
-                      </span>
-                      <img
-                        src={getTokenLogoUrl(chainId, entryToken ?? "")}
-                        alt={entryToken ?? ""}
-                        className="w-6 h-6"
-                      />
+                      <div className="flex flex-row items-center gap-2">
+                        <span>
+                          {formatNumber(Number(entryAmount) / 10 ** 18)}
+                        </span>
+                        <img
+                          src={getTokenLogoUrl(chainId, entryToken ?? "")}
+                          alt={entryToken ?? ""}
+                          className="w-6 h-6"
+                        />
 
-                      <span>
-                        {
-                          tokens.find((token) => token.address === entryToken)
-                            ?.symbol
-                        }
-                      </span>
-                    </div>
-                    <span className="text-neutral">
-                      ~${entryFeeUsdCost.toFixed(2)}
-                    </span>
-                  </div>
-                  {address &&
-                    (hasBalance ? (
-                      <div className="flex flex-row items-center gap-2">
-                        <span className="w-6 h-6">
-                          <CHECK />
+                        <span>
+                          {
+                            tokens.find((token) => token.address === entryToken)
+                              ?.symbol
+                          }
                         </span>
-                        <span className="text-sm">Enough Balance</span>
                       </div>
-                    ) : (
-                      <div className="flex flex-row items-center gap-2">
-                        <span className="w-6 h-6">
-                          <X />
+                      <span className="text-neutral">
+                        ~${entryFeeUsdCost.toFixed(2)}
+                      </span>
+                    </div>
+                    {address &&
+                      (hasBalance ? (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-6 h-6">
+                            <CHECK />
+                          </span>
+                          <span className="text-sm">Enough Balance</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-6 h-6">
+                            <X />
+                          </span>
+                          <span className="text-sm">Not Enough Balance</span>
+                        </div>
+                      ))}
+                  </div>
+                  <span className="w-10 rotate-90">
+                    <FAT_ARROW_RIGHT />
+                  </span>
+                  <div className="flex flex-row items-center gap-2 w-full">
+                    <div
+                      className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
+                        creatorAmount > 0 ? "" : "opacity-50"
+                      }`}
+                    >
+                      <span className="text-sm sm:text-base">
+                        {creatorShare}%
+                      </span>
+                      <span className="text-sm sm:text-base">Creator Fee</span>
+                      <div className="flex flex-row items-center gap-1">
+                        <span className="text-xs sm:text-sm">
+                          +{formatNumber(creatorAmount)}
                         </span>
-                        <span className="text-sm">Not Enough Balance</span>
+                        <img
+                          src={getTokenLogoUrl(chainId, entryToken ?? "")}
+                          alt={entryToken ?? ""}
+                          className="w-5"
+                        />
+                        <span className="hidden sm:block text-xs sm:text-sm text-neutral">
+                          ~${formatNumber(creatorAmount * (entryFeePrice ?? 0))}
+                        </span>
                       </div>
-                    ))}
-                </div>
-                <span className="w-10 rotate-90">
-                  <FAT_ARROW_RIGHT />
-                </span>
-                <div className="flex flex-row items-center gap-2 w-full">
-                  <div
-                    className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
-                      creatorAmount > 0 ? "" : "opacity-50"
-                    }`}
-                  >
-                    <span className="text-sm sm:text-base">
-                      {creatorShare}%
-                    </span>
-                    <span className="text-sm sm:text-base">Creator Fee</span>
-                    <div className="flex flex-row items-center gap-1">
-                      <span className="text-xs sm:text-sm">
-                        +{formatNumber(creatorAmount)}
-                      </span>
-                      <img
-                        src={getTokenLogoUrl(chainId, entryToken ?? "")}
-                        alt={entryToken ?? ""}
-                        className="w-5"
-                      />
-                      <span className="hidden sm:block text-xs sm:text-sm text-neutral">
-                        ~${formatNumber(creatorAmount * (entryFeePrice ?? 0))}
-                      </span>
                     </div>
-                  </div>
-                  <div
-                    className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
-                      gameAmount > 0 ? "" : "opacity-50"
-                    }`}
-                  >
-                    <span className="text-sm sm:text-base">{gameShare}%</span>
-                    <span className="text-sm sm:text-base">Game Fee</span>
-                    <div className="flex flex-row items-center gap-1">
-                      <span className="text-xs sm:text-sm">
-                        +{formatNumber(gameAmount)}
-                      </span>
-                      <img
-                        src={getTokenLogoUrl(chainId, entryToken ?? "")}
-                        alt={entryToken ?? ""}
-                        className="w-5"
-                      />
-                      <span className="hidden sm:block text-xs sm:text-sm text-neutral">
-                        ~${formatNumber(gameAmount * (entryFeePrice ?? 0))}
-                      </span>
+                    <div
+                      className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
+                        gameAmount > 0 ? "" : "opacity-50"
+                      }`}
+                    >
+                      <span className="text-sm sm:text-base">{gameShare}%</span>
+                      <span className="text-sm sm:text-base">Game Fee</span>
+                      <div className="flex flex-row items-center gap-1">
+                        <span className="text-xs sm:text-sm">
+                          +{formatNumber(gameAmount)}
+                        </span>
+                        <img
+                          src={getTokenLogoUrl(chainId, entryToken ?? "")}
+                          alt={entryToken ?? ""}
+                          className="w-5"
+                        />
+                        <span className="hidden sm:block text-xs sm:text-sm text-neutral">
+                          ~${formatNumber(gameAmount * (entryFeePrice ?? 0))}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
-                      prizePoolAmount > 0 ? "" : "opacity-50"
-                    }`}
-                  >
-                    <span className="text-sm sm:text-base">
-                      {prizePoolShare}%
-                    </span>
-                    <span className="text-sm sm:text-base">Prize Pool</span>
-                    <div className="flex flex-row items-center gap-1">
-                      <span className="text-xs sm:text-sm">
-                        +{formatNumber(prizePoolAmount)}
+                    <div
+                      className={`flex flex-col items-center gap-1 border border-brand-muted rounded-md p-2 w-1/3 ${
+                        prizePoolAmount > 0 ? "" : "opacity-50"
+                      }`}
+                    >
+                      <span className="text-sm sm:text-base">
+                        {prizePoolShare}%
                       </span>
-                      <img
-                        src={getTokenLogoUrl(chainId, entryToken ?? "")}
-                        alt={entryToken ?? ""}
-                        className="w-5"
-                      />
-                      <span className="hidden sm:block text-xs sm:text-sm text-neutral">
-                        ~${formatNumber(prizePoolAmount * (entryFeePrice ?? 0))}
-                      </span>
+                      <span className="text-sm sm:text-base">Prize Pool</span>
+                      <div className="flex flex-row items-center gap-1">
+                        <span className="text-xs sm:text-sm">
+                          +{formatNumber(prizePoolAmount)}
+                        </span>
+                        <img
+                          src={getTokenLogoUrl(chainId, entryToken ?? "")}
+                          alt={entryToken ?? ""}
+                          className="w-5"
+                        />
+                        <span className="hidden sm:block text-xs sm:text-sm text-neutral">
+                          ~$
+                          {formatNumber(prizePoolAmount * (entryFeePrice ?? 0))}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {hasEntryRequirement && (
-            <div className="flex flex-col gap-2">
-              <span className="text-lg font-brand">Entry Requirements</span>
-              <span className="px-2">
-                {requirementVariant === "token" ? (
-                  "You must hold the NFT"
-                ) : requirementVariant === "tournament" ? (
-                  <div className="flex flex-row items-center gap-2">
-                    {`You must have ${
-                      tournamentRequirementVariant === "winners"
-                        ? "won"
-                        : "participated in"
-                    }:`}
-                  </div>
-                ) : (
-                  "Must be part of the allowlist"
-                )}
-              </span>
-              {requirementVariant === "token" ? (
-                <div className="flex flex-row items-center gap-2 px-4">
-                  <span className="w-8">
-                    <COIN />
-                  </span>
-                  <span>{token?.name}</span>
-                  <span className="text-neutral">{token?.symbol}</span>
-                  {address ? (
-                    meetsEntryRequirements ? (
-                      <div className="flex flex-row items-center gap-2">
-                        <span className="w-5">
-                          <CHECK />
-                        </span>
-                        <span>
-                          {`${
-                            entriesLeftByTournament.find(
-                              (entry) =>
-                                entry.token === requiredTokenAddresses[0]
-                            )?.entriesLeft
-                          } ${
-                            entriesLeftByTournament.find(
-                              (entry) =>
-                                entry.token === requiredTokenAddresses[0]
-                            )?.entriesLeft === 1
-                              ? "entry"
-                              : "entries"
-                          } left`}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="w-5">
-                        <X />
-                      </span>
-                    )
+            <>
+              <div className="w-full h-0.5 bg-brand/25" />
+              <div className="flex flex-col gap-2">
+                <span className="text-lg font-brand">Entry Requirements</span>
+                <span className="px-2">
+                  {requirementVariant === "token" ? (
+                    "You must hold the NFT"
+                  ) : requirementVariant === "tournament" ? (
+                    <div className="flex flex-row items-center gap-2">
+                      {`You must have ${
+                        tournamentRequirementVariant === "winners"
+                          ? "won"
+                          : "participated in"
+                      }:`}
+                    </div>
                   ) : (
-                    <span className="text-warning">Connect Account</span>
+                    "Must be part of the allowlist"
                   )}
-                </div>
-              ) : requirementVariant === "tournament" ? (
-                <div className="flex flex-col gap-2 px-4">
-                  {tournamentsData.map((tournament) => {
-                    const tournamentFinalizedTime =
-                      BigInt(tournament?.schedule.game.end ?? 0n) +
-                      BigInt(tournament?.schedule.submission_duration ?? 0n);
-                    const hasTournamentFinalized =
-                      tournamentFinalizedTime < currentTime;
-                    return (
-                      <div
-                        key={tournament.id}
-                        className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2"
-                      >
-                        <span>{feltToString(tournament.metadata.name)}</span>
-                        {address ? (
-                          tournamentRequirementVariant === "winners" ? (
-                            !!hasWonTournamentMap[tournament.id.toString()] &&
-                            hasWonTournamentMap[tournament.id.toString()]
-                              .length > 0 ? (
+                </span>
+                {requirementVariant === "token" ? (
+                  <div className="flex flex-row items-center gap-2 px-4">
+                    <span className="w-8">
+                      <COIN />
+                    </span>
+                    <span>{token?.name}</span>
+                    <span className="text-neutral">{token?.symbol}</span>
+                    {address ? (
+                      meetsEntryRequirements ? (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <CHECK />
+                          </span>
+                          <span>
+                            {`${
+                              entriesLeftByTournament.find(
+                                (entry) =>
+                                  entry.token === requiredTokenAddresses[0]
+                              )?.entriesLeft
+                            } ${
+                              entriesLeftByTournament.find(
+                                (entry) =>
+                                  entry.token === requiredTokenAddresses[0]
+                              )?.entriesLeft === 1
+                                ? "entry"
+                                : "entries"
+                            } left`}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="w-5">
+                          <X />
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-warning">Connect Account</span>
+                    )}
+                  </div>
+                ) : requirementVariant === "tournament" ? (
+                  <div className="flex flex-col gap-2 px-4">
+                    {tournamentsData.map((tournament) => {
+                      const tournamentFinalizedTime =
+                        BigInt(tournament?.schedule.game.end ?? 0n) +
+                        BigInt(tournament?.schedule.submission_duration ?? 0n);
+                      const hasTournamentFinalized =
+                        tournamentFinalizedTime < currentTime;
+                      return (
+                        <div
+                          key={tournament.id}
+                          className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2"
+                        >
+                          <span>{feltToString(tournament.metadata.name)}</span>
+                          {address ? (
+                            tournamentRequirementVariant === "winners" ? (
+                              !!hasWonTournamentMap[tournament.id.toString()] &&
+                              hasWonTournamentMap[tournament.id.toString()]
+                                .length > 0 ? (
+                                <div className="flex flex-row items-center gap-2">
+                                  <span className="w-5">
+                                    <CHECK />
+                                  </span>
+                                  {entriesLeftByTournament.find(
+                                    (entry) =>
+                                      entry.tournamentId ===
+                                      tournament.id.toString()
+                                  )?.entriesLeft ?? 0 > 0 ? (
+                                    <span>
+                                      {`${
+                                        entriesLeftByTournament.find(
+                                          (entry) =>
+                                            entry.tournamentId ===
+                                            tournament.id.toString()
+                                        )?.entriesLeft
+                                      } ${
+                                        entriesLeftByTournament.find(
+                                          (entry) =>
+                                            entry.tournamentId ===
+                                            tournament.id.toString()
+                                        )?.entriesLeft === 1
+                                          ? "entry"
+                                          : "entries"
+                                      } left`}
+                                    </span>
+                                  ) : (
+                                    <span>No entries left</span>
+                                  )}
+                                </div>
+                              ) : !hasTournamentFinalized ? (
+                                <span className="text-warning">
+                                  Not Finalized
+                                </span>
+                              ) : (
+                                <div className="flex flex-row items-center gap-2">
+                                  <span className="w-5">
+                                    <X />
+                                  </span>
+                                  <span>No qualified entries</span>
+                                </div>
+                              )
+                            ) : !!hasParticipatedInTournamentMap[
+                                tournament.id.toString()
+                              ] ? (
                               <div className="flex flex-row items-center gap-2">
                                 <span className="w-5">
                                   <CHECK />
@@ -971,116 +1022,79 @@ export function EnterTournamentDialog({
                                 Not Finalized
                               </span>
                             ) : (
-                              <div className="flex flex-row items-center gap-2">
-                                <span className="w-5">
-                                  <X />
-                                </span>
-                                <span>No qualified entries</span>
-                              </div>
-                            )
-                          ) : !!hasParticipatedInTournamentMap[
-                              tournament.id.toString()
-                            ] ? (
-                            <div className="flex flex-row items-center gap-2">
                               <span className="w-5">
-                                <CHECK />
+                                <X />
                               </span>
-                              {entriesLeftByTournament.find(
-                                (entry) =>
-                                  entry.tournamentId ===
-                                  tournament.id.toString()
-                              )?.entriesLeft ?? 0 > 0 ? (
-                                <span>
-                                  {`${
-                                    entriesLeftByTournament.find(
-                                      (entry) =>
-                                        entry.tournamentId ===
-                                        tournament.id.toString()
-                                    )?.entriesLeft
-                                  } ${
-                                    entriesLeftByTournament.find(
-                                      (entry) =>
-                                        entry.tournamentId ===
-                                        tournament.id.toString()
-                                    )?.entriesLeft === 1
-                                      ? "entry"
-                                      : "entries"
-                                  } left`}
-                                </span>
-                              ) : (
-                                <span>No entries left</span>
-                              )}
-                            </div>
-                          ) : !hasTournamentFinalized ? (
-                            <span className="text-warning">Not Finalized</span>
+                            )
                           ) : (
-                            <span className="w-5">
-                              <X />
+                            <span className="text-neutral">
+                              Connect Account
                             </span>
-                          )
-                        ) : (
-                          <span className="text-neutral">Connect Account</span>
-                        )}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : address ? (
+                  <div className="flex flex-row items-center gap-2 px-4">
+                    <span className="w-8">
+                      <USER />
+                    </span>
+                    <span>{displayAddress(address)}</span>
+                    {meetsEntryRequirements ? (
+                      <div className="flex flex-row items-center gap-2">
+                        <span className="w-5">
+                          <CHECK />
+                        </span>
+                        <span>
+                          {`${
+                            entriesLeftByTournament.find(
+                              (entry) => entry.address === address
+                            )?.entriesLeft
+                          } entries left`}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : address ? (
-                <div className="flex flex-row items-center gap-2 px-4">
-                  <span className="w-8">
-                    <USER />
-                  </span>
-                  <span>{displayAddress(address)}</span>
-                  {meetsEntryRequirements ? (
-                    <div className="flex flex-row items-center gap-2">
-                      <span className="w-5">
-                        <CHECK />
-                      </span>
-                      <span>
-                        {`${
-                          entriesLeftByTournament.find(
-                            (entry) => entry.address === address
-                          )?.entriesLeft
-                        } entries left`}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-row items-center gap-2">
-                      <span className="w-5">
-                        <X />
-                      </span>
-                      <span>No entries</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <span className="text-neutral">Connect Account</span>
-              )}
-            </div>
+                    ) : (
+                      <div className="flex flex-row items-center gap-2">
+                        <span className="w-5">
+                          <X />
+                        </span>
+                        <span>No entries</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-neutral">Connect Account</span>
+                )}
+              </div>
+            </>
           )}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="playerName" className="text-lg font-brand">
-              Player Name
-            </Label>
-            <div className="flex flex-col gap-4">
-              {accountUsername && (
-                <div className="flex flex-row justify-center gap-2">
-                  <span className="text-brand-muted">Default:</span>
-                  <span className="text-brand">{accountUsername}</span>
-                </div>
-              )}
-              <Input
-                id="playerName"
-                placeholder="Enter your player name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full"
-              />
+          <>
+            <div className="w-full h-0.5 bg-brand/25" />
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="playerName" className="text-lg font-brand">
+                Player Name
+              </Label>
+              <div className="flex flex-col gap-4">
+                {accountUsername && (
+                  <div className="flex flex-row justify-center gap-2">
+                    <span className="text-brand-muted">Default:</span>
+                    <span className="text-brand">{accountUsername}</span>
+                  </div>
+                )}
+                <Input
+                  id="playerName"
+                  placeholder="Enter your player name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
-          </div>
-          <div className="text-warning">
-            This game requires you to play with a controller wallet.
-          </div>
+            <div className="text-warning">
+              This game requires you to play with a controller wallet.
+            </div>
+          </>
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <DialogClose asChild>

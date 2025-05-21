@@ -1,0 +1,54 @@
+---
+layout: docs
+---
+
+# Entry Fees
+
+Budokan allows you to set entry fees for your tournaments using any supported token on Starknet. This feature lets communities leverage their own ecosystem tokens as payment for games on the platform, adding flexibility and value.
+
+## Supported Tokens
+
+<div className="flex flex-row">
+   <p>
+      For security, Budokan currently uses a whitelist of tokens for tournament entry fees. In the future, any token supported on Ekubo will be available for use. Support for ERC721 (NFT) entry fees is also coming soon.
+   </p>
+   <div className="flex-shrink-0">
+      <img 
+        src="/docs/erc20-tokens.png" 
+        alt="Entry Fee Tokens" 
+        width="300" 
+        height="600" 
+      />
+      <em>Figure 1: Entry fee tokens currently supported.</em>
+   </div>
+</div>
+
+## Customizing Entry Fee Distribution
+
+The entry fee form offers flexible options for setting the price of entry and how fees are split among different parties. To make things simple, values are converted to USD where possible, so both players and creators can easily compare amounts—even if they're unfamiliar with the token.
+
+![Entry Fees](/docs/entry-fees.png)
+*Figure 2: Entry Fees Form.*
+
+### How Entry Fees Are Split
+
+- **Creator Fee:**
+  - The percentage of each entry fee that goes to the tournament creator. This is automatically distributed to the creator's account (`Entry #0`) when a player enters.
+
+- **Game Fee:**
+  - The percentage of each entry fee that goes to the game developer. The creator sets this percentage, though a minimum base fee may be enforced in the future. The game developer receives this cut via the account holding `Game #0`.
+
+- **Player Distribution (Prize Pool):**
+  - The remaining amount is added to the tournament's prize pool. The creator decides how the prize is split among winners, based on the leaderboard size. Use the slider to adjust distribution weights, or manually enter the splits (they must total 100%).
+
+> **Tip:** Use familiar tokens for your audience to encourage participation. Double-check your fee splits before confirming, as they can't be changed after creation.
+
+---
+
+## Related Guides
+- [Creating a Tournament](../budokan/guide/create)
+- [Prize Structure](../budokan/guide/prizes)
+- [Onboarding](../budokan/guide/onboarding)
+- [FAQ](../budokan/faq)
+
+If you have questions or need help, check the FAQ or contact support through the app.

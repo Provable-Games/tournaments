@@ -54,4 +54,5 @@ export default defineConfig({
   server: {
     proxy: {},
   },
+  publicDir: "../../public",
 });

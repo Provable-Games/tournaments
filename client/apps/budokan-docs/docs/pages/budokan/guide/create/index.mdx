@@ -1,0 +1,120 @@
+---
+layout: docs
+---
+
+# Creating a Tournament
+
+Budokan lets anyone create tournaments for any game that supports the [Emedabble Game Standard](../embeddable-game-standard/index) (EGS). This guide walks you through the process, highlights customization options, and shares best practices for a successful tournament.
+
+## Prerequisites
+- A Starknet wallet ([see Onboarding](../onboarding))
+- Prize tokens (if you want to offer custom prizes)
+
+## How to Create a Tournament
+
+### 1. Open the Create Tournament Page
+- Click the **Create Tournament** button in the navigation menu.
+
+![Create Tournament Button](/docs/navigation.png)
+*Figure 1: Create Tournament Button.*
+
+This opens the Create Tournament page, where you can configure all aspects of your tournament.
+
+![Create Tournament Page](/docs/create-tournament.png)
+*Figure 2: Create Tournament Page.*
+
+---
+
+### 2. Configure Tournament Details
+- Select the game
+- Adjust game settings ([see Game Settings](../create/entry-requirements))
+- Enter a name and description
+- Set the leaderboard size (number of winners)
+
+---
+
+### 3. Set the Tournament Schedule
+- Choose start and end times
+- Set the submission period
+- Select registration type:
+  - Open (anyone can join)
+  - Fixed (limited registration)
+
+![Tournament Schedule](/docs/schedule.png)
+*Figure 3: Tournament Schedule Form.*
+
+---
+
+### 4. (Optional) Configure Entry Requirements
+- Set qualification requirements
+- Limit the number of players
+
+![Tournament Entry Requirements](/docs/entry-requirements-tournament.png)
+*Figure 4: Entry Requirements Form.*
+
+For more details, see [Entry Requirements](../create/entry-requirements).
+
+---
+
+### 5. (Optional) Set Entry Fees
+- Choose entry fee tokens
+- Define fee distribution
+   - Tournament Creator %
+   - Game %
+   - Winner distribution
+
+![Entry Fees](/docs/entry-fees.png)
+*Figure 5: Entry Fees Form.*
+
+For more details, see [Entry Fees](../create/entry-fees).
+
+---
+
+### 6. (Optional) Set Up Prize Structure
+- Choose prize types (ERC20s, ERC721s)
+- Define how prizes are distributed
+- Set winner positions
+
+![Prizes](/docs/prizes.png)
+*Figure 6: Tournament Prizes Form.*
+
+---
+
+### 7. Review and Confirm
+
+After completing the form, you'll see a tournament confirmation page. Review all details and confirm before submitting the transaction. This is your chance to double-check the structure and any prizes.
+
+<div className="flex flex-row">
+   <p>
+      Once you confirm, your tournament will be created and visible to other players. Make sure you are happy with all settings before finalizing.
+   </p>
+   <div className="flex-shrink-0">
+      <img 
+        src="/docs/tournament-confirmation.png" 
+        alt="Tournament Confirmation" 
+        width="300" 
+        height="600" 
+      />
+      <em>Figure 7: Tournament confirmation dialog.</em>
+   </div>
+</div>
+
+## Best Practices
+
+- **Sybil Resistance:**
+  - Avoid making tournaments with open, free entry and a prize pool, as this can lead to abuse (multiple entries per wallet). Consider qualification requirements or entry fees to protect your tournament.
+
+- **Submission Period:**
+  - Always note the submission period. If no scores are submitted before the deadline, the prize pool will be forfeited.
+  - Budokan provides infrastructure to help monitor and auto-submit, but it's wise to bookmark your tournament and set reminders.
+
+> **Tip:** Double-check all tournament settings before confirming. Once created, some options cannot be changed.
+
+## Related Guides
+- [Onboarding](../budokan/guide/onboarding)
+- [Entry Requirements](../budokan/guide/create/entry-requirements)
+- [Entry Fees](../budokan/guide/create/entry-fees)
+- [Submitting Scores](../budokan/guide/submit-scores)
+- [FAQ](../budokan/faq)
+
+If you have questions or need help, check the FAQ or contact support through the app.

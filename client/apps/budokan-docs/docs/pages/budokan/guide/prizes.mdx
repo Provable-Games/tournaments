@@ -2,41 +2,91 @@
 layout: docs
 ---
 
-# Managing Prizes
+# Budokan Prizes
 
-Learn how to manage and distribute prizes in your tournament.
+Budokan features a flexible, permissionless prize system that allows anyone to add prizes to new or ongoing tournaments. This guide explains how prizes work, how to add and claim them, and best practices for both players and sponsors.
 
-## Prize Types
-- Entry Fee Prizes
-- Custom Token Prizes
-- Mixed Prize Pools
+## Supported Prize Tokens
 
-## For Tournament Creators
-1. Setting Up Prizes
-   - Adding prize tokens
-   - Configuring distribution
-   - Managing prize pool
+<div className="flex flex-row gap-4 items-start">
+  <div className="flex-1">
+    <p>
+      For security, Budokan currently uses a whitelist of tokens for prizes. In the future, any token supported on Ekubo, as well as NFTs (ERC721), will be available for use. This enables communities and sponsors to contribute a wide variety of rewards.
+    </p>
+  </div>
+  <div className="flex-shrink-0">
+    <img 
+      src="/docs/prize-token-list.png" 
+      alt="Prize Tokens" 
+      width="300" 
+      height="600" 
+    />
+    <br />
+    <em>Figure 1: Supported ERC20s and NFTs for prizes.</em>
+  </div>
+</div>
 
-2. Prize Distribution
-   - Automatic distribution
-   - Manual distribution
-   - Emergency procedures
+## How to Add Prizes
 
-## For Players
-1. Prize Eligibility
-   - Understanding requirements
-   - Checking position
-   - Claiming process
+Prizes can be added at multiple stages during a tournament's lifecycle:
 
-2. Claiming Prizes
-   - When to claim
-   - How to claim
-   - Troubleshooting
+1. **During Tournament Creation:**
+   - Set up prize tokens and distribution when creating your tournament.
+   - Choose from supported ERC20s or NFTs.
 
-## Examples
-[Include examples of prize setup and claiming]
+![Prizes](/docs/prizes.png)
+*Figure 2: Tournament Prizes Form during creation.*
 
-## Best Practices
-- Prize pool management
-- Distribution timing
-- Security considerations
+2. **After Tournament Creation:**
+   - Add prizes at any time before the tournament ends.
+   - Go to the tournament page and click the **Add Prizes** button.
+
+![Add Prizes Button](/docs/add-prizes-button.png)
+*Figure 3: Add Prizes on the tournament page.*
+
+> **Tip:** Sponsors and community members can contribute prizes even after a tournament has started, increasing engagement and excitement.
+
+## Prize Eligibility & Distribution
+
+Prizes are distributed based on the tournament's rules and leaderboard positions. Here's how it works:
+
+- **Eligibility:**
+  - Players must meet all tournament requirements and achieve a winning position to be eligible for prizes.
+
+- **Distribution:**
+  - Prizes will be allocated to winners after the tournament concludes, the submission period ends and the prizes have been claimed.
+  - The distribution follows the splits set by the tournament creator or sponsor.
+
+> **Note:** Always check the tournament details for specific prize eligibility rules and distribution breakdowns.
+
+## Claiming Prizes
+
+1. **When to Claim:**
+   - Prizes become claimable after the tournament ends and all results are verified.
+   - You will be notified in the app or via your tournament dashboard.
+
+2. **How to Claim:**
+   - Go to the tournament page and look for the **Claim Prizes** button in the top right.
+   - The will effectively distribute all prizes, game fees and creator fees in a single tx.
+
+## For Sponsors & Community Contributors
+
+Budokan encourages sponsors and community members to add prizes to tournaments. Here's how you can get involved:
+
+- **Adding Prizes:**
+  - Use the **Add Prizes** button on any tournament page to contribute tokens or NFTs.
+  - Specify the prize type, amount, and any special eligibility requirements.
+
+- **Visibility:**
+  - Your contribution will be visible on the tournament page, and you will be credited as a sponsor.
+
+> **Tip:** Adding prizes can boost tournament participation and promote your project or community.
+
+## Related Guides
+- [Creating a Tournament](../budokan/guide/create)
+- [Entry Fees](../budokan/guide/create/entry-fees)
+- [Entry Requirements](../budokan/guide/create/entry_requirements)
+- [Onboarding](../budokan/guide/onboarding)
+- [FAQ](../budokan/guide/faq)
+
+If you have questions or need help, check the FAQ or contact support through the app.

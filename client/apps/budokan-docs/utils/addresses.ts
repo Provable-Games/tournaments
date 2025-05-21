@@ -16,15 +16,15 @@ export function getAddress(
 ): string | null {
   const manifest = networks[network];
 
-  // console.log(manifest);
-  console.log(manifest.contracts, `${namespace}-${tag}`);
-
   // Find the contract in the manifest
   const contract = manifest.contracts.find(
     (contract) => contract.tag === `${namespace}-${tag}`
   );
 
-  // console.log(contract);
-
   return contract?.address || null;
+}
+
+export function displayAddress(string: string) {
+  if (string === undefined) return "unknown";
+  return string.substring(0, 6) + "..." + string.substring(string.length - 4);
 }

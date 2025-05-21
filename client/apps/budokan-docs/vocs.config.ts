@@ -47,21 +47,30 @@ export default defineConfig({
     {
       text: "Budokan",
       link: "/budokan",
+      collapsed: false,
       items: [
-        { text: "Overview", link: "/budokan/overview" },
         { text: "Key Functions", link: "/budokan/key-functions" },
         {
           text: "Guide",
-          link: "/budokan/guide/guide",
+          link: "/budokan/guide",
           collapsed: true,
           items: [
             { text: "Onboarding", link: "/budokan/guide/onboarding" },
-            { text: "Enter", link: "/budokan/guide/enter" },
+            { text: "Enter Tournaments", link: "/budokan/guide/enter" },
+            { text: "Submission", link: "/budokan/guide/submission" },
+            {
+              text: "Prizes",
+              link: "/budokan/guide/prizes",
+            },
             {
               text: "Create",
               link: "/budokan/guide/create",
               collapsed: true,
               items: [
+                {
+                  text: "Game Settings",
+                  link: "/budokan/guide/create/game-settings",
+                },
                 {
                   text: "Entry Fees",
                   link: "/budokan/guide/create/entry-fees",
@@ -72,19 +81,16 @@ export default defineConfig({
                 },
               ],
             },
-            {
-              text: "Prizes",
-              link: "/budokan/guide/prizes",
-            },
           ],
         },
+        { text: "FAQ", link: "/budokan/faq" },
       ],
     },
     {
       text: "Embeddable Game Standard",
       link: "/embeddable-game-standard",
+      collapsed: false,
       items: [
-        { text: "Overview", link: "/embeddable-game-standard" },
         {
           text: "Key Functions",
           link: "/embeddable-game-standard/key-functions",
@@ -96,6 +102,17 @@ export default defineConfig({
         {
           text: "Games",
           link: "/embeddable-game-standard/games",
+        },
+      ],
+    },
+    {
+      text: "Development",
+      link: "/development",
+      collapsed: false,
+      items: [
+        {
+          text: "SDK",
+          link: "/development/sdk",
         },
       ],
     },

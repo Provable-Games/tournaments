@@ -1,0 +1,70 @@
+---
+layout: docs
+---
+
+# Submitting Scores
+
+Congratulations on achieving a high score! To ensure your results count and you remain eligible for prizes, you must submit your score to the contract during the designated submission period. This guide explains how and when to submit, how verification works, and how automation can help.
+
+## Submission Period
+
+After a tournament ends, there is a dedicated window—called the **submission period**—for players to submit their scores on-chain. The tournament creator sets this window (minimum 15 minutes). It is crucial to submit your score during this time; otherwise, you may not qualify for prizes or leaderboard positions.
+
+> **Note:** If you miss the submission period, your score may not be recognized, and you could forfeit any prizes.
+
+## How to Submit Your Score
+
+1. When the tournament ends, check the tournament page for the submission window and instructions.
+2. Submit your score through the app interface during the submission period.
+3. Once your score is submitted and verified, a checkmark or "verified" mark will appear next to your name in the leaderboard.
+
+<div className="flex flex-row gap-4 items-center">
+  <div className="flex-1">
+    <img 
+      src="/docs/submit-button.png" 
+      alt="Submission Dialog" 
+      width="700" 
+      height="700" 
+    />
+    <br />
+    <em>Figure 1: Submit Scores Button.</em>
+  </div>
+  <div className="flex-shrink-0">
+    <img 
+      src="/docs/submission-dialog.png" 
+      alt="Submission Dialog" 
+      width="400" 
+      height="200" 
+    />
+    <br />
+    <em>Figure 2: Submission dialog for top scores.</em>
+  </div>
+</div>
+
+## Score Verification
+
+- Submitted scores are validated by the contract to ensure they qualify for their claimed positions.
+- Only verified scores are eligible for prizes and final leaderboard placement.
+
+![Submitted Scores](/docs/submitted-scores.jpeg)
+*Figure 3: Submitted scores table with verified entries.*
+
+
+## Automated Submission
+
+Budokan provides an automated submission bot that detects when a tournament ends and schedules the top scores to be submitted on-chain. This helps ensure that scores are not missed due to user error or forgetfulness.
+
+You can find the code and instructions for running your own submission bot here:
+
+[Submission Bot Template](https://github.com/Provable-Games/budokan-submission-bot)
+
+> **Tip:** Even with automation, always double-check that your score has been submitted and verified before the submission window closes.
+
+---
+
+## Related Guides
+- [Entering Tournaments](../budokan/guide/enter)
+- [Prizes](../budokan/guide/prizes)
+- [FAQ](../budokan/faq)
+
+If you have questions or need help, check the FAQ or contact support through the app.
