@@ -15,33 +15,19 @@ export const GameCard: React.FC<GameCardProps> = ({
   description,
   developer,
 }) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      border: "1px solid #eee",
-      borderRadius: "8px",
-      padding: "16px",
-      marginBottom: "16px",
-      background: "#fafbfc",
-    }}
-  >
-    <img
-      src={icon}
-      alt={name}
-      style={{ width: 48, height: 48, marginRight: 24, borderRadius: 8 }}
-    />
+  <div className="flex items-center border border-gray-200 rounded-lg p-4 mb-4 bg-gray-900">
+    <img src={icon} alt={name} className="w-12 h-12 mr-6 rounded-lg" />
     <div>
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ fontSize: 20, fontWeight: 600 }}
+        className="text-lg font-semibold hover:underline"
       >
         {name}
       </a>
-      <div style={{ color: "#666", margin: "4px 0" }}>{description}</div>
-      <div style={{ fontSize: 14, color: "#888" }}>By {developer}</div>
+      <div className="text-gray-200 my-1">{description}</div>
+      <div className="text-sm text-gray-300">By {developer}</div>
     </div>
   </div>
 );

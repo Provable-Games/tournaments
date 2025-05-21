@@ -1,0 +1,97 @@
+---
+layout: docs
+---
+
+# Embeddable Game Standard: Implementation Guide
+
+This guide walks through the steps required for a game developer to implement the 
+Embeddable Game Standard and integrate with Budokan tournaments as well as any other meta apps.
+
+## 1. Contract Structure
+Start by creating a new Cairo contract that imports and uses the `game_component` module from Budokan.
+
+```cairo
+use tournaments::components::game::game_component;
+
+#[dojo::contract]
+pub mod MyGame {
+    component!(path: game_component, storage: game, event: GameEvent);
+    #[abi(embed_v0)]
+    impl GameComponentImpl = game_component::GameImpl<ContractState>;
+    impl GameComponentInternalImpl = game_component::InternalImpl<ContractState>;
+    // ... additional game logic ...
+}
+```
+
+## 2. Implement Required Storage and Events
+Define the required storage fields and events as specified in the standard.
+
+```cairo
+#[storage]
+struct Storage {
+    #[substorage(v0)]
+    game: game_component::Storage,
+    #[substorage(v0)]
+    erc721: ERC721Component::Storage,
+    #[substorage(v0)]
+    src5: SRC5Component::Storage,
+}
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {
+    #[flat]
+    GameEvent: game_component::Event,
+    #[flat]
+    ERC721Event: ERC721Component::Event,
+    #[flat]
+    SRC5Event: SRC5Component::Event,
+}
+```
+
+## 3. Expose Required Interfaces
+Ensure your contract exposes the following:
+- ERC721 interface for game tokens
+- Metadata and settings interfaces
+- Functions for minting, metadata retrieval, and event emission
+
+## 4. Implement Initialization Logic
+Implement the `initializer` function to set up game metadata, settings, and storage configuration.
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+) {
+    // ... initialization logic ...
+}
+```
+
+## 5. Get score function
+- Contract view function to return score attribute on score model
+- IGameDetails
+
+## 6. Settings exist
+- If no settings, accept settings id 0 but reject more than
+- ISettings
+
+## 7. Integrate with Budokan
+- Test minting game tokens via Budokan tournament flows
+- Ensure metadata and events are correctly emitted and indexed
+- Register your game contract with Budokan for tournament use
+
+## 8. Test and Deploy
+- Thoroughly test your contract for compatibility and security
+- Deploy to Starknet and register with Budokan
+
+By following these steps, your game will be fully compatible with the Budokan tournament system and the Embeddable Game Standard. 

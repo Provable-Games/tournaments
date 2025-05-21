@@ -26,320 +26,6 @@ import { Button } from 'vocs/components'
 
 ---
 
-file: docs/pages/development/index.mdx
-meta: {
-  "layout": "docs"
-}
-
-# Development
-
-
-
----
-
-file: docs/pages/embeddable-game-standard/games.mdx
-meta: {
-  "layout": "docs"
-}
-
-import { GameCard } from '../../components/GameCard'
-
-# Embeddable Game Standard: Games
-
-Here is a list of games that have implemented the emeddable game standard and are benefitting from the tools provided:
-
-<GameCard icon="https://darkshuffle.io/favicon.svg" name="Dark Shuffle" url="https://darkshuffle.io" description="Dark Shuffle is a turn-based, collectible card game. Build your deck, battle monsters, and explore a procedurally generated world." developer="Provable Games" />
-
-<GameCard icon="https://app.zkube.xyz/assets/pwa-512x512.png" name="zKube" url="https://app.zkube.xyz/" description="zKube is an engaging puzzle game that puts players' strategic thinking to the test. Set within a dynamic grid, the objective is simple: manipulate blocks to form solid lines and earn points.	" developer="Chain Devs" />
-
-
-
----
-
-file: docs/pages/embeddable-game-standard/implementation.mdx
-meta: {
-  "layout": "docs"
-}
-
-# Embeddable Game Standard: Implementation Guide
-
-This guide walks through the steps required for a game developer to implement the Embeddable Game Standard and integrate with Budokan tournaments.
-
-## 1. Contract Structure
-
-Start by creating a new Cairo contract that imports and uses the `game_component` module from Budokan.
-
-```cairo
-use tournaments::components::game::game_component;
-
-#[dojo::contract]
-pub mod MyGame {
-    component!(path: game_component, storage: game, event: GameEvent);
-    #[abi(embed_v0)]
-    impl GameComponentImpl = game_component::GameImpl<ContractState>;
-    impl GameComponentInternalImpl = game_component::InternalImpl<ContractState>;
-    // ... additional game logic ...
-}
-```
-
-## 2. Implement Required Storage and Events
-
-Define the required storage fields and events as specified in the standard.
-
-## 3. Expose Required Interfaces
-
-Ensure your contract exposes the following:
-
-* ERC721 interface for game tokens
-* Metadata and settings interfaces
-* Functions for minting, metadata retrieval, and event emission
-
-## 4. Implement Initialization Logic
-
-Implement the `initializer` function to set up game metadata, settings, and storage configuration.
-
-```cairo
-fn initializer(
-    ref self: ComponentState<TContractState>,
-    creator_address: ContractAddress,
-    name: felt252,
-    description: ByteArray,
-    developer: felt252,
-    publisher: felt252,
-    genre: felt252,
-    image: ByteArray,
-    namespace: ByteArray,
-    score_model: ByteArray,
-    score_attribute: ByteArray,
-    settings_model: ByteArray,
-) {
-    // ... initialization logic ...
-}
-```
-
-## 5. Integrate with Budokan
-
-* Test minting game tokens via Budokan tournament flows
-* Ensure metadata and events are correctly emitted and indexed
-* Register your game contract with Budokan for tournament use
-
-## 6. Test and Deploy
-
-* Thoroughly test your contract for compatibility and security
-* Deploy to Starknet and register with Budokan
-
-By following these steps, your game will be fully compatible with the Budokan tournament system and the Embeddable Game Standard.
-
-
-
----
-
-file: docs/pages/embeddable-game-standard/index.mdx
-meta: {
-  "layout": "docs"
-}
-
-# Embeddable Game Standard
-
-The Embeddable Game Standard defines a set of interfaces and data structures that games must implement to be compatible with the Budokan tournament system. This open standard enables seamless integration of games into onchain tournaments, allowing for permissionless onboarding, score tracking, and prize distribution.
-
-## Table of Contents
-
-* [Overview](#overview)
-* [Architecture](#architecture)
-* [Key Functions](#key-functions)
-* [Implementation Guide](#implementation-guide)
-
-## Overview
-
-The standard provides a blueprint for game contracts to:
-
-* Mint game tokens (ERC721) for tournament entries
-* Store and expose game and player metadata
-* Track scores and settings in a standardized way
-* Emit events for metadata updates and lifecycle changes
-
-By adhering to this standard, games can:
-
-* Be listed and used in Budokan tournaments
-* Enable automated leaderboard and prize logic
-* Support composable, upgradable tournament experiences
-
-## Architecture
-
-* **Game Component:** Implements the core logic for minting, metadata management, and score tracking. See `contracts/src/components/game.cairo`.
-* **Models & Interfaces:** Define the data structures for game metadata, token metadata, settings, and lifecycle events.
-* **Integration Points:** Games must expose the required interfaces and implement the necessary storage and event logic.
-
-## Key Functions
-
-* `mint`: Mint a new game token for a player, with associated metadata and settings.
-* `game_metadata`: Retrieve metadata for the game contract.
-* `token_metadata`: Retrieve metadata for a specific game token.
-* `game_count`: Get the total number of games/tokens minted.
-* `emit_metadata_update`: Emit an event when token metadata is updated.
-* `initializer`: Initialize the game contract with metadata, settings, and storage configuration.
-
-## Implementation Guide
-
-1. **Implement the Game Component:**
-   * Use the provided `game_component` module as a base.
-   * Implement the required storage, events, and interface functions.
-2. **Define Metadata and Settings:**
-   * Use the standard models for game and token metadata.
-   * Store settings and score models as required by your game logic.
-3. **Integrate with Budokan:**
-   * Ensure your contract exposes the required interfaces (ERC721, metadata, settings).
-   * Test minting, metadata retrieval, and event emission with Budokan tournament flows.
-4. **Deploy and Register:**
-   * Deploy your game contract to Starknet.
-   * Register the game with Budokan for tournament use.
-
-## Games
-
-The current games that have implemented the standard:
-
-* Dark Shuffle
-* Zkube
-* Loot Survivor (coming soon)
-
-By following this standard, your game will be compatible with Budokan and other systems that adopt the Embeddable Game Standard.
-
-
-
----
-
-file: docs/pages/embeddable-game-standard/key-functions.mdx
-meta: {
-  "layout": "docs"
-}
-
-# Embeddable Game Standard: Key Functions
-
-This section details the primary functions that a game contract must implement to comply with the Embeddable Game Standard and be compatible with Budokan tournaments.
-
-## `mint`
-
-```cairo
-fn mint(
-    ref self: ComponentState<TContractState>,
-    player_name: felt252,
-    settings_id: u32,
-    start: Option<u64>,
-    end: Option<u64>,
-    to: ContractAddress,
-) -> u64;
-```
-
-**Purpose:** Mint a new game token (ERC721) for a player, with associated metadata and settings.
-
-**Parameters:**
-
-* `player_name`: Name of the player (felt252).
-* `settings_id`: ID of the game settings to use.
-* `start`, `end`: Optional start and end timestamps for the game session.
-* `to`: Address to mint the token to.
-
-**Returns:** Token ID of the newly minted game token.
-
-***
-
-## `game_metadata`
-
-```cairo
-fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata;
-```
-
-**Purpose:** Retrieve metadata for the game contract (name, description, developer, etc.).
-
-**Returns:** GameMetadata struct.
-
-***
-
-## `token_metadata`
-
-```cairo
-fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata;
-```
-
-**Purpose:** Retrieve metadata for a specific game token (player, settings, lifecycle, etc.).
-
-**Parameters:**
-
-* `token_id`: ID of the game token.
-
-**Returns:** TokenMetadata struct.
-
-***
-
-## `game_count`
-
-```cairo
-fn game_count(self: @ComponentState<TContractState>) -> u64;
-```
-
-**Purpose:** Get the total number of games/tokens minted by the contract.
-
-**Returns:** Total count (u64).
-
-***
-
-## `emit_metadata_update`
-
-```cairo
-fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64);
-```
-
-**Purpose:** Emit an event when token metadata is updated, for offchain indexing and UI updates.
-
-**Parameters:**
-
-* `game_id`: ID of the game token whose metadata was updated.
-
-***
-
-## `initializer`
-
-```cairo
-fn initializer(
-    ref self: ComponentState<TContractState>,
-    creator_address: ContractAddress,
-    name: felt252,
-    description: ByteArray,
-    developer: felt252,
-    publisher: felt252,
-    genre: felt252,
-    image: ByteArray,
-    namespace: ByteArray,
-    score_model: ByteArray,
-    score_attribute: ByteArray,
-    settings_model: ByteArray,
-);
-```
-
-**Purpose:** Initialize the game contract with metadata, settings, and storage configuration. Mints a creator token and registers interfaces.
-
-**Parameters:**
-
-* `creator_address`: Address of the game creator.
-* `name`, `description`, `developer`, `publisher`, `genre`, `image`: Metadata fields.
-* `namespace`, `score_model`, `score_attribute`, `settings_model`: Storage and configuration fields.
-
-***
-
-## Additional Functions
-
-* `namespace`: Returns the namespace used for storage.
-* `score_model`: Returns the score model identifier.
-* `score_attribute`: Returns the score attribute identifier.
-* `settings_model`: Returns the settings model identifier.
-* `set_settings`: Set or update game settings details.
-* `assert_setting_exists`: Ensure a settings ID exists before minting.
-
-
-
----
-
 file: docs/pages/budokan/faq.mdx
 meta: {
   "layout": "docs"
@@ -439,10 +125,10 @@ Check our guides or contact support through the app for further assistance.
 
 ## More Resources
 
-* [Onboarding Guide](../budokan/guide/onboarding)
-* [Entering Tournaments](../budokan/guide/enter)
-* [Creating a Tournament](../budokan/guide/create)
-* [Prizes](../budokan/guide/prizes)
+* [Onboarding Guide](/budokan/guide/onboarding)
+* [Entering Tournaments](/budokan/guide/enter)
+* [Creating a Tournament](/budokan/guide/create)
+* [Prizes](/budokan/guide/prizes)
 
 If you have suggestions for this FAQ, let us know!
 
@@ -471,9 +157,9 @@ Budokan is an onchain tournament system designed to power competitive gaming exp
 
 ## Table of Contents
 
-* [Key Functions](../budokan/key-functions)
-* [Guide](../budokan/guide)
-* [FAQ](../budokan/faq)
+* [Key Functions](/budokan/key-functions)
+* [Guide](/budokan/guide)
+* [FAQ](/budokan/faq)
 
 ## Contracts
 
@@ -685,14 +371,317 @@ fn get_leaderboard(
 
 ---
 
-file: docs/pages/development/sdk/index.mdx
+file: docs/pages/development/index.mdx
 meta: {
   "layout": "docs"
 }
 
-# SDK
+# Development
 
-Coming soon...
+
+
+---
+
+file: docs/pages/embeddable-game-standard/games.mdx
+meta: {
+  "layout": "docs"
+}
+
+import { GameCard } from '../../components/GameCard'
+
+# Embeddable Game Standard: Games
+
+Here is a list of games that have implemented the emeddable game standard and are benefitting from the tools provided:
+
+<GameCard icon="https://darkshuffle.io/favicon.svg" name="Dark Shuffle" url="https://darkshuffle.io" description="Dark Shuffle is a turn-based, collectible card game. Build your deck, battle monsters, and explore a procedurally generated world." developer="Provable Games" />
+
+<GameCard icon="https://app.zkube.xyz/assets/pwa-512x512.png" name="zKube" url="https://app.zkube.xyz/" description="zKube is an engaging puzzle game that puts players' strategic thinking to the test. Set within a dynamic grid, the objective is simple: manipulate blocks to form solid lines and earn points.	" developer="zKorp" />
+
+## Why Build Games with EGS?
+
+* Instantly reach new audiences by making your game embeddable in multiple apps and platforms
+* Focus on gameplay and innovation, not infrastructure
+* Extend the way your game is played through permissionless settings creation
+* Benefit from community-driven tournaments, quests, and rewards
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/index.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard
+
+The Embeddable Game Standard defines a set of interfaces and data structures that games must implement to be compatible with the Budokan tournament system. This open standard enables seamless integration of games into onchain tournaments, allowing for permissionless onboarding, score tracking, and prize distribution.
+
+## Table of Contents
+
+* [Overview](#overview)
+* [Architecture](#architecture)
+* [Key Functions](#key-functions)
+* [Implementation Guide](#implementation-guide)
+
+## Overview
+
+The standard provides a blueprint for game contracts to:
+
+* Mint game tokens (ERC721) for tournament entries
+* Store and expose game and player metadata
+* Track scores and settings in a standardized way
+* Emit events for metadata updates and lifecycle changes
+
+By adhering to this standard, games can:
+
+* Be listed and used in Budokan tournaments
+* Enable automated leaderboard and prize logic
+* Support composable, upgradable tournament experiences
+
+## Architecture
+
+* **Game Component:** Implements the core logic for minting, metadata management, and score tracking. See `contracts/src/components/game.cairo`.
+* **Models & Interfaces:** Define the data structures for game metadata, token metadata, settings, and lifecycle events.
+* **Integration Points:** Games must expose the required interfaces and implement the necessary storage and event logic.
+
+## Key Functions
+
+* `mint`: Mint a new game token for a player, with associated metadata and settings.
+* `game_metadata`: Retrieve metadata for the game contract.
+* `token_metadata`: Retrieve metadata for a specific game token.
+* `game_count`: Get the total number of games/tokens minted.
+* `emit_metadata_update`: Emit an event when token metadata is updated.
+* `initializer`: Initialize the game contract with metadata, settings, and storage configuration.
+
+## Implementation Guide
+
+1. **Implement the Game Component:**
+   * Use the provided `game_component` module as a base.
+   * Implement the required storage, events, and interface functions.
+2. **Define Metadata and Settings:**
+   * Use the standard models for game and token metadata.
+   * Store settings and score models as required by your game logic.
+3. **Integrate with Budokan:**
+   * Ensure your contract exposes the required interfaces (ERC721, metadata, settings).
+   * Test minting, metadata retrieval, and event emission with Budokan tournament flows.
+4. **Deploy and Register:**
+   * Deploy your game contract to Starknet.
+   * Register the game with Budokan for tournament use.
+
+## Games
+
+The current games that have implemented the standard:
+
+* Dark Shuffle
+* Zkube
+* Loot Survivor (coming soon)
+
+By following this standard, your game will be compatible with Budokan and other systems that adopt the Embeddable Game Standard.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/key-functions.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Key Functions
+
+This section details the primary functions that a game contract must implement to comply with the Embeddable Game Standard and be compatible with Budokan tournaments.
+
+## `mint`
+
+```cairo
+fn mint(
+    ref self: ComponentState<TContractState>,
+    player_name: felt252,
+    settings_id: u32,
+    start: Option<u64>,
+    end: Option<u64>,
+    to: ContractAddress,
+) -> u64;
+```
+
+**Purpose:** Mint a new game token (ERC721) for a player, with associated metadata and settings.
+
+**Parameters:**
+
+* `player_name`: Name of the player (felt252).
+* `settings_id`: ID of the game settings to use.
+* `start`, `end`: Optional start and end timestamps for the game session.
+* `to`: Address to mint the token to.
+
+**Returns:** Token ID of the newly minted game token.
+
+***
+
+## `game_metadata`
+
+```cairo
+fn game_metadata(self: @ComponentState<TContractState>) -> GameMetadata;
+```
+
+**Purpose:** Retrieve metadata for the game contract (name, description, developer, etc.).
+
+**Returns:** GameMetadata struct.
+
+***
+
+## `token_metadata`
+
+```cairo
+fn token_metadata(self: @ComponentState<TContractState>, token_id: u64) -> TokenMetadata;
+```
+
+**Purpose:** Retrieve metadata for a specific game token (player, settings, lifecycle, etc.).
+
+**Parameters:**
+
+* `token_id`: ID of the game token.
+
+**Returns:** TokenMetadata struct.
+
+***
+
+## `game_count`
+
+```cairo
+fn game_count(self: @ComponentState<TContractState>) -> u64;
+```
+
+**Purpose:** Get the total number of games/tokens minted by the contract.
+
+**Returns:** Total count (u64).
+
+***
+
+## `emit_metadata_update`
+
+```cairo
+fn emit_metadata_update(ref self: ComponentState<TContractState>, game_id: u64);
+```
+
+**Purpose:** Emit an event when token metadata is updated, for offchain indexing and UI updates.
+
+**Parameters:**
+
+* `game_id`: ID of the game token whose metadata was updated.
+
+***
+
+## `initializer`
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+);
+```
+
+**Purpose:** Initialize the game contract with metadata, settings, and storage configuration. Mints a creator token and registers interfaces.
+
+**Parameters:**
+
+* `creator_address`: Address of the game creator.
+* `name`, `description`, `developer`, `publisher`, `genre`, `image`: Metadata fields.
+* `namespace`, `score_model`, `score_attribute`, `settings_model`: Storage and configuration fields.
+
+***
+
+## Additional Functions
+
+* `namespace`: Returns the namespace used for storage.
+* `score_model`: Returns the score model identifier.
+* `score_attribute`: Returns the score attribute identifier.
+* `settings_model`: Returns the settings model identifier.
+* `set_settings`: Set or update game settings details.
+* `assert_setting_exists`: Ensure a settings ID exists before minting.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/meta-apps.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Meta-Apps
+
+The Embeddable Game Standard (EGS) unlocks powerful new possibilities for both game developers and platforms. By making games permissionlessly embeddable, EGS enables a growing ecosystem of apps to integrate, distribute, and build on top of games in novel ways. This page highlights some of the leading apps leveraging EGS today.
+
+## Budokan: Permissionless Tournaments
+
+Budokan uses the EGS to provide a fully permissionless tournament protocol. With EGS, games no longer need to implement their own leaderboard or revenue logic—instead, they can plug into Budokan's aggregated platform, which:
+
+* Accepts any supported token for entry fees and prizes
+* Offers extensive customization for tournament formats, entry requirements, and prize structures
+* Handles all leaderboard, prize, and entry logic on behalf of the game
+
+This makes it easy for game developers to reach new audiences and for players to discover and compete in a wide variety of tournaments.
+
+![Budokan Overview](/docs/overview.png)
+*Figure 1: Budokan overview page.*
+
+> **Tip:** By integrating with Budokan, game developers can focus on gameplay while the platform handles tournaments, rewards, and community engagement.
+
+## Eternum: Expanding Gameplay with Embedded Mini-Games
+
+Eternum, a next-generation MMO, leverages EGS to embed mini-games directly into its core experience. In Season 1, Eternum introduced a new quest system powered by EGS, allowing:
+
+* Seamless integration of third-party mini-games as quests
+* Emergence of new strategies and gameplay loops
+* A more dynamic, deconstructed MMO experience
+
+![Eternum Quest](/docs/eternum-quest.png)
+*Figure 2: Eternum Quest.*
+
+<div className="flex flex-row gap-4 items-start">
+  <div className="flex-1">
+    <p>
+      Embedding games within Eternum allows mini-games to reach a much wider audience, maximizing their distribution and exposure. For Eternum, this approach brings significant value by introducing a diverse range of gameplay experiences to their core player base, keeping the platform fresh and engaging. By integrating a variety of mini-games, Eternum can continually offer new challenges and entertainment, enhancing player retention and satisfaction.
+    </p>
+  </div>
+
+  <div className="flex-shrink-0">
+    <img src="/docs/eternum-quest-post.png" alt="Eternum Quest Post" width="400" height="300" />
+
+    <br />
+
+    <em>Figure 3: Eternum Quest Post.</em>
+  </div>
+</div>
+
+> **Note:** EGS makes it easy for any platform to embed, remix, or build on top of games, opening up new opportunities for both developers and communities.
+
+## Why Build Meta-Apps with EGS?
+
+* Offer a diverse library of games and experiences
+* Easily add new content and features without building from scratch
+* Foster engagement and retention by providing variety to your users
+
+> **Tip:** The EGS ecosystem is growing—consider how your app or game could benefit from permissionless embedding and integration.
+
+## Related Guides
+
+* [Embeddable Game Standard Overview](/embeddable-game-standard)
+* [Budokan Tournaments](/budokan)
+* [Game Integration Guide](/embeddable-game-standard/implementation)
+
+If you have questions or want to feature your app here, contact the Budokan team or join the community!
 
 
 
@@ -795,10 +784,10 @@ Once you have entered a tournament:
 
 ## Related Guides
 
-* [Submitting Scores](../budokan/guide/submission)
-* [Tournament Prizes](../budokan/guide/prizes)
+* [Submitting Scores](/budokan/guide/submission)
+* [Tournament Prizes](/budokan/guide/prizes)
 
-If you have questions or encounter issues, check the [FAQ](../guide/faq) or contact support through the app.
+If you have questions or encounter issues, check the [FAQ](/guide/faq) or contact support through the app.
 
 
 
@@ -815,10 +804,10 @@ This guide walks you through the complete process of using Budokan, from creatin
 
 ## Table of Contents
 
-* [Onboarding](../budokan/guide/onboarding)
-* [Entering a Tournament](../budokan/guide/enter)
-* [Creating a Tournament](../budokan/guide/create)
-* [Prizes](../budokan/guide/prizes)
+* [Onboarding](/budokan/guide/onboarding)
+* [Entering a Tournament](/budokan/guide/enter)
+* [Creating a Tournament](/budokan/guide/create)
+* [Prizes](/budokan/guide/prizes)
 
 ## Overview
 
@@ -901,9 +890,9 @@ Follow these steps to get started:
 
 ## Next Steps & Related Guides
 
-* [Entering Tournaments](../budokan/guide/enter)
-* [Submitting Scores](../budokan/guide/submission)
-* [FAQ](../guide/faq)
+* [Entering Tournaments](/budokan/guide/enter)
+* [Submitting Scores](/budokan/guide/submission)
+* [FAQ](/guide/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
 
@@ -996,11 +985,11 @@ Budokan encourages sponsors and community members to add prizes to tournaments. 
 
 ## Related Guides
 
-* [Creating a Tournament](../budokan/guide/create)
-* [Entry Fees](../budokan/guide/create/entry-fees)
-* [Entry Requirements](../budokan/guide/create/entry_requirements)
-* [Onboarding](../budokan/guide/onboarding)
-* [FAQ](../budokan/guide/faq)
+* [Creating a Tournament](/budokan/guide/create)
+* [Entry Fees](/budokan/guide/create/entry-fees)
+* [Entry Requirements](/budokan/guide/create/entry_requirements)
+* [Onboarding](/budokan/guide/onboarding)
+* [FAQ](/budokan/guide/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
 
@@ -1069,11 +1058,155 @@ You can find the code and instructions for running your own submission bot here:
 
 ## Related Guides
 
-* [Entering Tournaments](../budokan/guide/enter)
-* [Prizes](../budokan/guide/prizes)
-* [FAQ](../budokan/faq)
+* [Entering Tournaments](/budokan/guide/enter)
+* [Prizes](/budokan/guide/prizes)
+* [FAQ](/budokan/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
+
+
+
+---
+
+file: docs/pages/development/sdk/index.mdx
+meta: {
+  "layout": "docs"
+}
+
+# SDK
+
+Coming soon...
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/implementation/embedding-games.mdx
+meta: {}
+
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/implementation/index.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Implementation Guide
+
+This guide walks through the steps required for a game developer to implement the
+Embeddable Game Standard and integrate with Budokan tournaments as well as any other meta apps.
+
+## 1. Contract Structure
+
+Start by creating a new Cairo contract that imports and uses the `game_component` module from Budokan.
+
+```cairo
+use tournaments::components::game::game_component;
+
+#[dojo::contract]
+pub mod MyGame {
+    component!(path: game_component, storage: game, event: GameEvent);
+    #[abi(embed_v0)]
+    impl GameComponentImpl = game_component::GameImpl<ContractState>;
+    impl GameComponentInternalImpl = game_component::InternalImpl<ContractState>;
+    // ... additional game logic ...
+}
+```
+
+## 2. Implement Required Storage and Events
+
+Define the required storage fields and events as specified in the standard.
+
+```cairo
+#[storage]
+struct Storage {
+    #[substorage(v0)]
+    game: game_component::Storage,
+    #[substorage(v0)]
+    erc721: ERC721Component::Storage,
+    #[substorage(v0)]
+    src5: SRC5Component::Storage,
+}
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {
+    #[flat]
+    GameEvent: game_component::Event,
+    #[flat]
+    ERC721Event: ERC721Component::Event,
+    #[flat]
+    SRC5Event: SRC5Component::Event,
+}
+```
+
+## 3. Expose Required Interfaces
+
+Ensure your contract exposes the following:
+
+* ERC721 interface for game tokens
+* Metadata and settings interfaces
+* Functions for minting, metadata retrieval, and event emission
+
+## 4. Implement Initialization Logic
+
+Implement the `initializer` function to set up game metadata, settings, and storage configuration.
+
+```cairo
+fn initializer(
+    ref self: ComponentState<TContractState>,
+    creator_address: ContractAddress,
+    name: felt252,
+    description: ByteArray,
+    developer: felt252,
+    publisher: felt252,
+    genre: felt252,
+    image: ByteArray,
+    namespace: ByteArray,
+    score_model: ByteArray,
+    score_attribute: ByteArray,
+    settings_model: ByteArray,
+) {
+    // ... initialization logic ...
+}
+```
+
+## 5. Get score function
+
+* Contract view function to return score attribute on score model
+* IGameDetails
+
+## 6. Settings exist
+
+* If no settings, accept settings id 0 but reject more than
+* ISettings
+
+## 7. Integrate with Budokan
+
+* Test minting game tokens via Budokan tournament flows
+* Ensure metadata and events are correctly emitted and indexed
+* Register your game contract with Budokan for tournament use
+
+## 8. Test and Deploy
+
+* Thoroughly test your contract for compatibility and security
+* Deploy to Starknet and register with Budokan
+
+By following these steps, your game will be fully compatible with the Budokan tournament system and the Embeddable Game Standard.
+
+
+
+---
+
+file: docs/pages/embeddable-game-standard/implementation/settings.mdx
+meta: {
+  "layout": "docs"
+}
+
+# Embeddable Game Standard: Game Settings
 
 
 
@@ -1126,10 +1259,10 @@ The entry fee form offers flexible options for setting the price of entry and ho
 
 ## Related Guides
 
-* [Creating a Tournament](../budokan/guide/create)
-* [Prize Structure](../budokan/guide/prizes)
-* [Onboarding](../budokan/guide/onboarding)
-* [FAQ](../budokan/faq)
+* [Creating a Tournament](/budokan/guide/create)
+* [Prize Structure](/budokan/guide/prizes)
+* [Onboarding](/budokan/guide/onboarding)
+* [FAQ](/budokan/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
 
@@ -1210,10 +1343,10 @@ You can also restrict tournament access by whitelisting specific wallet addresse
 
 ## Related Guides
 
-* [Creating a Tournament](../budokan/guide/create)
-* [Entry Fees](../budokan/guide/entry-fees)
-* [Onboarding](../budokan/guide/onboarding)
-* [FAQ](../budokan/guide/faq)
+* [Creating a Tournament](/budokan/guide/create)
+* [Entry Fees](/budokan/guide/entry-fees)
+* [Onboarding](/budokan/guide/onboarding)
+* [FAQ](/budokan/guide/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
 
@@ -1228,17 +1361,27 @@ meta: {
 
 # Game Settings
 
-As part of the [EGS](../embeddable-game-standard) all games within Budokan support having customised settings. This extends the different
-game modes that tournaments can be created from and even allows creators to experiment with
-new game modes that might gather interest.
+Budokan supports fully customizable game settings for all games that implement the [Embeddable Game Standard (EGS)](../embeddable-game-standard). This allows tournament creators to experiment with new game modes, tailor experiences for their communities, and offer a wide variety of play styles.
 
-## Selecting settings
+## Why Customize Game Settings?
+
+Custom game settings let you:
+
+* Create unique tournament experiences
+* Enable or disable specific game features
+* Adjust difficulty, rules, or other parameters
+* Encourage new strategies and community engagement
+
+> **Tip:** Experimenting with different settings can help you discover popular new game modes and keep your tournaments fresh.
+
+***
+
+## How to Select and Customize Settings
 
 <div className="flex flex-row gap-4 items-start">
   <div className="flex-1">
     <p>
-      When you select a game you can choose to customise the settings. These are displayed as the key
-      value pairs as we read them on chain. Click "Select Settings" to customise.
+      When creating a tournament, you can choose to customize the game settings. These settings are displayed as key-value pairs, read directly from the game contract on-chain. Click <strong>Select Settings</strong> to open the customization dialog.
     </p>
   </div>
 
@@ -1247,9 +1390,17 @@ new game modes that might gather interest.
 
     <br />
 
-    <em>Figure 1: Customising Game Settings in Budokan.</em>
+    <em>Figure 1: Customizing Game Settings in Budokan.</em>
   </div>
 </div>
+
+***
+
+## Creating and Using Custom Settings
+
+* Settings can be created permissionlessly through the games themselves.
+* Any custom settings you create will be displayed and available for play within Budokan.
+* You can select from existing settings or define new ones for your tournament.
 
 <div className="flex flex-row gap-4 items-start">
   <div className="flex-shrink-0">
@@ -1260,10 +1411,26 @@ new game modes that might gather interest.
     <em>Figure 2: Selecting Specific Settings.</em>
   </div>
 
-  <p>
-    The Cartridge Controller makes onboarding easy, allowing you to use familiar social accounts or other wallets. After setup, you'll be ready to join tournaments and play games on Budokan.
-  </p>
+  <div className="flex-shrink-0">
+    <img src="/docs/view-settings.png" alt="Game Settings View" width="300" height="200" />
+
+    <br />
+
+    <em>Figure 3: Viewing a selected setting.</em>
+  </div>
 </div>
+
+> **Note:** All custom settings are transparent and visible to players, ensuring a fair and open tournament environment.
+
+***
+
+## Related Guides
+
+* [Creating a Tournament](/budokan/guide/create)
+* [Prizes](/budokan/guide/prizes)
+* [FAQ](/budokan/faq)
+
+If you have questions or need help, check the FAQ or contact support through the app.
 
 
 
@@ -1388,11 +1555,11 @@ After completing the form, you'll see a tournament confirmation page. Review all
 
 ## Related Guides
 
-* [Onboarding](../budokan/guide/onboarding)
-* [Entry Requirements](../budokan/guide/create/entry-requirements)
-* [Entry Fees](../budokan/guide/create/entry-fees)
-* [Submitting Scores](../budokan/guide/submit-scores)
-* [FAQ](../budokan/faq)
+* [Onboarding](/budokan/guide/onboarding)
+* [Entry Requirements](/budokan/guide/create/entry-requirements)
+* [Entry Fees](/budokan/guide/create/entry-fees)
+* [Submitting Scores](/budokan/guide/submit-scores)
+* [FAQ](/budokan/faq)
 
 If you have questions or need help, check the FAQ or contact support through the app.
 

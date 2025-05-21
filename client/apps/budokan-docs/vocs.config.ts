@@ -46,15 +46,16 @@ export default defineConfig({
   sidebar: [
     {
       text: "Budokan",
-      link: "/budokan",
       collapsed: false,
       items: [
+        { text: "Overview", link: "/budokan" },
         { text: "Key Functions", link: "/budokan/key-functions" },
         {
           text: "Guide",
           link: "/budokan/guide",
           collapsed: true,
           items: [
+            { text: "Overview", link: "/budokan/guide" },
             { text: "Onboarding", link: "/budokan/guide/onboarding" },
             { text: "Enter Tournaments", link: "/budokan/guide/enter" },
             { text: "Submission", link: "/budokan/guide/submission" },
@@ -67,6 +68,7 @@ export default defineConfig({
               link: "/budokan/guide/create",
               collapsed: true,
               items: [
+                { text: "Overview", link: "/budokan/guide/create" },
                 {
                   text: "Game Settings",
                   link: "/budokan/guide/create/game-settings",
@@ -88,28 +90,52 @@ export default defineConfig({
     },
     {
       text: "Embeddable Game Standard",
-      link: "/embeddable-game-standard",
       collapsed: false,
       items: [
+        {
+          text: "Overview",
+          link: "/embeddable-game-standard",
+        },
         {
           text: "Key Functions",
           link: "/embeddable-game-standard/key-functions",
         },
         {
           text: "Implementation Guide",
-          link: "/embeddable-game-standard/implementation",
+          collapsed: true,
+          items: [
+            {
+              text: "Overview",
+              link: "/embeddable-game-standard/implementation",
+            },
+            {
+              text: "Game Settings",
+              link: "/embeddable-game-standard/implementation/settings",
+            },
+            {
+              text: "Embedding Games",
+              link: "/embeddable-game-standard/implementation/embedding-games",
+            },
+          ],
         },
         {
           text: "Games",
           link: "/embeddable-game-standard/games",
         },
+        {
+          text: "Applications",
+          link: "/embeddable-game-standard/meta-apps",
+        },
       ],
     },
     {
       text: "Development",
-      link: "/development",
       collapsed: false,
       items: [
+        {
+          text: "Overview",
+          link: "/development",
+        },
         {
           text: "SDK",
           link: "/development/sdk",
