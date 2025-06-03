@@ -1119,7 +1119,7 @@ pub mod tournament_component {
         ) {
             assert!(
                 position > 0 && position.into() <= winner_count,
-                "Tournament: Invalid position or no winner for this position",
+                "Tournament: Invalid position",
             );
         }
 
@@ -1331,8 +1331,7 @@ pub mod tournament_component {
                         }
                     },
                     Role::Position(position) => {
-                        let leaderboard = store.get_leaderboard(tournament_id);
-                        self._assert_position_is_valid(position, leaderboard.len());
+                        self._assert_position_is_valid(position, tournament.game_config.prize_spots.into());
                         *entry_fee.distribution.at(position.into() - 1)
                     },
                 };
@@ -1357,8 +1356,17 @@ pub mod tournament_component {
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);
-                        let winner_token_id = *leaderboard.at(position.into() - 1);
-                        self._get_owner(tournament.game_config.address, winner_token_id.into())
+                        // Check if leaderboard has enough entries for the position
+                        if position.into() <= leaderboard.len() {
+                            let winner_token_id = *leaderboard.at(position.into() - 1);
+                            self._get_owner(tournament.game_config.address, winner_token_id.into())
+                        } else {
+                            // No entry at this position, default to tournament creator
+                            self
+                                ._get_owner(
+                                    tournament.game_config.address, tournament.creator_token_id.into(),
+                                )
+                        }
                     },
                 };
 
@@ -1392,23 +1400,31 @@ pub mod tournament_component {
 
             // Get winner address
             let leaderboard = store.get_leaderboard(tournament_id);
-            self._assert_position_is_valid(prize.payout_position, leaderboard.len());
+            self._assert_position_is_valid(prize.payout_position, tournament.game_config.prize_spots.into());
 
-            let winner_token_id = *leaderboard.at(prize.payout_position.into() - 1);
-            let winner_address = self
-                ._get_owner(tournament.game_config.address, winner_token_id.into());
+            // Check if leaderboard has enough entries for the position
+            let recipient_address = if prize.payout_position.into() <= leaderboard.len() {
+                let winner_token_id = *leaderboard.at(prize.payout_position.into() - 1);
+                self._get_owner(tournament.game_config.address, winner_token_id.into())
+            } else {
+                // No entry at this position, default to tournament creator
+                self
+                ._get_owner(
+                    tournament.game_config.address, tournament.creator_token_id.into(),
+                )
+            };
 
             // Transfer prize
             match prize.token_type {
                 TokenType::erc20(erc20_token) => {
                     let erc20 = IERC20Dispatcher { contract_address: prize.token_address };
-                    erc20.transfer(winner_address, erc20_token.amount.into());
+                    erc20.transfer(recipient_address, erc20_token.amount.into());
                 },
                 TokenType::erc721(erc721_token) => {
                     let erc721 = IERC721Dispatcher { contract_address: prize.token_address };
                     erc721
                         .transfer_from(
-                            get_contract_address(), winner_address, erc721_token.id.into(),
+                            get_contract_address(), recipient_address, erc721_token.id.into(),
                         );
                 },
             };
