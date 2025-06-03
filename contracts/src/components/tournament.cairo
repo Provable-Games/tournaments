@@ -1118,8 +1118,7 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>, position: u8, winner_count: u32,
         ) {
             assert!(
-                position > 0 && position.into() <= winner_count,
-                "Tournament: Invalid position",
+                position > 0 && position.into() <= winner_count, "Tournament: Invalid position",
             );
         }
 
@@ -1331,7 +1330,10 @@ pub mod tournament_component {
                         }
                     },
                     Role::Position(position) => {
-                        self._assert_position_is_valid(position, tournament.game_config.prize_spots.into());
+                        self
+                            ._assert_position_is_valid(
+                                position, tournament.game_config.prize_spots.into(),
+                            );
                         *entry_fee.distribution.at(position.into() - 1)
                     },
                 };
@@ -1364,7 +1366,8 @@ pub mod tournament_component {
                             // No entry at this position, default to tournament creator
                             self
                                 ._get_owner(
-                                    tournament.game_config.address, tournament.creator_token_id.into(),
+                                    tournament.game_config.address,
+                                    tournament.creator_token_id.into(),
                                 )
                         }
                     },
@@ -1400,7 +1403,10 @@ pub mod tournament_component {
 
             // Get winner address
             let leaderboard = store.get_leaderboard(tournament_id);
-            self._assert_position_is_valid(prize.payout_position, tournament.game_config.prize_spots.into());
+            self
+                ._assert_position_is_valid(
+                    prize.payout_position, tournament.game_config.prize_spots.into(),
+                );
 
             // Check if leaderboard has enough entries for the position
             let recipient_address = if prize.payout_position.into() <= leaderboard.len() {
@@ -1408,10 +1414,7 @@ pub mod tournament_component {
                 self._get_owner(tournament.game_config.address, winner_token_id.into())
             } else {
                 // No entry at this position, default to tournament creator
-                self
-                ._get_owner(
-                    tournament.game_config.address, tournament.creator_token_id.into(),
-                )
+                self._get_owner(tournament.game_config.address, tournament.creator_token_id.into())
             };
 
             // Transfer prize

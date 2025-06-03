@@ -2967,7 +2967,8 @@ fn tournament_with_no_submissions() {
     contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::TournamentCreator));
 
     // Verify tournament creator gets all prizes since no submissions were made
-    // Creator should get: sponsored prizes (STARTING_BALANCE) + entry fee pool (270 total from 3 players) + creator fee (30 total from 3 players)
+    // Creator should get: sponsored prizes (STARTING_BALANCE) + entry fee pool (270 total from 3
+    // players) + creator fee (30 total from 3 players)
     let expected_creator_balance = creator_balance_after_entries + STARTING_BALANCE + 270 + 30;
     assert(
         contracts.erc20.balance_of(OWNER()) == expected_creator_balance,
@@ -2975,19 +2976,31 @@ fn tournament_with_no_submissions() {
     );
 
     // Verify other players don't get anything since they didn't submit scores
-    assert!(contracts.erc20.balance_of(player2) == player2_balance_after_entry, "Player2 should get nothing");
-    assert!(contracts.erc20.balance_of(player3) == player3_balance_after_entry, "Player3 should get nothing");
+    assert!(
+        contracts.erc20.balance_of(player2) == player2_balance_after_entry,
+        "Player2 should get nothing",
+    );
+    assert!(
+        contracts.erc20.balance_of(player3) == player3_balance_after_entry,
+        "Player3 should get nothing",
+    );
 
     // Verify NFT prize goes to tournament creator
     assert!(contracts.erc721.owner_of(1) == OWNER(), "NFT should go to creator");
 
     // Verify tournament entries were recorded but no scores submitted
     assert!(contracts.tournament.tournament_entries(tournament.id) == 3, "Invalid entry count");
-    
-    let registration1 = contracts.tournament.get_registration(contracts.game.contract_address, token_id1);
-    let registration2 = contracts.tournament.get_registration(contracts.game.contract_address, token_id2);
-    let registration3 = contracts.tournament.get_registration(contracts.game.contract_address, token_id3);
-    
+
+    let registration1 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id1);
+    let registration2 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id2);
+    let registration3 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id3);
+
     assert!(!registration1.has_submitted, "Player1 should not have submitted");
     assert!(!registration2.has_submitted, "Player2 should not have submitted");
     assert!(!registration3.has_submitted, "Player3 should not have submitted");
@@ -2995,4 +3008,331 @@ fn tournament_with_no_submissions() {
     // Verify leaderboard is empty since no scores were submitted
     let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
     assert(leaderboard.len() == 0, 'Leaderboard should be empty');
+}
+
+#[test]
+fn tournament_with_partial_submissions() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create entry fee with equal distribution across 10 positions
+    let entry_fee = EntryFee {
+        token_address: contracts.erc20.contract_address,
+        amount: 100,
+        distribution: array![9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+            .span(), // 90% distributed equally to top 10
+        tournament_creator_share: Option::Some(10), // 10% creator fee
+        game_creator_share: Option::None,
+    };
+
+    // Create tournament with 10 prize spots
+    let mut game_config = test_game_config(contracts.game.contract_address);
+    game_config.prize_spots = 10;
+
+    let tournament = contracts
+        .tournament
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            game_config,
+            Option::Some(entry_fee),
+            Option::None,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Add sponsored prizes for first 5 positions
+    contracts.erc20.approve(contracts.tournament.contract_address, 500); // 5 prizes of 100 each
+    contracts.erc721.approve(contracts.tournament.contract_address, 1);
+
+    let sponsored_prize_1 = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: 100 }),
+            1,
+        );
+    let sponsored_prize_2 = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: 100 }),
+            2,
+        );
+    let sponsored_prize_3 = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: 100 }),
+            3,
+        );
+    let sponsored_prize_4 = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: 100 }),
+            4,
+        );
+    let sponsored_prize_5 = contracts
+        .tournament
+        .add_prize(
+            tournament.id,
+            contracts.erc20.contract_address,
+            TokenType::erc20(ERC20Data { amount: 100 }),
+            5,
+        );
+
+    // Create 10 players
+    let player1 = OWNER();
+    let player2 = starknet::contract_address_const::<0x456>();
+    let player3 = starknet::contract_address_const::<0x789>();
+    let player4 = starknet::contract_address_const::<0x101>();
+    let player5 = starknet::contract_address_const::<0x202>();
+    let player6 = starknet::contract_address_const::<0x303>();
+    let player7 = starknet::contract_address_const::<0x404>();
+    let player8 = starknet::contract_address_const::<0x505>();
+    let player9 = starknet::contract_address_const::<0x606>();
+    let player10 = starknet::contract_address_const::<0x707>();
+
+    // All 10 players enter tournament
+    utils::impersonate(player1);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id1, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player1', player1, Option::None);
+
+    // Player 2 enters
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id2, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player2', player2, Option::None);
+
+    // Player 3 enters
+    utils::impersonate(player3);
+    contracts.erc20.mint(player3, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id3, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player3', player3, Option::None);
+
+    // Player 4 enters
+    utils::impersonate(player4);
+    contracts.erc20.mint(player4, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id4, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player4', player4, Option::None);
+
+    // Player 5 enters
+    utils::impersonate(player5);
+    contracts.erc20.mint(player5, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id5, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player5', player5, Option::None);
+
+    // Player 6 enters
+    utils::impersonate(player6);
+    contracts.erc20.mint(player6, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id6, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player6', player6, Option::None);
+
+    // Player 7 enters
+    utils::impersonate(player7);
+    contracts.erc20.mint(player7, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id7, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player7', player7, Option::None);
+
+    // Player 8 enters
+    utils::impersonate(player8);
+    contracts.erc20.mint(player8, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id8, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player8', player8, Option::None);
+
+    // Player 9 enters
+    utils::impersonate(player9);
+    contracts.erc20.mint(player9, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id9, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player9', player9, Option::None);
+
+    // Player 10 enters
+    utils::impersonate(player10);
+    contracts.erc20.mint(player10, 100);
+    contracts.erc20.approve(contracts.tournament.contract_address, 100);
+    let (token_id10, _) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player10', player10, Option::None);
+
+    // Store initial balances after entry fees are paid
+    let player1_balance_after_entry = contracts.erc20.balance_of(player1);
+    let player2_balance_after_entry = contracts.erc20.balance_of(player2);
+    let player3_balance_after_entry = contracts.erc20.balance_of(player3);
+    let player4_balance_after_entry = contracts.erc20.balance_of(player4);
+    let player5_balance_after_entry = contracts.erc20.balance_of(player5);
+
+    // Move to end of tournament and set scores for all players
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    contracts.game.end_game(token_id1, 1000); // Best score
+    contracts.game.end_game(token_id2, 900);
+    contracts.game.end_game(token_id3, 800);
+    contracts.game.end_game(token_id4, 700);
+    contracts.game.end_game(token_id5, 600);
+    contracts.game.end_game(token_id6, 500); // Not submitted
+    contracts.game.end_game(token_id7, 400); // Not submitted
+    contracts.game.end_game(token_id8, 300); // Not submitted
+    contracts.game.end_game(token_id9, 200); // Not submitted
+    contracts.game.end_game(token_id10, 100); // Not submitted
+
+    // Submit scores for only the first 5 players
+    utils::impersonate(player2);
+
+    contracts.tournament.submit_score(tournament.id, token_id1, 1);
+    contracts.tournament.submit_score(tournament.id, token_id2, 2);
+    contracts.tournament.submit_score(tournament.id, token_id3, 3);
+    contracts.tournament.submit_score(tournament.id, token_id4, 4);
+    contracts.tournament.submit_score(tournament.id, token_id5, 5);
+
+    // Move to after submission period
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    // Verify leaderboard has only 5 entries
+    let leaderboard = contracts.tournament.get_leaderboard(tournament.id);
+    assert(leaderboard.len() == 5, 'Leaderboard has 5 entries');
+    assert(*leaderboard.at(0) == token_id1, 'Invalid first place');
+    assert(*leaderboard.at(1) == token_id2, 'Invalid second place');
+    assert(*leaderboard.at(2) == token_id3, 'Invalid third place');
+    assert(*leaderboard.at(3) == token_id4, 'Invalid fourth place');
+    assert(*leaderboard.at(4) == token_id5, 'Invalid fifth place');
+
+    // Submitters claim their sponsored prizes and entry fee prizes
+    contracts.tournament.claim_prize(tournament.id, PrizeType::Sponsored(sponsored_prize_1));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::Sponsored(sponsored_prize_2));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::Sponsored(sponsored_prize_3));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::Sponsored(sponsored_prize_4));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::Sponsored(sponsored_prize_5));
+
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(1)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(2)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(3)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(4)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(5)));
+
+    // Creator claims remaining positions and creator fee
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(6)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(7)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(8)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(9)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(10)));
+    contracts.tournament.claim_prize(tournament.id, PrizeType::EntryFees(Role::TournamentCreator));
+
+    // Verify submitters received their rewards
+    // Each position gets 9% of total pool (10 players * 100 = 1000), so 90 tokens each
+    // Plus sponsored prizes of 100 tokens each
+    let expected_prize_per_position = 90; // 9% of 1000
+    let sponsored_prize_amount = 100;
+    let expected_creator_rewards = 5 * expected_prize_per_position
+        + 100; // 5 positions + creator fee
+
+    // Debug: Let's check actual balances vs expected
+    let player1_actual = contracts.erc20.balance_of(player1);
+    // Player1 is OWNER, so gets position 1 rewards + sponsored prize + creator rewards
+    let player1_expected = player1_balance_after_entry
+        + expected_prize_per_position
+        + sponsored_prize_amount
+        + expected_creator_rewards;
+
+    assert!(
+        player1_actual == player1_expected,
+        "Player1 balance mismatch. Expected: {}, got: {}",
+        player1_expected,
+        player1_actual,
+    );
+
+    assert!(
+        contracts.erc20.balance_of(player2) == player2_balance_after_entry
+            + expected_prize_per_position
+            + sponsored_prize_amount,
+        "Player2 should receive position 2 rewards",
+    );
+    assert!(
+        contracts.erc20.balance_of(player3) == player3_balance_after_entry
+            + expected_prize_per_position
+            + sponsored_prize_amount,
+        "Player3 should receive position 3 rewards",
+    );
+    assert!(
+        contracts.erc20.balance_of(player4) == player4_balance_after_entry
+            + expected_prize_per_position
+            + sponsored_prize_amount,
+        "Player4 should receive position 4 rewards",
+    );
+    assert!(
+        contracts.erc20.balance_of(player5) == player5_balance_after_entry
+            + expected_prize_per_position
+            + sponsored_prize_amount,
+        "Player5 should receive position 5 rewards",
+    );
+
+    // Verify tournament entries were recorded correctly
+    assert!(contracts.tournament.tournament_entries(tournament.id) == 10, "Invalid entry count");
+
+    // Verify only first 5 players submitted scores
+    let registration1 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id1);
+    let registration2 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id2);
+    let registration3 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id3);
+    let registration4 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id4);
+    let registration5 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id5);
+    let registration6 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id6);
+    let registration7 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id7);
+    let registration8 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id8);
+    let registration9 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id9);
+    let registration10 = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id10);
+
+    assert!(registration1.has_submitted, "Player1 should have submitted");
+    assert!(registration2.has_submitted, "Player2 should have submitted");
+    assert!(registration3.has_submitted, "Player3 should have submitted");
+    assert!(registration4.has_submitted, "Player4 should have submitted");
+    assert!(registration5.has_submitted, "Player5 should have submitted");
+    assert!(!registration6.has_submitted, "Player6 should not have submitted");
+    assert!(!registration7.has_submitted, "Player7 should not have submitted");
+    assert!(!registration8.has_submitted, "Player8 should not have submitted");
+    assert!(!registration9.has_submitted, "Player9 should not have submitted");
+    assert!(!registration10.has_submitted, "Player10 should not have submitted");
 }
