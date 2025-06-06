@@ -1538,38 +1538,17 @@ pub mod tournament_component {
             player_address: ContractAddress,
             qualifier: Option<QualificationProof>,
         ) -> ContractAddress {
-            // Check if it's an allowlist entry requirement and no qualifier is provided
-            if qualifier.is_none() {
-                match entry_requirement.entry_requirement_type {
-                    EntryRequirementType::allowlist(addresses) => {
-                        // For allowlist, check if caller is in allowlist directly
-                        let mut found = false;
-                        let mut loop_index = 0;
-                        loop {
-                            if loop_index == addresses.len() {
-                                break;
-                            }
-                            let qualifying_address = *addresses.at(loop_index);
-                            if qualifying_address == get_caller_address() {
-                                found = true;
-                                break;
-                            }
-                            loop_index += 1;
-                        };
-                        assert!(found, "Tournament: Caller is not in allowlist");
-                        return player_address;
-                    },
-                    _ => {
-                        panic!(
-                            "Tournament: Tournament {} has an entry requirement but no qualification was provided",
-                            tournament_id,
-                        );
-                    },
-                }
-            }
+            // Require qualifier for all entry requirements
+            let qualifier = match qualifier {
+                Option::Some(q) => q,
+                Option::None => {
+                    panic!(
+                        "Tournament: Tournament {} has an entry requirement but no qualification was provided",
+                        tournament_id,
+                    )
+                },
+            };
 
-            // If we reach here, qualifier is Some, so unwrap it safely
-            let qualifier = qualifier.unwrap();
             let recipient = self
                 ._validate_entry_requirement(
                     store, tournament_id, entry_requirement, player_address, qualifier,
