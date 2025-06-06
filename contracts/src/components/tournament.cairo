@@ -275,25 +275,30 @@ pub mod tournament_component {
 
             tournament.schedule.assert_registration_open(get_block_timestamp());
 
-            if let Option::Some(entry_requirement) = tournament.entry_requirement {
-                self
+            // Determine the actual recipient based on entry requirements and qualification
+            let mint_to_address = if let Option::Some(entry_requirement) = tournament
+                .entry_requirement {
+                let recipient = self
                     ._process_entry_requirement(
                         ref store, tournament_id, entry_requirement, player_address, qualification,
                     );
-            }
+                recipient
+            } else {
+                player_address
+            };
 
             if let Option::Some(entry_fee) = tournament.entry_fee {
                 self._process_entry_fee(entry_fee);
             }
 
-            // mint game to the entrant
+            // mint game to the determined recipient
             let game_token_id = self
                 ._mint_game(
                     tournament.game_config.address,
                     tournament.game_config.settings_id,
                     tournament.schedule,
                     player_name,
-                    player_address,
+                    mint_to_address,
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -851,16 +856,6 @@ pub mod tournament_component {
             );
         }
 
-        #[inline(always)]
-        fn _validate_token_ownership(
-            self: @ComponentState<TContractState>,
-            token: ContractAddress,
-            token_id: u256,
-            account: ContractAddress,
-        ) {
-            let owner = self._get_owner(token, token_id);
-            assert!(owner == account, "Tournament: Caller does not own token id {}", token_id);
-        }
 
         #[inline(always)]
         fn _assert_under_entry_limit(
@@ -876,17 +871,6 @@ pub mod tournament_component {
             );
         }
 
-        #[inline(always)]
-        fn _assert_gated_token_owner(
-            self: @ComponentState<TContractState>, token: ContractAddress, token_id: u256,
-        ) {
-            let owner = self._get_owner(token, token_id);
-            assert!(
-                owner == get_caller_address(),
-                "Tournament: Caller does not own qualifying token id {}",
-                token_id,
-            );
-        }
 
         fn _assert_gated_type_validates(
             self: @ComponentState<TContractState>,
@@ -931,50 +915,6 @@ pub mod tournament_component {
             }
         }
 
-        fn _assert_player_is_eligible(
-            self: @ComponentState<TContractState>,
-            tournament_id: u64,
-            store: Store,
-            entry_requirement: EntryRequirement,
-            qualifying_token_id: Option<u256>,
-        ) {
-            match entry_requirement.entry_requirement_type {
-                EntryRequirementType::token(token_address) => {
-                    match qualifying_token_id {
-                        Option::Some(token_id) => {
-                            self._assert_gated_token_owner(token_address, token_id);
-                        },
-                        Option::None => {
-                            let token_address_felt: felt252 = token_address.into();
-                            panic!(
-                                "Tournament: tournament {} requires ownership of NFT {} to register",
-                                tournament_id,
-                                token_address_felt,
-                            );
-                        },
-                    }
-                },
-                EntryRequirementType::tournament(tournament_type) => {
-                    match qualifying_token_id {
-                        Option::Some(token_id) => {
-                            self
-                                ._assert_has_qualified_in_tournaments(
-                                    store, tournament_type, token_id.try_into().unwrap(),
-                                );
-                        },
-                        Option::None => {
-                            panic!(
-                                "Tournament: tournament {} requires proof of participation in a qualifying tournament",
-                                tournament_id,
-                            );
-                        },
-                    }
-                },
-                EntryRequirementType::allowlist(addresses) => {
-                    self._assert_qualifying_address(addresses);
-                },
-            }
-        }
 
         fn _assert_tournament_exists(
             self: @ComponentState<TContractState>, store: Store, tournament_id: u64,
@@ -1093,25 +1033,6 @@ pub mod tournament_component {
             );
         }
 
-        #[inline(always)]
-        fn _assert_qualifying_address(
-            self: @ComponentState<TContractState>, qualifying_addresses: Span<ContractAddress>,
-        ) {
-            let mut found = false;
-            let mut loop_index = 0;
-            loop {
-                if loop_index == qualifying_addresses.len() {
-                    break;
-                }
-                let qualifying_address = *qualifying_addresses.at(loop_index);
-                if qualifying_address == get_caller_address() {
-                    found = true;
-                    break;
-                }
-                loop_index += 1;
-            };
-            assert!(found, "Tournament: Caller is not in allowlist");
-        }
 
         #[inline(always)]
         fn _assert_position_is_valid(
@@ -1616,28 +1537,54 @@ pub mod tournament_component {
             entry_requirement: EntryRequirement,
             player_address: ContractAddress,
             qualifier: Option<QualificationProof>,
-        ) {
-            // if tournament has an entry requirement, caller must provide a qualifier
-            if let Option::Some(qualifier) = qualifier {
-                self
-                    ._validate_entry_requirement(
-                        store, tournament_id, entry_requirement, player_address, qualifier,
-                    );
-
-                // if entry limit was specified
-                if entry_requirement.entry_limit != 0 {
-                    // check and update limit requirements
-                    self
-                        ._update_qualification_entries(
-                            ref store, tournament_id, qualifier, entry_requirement.entry_limit,
+        ) -> ContractAddress {
+            // Check if it's an allowlist entry requirement and no qualifier is provided
+            if qualifier.is_none() {
+                match entry_requirement.entry_requirement_type {
+                    EntryRequirementType::allowlist(addresses) => {
+                        // For allowlist, check if caller is in allowlist directly
+                        let mut found = false;
+                        let mut loop_index = 0;
+                        loop {
+                            if loop_index == addresses.len() {
+                                break;
+                            }
+                            let qualifying_address = *addresses.at(loop_index);
+                            if qualifying_address == get_caller_address() {
+                                found = true;
+                                break;
+                            }
+                            loop_index += 1;
+                        };
+                        assert!(found, "Tournament: Caller is not in allowlist");
+                        return player_address;
+                    },
+                    _ => {
+                        panic!(
+                            "Tournament: Tournament {} has an entry requirement but no qualification was provided",
+                            tournament_id,
                         );
+                    },
                 }
-            } else {
-                panic!(
-                    "Tournament: Tournament {} has an entry requirement but no qualification was provided",
-                    tournament_id,
-                );
             }
+
+            // If we reach here, qualifier is Some, so unwrap it safely
+            let qualifier = qualifier.unwrap();
+            let recipient = self
+                ._validate_entry_requirement(
+                    store, tournament_id, entry_requirement, player_address, qualifier,
+                );
+
+            // if entry limit was specified
+            if entry_requirement.entry_limit != 0 {
+                // check and update limit requirements
+                self
+                    ._update_qualification_entries(
+                        ref store, tournament_id, qualifier, entry_requirement.entry_limit,
+                    );
+            }
+
+            recipient
         }
 
         fn _update_qualification_entries(
@@ -1667,19 +1614,19 @@ pub mod tournament_component {
             entry_requirement: EntryRequirement,
             player_address: ContractAddress,
             qualifier: QualificationProof,
-        ) {
+        ) -> ContractAddress {
             match entry_requirement.entry_requirement_type {
                 EntryRequirementType::tournament(tournament_type) => {
                     self
                         ._validate_tournament_qualification(
                             store, tournament_id, tournament_type, qualifier, player_address,
-                        );
+                        )
                 },
                 EntryRequirementType::token(token_address) => {
-                    self._validate_nft_qualification(token_address, player_address, qualifier);
+                    self._validate_nft_qualification(token_address, player_address, qualifier)
                 },
                 EntryRequirementType::allowlist(addresses) => {
-                    self._validate_allowlist_qualification(addresses, qualifier);
+                    self._validate_allowlist_qualification(addresses, qualifier)
                 },
             }
         }
@@ -1691,7 +1638,7 @@ pub mod tournament_component {
             tournament_type: TournamentType,
             qualifier: QualificationProof,
             player_address: ContractAddress,
-        ) {
+        ) -> ContractAddress {
             let qualifying_proof_tournament = match qualifier {
                 QualificationProof::Tournament(qual) => qual,
                 _ => panic!("Tournament: Provided qualification proof is not of type 'Tournament'"),
@@ -1716,13 +1663,14 @@ pub mod tournament_component {
                     leaderboard.span(), tournament_type, qualifying_proof_tournament,
                 );
 
-            // verify token ownership
-            self
-                ._validate_token_ownership(
+            // Return the owner of the qualifying token
+            let token_owner = self
+                ._get_owner(
                     qualifying_tournament.game_config.address,
                     qualifying_proof_tournament.token_id.into(),
-                    player_address,
                 );
+
+            token_owner
         }
 
         fn _validate_nft_qualification(
@@ -1730,17 +1678,17 @@ pub mod tournament_component {
             token_address: ContractAddress,
             player_address: ContractAddress,
             qualifier: QualificationProof,
-        ) {
+        ) -> ContractAddress {
             let qualification = match qualifier {
                 QualificationProof::NFT(qual) => qual,
                 _ => panic!("Tournament: Provided qualification proof is not of type 'Token'"),
             };
 
             let erc721_dispatcher = IERC721Dispatcher { contract_address: token_address };
-            assert!(
-                erc721_dispatcher.owner_of(qualification.token_id) == player_address,
-                "Tournament: Player does not own required nft",
-            );
+            let token_owner = erc721_dispatcher.owner_of(qualification.token_id);
+
+            // Return the owner of the qualifying NFT
+            token_owner
         }
 
         fn _is_qualifying_tournament(
@@ -1765,7 +1713,7 @@ pub mod tournament_component {
             self: @ComponentState<TContractState>,
             allowlist_addresses: Span<ContractAddress>,
             qualifier: QualificationProof,
-        ) {
+        ) -> ContractAddress {
             let qualifying_address = match qualifier {
                 QualificationProof::Address(qual) => qual,
                 _ => panic!("Tournament: Provided qualification proof is not of type 'Address'"),
@@ -1776,10 +1724,9 @@ pub mod tournament_component {
                 "Tournament: Qualifying address is not in allowlist",
             );
 
-            assert!(
-                qualifying_address == starknet::get_caller_address(),
-                "Tournament: Caller address is different than qualifying address",
-            );
+            // Return the qualifying address - for allowlist, the game is minted to the allowlisted
+            // address
+            qualifying_address
         }
 
         fn _contains_address(

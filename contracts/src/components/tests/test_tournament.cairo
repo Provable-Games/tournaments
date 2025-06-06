@@ -3336,3 +3336,327 @@ fn tournament_with_partial_submissions() {
     assert!(!registration9.has_submitted, "Player9 should not have submitted");
     assert!(!registration10.has_submitted, "Player10 should not have submitted");
 }
+
+//
+// Tests for third-party enter_tournament functionality
+//
+
+#[test]
+fn test_third_party_enter_tournament_with_nft_qualification() {
+    let contracts = setup();
+
+    // Create additional accounts
+    let nft_owner = starknet::contract_address_const::<0x1>();
+    let third_party = starknet::contract_address_const::<0x2>();
+
+    // Mint NFT to the owner
+    utils::impersonate(OWNER());
+    contracts.erc721.mint(nft_owner, 2);
+
+    // This variable is not used, removing it
+
+    // Update tournament to have NFT entry requirement
+    let entry_requirement = Option::Some(
+        EntryRequirement {
+            entry_limit: 0,
+            entry_requirement_type: EntryRequirementType::token(contracts.erc721.contract_address),
+        },
+    );
+
+    // Create tournament with NFT requirement
+    let metadata = test_metadata();
+    let schedule = test_schedule();
+    let game_config = test_game_config(contracts.game.contract_address);
+
+    utils::impersonate(OWNER());
+    let tournament_with_nft = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), metadata, schedule, game_config, Option::None, entry_requirement,
+        );
+
+    // Third party enters tournament for NFT owner using qualification proof
+    let qualification = Option::Some(QualificationProof::NFT(NFTQualification { token_id: 2 }));
+
+    utils::impersonate(third_party);
+    let (token_id, entry_number) = contracts
+        .tournament
+        .enter_tournament(
+            tournament_with_nft.id,
+            'player1',
+            third_party, // This will be ignored, game minted to nft_owner instead
+            qualification,
+        );
+
+    // Verify game was minted to the NFT owner, not the third party
+    let game_owner = contracts.game.owner_of(token_id.into());
+    assert!(game_owner == nft_owner, "Game should be minted to NFT owner");
+    assert!(game_owner != third_party, "Game should not be minted to third party");
+
+    // Verify registration details
+    let registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id);
+    assert!(registration.tournament_id == tournament_with_nft.id, "Wrong tournament id");
+    assert!(registration.entry_number == entry_number, "Wrong entry number");
+}
+
+#[test]
+fn test_third_party_enter_tournament_with_tournament_qualification() {
+    let contracts = setup();
+
+    // Create additional accounts
+    let winner = starknet::contract_address_const::<0x1>();
+    let third_party = starknet::contract_address_const::<0x2>();
+
+    // Create and complete a qualifying tournament
+    utils::impersonate(OWNER());
+    let qualifying_tournament = create_basic_tournament(
+        contracts.tournament, contracts.game.contract_address,
+    );
+
+    // Winner enters qualifying tournament
+    utils::impersonate(winner);
+    let (qualifying_token_id, _) = contracts
+        .tournament
+        .enter_tournament(qualifying_tournament.id, 'winner', winner, Option::None);
+
+    // Set scores and complete qualifying tournament
+    starknet::testing::set_block_timestamp(TEST_END_TIME().into());
+    contracts.game.end_game(qualifying_token_id, 1000);
+
+    // Advance time to submission period
+    starknet::testing::set_block_timestamp(TEST_START_TIME().into() + 1);
+    contracts.tournament.submit_score(qualifying_tournament.id, qualifying_token_id, 1);
+
+    // Advance time to tournament end
+    starknet::testing::set_block_timestamp(TEST_END_TIME().into() + 1);
+
+    // Create new tournament with tournament qualification requirement
+    let entry_requirement = Option::Some(
+        EntryRequirement {
+            entry_limit: 0,
+            entry_requirement_type: EntryRequirementType::tournament(
+                TournamentType::winners(array![qualifying_tournament.id].span()),
+            ),
+        },
+    );
+
+    let metadata = test_metadata();
+    let schedule = test_schedule();
+    let game_config = test_game_config(contracts.game.contract_address);
+
+    utils::impersonate(OWNER());
+    let tournament_with_qualification = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), metadata, schedule, game_config, Option::None, entry_requirement,
+        );
+
+    // Third party enters tournament for winner using tournament qualification
+    let qualification = Option::Some(
+        QualificationProof::Tournament(
+            TournamentQualification {
+                tournament_id: qualifying_tournament.id, token_id: qualifying_token_id, position: 1,
+            },
+        ),
+    );
+
+    utils::impersonate(third_party);
+    let (token_id, entry_number) = contracts
+        .tournament
+        .enter_tournament(
+            tournament_with_qualification.id,
+            'winner',
+            third_party, // This will be ignored, game minted to winner instead
+            qualification,
+        );
+
+    // Verify game was minted to the winner, not the third party
+    let game_owner = contracts.game.owner_of(token_id.into());
+    assert!(game_owner == winner, "Game should be minted to tournament winner");
+    assert!(game_owner != third_party, "Game should not be minted to third party");
+
+    // Verify registration details
+    let registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id);
+    assert!(registration.tournament_id == tournament_with_qualification.id, "Wrong tournament id");
+    assert!(registration.entry_number == entry_number, "Wrong entry number");
+}
+
+#[test]
+fn test_third_party_enter_tournament_with_allowlist_qualification() {
+    let contracts = setup();
+
+    // Create additional accounts
+    let allowlisted_user = starknet::contract_address_const::<0x1>();
+    let third_party = starknet::contract_address_const::<0x2>();
+
+    // Create tournament with allowlist entry requirement
+    let entry_requirement = Option::Some(
+        EntryRequirement {
+            entry_limit: 0,
+            entry_requirement_type: EntryRequirementType::allowlist(
+                array![allowlisted_user].span(),
+            ),
+        },
+    );
+
+    let metadata = test_metadata();
+    let schedule = test_schedule();
+    let game_config = test_game_config(contracts.game.contract_address);
+
+    utils::impersonate(OWNER());
+    let tournament_with_allowlist = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), metadata, schedule, game_config, Option::None, entry_requirement,
+        );
+
+    // Third party enters tournament for allowlisted user using address qualification
+    let qualification = Option::Some(QualificationProof::Address(allowlisted_user));
+
+    utils::impersonate(third_party);
+    let (token_id, entry_number) = contracts
+        .tournament
+        .enter_tournament(
+            tournament_with_allowlist.id,
+            'allowlisted_player',
+            third_party, // This will be ignored, game minted to allowlisted_user instead
+            qualification,
+        );
+
+    // Verify game was minted to the allowlisted user, not the third party
+    let game_owner = contracts.game.owner_of(token_id.into());
+    assert!(game_owner == allowlisted_user, "Game should be minted to allowlisted user");
+    assert!(game_owner != third_party, "Game should not be minted to third party");
+
+    // Verify registration details
+    let registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id);
+    assert!(registration.tournament_id == tournament_with_allowlist.id, "Wrong tournament id");
+    assert!(registration.entry_number == entry_number, "Wrong entry number");
+}
+
+#[test]
+fn test_allowlist_user_can_still_enter_directly_without_qualification() {
+    let contracts = setup();
+
+    // Create additional account
+    let allowlisted_user = starknet::contract_address_const::<0x1>();
+
+    // Create tournament with allowlist entry requirement
+    let entry_requirement = Option::Some(
+        EntryRequirement {
+            entry_limit: 0,
+            entry_requirement_type: EntryRequirementType::allowlist(
+                array![allowlisted_user].span(),
+            ),
+        },
+    );
+
+    let metadata = test_metadata();
+    let schedule = test_schedule();
+    let game_config = test_game_config(contracts.game.contract_address);
+
+    utils::impersonate(OWNER());
+    let tournament_with_allowlist = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), metadata, schedule, game_config, Option::None, entry_requirement,
+        );
+
+    // Allowlisted user enters tournament directly without qualification proof
+    utils::impersonate(allowlisted_user);
+    let (token_id, entry_number) = contracts
+        .tournament
+        .enter_tournament(
+            tournament_with_allowlist.id,
+            'direct_player',
+            allowlisted_user,
+            Option::None // No qualification needed for allowlist
+        );
+
+    // Verify game was minted to the allowlisted user
+    let game_owner = contracts.game.owner_of(token_id.into());
+    assert!(game_owner == allowlisted_user, "Game should be minted to allowlisted user");
+
+    // Verify registration details
+    let registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id);
+    assert!(registration.tournament_id == tournament_with_allowlist.id, "Wrong tournament id");
+    assert!(registration.entry_number == entry_number, "Wrong entry number");
+}
+
+#[test]
+#[should_panic(expected: ("Tournament: Caller is not in allowlist", 'ENTRYPOINT_FAILED'))]
+fn test_non_allowlisted_user_cannot_enter_without_qualification() {
+    let contracts = setup();
+
+    // Create additional accounts
+    let allowlisted_user = starknet::contract_address_const::<0x1>();
+    let non_allowlisted_user = starknet::contract_address_const::<0x2>();
+
+    // Create tournament with allowlist entry requirement
+    let entry_requirement = Option::Some(
+        EntryRequirement {
+            entry_limit: 0,
+            entry_requirement_type: EntryRequirementType::allowlist(
+                array![allowlisted_user].span(),
+            ),
+        },
+    );
+
+    let metadata = test_metadata();
+    let schedule = test_schedule();
+    let game_config = test_game_config(contracts.game.contract_address);
+
+    utils::impersonate(OWNER());
+    let tournament_with_allowlist = contracts
+        .tournament
+        .create_tournament(
+            OWNER(), metadata, schedule, game_config, Option::None, entry_requirement,
+        );
+
+    // Non-allowlisted user tries to enter without qualification - should fail
+    utils::impersonate(non_allowlisted_user);
+    contracts
+        .tournament
+        .enter_tournament(
+            tournament_with_allowlist.id, 'non_allowlisted', non_allowlisted_user, Option::None,
+        );
+}
+
+#[test]
+fn test_no_entry_requirement_still_mints_to_player_address() {
+    let contracts = setup();
+
+    // Create additional accounts
+    let player = starknet::contract_address_const::<0x1>();
+    let third_party = starknet::contract_address_const::<0x2>();
+
+    // Create tournament with no entry requirement
+    utils::impersonate(OWNER());
+    let tournament = create_basic_tournament(contracts.tournament, contracts.game.contract_address);
+
+    // Third party enters tournament for player (no qualification needed)
+    utils::impersonate(third_party);
+    let (token_id, entry_number) = contracts
+        .tournament
+        .enter_tournament(tournament.id, 'player', player, Option::None);
+
+    // Verify game was minted to the specified player address
+    let game_owner = contracts.game.owner_of(token_id.into());
+    assert!(game_owner == player, "Game should be minted to player address");
+    assert!(game_owner != third_party, "Game should not be minted to third party");
+
+    // Verify registration details
+    let registration = contracts
+        .tournament
+        .get_registration(contracts.game.contract_address, token_id);
+    assert!(registration.tournament_id == tournament.id, "Wrong tournament id");
+    assert!(registration.entry_number == entry_number, "Wrong entry number");
+}
