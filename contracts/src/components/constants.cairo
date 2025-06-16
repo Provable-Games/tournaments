@@ -17,5 +17,5 @@ pub const SEPOLIA_CHAIN_ID: felt252 = 0x534e5f5345504f4c4941;
 pub const GAME_CREATOR_TOKEN_ID: u64 = 0;
 
 pub fn DEFAULT_NS() -> ByteArray {
-    "budokan_1_0_7"
+    "budokan_1_0_8"
 }

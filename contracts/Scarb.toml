@@ -8,12 +8,26 @@ edition = "2024_07"
 
 [[target.starknet-contract]]
 sierra = true
-build-external-contracts = ["dojo::world::world_contract::world"]
+build-external-contracts = [
+    "dojo::world::world_contract::world",
+    "game_components_minigame::tests::models::minigame::m_ScoreObjective",
+    "game_components_minigame::tests::models::minigame::m_ScoreObjectiveCount",
+    "game_components_minigame::tests::models::minigame::m_Settings",
+    "game_components_minigame::tests::models::minigame::m_SettingsDetails",
+    "game_components_minigame::tests::models::minigame::m_SettingsCounter",
+    "game_components_minigame::tests::models::minigame::m_Score",
+    "game_components_minigame::tests::mocks::minigame_mock::minigame_mock",
+]
 
 [dependencies]
-openzeppelin_introspection = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
-openzeppelin_token = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v1.0.0"}
-dojo = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.5.1" }
+openzeppelin_introspection = "1.0.0"
+openzeppelin_token = "1.0.0"
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.1" }
+game_components_denshokan = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+game_components_metagame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+game_components_minigame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+game_components_utils = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+denshokan = { git = "https://github.com/Provable-Games/denshokan", branch = "main" }
 starknet = "2.10.1"
 
 [dev-dependencies]

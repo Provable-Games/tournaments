@@ -23,7 +23,6 @@ pub mod components {
         pub mod mocks {
             pub mod erc20_mock;
             pub mod erc721_mock;
-            pub mod game_mock;
             pub mod tournament_mock;
         }
         #[cfg(test)]

@@ -67,10 +67,6 @@ pub mod tournament_component {
     use tournaments::components::constants::{
         TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID,
     };
-    use tournaments::components::interfaces::{
-        IGameTokenDispatcher, IGameTokenDispatcherTrait, IGameDetailsDispatcher,
-        IGameDetailsDispatcherTrait, IGAMETOKEN_ID, IGAME_METADATA_ID,
-    };
     use tournaments::components::models::tournament::{
         Tournament as TournamentModel, Registration, Leaderboard, Prize, Token, TournamentConfig,
         TokenType, TournamentType, ERC20Data, ERC721Data, PrizeType, Role, PrizeClaim, Metadata,
@@ -88,6 +84,7 @@ pub mod tournament_component {
     use dojo::contract::components::world_provider::{IWorldProvider};
 
     use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
     use openzeppelin_token::erc20::interface::{
@@ -99,14 +96,68 @@ pub mod tournament_component {
         IERC721MetadataDispatcherTrait, IERC721_ID,
     };
 
+    use game_components_minigame::interface::{
+        IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameDetailsDispatcher,
+        IMinigameDetailsDispatcherTrait, IMINIGAME_ID,
+    };
+    use game_components_metagame::models::context::{GameContextDetails, GameContext};
+    use game_components_utils::json::create_context_json;
+    use game_components_metagame::interface::IMetagameContext;
+    use game_components_metagame::metagame::metagame_component;
+    use game_components_denshokan::interface::{IDenshokanDispatcher, IDenshokanDispatcherTrait};
+
+    component!(path: metagame_component, storage: metagame, event: MetagameEvent);
+
     // uses dojo world storage
     #[storage]
-    pub struct Storage {}
+    pub struct Storage {
+        #[substorage(v0)]
+        metagame: metagame_component::Storage,
+        denshokan_address: ContractAddress,
+    }
 
     // uses dojo world events
     #[event]
     #[derive(Drop, starknet::Event)]
-    pub enum Event {}
+    pub enum Event {
+        #[flat]
+        MetagameEvent(metagame_component::Event),
+    }
+
+    #[abi(embed_v0)]
+    impl GameContextImpl<TContractState, +HasComponent<TContractState>, +IWorldProvider<TContractState>> of IMetagameContext<ComponentState<TContractState>> {
+        fn has_context(self: @TState, token_id: u64) -> bool {
+            let world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
+            );
+            let store: Store = StoreTrait::new(world);
+            let denshokan_dispatcher = IDenshokanDispatcher { contract_address:
+            self.denshokan_address.read() };
+            let game_address = denshokan_dispatcher.game_address(token_id);
+            let registration = store.get_registration(game_address, token_id);
+            registration.tournament_id != 0
+        }
+
+        fn context(self: @ContractState, token_id: u64) -> GameContextDetails {
+            let mut world = WorldTrait::storage(
+                self.get_contract().world_dispatcher(), @DEFAULT_NS(),
+            );
+            let store: Store = StoreTrait::new(world);
+            let denshokan_dispatcher = IDenshokanDispatcher { contract_address:
+            self.denshokan_address.read() };
+            let game_address = denshokan_dispatcher.game_address(token_id);
+            let registration = store.get_registration(game_address, token_id);
+            let context = array![
+                GameContext { name: "Tournament ID", value: format!("{}",
+                registration.tournament_id) },
+            ].span();
+            // let context = array![GameContext { name: "Tournament ID", value: format!("{}", 0) }]
+            //     .span();
+            GameContextDetails {
+                name: "Budokan", description: "The onchain tournament system", context: context,
+            }
+        }
+    }
 
     #[embeddable_as(TournamentImpl)]
     impl Tournament<
@@ -231,14 +282,26 @@ pub mod tournament_component {
                 self._assert_valid_entry_requirement(store, entry_requirement);
             }
 
+            let tournament_metrics = store.get_platform_metrics();
+            let tournament_id = tournament_metrics.total_tournaments + 1;
+
+            let empty_objective_ids: Span<u32> = array![].span();
+            let context_json = self._create_context(tournament_id);
+
             // mint a game to the tournament creator for reward distribution
             let creator_token_id = self
                 ._mint_game(
                     game_config.address,
-                    game_config.settings_id,
-                    schedule,
-                    metadata.name,
+                    Option::Some('Tournament Creator'),
+                    Option::Some(game_config.settings_id),
+                    Option::Some(schedule.game.start),
+                    Option::Some(schedule.game.end),
+                    Option::Some(empty_objective_ids),
+                    Option::Some(context_json),
+                    Option::None, // client_url
+                    Option::None, // renderer_address
                     creator_rewards_address,
+                    false,
                 );
 
             store
@@ -291,14 +354,23 @@ pub mod tournament_component {
                 self._process_entry_fee(entry_fee);
             }
 
+            let empty_objective_ids: Span<u32> = array![].span();
+            let context_json = self._create_context(tournament_id);
+
             // mint game to the determined recipient
             let game_token_id = self
                 ._mint_game(
                     tournament.game_config.address,
-                    tournament.game_config.settings_id,
-                    tournament.schedule,
-                    player_name,
+                    Option::Some(player_name),
+                    Option::Some(tournament.game_config.settings_id),
+                    Option::Some(tournament.schedule.game.start),
+                    Option::Some(tournament.schedule.game.end),
+                    Option::Some(empty_objective_ids),
+                    Option::Some(context_json),
+                    Option::None, // client_url
+                    Option::None, // renderer_address
                     mint_to_address,
+                    false,
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -482,13 +554,15 @@ pub mod tournament_component {
         /// @param base_uri A byte array representing the base uri of the tournament.
         /// @param safe_mode A bool representing whether to use safe mode.
         /// @param test_mode A bool representing whether to use test mode.
-        fn initialize(ref self: ComponentState<TContractState>, safe_mode: bool, test_mode: bool) {
+        /// @param denshokan_address A contract address representing the denshokan contract.
+        fn initialize(ref self: ComponentState<TContractState>, safe_mode: bool, test_mode: bool, denshokan_address: ContractAddress) {
             let mut world = WorldTrait::storage(
                 self.get_contract().world_dispatcher(), @DEFAULT_NS(),
             );
             let mut store: Store = StoreTrait::new(world);
             // Store the config
             store.set_tournament_config(@TournamentConfig { key: VERSION, safe_mode, test_mode });
+            self.denshokan_address.write(denshokan_address.clone());
         }
 
         //
@@ -554,7 +628,7 @@ pub mod tournament_component {
         fn get_score_for_token_id(
             self: @ComponentState<TContractState>, contract_address: ContractAddress, token_id: u64,
         ) -> u32 {
-            let game_dispatcher = IGameDetailsDispatcher { contract_address };
+            let game_dispatcher = IMinigameDetailsDispatcher { contract_address };
             game_dispatcher.score(token_id)
         }
 
@@ -645,7 +719,6 @@ pub mod tournament_component {
 
             let src5_dispatcher = ISRC5Dispatcher { contract_address };
             self._assert_supports_game_interface(src5_dispatcher, contract_address);
-            self._assert_supports_game_metadata_interface(src5_dispatcher, contract_address);
             self._assert_game_supports_erc721_interface(src5_dispatcher, contract_address);
         }
 
@@ -700,23 +773,9 @@ pub mod tournament_component {
         ) {
             let address: felt252 = address.into();
             assert!(
-                src5_dispatcher.supports_interface(IGAMETOKEN_ID),
+                src5_dispatcher.supports_interface(IMINIGAME_ID),
                 "Tournament: Game address {} does not support IGame interface",
                 address,
-            );
-        }
-
-        #[inline(always)]
-        fn _assert_supports_game_metadata_interface(
-            self: @ComponentState<TContractState>,
-            src5_dispatcher: ISRC5Dispatcher,
-            address: ContractAddress,
-        ) {
-            let address_felt: felt252 = address.into();
-            assert!(
-                src5_dispatcher.supports_interface(IGAME_METADATA_ID),
-                "Tournament: Game address {} does not support IGameMetadata interface",
-                address_felt,
             );
         }
 
@@ -1147,19 +1206,30 @@ pub mod tournament_component {
         fn _mint_game(
             ref self: ComponentState<TContractState>,
             game_address: ContractAddress,
-            settings_id: u32,
-            game_schedule: Schedule,
-            player_name: felt252,
-            to_address: ContractAddress,
+            player_name: Option<felt252>,
+            settings_id: Option<u32>,
+            start: Option<u64>,
+            end: Option<u64>,
+            objective_ids: Option<Span<u32>>,
+            context: Option<ByteArray>,
+            client_url: Option<ByteArray>,
+            renderer_address: Option<ContractAddress>,
+            to: ContractAddress,
+            soulbound: bool,
         ) -> u64 {
-            let game_dispatcher = IGameTokenDispatcher { contract_address: game_address };
+            let game_dispatcher = IMinigameDispatcher { contract_address: game_address };
             game_dispatcher
                 .mint(
                     player_name,
                     settings_id,
-                    Option::Some(game_schedule.game.start),
-                    Option::Some(game_schedule.game.end),
-                    to_address,
+                    start,
+                    end,
+                    objective_ids,
+                    context,
+                    client_url,
+                    renderer_address,
+                    to,
+                    soulbound,
                 )
         }
 
@@ -1392,7 +1462,7 @@ pub mod tournament_component {
                 "Tournament: Must submit for next available position",
             );
 
-            let game_dispatcher = IGameDetailsDispatcher {
+            let game_dispatcher = IMinigameDetailsDispatcher {
                 contract_address: *tournament.game_config.address,
             };
 
@@ -1723,6 +1793,14 @@ pub mod tournament_component {
                 }
                 i += 1;
             }
+        }
+
+        fn _create_context(self: @ComponentState<TContractState>, tournament_id: u64) -> ByteArray {
+            let context = array![
+                GameContext { name: "Tournament ID", value: format!("{}", tournament_id) },
+            ]
+                .span();
+            create_context_json("Budokan", "The onchain tournament system", context)
         }
     }
 }

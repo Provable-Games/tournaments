@@ -23,7 +23,7 @@ contracts = [
 	"erc721:0x04fd5df500e6c6615e4423258639f189455672bc841ba58f1c781ac7c5ff4bd8" # zkube v1.1.0
 ]
 
-namespaces = ["ds_v1_2_0", "budokan_1_0_7", "zkube_budo_v1_1_0"]
+namespaces = ["ds_v1_2_0", "budokan_1_0_8", "zkube_budo_v1_1_0"]
 
 world_block = 1355127 # Eternum Season 1 Pass deployment block - 1
 #https://voyager.online/tx/0x3ffdcecd7357033b2b2ac7bbe0c290555190dd79edec6e19f529df498243b32

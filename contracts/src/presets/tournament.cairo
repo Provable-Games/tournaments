@@ -44,35 +44,38 @@ pub trait ITournament<TState> {
         token_type: TokenType,
         position: u8,
     );
-
-    fn initializer(
-        ref self: TState,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
-        safe_mode: bool,
-        test_mode: bool,
-        test_erc20: ContractAddress,
-        test_erc721: ContractAddress,
-    );
 }
 
 #[dojo::contract]
 pub mod Budokan {
     use starknet::{contract_address_const};
+
     use tournaments::components::tournament::tournament_component;
-    use tournaments::components::constants::{MAINNET_CHAIN_ID};
+    use tournaments::components::constants::{MAINNET_CHAIN_ID, DEFAULT_NS};
+    use tournaments::components::interfaces::{WorldTrait, WorldImpl};
+    use tournaments::components::libs::store::{Store, StoreTrait};
+
+    use openzeppelin_introspection::src5::SRC5Component;
 
     component!(path: tournament_component, storage: tournament, event: TournamentEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
     #[abi(embed_v0)]
     impl TournamentComponentImpl =
         tournament_component::TournamentImpl<ContractState>;
     impl TournamentComponentInternalImpl = tournament_component::InternalImpl<ContractState>;
 
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
     #[storage]
     struct Storage {
         #[substorage(v0)]
         tournament: tournament_component::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
+        // denshokan_address: ContractAddress,
     }
 
     #[event]
@@ -80,10 +83,18 @@ pub mod Budokan {
     enum Event {
         #[flat]
         TournamentEvent: tournament_component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
     }
 
-    fn dojo_init(ref self: ContractState, safe_mode: bool, test_mode: bool) {
-        self.tournament.initialize(safe_mode, test_mode);
+    fn dojo_init(
+        ref self: ContractState,
+        safe_mode: bool,
+        test_mode: bool,
+        denshokan_address: ContractAddress,
+    ) {
+        self.tournament.initialize(safe_mode, test_mode, denshokan_address);
+        self.metagame.initializer(DEFAULT_NS());
         let chain_id = starknet::get_tx_info().unbox().chain_id;
         if chain_id == MAINNET_CHAIN_ID {
             self

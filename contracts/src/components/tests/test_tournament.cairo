@@ -16,7 +16,6 @@ use tournaments::components::constants::{
 use tournaments::components::tests::interfaces::WorldTrait;
 
 use tournaments::components::models::{
-    game::{m_GameMetadata, m_GameCounter, m_SettingsDetails, m_TokenMetadata, m_Score},
     tournament::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
@@ -24,6 +23,13 @@ use tournaments::components::models::{
         EntryRequirement, EntryRequirementType, TournamentType, Prize, PrizeType, Role,
         QualificationProof, TournamentQualification, NFTQualification,
     },
+};
+use game_components_minigame::interface::{
+    IMinigameDetailsDispatcher, IMinigameDetailsDispatcherTrait,
+};
+use game_components_minigame::tests::models::minigame::{
+    m_Score, m_ScoreObjective, m_ScoreObjectiveCount, m_Settings, m_SettingsDetails,
+    m_SettingsCounter, Score,
 };
 
 use tournaments::components::models::schedule::{Schedule, Period, Phase};

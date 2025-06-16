@@ -12,13 +12,13 @@ rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
 world_address = "0x01bfa92665fb815c9ec5f37c562a5c9a06fdf23ce022c1d33d4ac07cef5ad80c"
 
 [namespace]
-default = "budokan_1_0_7"
+default = "budokan_1_0_8"
 
 [writers]
-"budokan_1_0_7" = ["budokan_1_0_7-Budokan"]
+"budokan_1_0_8" = ["budokan_1_0_8-Budokan"]
 
 [init_call_args]
-"budokan_1_0_7-Budokan" = [
+"budokan_1_0_8-Budokan" = [
     "1", # safe_mode
     "0" # test_mode
 ]
@@ -26,8 +26,8 @@ default = "budokan_1_0_7"
 [migration]
 order_inits = []
 skip_contracts = [
-    "budokan_1_0_7-tournament_mock", 
-    "budokan_1_0_7-game_mock", 
-    "budokan_1_0_7-erc20_mock", 
-    "budokan_1_0_7-erc721_mock", 
+    "budokan_1_0_8-tournament_mock", 
+    "budokan_1_0_8-game_mock", 
+    "budokan_1_0_8-erc20_mock", 
+    "budokan_1_0_8-erc721_mock", 
 ]
