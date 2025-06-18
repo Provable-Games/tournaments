@@ -1,15 +1,13 @@
 use starknet::ContractAddress;
 use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
-
-use tournaments::components::models::tournament::{
+use budokan::models::budokan::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentConfig,
     TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
-    GameConfig, EntryFee, EntryRequirement,
+    GameConfig, EntryFee, EntryRequirement, QualificationEntries, QualificationProof,
 };
-use tournaments::components::models::schedule::Schedule;
-
-use tournaments::components::constants::{VERSION};
+use budokan::models::schedule::Schedule;
+use budokan::constants::{VERSION};
 
 #[derive(Copy, Drop)]
 pub struct Store {
@@ -33,6 +31,13 @@ pub impl StoreImpl of StoreTrait {
     fn get_platform_metrics(self: Store) -> PlatformMetrics {
         (self.world.read_model(VERSION))
     }
+
+    #[inline(always)]
+    fn get_tournament_count(self: Store) -> u64 {
+        let metrics: PlatformMetrics = (self.world.read_model(VERSION));
+        metrics.total_tournaments
+    }
+
 
     #[inline(always)]
     fn get_token_metadata_metrics(self: Store, key: felt252) -> TournamentTokenMetrics {
@@ -60,8 +65,9 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
-    fn get_leaderboard(self: Store, tournament_id: u64) -> Leaderboard {
-        (self.world.read_model(tournament_id))
+    fn get_leaderboard(self: Store, tournament_id: u64) -> Array<u64> {
+        let leaderboard: Leaderboard = (self.world.read_model(tournament_id));
+        leaderboard.token_ids
     }
 
     #[inline(always)]
@@ -84,6 +90,13 @@ pub impl StoreImpl of StoreTrait {
         (self.world.read_model((tournament_id, prize_type)))
     }
 
+    #[inline(always)]
+    fn get_qualification_entries(
+        self: Store, tournament_id: u64, qualification_proof: QualificationProof,
+    ) -> QualificationEntries {
+        (self.world.read_model((tournament_id, qualification_proof)))
+    }
+
     //
     // Setters
     //
@@ -100,14 +113,11 @@ pub impl StoreImpl of StoreTrait {
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
     ) -> Tournament {
-        let id = self.increment_and_get_tournament_count();
-        let created_by = starknet::get_caller_address();
-        let created_at = starknet::get_block_timestamp();
         let tournament = Tournament {
-            id,
+            id: self.increment_and_get_tournament_count(),
+            created_at: starknet::get_block_timestamp(),
+            created_by: starknet::get_caller_address(),
             creator_token_id,
-            created_by,
-            created_at,
             metadata,
             schedule,
             game_config,
@@ -203,6 +213,11 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn set_prize_claim(ref self: Store, model: @PrizeClaim) {
+        self.world.write_model(model);
+    }
+
+    #[inline(always)]
+    fn set_qualification_entries(ref self: Store, model: @QualificationEntries) {
         self.world.write_model(model);
     }
 }

@@ -1,25 +1,23 @@
 use starknet::ContractAddress;
 
-use tournaments::components::constants::{
+use budokan::constants::{
     MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, MAX_TOURNAMENT_LENGTH,
 };
-use tournaments::tests::{
+use budokan::tests::{
     constants::{
         TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_REGISTRATION_START_TIME,
         TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, SETTINGS_NAME,
         SETTINGS_DESCRIPTION, OWNER,
     },
 };
-use tournaments::components::interfaces::{
-    IBudokanDispatcher, IBudokanDispatcherTrait
-};
+use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
 use game_components_minigame::tests::mocks::minigame_mock::{
-    IMinigameMockDispatcher, IMinigameMockDispatcherTrait
+    IMinigameMockDispatcher, IMinigameMockDispatcherTrait,
 };
 
-use tournaments::components::models::tournament::{Tournament, Metadata, GameConfig};
+use budokan::models::budokan::{Tournament, Metadata, GameConfig};
 
-use tournaments::components::models::schedule::{Schedule, Period};
+use budokan::models::schedule::{Schedule, Period};
 
 //
 // Test Helpers
@@ -105,9 +103,7 @@ pub fn registration_open_beyond_tournament_end() -> Schedule {
     )
 }
 
-pub fn create_basic_tournament(
-    budokan: IBudokanDispatcher, game: ContractAddress,
-) -> Tournament {
+pub fn create_basic_tournament(budokan: IBudokanDispatcher, game: ContractAddress) -> Tournament {
     budokan
         .create_tournament(
             OWNER(),
@@ -118,7 +114,6 @@ pub fn create_basic_tournament(
             Option::None,
         )
 }
-
 // pub fn register_tokens_for_test(
 //     tournament: ITournamentMockDispatcher,
 //     erc20: IERC20MockDispatcher,

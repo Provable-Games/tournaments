@@ -8,15 +8,15 @@ use dojo_cairo_test::{
     WorldStorageTestTrait,
 };
 
-use tournaments::components::constants::{
+use budokan::constants::{
     MIN_REGISTRATION_PERIOD, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD, MIN_TOURNAMENT_LENGTH,
     DEFAULT_NS,
 };
-use tournaments::components::libs::store::{Store as BudokanStore, StoreTrait as BudokanStoreTrait};
-use tournaments::components::constants::{VERSION};
+use budokan::libs::store::{Store as BudokanStore, StoreTrait as BudokanStoreTrait};
+use budokan::constants::{VERSION};
 
-use tournaments::components::models::{
-    tournament::{
+use budokan::models::{
+    budokan::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token,
         m_TournamentConfig, m_PrizeMetrics, m_PlatformMetrics, m_TournamentTokenMetrics,
         m_PrizeClaim, m_QualificationEntries, ERC20Data, ERC721Data, EntryFee, TokenType,
@@ -24,39 +24,34 @@ use tournaments::components::models::{
         QualificationProof, TournamentQualification, NFTQualification, TokenData, TokenTypeData,
     },
 };
-use tournaments::components::models::schedule::{Schedule, Period, Phase};
+use budokan::models::schedule::{Schedule, Period, Phase};
 
-use tournaments::tests::{
+use budokan::tests::{
     utils,
     constants::{
         OWNER, TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, STARTING_BALANCE,
         TEST_REGISTRATION_START_TIME, TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME,
     },
 };
-use tournaments::components::tests::helpers::{
-    create_basic_tournament, test_metadata, test_game_config,
-    test_schedule, custom_schedule, test_game_period, registration_period_too_short,
-    registration_period_too_long, registration_open_beyond_tournament_end, test_season_schedule,
-    tournament_too_long,
+use budokan::tests::helpers::{
+    create_basic_tournament, test_metadata, test_game_config, test_schedule, custom_schedule,
+    test_game_period, registration_period_too_short, registration_period_too_long,
+    registration_open_beyond_tournament_end, test_season_schedule, tournament_too_long,
 };
-use tournaments::components::tests::mocks::{
-    erc20_mock::erc20_mock, erc721_mock::erc721_mock
+use budokan::tests::mocks::{erc20_mock::erc20_mock, erc721_mock::erc721_mock};
+use budokan::budokan::Budokan;
+use budokan::tests::interfaces::{
+    IERC20MockDispatcher, IERC20MockDispatcherTrait, IERC721MockDispatcher,
+    IERC721MockDispatcherTrait,
 };
-use tournaments::presets::tournament::Budokan;
-use tournaments::components::tests::interfaces::{
-    IERC20MockDispatcher, IERC20MockDispatcherTrait,
-    IERC721MockDispatcher, IERC721MockDispatcherTrait,
-};
-use tournaments::components::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
+use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
 use game_components_denshokan::interface::{IDenshokanDispatcher};
 use game_components_minigame::tests::mocks::minigame_mock::{
     IMinigameMockDispatcher, IMinigameMockDispatcherTrait,
 };
-use game_components_metagame::interface::{
-    IMETAGAME_ID
-};
+use game_components_metagame::interface::{IMETAGAME_ID};
 
-use tournaments::components::tests::utils::setup_denshokan;
+use budokan::tests::setup_denshokan;
 
 use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
 use openzeppelin_token::erc721::interface;
@@ -114,7 +109,9 @@ fn assert_only_event_approval(
 // Setup
 //
 
-fn setup_uninitialized(denshokan_address: ContractAddress) -> (WorldStorage, ContractAddress, ContractAddress) {
+fn setup_uninitialized(
+    denshokan_address: ContractAddress,
+) -> (WorldStorage, ContractAddress, ContractAddress) {
     testing::set_block_number(1);
     testing::set_block_timestamp(1);
 
@@ -141,19 +138,25 @@ fn setup_uninitialized(denshokan_address: ContractAddress) -> (WorldStorage, Con
     };
 
     // deploy systems contract
-    let erc20_mock_address = deploy_contract(erc20_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span());
-    let erc721_mock_address = deploy_contract(erc721_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span());
+    let erc20_mock_address = deploy_contract(
+        erc20_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
+    );
+    let erc721_mock_address = deploy_contract(
+        erc721_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
+    );
 
     // Create token data array for new dojo_init signature
     let mut token_data_array = array![];
-    token_data_array.append(TokenData { token_address: erc20_mock_address, token_type: TokenType::erc20 });
-    token_data_array.append(TokenData { token_address: erc721_mock_address, token_type: TokenType::erc721 });
+    token_data_array
+        .append(TokenData { token_address: erc20_mock_address, token_type: TokenType::erc20 });
+    token_data_array
+        .append(TokenData { token_address: erc721_mock_address, token_type: TokenType::erc721 });
 
     let mut init_calldata = array![];
     init_calldata.append(false.into()); // safe_mode
     init_calldata.append(false.into()); // test_mode
     init_calldata.append(denshokan_address.into()); // denshokan_address
-    
+
     // Serialize the token data array
     let mut serialized_tokens = array![];
     token_data_array.serialize(ref serialized_tokens);
@@ -162,7 +165,7 @@ fn setup_uninitialized(denshokan_address: ContractAddress) -> (WorldStorage, Con
     let mut contract_defs: Array<ContractDef> = array![
         ContractDefTrait::new(@DEFAULT_NS(), @"Budokan")
             .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span())
-            .with_init_calldata(init_calldata.span())
+            .with_init_calldata(init_calldata.span()),
     ];
 
     let mut world: WorldStorage = spawn_test_world([ndef].span());
@@ -173,8 +176,10 @@ fn setup_uninitialized(denshokan_address: ContractAddress) -> (WorldStorage, Con
 }
 
 pub fn setup() -> TestContracts {
-    let denshokan_contracts = tournaments::components::tests::utils::setup_denshokan::setup();
-    let (world, erc20_mock_address, erc721_mock_address) = setup_uninitialized(denshokan_contracts.denshokan.contract_address);
+    let denshokan_contracts = setup_denshokan::setup();
+    let (world, erc20_mock_address, erc721_mock_address) = setup_uninitialized(
+        denshokan_contracts.denshokan.contract_address,
+    );
 
     let budokan_address = match world.dns(@"Budokan") {
         Option::Some((address, _)) => address,
@@ -231,12 +236,13 @@ fn initializer() {
     assert(erc20_token.is_registered == true, 'Invalid erc20 token registered');
 
     let erc721_token = store.get_token(contracts.erc721.contract_address);
-    assert(erc721_token.address == contracts.erc721.contract_address, 'Invalid erc721 token address');
+    assert(
+        erc721_token.address == contracts.erc721.contract_address, 'Invalid erc721 token address',
+    );
     assert(erc721_token.name == "Test ERC721", 'Invalid erc721 token name');
     assert(erc721_token.symbol == "T721", 'Invalid erc721 token symbol');
     assert(erc721_token.token_type == TokenType::erc721, 'Invalid erc721 token type');
     assert(erc721_token.is_registered == true, 'Invalid erc721 token registered');
-    
 }
 
 //
@@ -249,7 +255,9 @@ fn create_tournament() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     assert(tournament.metadata.name == TOURNAMENT_NAME(), 'Invalid tournament name');
     assert(
@@ -278,7 +286,8 @@ fn create_tournament() {
     );
     assert!(tournament.entry_fee == Option::None, "tournament entry fee should be none");
     assert(
-        tournament.game_config.address == contracts.minigame.contract_address, 'Invalid game address',
+        tournament.game_config.address == contracts.minigame.contract_address,
+        'Invalid game address',
     );
     assert(tournament.game_config.settings_id == 1, 'Invalid settings id');
     assert(contracts.budokan.total_tournaments() == 1, 'Invalid tournaments count');
@@ -468,7 +477,9 @@ fn create_tournament_with_prizes() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
     contracts.erc20.approve(contracts.budokan.contract_address, STARTING_BALANCE);
     contracts.erc721.approve(contracts.budokan.contract_address, 1);
     contracts
@@ -529,7 +540,9 @@ fn create_tournament_with_prizes_position_too_large() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     contracts.erc20.approve(contracts.budokan.contract_address, STARTING_BALANCE);
     contracts.erc721.approve(contracts.budokan.contract_address, 1);
@@ -635,9 +648,7 @@ fn create_gated_tournament_with_unsettled_tournament() {
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
     // Enter first tournament
-    contracts
-        .budokan
-        .enter_tournament(first_tournament.id, 'test_player', OWNER(), Option::None);
+    contracts.budokan.enter_tournament(first_tournament.id, 'test_player', OWNER(), Option::None);
 
     let entry_requirement_type = EntryRequirementType::tournament(
         TournamentType::winners(array![first_tournament.id].span()),
@@ -1201,7 +1212,9 @@ fn enter_tournament() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     // advance time to registration start time
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1255,8 +1268,6 @@ fn use_host_token_to_qualify_into_tournament_gated_tournament() {
     let (first_entry_token_id, _) = contracts
         .budokan
         .enter_tournament(first_tournament.id, 'test_player', OWNER(), Option::None);
-
-    println!("first_entry_token_id: {}", first_entry_token_id);
 
     testing::set_block_timestamp(TEST_END_TIME().into());
     contracts.minigame.end_game(first_entry_token_id, 100);
@@ -1771,7 +1782,9 @@ fn submit_score_already_submitted() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
     let (token_id, _) = contracts
@@ -1794,7 +1807,9 @@ fn submit_score_wrong_period() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
     let (token_id, _) = contracts
@@ -1813,7 +1828,9 @@ fn submit_score_position_zero() {
     let contracts = setup();
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
     let (token_id, _) = contracts
@@ -1873,7 +1890,9 @@ fn submit_score_invalid_tournament() {
     utils::impersonate(OWNER());
 
     // create basic tournament
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     // Try to submit score for non-existent tournament
     let tournament_id = tournament.id + 1;
@@ -1892,7 +1911,9 @@ fn claim_prizes_with_sponsored_prizes() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     // register_tokens_for_test(tournament, erc20, erc721);
 
@@ -1943,7 +1964,9 @@ fn claim_prizes_prize_already_claimed() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     contracts.erc20.approve(contracts.budokan.contract_address, STARTING_BALANCE);
     contracts.erc721.approve(contracts.budokan.contract_address, 1);
@@ -2206,9 +2229,7 @@ fn claim_prizes_with_premiums() {
     assert(contracts.erc20.balance_of(OWNER()) == STARTING_BALANCE - 1, 'Invalid balance');
 
     // check tournament now has premium funds
-    assert(
-        contracts.erc20.balance_of(contracts.budokan.contract_address) == 1, 'Invalid balance',
-    );
+    assert(contracts.erc20.balance_of(contracts.budokan.contract_address) == 1, 'Invalid balance');
 
     testing::set_block_timestamp(TEST_END_TIME().into());
 
@@ -2441,7 +2462,9 @@ fn claim_prizes_season() {
 
     utils::impersonate(OWNER());
 
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     contracts.erc20.approve(contracts.budokan.contract_address, STARTING_BALANCE);
     contracts.erc721.approve(contracts.budokan.contract_address, 1);
@@ -2711,7 +2734,6 @@ fn test_submit_score_tie_lower_game_id() {
         .enter_tournament(tournament.id, 'player1', OWNER(), Option::None);
 
     let (player2, _) = contracts
-        
         .budokan
         .enter_tournament(tournament.id, 'player2', OWNER(), Option::None);
 
@@ -2771,15 +2793,9 @@ fn test_submit_score_tie_higher_game_id_for_lower_position() {
     contracts.minigame.end_game(token_id3, 50); // Third player
 
     // Submit scores in order
-    contracts
-        .budokan
-        .submit_score(tournament.id, token_id1, 1); // First place (ID: 1, Score: 100)
-    contracts
-        .budokan
-        .submit_score(tournament.id, token_id2, 2); // Second place (ID: 2, Score: 100)
-    contracts
-        .budokan
-        .submit_score(tournament.id, token_id3, 3); // Third place (ID: 3, Score: 50)
+    contracts.budokan.submit_score(tournament.id, token_id1, 1); // First place (ID: 1, Score: 100)
+    contracts.budokan.submit_score(tournament.id, token_id2, 2); // Second place (ID: 2, Score: 100)
+    contracts.budokan.submit_score(tournament.id, token_id3, 3); // Third place (ID: 3, Score: 50)
 
     // Verify leaderboard
     let leaderboard = contracts.budokan.get_leaderboard(tournament.id);
@@ -2836,15 +2852,11 @@ fn test_submit_score_tie_lower_game_id_for_lower_position() {
     contracts.minigame.end_game(token_id2, 100); // Second player (higher ID)
 
     // Submit higher ID first
-    contracts
-        .budokan
-        .submit_score(tournament.id, token_id2, 1); // First place (ID: 3, Score: 100)
+    contracts.budokan.submit_score(tournament.id, token_id2, 1); // First place (ID: 3, Score: 100)
 
     // Try to submit lower ID for second place with same score
     // This should fail because for equal scores, the game ID in lower positions should be higher
-    contracts
-        .budokan
-        .submit_score(tournament.id, token_id1, 2); // Second place (ID: 2, Score: 100)
+    contracts.budokan.submit_score(tournament.id, token_id1, 2); // Second place (ID: 2, Score: 100)
 }
 
 #[test]
@@ -2854,7 +2866,9 @@ fn test_add_prize_records_sponsor_address() {
     utils::impersonate(OWNER());
 
     // Create tournament
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     // Create and impersonate sponsor address
     let sponsor = starknet::contract_address_const::<0x456>();
@@ -3537,7 +3551,6 @@ fn third_party_enter_tournament_with_allowlist_requirement() {
             different_address, // This should be ignored
             allowlist_qualification,
         );
-
 }
 
 /// Test that tournaments without entry requirements still work as before
@@ -3547,7 +3560,9 @@ fn third_party_enter_tournament_without_requirement_uses_player_address() {
     utils::impersonate(OWNER());
 
     // Create tournament without entry requirements
-    let tournament = create_basic_tournament(contracts.budokan, contracts.minigame.contract_address);
+    let tournament = create_basic_tournament(
+        contracts.budokan, contracts.minigame.contract_address,
+    );
 
     // Start tournament entries
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());

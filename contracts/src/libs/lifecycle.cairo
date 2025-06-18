@@ -1,4 +1,4 @@
-use tournaments::components::models::lifecycle::Lifecycle;
+use budokan::models::lifecycle::Lifecycle;
 
 #[generate_trait]
 pub impl LifecycleImpl of LifecycleTrait {
@@ -67,7 +67,7 @@ pub impl LifecycleAssertionsImpl of LifecycleAssertionsTrait {
 #[cfg(test)]
 mod tests {
     use super::{LifecycleTrait, LifecycleAssertionsTrait};
-    use tournaments::components::models::lifecycle::Lifecycle;
+    use budokan::models::lifecycle::Lifecycle;
     use core::num::traits::Bounded;
 
     #[test]

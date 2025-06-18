@@ -1,8 +1,6 @@
 use starknet::ContractAddress;
-use dojo::world::{WorldStorage, WorldStorageTrait, IWorldDispatcher};
-use tournaments::components::libs::utils::ZERO;
-use tournaments::components::models::schedule::{Phase, Schedule};
-use tournaments::components::models::tournament::{
+use budokan::models::schedule::{Phase, Schedule};
+use budokan::models::budokan::{
     EntryFee, EntryRequirement, GameConfig, Metadata, PrizeType, QualificationProof, TokenTypeData,
     Tournament as TournamentModel, Registration, Prize,
 };
@@ -16,10 +14,14 @@ pub trait IBudokan<TState> {
     fn current_phase(self: @TState, tournament_id: u64) -> Phase;
     fn is_token_registered(self: @TState, address: ContractAddress) -> bool;
     fn register_token(ref self: TState, address: ContractAddress, token_type: TokenTypeData);
-    fn get_registration(self: @TState, game_address: ContractAddress, token_id: u64) -> Registration;
+    fn get_registration(
+        self: @TState, game_address: ContractAddress, token_id: u64,
+    ) -> Registration;
     fn get_prize(self: @TState, prize_id: u64) -> Prize;
-    fn get_tournament_id_for_token_id(self: @TState, game_address: ContractAddress, token_id: u64) -> u64;
-    
+    fn get_tournament_id_for_token_id(
+        self: @TState, game_address: ContractAddress, token_id: u64,
+    ) -> u64;
+
     fn create_tournament(
         ref self: TState,
         creator_rewards_address: ContractAddress,

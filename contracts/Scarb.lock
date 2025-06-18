@@ -49,9 +49,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "budokan"
+version = "0.0.1"
+dependencies = [
+ "denshokan",
+ "dojo",
+ "dojo_cairo_test",
+ "game_components_denshokan",
+ "game_components_metagame",
+ "game_components_minigame",
+ "game_components_utils",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
+]
+
+[[package]]
 name = "denshokan"
-version = "1.5.0"
-source = "git+https://github.com/Provable-Games/denshokan?branch=main#185e6e4e0e19589ae8fc37b71d667d0e22d88b2f"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/denshokan?branch=main#c2c3b13f67ae1367ec8289388c8dbba4f9bb0da6"
 dependencies = [
  "alexandria_encoding",
  "dojo",
@@ -86,12 +101,12 @@ source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c
 [[package]]
 name = "game_components_denshokan"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#534b9e4b3fa4980d71cd140c23eae94a16a01fc4"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
 
 [[package]]
 name = "game_components_metagame"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#534b9e4b3fa4980d71cd140c23eae94a16a01fc4"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
 dependencies = [
  "dojo",
  "game_components_denshokan",
@@ -102,7 +117,7 @@ dependencies = [
 [[package]]
 name = "game_components_minigame"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#534b9e4b3fa4980d71cd140c23eae94a16a01fc4"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
 dependencies = [
  "dojo",
  "game_components_denshokan",
@@ -114,7 +129,7 @@ dependencies = [
 [[package]]
 name = "game_components_utils"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#534b9e4b3fa4980d71cd140c23eae94a16a01fc4"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
 dependencies = [
  "alexandria_encoding",
  "game_components_metagame",
@@ -170,18 +185,3 @@ name = "openzeppelin_utils"
 version = "1.0.0"
 source = "registry+https://scarbs.xyz/"
 checksum = "sha256:fd348b31c4a4407add33adc3c2b8f26dca71dbd7431faaf726168f37a91db0c1"
-
-[[package]]
-name = "tournaments"
-version = "0.0.1"
-dependencies = [
- "denshokan",
- "dojo",
- "dojo_cairo_test",
- "game_components_denshokan",
- "game_components_metagame",
- "game_components_minigame",
- "game_components_utils",
- "openzeppelin_introspection",
- "openzeppelin_token",
-]

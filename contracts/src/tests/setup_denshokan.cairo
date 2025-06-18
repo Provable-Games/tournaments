@@ -10,9 +10,7 @@ use dojo_cairo_test::{
 
 use denshokan::constants::DEFAULT_NS;
 use game_components_denshokan::interface::{IDenshokanDispatcher};
-use game_components_minigame::interface::{
-    IMinigameDetailsDispatcher,
-};
+use game_components_minigame::interface::{IMinigameDetailsDispatcher};
 
 use denshokan::models::denshokan::{
     m_GameMetadata, m_GameRegistry, m_GameRegistryId, m_GameCounter, m_MinterRegistry,
@@ -26,8 +24,8 @@ use game_components_minigame::tests::models::minigame::{
 use game_components_metagame::tests::models::metagame::{m_Context};
 
 use game_components_metagame::tests::mocks::metagame_mock::{
-    metagame_mock, IMetagameMockDispatcher,
-    IMetagameMockInitDispatcher, IMetagameMockInitDispatcherTrait,
+    metagame_mock, IMetagameMockDispatcher, IMetagameMockInitDispatcher,
+    IMetagameMockInitDispatcherTrait,
 };
 use game_components_minigame::tests::mocks::minigame_mock::{
     minigame_mock, IMinigameMockDispatcher, IMinigameMockDispatcherTrait,

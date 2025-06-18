@@ -1,5 +1,5 @@
-use tournaments::components::models::schedule::{Schedule, Period, Phase};
-use tournaments::components::constants::{
+use budokan::models::schedule::{Schedule, Period, Phase};
+use budokan::constants::{
     MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH, MAX_TOURNAMENT_LENGTH,
     MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
 };
@@ -229,7 +229,7 @@ pub impl ScheduleAssertionsImpl of ScheduleAssertionsTrait {
 #[cfg(test)]
 mod tests {
     use super::{ScheduleTrait, ScheduleAssertionsTrait, Schedule, Period, Phase};
-    use tournaments::components::constants::{
+    use budokan::constants::{
         MIN_REGISTRATION_PERIOD, MAX_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH,
         MAX_TOURNAMENT_LENGTH, MIN_SUBMISSION_PERIOD, MAX_SUBMISSION_PERIOD,
     };

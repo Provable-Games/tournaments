@@ -3,19 +3,19 @@ pub mod Budokan {
     use starknet::{ContractAddress, get_block_timestamp, get_contract_address, get_caller_address};
     use core::num::traits::Zero;
 
-    use tournaments::components::constants::{
-        TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID
+    use budokan::constants::{
+        TWO_POW_128, DEFAULT_NS, VERSION, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID,
     };
-    use tournaments::components::models::tournament::{
+    use budokan::models::budokan::{
         Tournament as TournamentModel, Registration, Leaderboard, Prize, Token, TournamentConfig,
-        TokenType, TokenTypeData, TournamentType, PrizeType, Role, PrizeClaim, Metadata,
-        GameConfig, EntryFee, EntryRequirement, QualificationProof, TournamentQualification,
+        TokenType, TokenTypeData, TournamentType, PrizeType, Role, PrizeClaim, Metadata, GameConfig,
+        EntryFee, EntryRequirement, QualificationProof, TournamentQualification,
         EntryRequirementType, TokenData,
     };
-    use tournaments::components::models::schedule::{Schedule, Phase};
-    use tournaments::components::interfaces::{IBudokan};
-    use tournaments::components::libs::store::{Store, StoreTrait};
-    use tournaments::components::libs::schedule::{
+    use budokan::models::schedule::{Schedule, Phase};
+    use budokan::interfaces::{IBudokan};
+    use budokan::libs::store::{Store, StoreTrait};
+    use budokan::libs::schedule::{
         ScheduleTrait, ScheduleImpl, ScheduleAssertionsTrait, ScheduleAssertionsImpl,
     };
 
@@ -28,12 +28,13 @@ pub mod Budokan {
     };
     use openzeppelin_token::erc721::interface::{
         IERC721Dispatcher, IERC721DispatcherTrait, IERC721MetadataDispatcher,
-        IERC721MetadataDispatcherTrait
+        IERC721MetadataDispatcherTrait,
     };
 
     use game_components_minigame::interface::{
-        IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameDetailsDispatcher,
-        IMinigameDetailsDispatcherTrait, IMINIGAME_ID, IMinigameSettingsDispatcher, IMinigameSettingsDispatcherTrait
+        IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameScoreDispatcher,
+        IMinigameScoreDispatcherTrait, IMINIGAME_ID, IMinigameSettingsDispatcher,
+        IMinigameSettingsDispatcherTrait,
     };
     use game_components_metagame::models::context::{GameContextDetails, GameContext};
     use game_components_metagame::metagame::metagame_component;
@@ -83,7 +84,7 @@ pub mod Budokan {
         let mut world = self.world(@DEFAULT_NS());
         let mut store: Store = StoreTrait::new(world);
         store.set_tournament_config(@TournamentConfig { key: VERSION, safe_mode, test_mode });
-        
+
         // Initialize metagame component
         self.metagame.initializer(DEFAULT_NS(), denshokan_address);
 
@@ -110,7 +111,13 @@ pub mod Budokan {
                     (token_dispatcher_metadata.name(), token_dispatcher_metadata.symbol())
                 },
             };
-            let new_token = @Token { address: token_data.token_address, name: name, symbol: symbol, token_type: token_data.token_type, is_registered: true };
+            let new_token = @Token {
+                address: token_data.token_address,
+                name: name,
+                symbol: symbol,
+                token_type: token_data.token_type,
+                is_registered: true,
+            };
             store.set_token(new_token);
             tokens_index += 1;
         }
@@ -121,7 +128,9 @@ pub mod Budokan {
         fn has_context(self: @ContractState, token_id: u64) -> bool {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            let denshokan_dispatcher = IDenshokanDispatcher { contract_address: self.denshokan_address() };
+            let denshokan_dispatcher = IDenshokanDispatcher {
+                contract_address: self.denshokan_address(),
+            };
             let game_address = denshokan_dispatcher.game_address(token_id);
             let registration = store.get_registration(game_address, token_id);
             registration.tournament_id != 0
@@ -130,13 +139,17 @@ pub mod Budokan {
         fn context(self: @ContractState, token_id: u64) -> GameContextDetails {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            let denshokan_dispatcher = IDenshokanDispatcher { contract_address: self.denshokan_address() };
+            let denshokan_dispatcher = IDenshokanDispatcher {
+                contract_address: self.denshokan_address(),
+            };
             let game_address = denshokan_dispatcher.game_address(token_id);
             let registration = store.get_registration(game_address, token_id);
             let context = array![
-                GameContext { name: "Tournament ID", value: format!("{}",
-                registration.tournament_id) },
-            ].span();
+                GameContext {
+                    name: "Tournament ID", value: format!("{}", registration.tournament_id),
+                },
+            ]
+                .span();
             // let context = array![GameContext { name: "Tournament ID", value: format!("{}", 0) }]
             //     .span();
             GameContextDetails {
@@ -152,9 +165,7 @@ pub mod Budokan {
             let store: Store = StoreTrait::new(world);
             store.get_platform_metrics().total_tournaments
         }
-        fn tournament(
-            self: @ContractState, tournament_id: u64,
-        ) -> TournamentModel {
+        fn tournament(self: @ContractState, tournament_id: u64) -> TournamentModel {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_tournament(tournament_id)
@@ -172,9 +183,7 @@ pub mod Budokan {
             store.get_tournament_entry_count(tournament_id).count
         }
 
-        fn is_token_registered(
-            self: @ContractState, address: ContractAddress,
-        ) -> bool {
+        fn is_token_registered(self: @ContractState, address: ContractAddress) -> bool {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             let token = store.get_token(address);
@@ -182,9 +191,7 @@ pub mod Budokan {
         }
 
         fn register_token(
-            ref self: ContractState,
-            address: ContractAddress,
-            token_type: TokenTypeData,
+            ref self: ContractState, address: ContractAddress, token_type: TokenTypeData,
         ) {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
@@ -195,19 +202,21 @@ pub mod Budokan {
             let (name, symbol) = self._register_token(address, token_type);
             match token_type {
                 TokenTypeData::erc20(_) => {
-                    let token_model = Token { address, name, symbol, token_type: TokenType::erc20, is_registered: true };
+                    let token_model = Token {
+                        address, name, symbol, token_type: TokenType::erc20, is_registered: true,
+                    };
                     store.set_token(@token_model);
                 },
                 TokenTypeData::erc721(_) => {
-                    let token_model = Token { address, name, symbol, token_type: TokenType::erc721, is_registered: true };
+                    let token_model = Token {
+                        address, name, symbol, token_type: TokenType::erc721, is_registered: true,
+                    };
                     store.set_token(@token_model);
                 },
             }
         }
 
-        fn get_leaderboard(
-            self: @ContractState, tournament_id: u64,
-        ) -> Array<u64> {
+        fn get_leaderboard(self: @ContractState, tournament_id: u64) -> Array<u64> {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
             store.get_leaderboard(tournament_id)
@@ -386,12 +395,7 @@ pub mod Budokan {
         /// @param tournament_id A u64 representing the unique ID of the tournament.
         /// @param token_id A u64 representing the unique ID of the game token.
         /// @param position A u8 representing the position on the leaderboard.
-        fn submit_score(
-            ref self: ContractState,
-            tournament_id: u64,
-            token_id: u64,
-            position: u8,
-        ) {
+        fn submit_score(ref self: ContractState, tournament_id: u64, token_id: u64, position: u8) {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
 
@@ -437,9 +441,7 @@ pub mod Budokan {
         /// @param self A reference to the ContractState object.
         /// @param tournament_id A u64 representing the unique ID of the tournament.
         /// @param prize_type A PrizeType representing the type of prize to claim.
-        fn claim_prize(
-            ref self: ContractState, tournament_id: u64, prize_type: PrizeType,
-        ) {
+        fn claim_prize(ref self: ContractState, tournament_id: u64, prize_type: PrizeType) {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
             let tournament = store.get_tournament(tournament_id);
@@ -522,15 +524,13 @@ pub mod Budokan {
         fn get_score_for_token_id(
             self: @ContractState, contract_address: ContractAddress, token_id: u64,
         ) -> u32 {
-            let game_dispatcher = IMinigameDetailsDispatcher { contract_address };
+            let game_dispatcher = IMinigameScoreDispatcher { contract_address };
             game_dispatcher.score(token_id)
         }
 
         #[inline(always)]
         fn _get_owner(
-            self: @ContractState,
-            contract_address: ContractAddress,
-            token_id: u256,
+            self: @ContractState, contract_address: ContractAddress, token_id: u256,
         ) -> ContractAddress {
             IERC721Dispatcher { contract_address }.owner_of(token_id)
         }
@@ -549,10 +549,7 @@ pub mod Budokan {
         // greater than the last place score. This is safe because we have already verified the
         // score was submitted
         fn _is_top_score(
-            self: @ContractState,
-            game_address: ContractAddress,
-            leaderboard: Span<u64>,
-            score: u32,
+            self: @ContractState, game_address: ContractAddress, leaderboard: Span<u64>, score: u32,
         ) -> bool {
             let num_scores = leaderboard.len();
 
@@ -584,28 +581,21 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _assert_valid_entry_requirement(
-            self: @ContractState,
-            store: Store,
-            entry_requirement: EntryRequirement,
+            self: @ContractState, store: Store, entry_requirement: EntryRequirement,
         ) {
             self._assert_gated_type_validates(store, entry_requirement);
         }
 
         #[inline(always)]
         fn _assert_valid_entry_fee(
-            self: @ContractState,
-            store: Store,
-            entry_fee: EntryFee,
-            prize_spots: u8,
+            self: @ContractState, store: Store, entry_fee: EntryFee, prize_spots: u8,
         ) {
             self._assert_entry_fee_token_registered(@store.get_token(entry_fee.token_address));
             self._assert_valid_payout_distribution(entry_fee, prize_spots);
         }
 
         #[inline(always)]
-        fn _assert_valid_game_config(
-            ref self: ContractState, game_config: GameConfig,
-        ) {
+        fn _assert_valid_game_config(ref self: ContractState, game_config: GameConfig) {
             let contract_address = game_config.address;
 
             self._assert_winners_count_greater_than_zero(game_config.prize_spots);
@@ -617,9 +607,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_winners_count_greater_than_zero(
-            self: @ContractState, prize_spots: u8,
-        ) {
+        fn _assert_winners_count_greater_than_zero(self: @ContractState, prize_spots: u8) {
             assert!(prize_spots > 0, "Tournament: Winners count must be greater than zero");
         }
 
@@ -661,9 +649,7 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _assert_supports_game_interface(
-            self: @ContractState,
-            src5_dispatcher: ISRC5Dispatcher,
-            address: ContractAddress,
+            self: @ContractState, src5_dispatcher: ISRC5Dispatcher, address: ContractAddress,
         ) {
             let address: felt252 = address.into();
             assert!(
@@ -674,9 +660,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_settings_exists(
-            self: @ContractState, game: ContractAddress, settings_id: u32,
-        ) {
+        fn _assert_settings_exists(self: @ContractState, game: ContractAddress, settings_id: u32) {
             let settings_dispatcher = IMinigameSettingsDispatcher { contract_address: game };
             let settings_exist = settings_dispatcher.setting_exists(settings_id);
             let game_address: felt252 = game.into();
@@ -689,9 +673,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_entry_fee_token_registered(
-            self: @ContractState, token: @Token,
-        ) {
+        fn _assert_entry_fee_token_registered(self: @ContractState, token: @Token) {
             assert!(
                 self._is_token_registered(token), "Tournament: Entry fee token is not registered",
             );
@@ -732,9 +714,7 @@ pub mod Budokan {
 
 
         #[inline(always)]
-        fn _assert_scores_count_valid(
-            self: @ContractState, prize_spots: u8, scores_count: u32,
-        ) {
+        fn _assert_scores_count_valid(self: @ContractState, prize_spots: u8, scores_count: u32) {
             assert!(
                 scores_count <= prize_spots.into(),
                 "Tournament: The length of scores submissions {} is greater than the winners count {}",
@@ -744,9 +724,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_position_on_leaderboard(
-            self: @ContractState, prize_spots: u8, position: u8,
-        ) {
+        fn _assert_position_on_leaderboard(self: @ContractState, prize_spots: u8, position: u8) {
             assert!(
                 position <= prize_spots,
                 "Tournament: Prize position {} is greater than the winners count {}",
@@ -756,18 +734,13 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_prize_exists(
-            self: @ContractState, token: ContractAddress, id: u64,
-        ) {
+        fn _assert_prize_exists(self: @ContractState, token: ContractAddress, id: u64) {
             assert!(!token.is_zero(), "Tournament: Prize key {} does not exist", id);
         }
 
         #[inline(always)]
         fn _assert_prize_not_claimed(
-            self: @ContractState,
-            store: Store,
-            tournament_id: u64,
-            prize_type: PrizeType,
+            self: @ContractState, store: Store, tournament_id: u64, prize_type: PrizeType,
         ) {
             let prize_claim = store.get_prize_claim(tournament_id, prize_type);
             assert!(!prize_claim.claimed, "Tournament: Prize has already been claimed");
@@ -798,10 +771,7 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _assert_under_entry_limit(
-            self: @ContractState,
-            tournament_id: u64,
-            current_entries: u8,
-            entry_limit: u8,
+            self: @ContractState, tournament_id: u64, current_entries: u8, entry_limit: u8,
         ) {
             assert!(
                 current_entries < entry_limit,
@@ -812,9 +782,7 @@ pub mod Budokan {
 
 
         fn _assert_gated_type_validates(
-            self: @ContractState,
-            store: Store,
-            entry_requirement: EntryRequirement,
+            self: @ContractState, store: Store, entry_requirement: EntryRequirement,
         ) {
             match entry_requirement.entry_requirement_type {
                 EntryRequirementType::token(token) => {
@@ -855,9 +823,7 @@ pub mod Budokan {
         }
 
 
-        fn _assert_tournament_exists(
-            self: @ContractState, store: Store, tournament_id: u64,
-        ) {
+        fn _assert_tournament_exists(self: @ContractState, store: Store, tournament_id: u64) {
             assert!(
                 tournament_id <= store.get_tournament_count(),
                 "Tournament: Tournament {} does not exist",
@@ -867,9 +833,7 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _validate_tournament_eligibility(
-            self: @ContractState,
-            tournament_type: TournamentType,
-            tournament_id: u64,
+            self: @ContractState, tournament_type: TournamentType, tournament_id: u64,
         ) {
             let (qualifying_tournaments, _) = match tournament_type {
                 TournamentType::winners(tournaments) => (tournaments, true),
@@ -911,10 +875,7 @@ pub mod Budokan {
         }
 
         fn _has_qualified_in_tournaments(
-            self: @ContractState,
-            store: Store,
-            tournament_type: TournamentType,
-            token_id: u64,
+            self: @ContractState, store: Store, tournament_type: TournamentType, token_id: u64,
         ) -> bool {
             let (tournament_ids, requires_top_score) = match tournament_type {
                 TournamentType::winners(ids) => (ids, true),
@@ -934,7 +895,7 @@ pub mod Budokan {
                 let game_address = tournament.game_config.address;
                 let leaderboard = store.get_leaderboard(tournament_id);
                 let registration = store.get_registration(game_address, token_id);
-                let owner = self._get_owner(self.denshokan_address() , token_id.into());
+                let owner = self._get_owner(self.denshokan_address(), token_id.into());
 
                 if owner == get_caller_address()
                     && registration.tournament_id == tournament.id
@@ -960,10 +921,7 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _assert_has_qualified_in_tournaments(
-            self: @ContractState,
-            store: Store,
-            tournament_type: TournamentType,
-            token_id: u64,
+            self: @ContractState, store: Store, tournament_type: TournamentType, token_id: u64,
         ) {
             assert!(
                 self._has_qualified_in_tournaments(store, tournament_type, token_id),
@@ -974,9 +932,7 @@ pub mod Budokan {
 
 
         #[inline(always)]
-        fn _assert_position_is_valid(
-            self: @ContractState, position: u8, winner_count: u32,
-        ) {
+        fn _assert_position_is_valid(self: @ContractState, position: u8, winner_count: u32) {
             assert!(
                 position > 0 && position.into() <= winner_count, "Tournament: Invalid position",
             );
@@ -1152,9 +1108,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _calculate_payout(
-            ref self: ContractState, bp: u128, total_value: u128,
-        ) -> u128 {
+        fn _calculate_payout(ref self: ContractState, bp: u128, total_value: u128) -> u128 {
             (bp * total_value) / 100
         }
 
@@ -1217,15 +1171,12 @@ pub mod Budokan {
                         // tournament creator is owner of the tournament creator token
                         self
                             ._get_owner(
-                                self.denshokan_address() , tournament.creator_token_id.into(),
+                                self.denshokan_address(), tournament.creator_token_id.into(),
                             )
                     },
                     Role::GameCreator => {
                         // game creator is owner of token id 0 of the game contract
-                        self
-                            ._get_owner(
-                                self.denshokan_address(), GAME_CREATOR_TOKEN_ID.into(),
-                            )
+                        self._get_owner(self.denshokan_address(), GAME_CREATOR_TOKEN_ID.into())
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);
@@ -1237,8 +1188,7 @@ pub mod Budokan {
                             // No entry at this position, default to tournament creator
                             self
                                 ._get_owner(
-                                    self.denshokan_address(),
-                                    tournament.creator_token_id.into(),
+                                    self.denshokan_address(), tournament.creator_token_id.into(),
                                 )
                         }
                     },
@@ -1342,7 +1292,7 @@ pub mod Budokan {
                 "Tournament: Must submit for next available position",
             );
 
-            let game_dispatcher = IMinigameDetailsDispatcher {
+            let game_dispatcher = IMinigameScoreDispatcher {
                 contract_address: *tournament.game_config.address,
             };
 
@@ -1469,10 +1419,7 @@ pub mod Budokan {
         }
 
         fn _mark_score_submitted(
-            ref self: ContractState,
-            ref store: Store,
-            tournament_id: u64,
-            token_id: u64,
+            ref self: ContractState, ref store: Store, tournament_id: u64, token_id: u64,
         ) {
             let game_address = store.get_tournament(tournament_id).game_config.address;
             let mut registration = store.get_registration(game_address, token_id);
@@ -1594,10 +1541,7 @@ pub mod Budokan {
 
             // Return the owner of the qualifying token
             let token_owner = self
-                ._get_owner(
-                    self.denshokan_address(),
-                    qualifying_proof_tournament.token_id.into(),
-                );
+                ._get_owner(self.denshokan_address(), qualifying_proof_tournament.token_id.into());
 
             token_owner
         }
@@ -1621,9 +1565,7 @@ pub mod Budokan {
         }
 
         fn _is_qualifying_tournament(
-            self: @ContractState,
-            qualifying_tournaments: Span<u64>,
-            tournament_id: u64,
+            self: @ContractState, qualifying_tournaments: Span<u64>, tournament_id: u64,
         ) -> bool {
             let mut i = 0;
             loop {
@@ -1659,9 +1601,7 @@ pub mod Budokan {
         }
 
         fn _contains_address(
-            self: @ContractState,
-            addresses: Span<ContractAddress>,
-            target: ContractAddress,
+            self: @ContractState, addresses: Span<ContractAddress>, target: ContractAddress,
         ) -> bool {
             let mut i = 0;
             loop {

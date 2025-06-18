@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 
 use starknet::testing;
-use tournaments::components::constants::{MIN_SUBMISSION_PERIOD};
-use tournaments::components::models::tournament::{TournamentGame, TokenType, ERC20Data, Prize};
+use budokan::constants::{MIN_SUBMISSION_PERIOD};
+use budokan::models::budokan::{TournamentGame, TokenType, ERC20Data, Prize};
 
-use tournaments::components::tests::interfaces::{
+use budokan::tests::interfaces::{
     IGameTokenMockDispatcherTrait, ITournamentMockDispatcherTrait, IERC20MockDispatcherTrait,
 };
-use tournaments::components::tests::test_tournament::{setup, TestContracts};
-use tournaments::tests::{
+use budokan::tests::test_tournament::{setup, TestContracts};
+use budokan::tests::{
     utils,
     constants::{
         OWNER, TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_START_TIME, TEST_END_TIME,

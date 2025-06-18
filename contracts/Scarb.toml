@@ -1,6 +1,6 @@
 [package]
 cairo-version = "=2.10.1"
-name = "tournaments"
+name = "budokan"
 version = "0.0.1"
 edition = "2024_07"
 

@@ -1,47 +1,37 @@
-pub mod components {
-    pub mod constants;
-    pub mod interfaces;
-    pub mod libs {
-        pub mod store;
-        pub mod utils;
-        pub mod lifecycle;
-        pub mod schedule;
-    }
-    pub mod models {
-        pub mod lifecycle;
-        pub mod schedule;
-        pub mod tournament;
-    }
-    // pub mod tournament;
-    pub mod tests {
-        pub mod libs {
-            pub mod store;
-        }
-        pub mod mocks {
-            pub mod erc20_mock;
-            pub mod erc721_mock;
-            // pub mod tournament_mock;
-        }
-        #[cfg(test)]
-        mod utils {
-            pub mod setup_denshokan;
-        }
-        #[cfg(test)]
-        mod helpers;
-        #[cfg(test)]
-        mod test_tournament;
-        pub mod interfaces;
-        // #[cfg(test)]
-    // mod test_tournament_stress_tests;
-    }
+pub mod constants;
+pub mod interfaces;
+pub mod libs {
+    pub mod store;
+    pub mod utils;
+    pub mod lifecycle;
+    pub mod schedule;
+}
+pub mod models {
+    pub mod lifecycle;
+    pub mod schedule;
+    pub mod budokan;
 }
 
-mod presets {
-    pub mod tournament;
-}
+pub mod budokan;
 
 #[cfg(test)]
 mod tests {
+    pub mod libs {
+        pub mod store;
+    }
+    pub mod mocks {
+        pub mod erc20_mock;
+        pub mod erc721_mock;
+    }
+    #[cfg(test)]
+    pub mod setup_denshokan;
+    #[cfg(test)]
+    mod helpers;
+    #[cfg(test)]
+    mod test_budokan;
+    // #[cfg(test)]
+    // mod test_budokan_stress_tests;
+    pub mod interfaces;
     pub mod constants;
     pub mod utils;
 }

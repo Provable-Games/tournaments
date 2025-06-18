@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 use starknet::ContractAddress;
-use tournaments::components::models::schedule::Schedule;
+use budokan::models::schedule::Schedule;
 
 #[dojo::model]
 #[derive(Drop, Serde)]

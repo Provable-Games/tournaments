@@ -1,6 +1,6 @@
 use starknet::{ContractAddress, contract_address_const};
 
-use tournaments::components::constants::{MIN_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH};
+use budokan::constants::{MIN_REGISTRATION_PERIOD, MIN_TOURNAMENT_LENGTH};
 
 pub fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()
