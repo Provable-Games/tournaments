@@ -79,8 +79,20 @@ pub struct ERC721Data {
     pub id: u128,
 }
 
-#[derive(Copy, Drop, Serde, Introspect)]
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TokenType {
+    erc20,
+    erc721,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub struct TokenData {
+    pub token_address: ContractAddress,
+    pub token_type: TokenType,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+pub enum TokenTypeData {
     erc20: ERC20Data,
     erc721: ERC721Data,
 }
@@ -145,7 +157,7 @@ pub struct Prize {
     pub tournament_id: u64,
     pub payout_position: u8,
     pub token_address: ContractAddress,
-    pub token_type: TokenType,
+    pub token_type: TokenTypeData,
     pub sponsor_address: ContractAddress,
 }
 

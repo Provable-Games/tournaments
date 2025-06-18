@@ -55,7 +55,7 @@ pub trait IERC721MockPublic<TState> {
     fn mint(ref self: TState, recipient: ContractAddress, token_id: u256);
 }
 
-#[dojo::contract]
+#[starknet::contract]
 pub mod erc721_mock {
     use starknet::ContractAddress;
 
@@ -100,10 +100,10 @@ pub mod erc721_mock {
     }
     //*******************************
 
-    fn dojo_init(ref self: ContractState) {
+    #[constructor]
+    fn constructor(ref self: ContractState) {
         self.erc721.initializer(TOKEN_NAME(), TOKEN_SYMBOL(), BASE_URI());
     }
-
 
     //-----------------------------------
     // Public

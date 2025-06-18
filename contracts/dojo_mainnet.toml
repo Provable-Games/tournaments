@@ -19,7 +19,8 @@ default = "budokan_1_0_8"
 [init_call_args]
 "budokan_1_0_8-Budokan" = [
     "0", # safe_mode
-    "0" # test_mode
+    "0" # test_mode,
+    "0x0" # denshokan address
 ]
 
 [migration]

@@ -9,14 +9,14 @@ import { DojoAppConfig } from "@/context/dojo";
 
 export const manifests: Record<ChainId, DojoManifest> = {
   [ChainId.KATANA_LOCAL]: tournament_manifest_dev as DojoManifest,
-  [ChainId.WP_BUDOKAN]: tournament_manifest_slot as DojoManifest,
+  [ChainId.WP_PG_SLOT]: tournament_manifest_slot as DojoManifest,
   [ChainId.SN_MAIN]: tournament_manifest_mainnet as DojoManifest,
   [ChainId.SN_SEPOLIA]: tournament_manifest_sepolia as DojoManifest,
 };
 
 export const namespace: Record<ChainId, string> = {
   [ChainId.KATANA_LOCAL]: "budokan_v_1_0_5",
-  [ChainId.WP_BUDOKAN]: "budokan_v_1_0_5",
+  [ChainId.WP_PG_SLOT]: "budokan_v_1_0_5",
   [ChainId.SN_MAIN]: "budokan_1_0_8",
   [ChainId.SN_SEPOLIA]: "budokan_v_1_0_6",
 };

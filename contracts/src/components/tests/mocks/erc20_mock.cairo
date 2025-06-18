@@ -6,7 +6,7 @@ pub trait IERC20MockPublic<TState> {
 }
 
 
-#[dojo::contract]
+#[starknet::contract]
 pub mod erc20_mock {
     use starknet::ContractAddress;
 
@@ -43,10 +43,10 @@ pub mod erc20_mock {
     }
     //*******************************
 
-    fn dojo_init(ref self: ContractState) {
+    #[constructor]
+    fn constructor(ref self: ContractState) {
         self.erc20.initializer(TOKEN_NAME(), TOKEN_SYMBOL());
     }
-
 
     //-----------------------------------
     // Public

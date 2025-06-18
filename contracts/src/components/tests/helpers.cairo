@@ -10,9 +10,11 @@ use tournaments::tests::{
         SETTINGS_DESCRIPTION, OWNER,
     },
 };
-use tournaments::components::tests::interfaces::{
-    ITournamentMockDispatcher, ITournamentMockDispatcherTrait, IGameTokenMockDispatcher,
-    IGameTokenMockDispatcherTrait,
+use tournaments::components::interfaces::{
+    IBudokanDispatcher, IBudokanDispatcherTrait
+};
+use game_components_minigame::tests::mocks::minigame_mock::{
+    IMinigameMockDispatcher, IMinigameMockDispatcherTrait
 };
 
 use tournaments::components::models::tournament::{Tournament, Metadata, GameConfig};
@@ -104,9 +106,9 @@ pub fn registration_open_beyond_tournament_end() -> Schedule {
 }
 
 pub fn create_basic_tournament(
-    tournament: ITournamentMockDispatcher, game: ContractAddress,
+    budokan: IBudokanDispatcher, game: ContractAddress,
 ) -> Tournament {
-    tournament
+    budokan
         .create_tournament(
             OWNER(),
             test_metadata(),
@@ -117,9 +119,6 @@ pub fn create_basic_tournament(
         )
 }
 
-pub fn create_settings_details(game: IGameTokenMockDispatcher) {
-    game.set_settings(1, SETTINGS_NAME(), SETTINGS_DESCRIPTION(), true);
-}
 // pub fn register_tokens_for_test(
 //     tournament: ITournamentMockDispatcher,
 //     erc20: IERC20MockDispatcher,
