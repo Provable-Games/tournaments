@@ -72,9 +72,9 @@ pub mod tournament_component {
         IGameDetailsDispatcherTrait, IGAMETOKEN_ID, IGAME_METADATA_ID,
     };
     use tournaments::components::models::tournament::{
-        Tournament as TournamentModel, Registration, Leaderboard, Prize, Token, TournamentConfig,
-        TokenType, TournamentType, ERC20Data, ERC721Data, PrizeType, Role, PrizeClaim, Metadata,
-        GameConfig, EntryFee, EntryRequirement, QualificationProof, TournamentQualification,
+        Tournament as TournamentModel, Registration, Prize, Token, TournamentConfig, TokenType,
+        TournamentType, ERC20Data, ERC721Data, PrizeType, Role, PrizeClaim, Metadata, GameConfig,
+        EntryFee, EntryRequirement, QualificationProof, TournamentQualification,
         EntryRequirementType,
     };
     use tournaments::components::models::schedule::{Schedule, Phase};
@@ -84,6 +84,10 @@ pub mod tournament_component {
         ScheduleTrait, ScheduleImpl, ScheduleAssertionsTrait, ScheduleAssertionsImpl,
     };
     use tournaments::components::interfaces::{ISettingsDispatcher, ISettingsDispatcherTrait};
+
+    // Import leaderboard store helpers
+    use tournaments::components::libs::leaderboard_store::{LeaderboardStoreTrait};
+    use tournaments::components::libs::leaderboard::leaderboard::{LeaderboardResult};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
 
@@ -348,35 +352,45 @@ pub mod tournament_component {
             // get tournament
             let tournament = store.get_tournament(tournament_id);
 
+            // Validate submission phase
+            let schedule = tournament.schedule;
+            assert!(
+                schedule.current_phase(get_block_timestamp()) == Phase::Submission,
+                "Tournament: Not in submission period",
+            );
+
             // get registration details for provided game token
             let registration = store.get_registration(tournament.game_config.address, token_id);
 
-            // get current leaderboard
-            let mut leaderboard = store.get_leaderboard(tournament_id);
+            // Validate provided token is registered for the specified tournament
+            assert!(
+                registration.tournament_id == tournament.id,
+                "Tournament: Token not registered for tournament",
+            );
+
+            // Score can only be submitted once
+            assert!(!registration.has_submitted, "Tournament: Score already submitted");
 
             // get score for token id
             let submitted_score = self
                 .get_score_for_token_id(tournament.game_config.address, token_id);
 
-            // validate submission
-            self
-                ._validate_score_submission(
-                    @tournament,
-                    @registration,
-                    leaderboard.span(),
-                    submitted_score,
-                    position,
-                    token_id,
-                );
+            // Submit score through leaderboard store helpers
+            let submit_result = store
+                .submit_score_to_leaderboard(tournament_id, token_id, submitted_score, position);
 
-            // update leaderboard
-            self._update_leaderboard(@tournament, token_id, position, ref leaderboard);
-
-            // save new leaderboard
-            store.set_leaderboard(@Leaderboard { tournament_id, token_ids: leaderboard });
-
-            // mark score as submitted
-            self._mark_score_submitted(ref store, tournament_id, token_id);
+            match submit_result {
+                LeaderboardResult::Success => { // Score successfully submitted, registration already marked as submitted
+                },
+                LeaderboardResult::InvalidPosition => panic!("Tournament: Invalid position"),
+                LeaderboardResult::LeaderboardFull => panic!("Tournament: Leaderboard is full"),
+                LeaderboardResult::ScoreTooLow => panic!("Tournament: Score too low for position"),
+                LeaderboardResult::ScoreTooHigh => panic!(
+                    "Tournament: Score qualifies for higher position",
+                ),
+                LeaderboardResult::DuplicateEntry => panic!("Tournament: Score already submitted"),
+                LeaderboardResult::InvalidConfig => panic!("Tournament: Invalid configuration"),
+            }
         }
 
         /// @title Claim prize
@@ -577,27 +591,13 @@ pub mod tournament_component {
             }
         }
 
-        // @dev instead of iterating over all scores, we just check if the submitted score is
-        // greater than the last place score. This is safe because we have already verified the
-        // score was submitted
+        // Use leaderboard store helper to check if a score qualifies as a top score
         fn _is_top_score(
-            self: @ComponentState<TContractState>,
-            game_address: ContractAddress,
-            leaderboard: Span<u64>,
-            score: u32,
+            self: @ComponentState<TContractState>, tournament_id: u64, score: u32,
         ) -> bool {
-            let num_scores = leaderboard.len();
-
-            if num_scores == 0 {
-                return true;
-            }
-
-            // technically this should be checking the score at the bottom of the leaderboard
-            // regardless of if a score has been submitted for that position or not
-            // we can safely do this using Array.get() and checking if it's None or Some
-            let last_place_id = *leaderboard.at(num_scores - 1);
-            let last_place_score = self.get_score_for_token_id(game_address, last_place_id);
-            score >= last_place_score
+            let world = WorldTrait::storage(self.get_contract().world_dispatcher(), @DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.qualifies_for_leaderboard(tournament_id, score)
         }
 
         //
@@ -993,7 +993,6 @@ pub mod tournament_component {
                 let tournament_id = *tournament_ids.at(loop_index);
                 let tournament = store.get_tournament(tournament_id);
                 let game_address = tournament.game_config.address;
-                let leaderboard = store.get_leaderboard(tournament_id);
                 let registration = store.get_registration(game_address, token_id);
                 let owner = self._get_owner(game_address, token_id.into());
 
@@ -1002,8 +1001,11 @@ pub mod tournament_component {
                     && registration.entry_number != 0
                     && registration.has_submitted {
                     if requires_top_score {
-                        let score = self.get_score_for_token_id(game_address, token_id);
-                        is_qualified = self._is_top_score(game_address, leaderboard.span(), score);
+                        // Use leaderboard store helper to check if the token is a top score
+                        is_qualified = self
+                            ._is_top_score(
+                                tournament_id, self.get_score_for_token_id(game_address, token_id),
+                            );
                     } else {
                         is_qualified = true;
                     }
@@ -1261,7 +1263,7 @@ pub mod tournament_component {
 
                 let prize_amount = self._calculate_payout(share.into(), total_pool);
 
-                // Get recipient address
+                // Get recipient address using leaderboard from store
                 let recipient_address = match role {
                     Role::TournamentCreator => {
                         // tournament creator is owner of the tournament creator token
@@ -1278,6 +1280,7 @@ pub mod tournament_component {
                             )
                     },
                     Role::Position(position) => {
+                        // Get leaderboard from store
                         let leaderboard = store.get_leaderboard(tournament_id);
                         // Check if leaderboard has enough entries for the position
                         if position.into() <= leaderboard.len() {
@@ -1322,7 +1325,7 @@ pub mod tournament_component {
                 prize.tournament_id,
             );
 
-            // Get winner address
+            // Get winner address using leaderboard from store
             let leaderboard = store.get_leaderboard(tournament_id);
             self
                 ._assert_position_is_valid(
@@ -1352,182 +1355,6 @@ pub mod tournament_component {
                         );
                 },
             };
-        }
-
-        fn _validate_score_submission(
-            self: @ComponentState<TContractState>,
-            tournament: @TournamentModel,
-            registration: @Registration,
-            current_leaderboard: Span<u64>,
-            submitted_score: u32,
-            submitted_position: u8,
-            token_id: u64,
-        ) {
-            let schedule = *tournament.schedule;
-            assert!(
-                schedule.current_phase(get_block_timestamp()) == Phase::Submission,
-                "Tournament: Not in submission period",
-            );
-
-            // Validate position is within prize spots (1-based indexing)
-            assert!(
-                submitted_position > 0
-                    && submitted_position <= *tournament.game_config.prize_spots.into(),
-                "Tournament: Invalid position",
-            );
-
-            // Validate provided token is registered for the specified tournament
-            assert!(
-                *registration.tournament_id == *tournament.id,
-                "Tournament: Token not registered for tournament",
-            );
-
-            // Score can only be submitted once
-            assert!(!*registration.has_submitted, "Tournament: Score already submitted");
-
-            // Prevent gaps in leaderboard
-            let position_index: u32 = submitted_position.into() - 1;
-            assert!(
-                position_index <= current_leaderboard.len(),
-                "Tournament: Must submit for next available position",
-            );
-
-            let game_dispatcher = IGameDetailsDispatcher {
-                contract_address: *tournament.game_config.address,
-            };
-
-            // if the score being submitted is for a position already on the leaderboard
-            if position_index < current_leaderboard.len() {
-                // validate it's higher
-                let game_id_at_position = *current_leaderboard.at(position_index);
-                let score_at_position = game_dispatcher.score(game_id_at_position);
-
-                assert!(
-                    submitted_score >= score_at_position,
-                    "Tournament: Score {} is less than current score of {} at position {}",
-                    submitted_score,
-                    score_at_position,
-                    submitted_position,
-                );
-
-                if submitted_score == score_at_position {
-                    assert!(
-                        token_id < game_id_at_position,
-                        "Tournament: Tie goes to game with lower id. Submitted game id {} is higher than current game id {}",
-                        token_id,
-                        game_id_at_position,
-                    );
-                }
-            }
-
-            // if score is being submitted for any position other than first
-            if submitted_position > 1 {
-                // validate it is less than or equal to the score above it
-                let position_above = position_index - 1;
-                let game_id_above = *current_leaderboard.at(position_above);
-                let current_score_above_position = game_dispatcher.score(game_id_above);
-
-                assert!(
-                    submitted_score <= current_score_above_position,
-                    "Tournament: Score {} qualifies for higher position than {}",
-                    submitted_score,
-                    submitted_position,
-                );
-
-                // If scores are equal, ensure the game ID is higher (lower priority in case of tie)
-                if submitted_score == current_score_above_position {
-                    assert!(
-                        token_id > game_id_above,
-                        "Tournament: For equal scores, game id {} should be higher than game id above {}",
-                        token_id,
-                        game_id_above,
-                    );
-                }
-            }
-        }
-
-        fn _update_leaderboard(
-            self: @ComponentState<TContractState>,
-            tournament: @TournamentModel,
-            token_id: u64,
-            position: u8,
-            ref leaderboard: Array<u64>,
-        ) {
-            // convert position to 0-based index
-            let position_index: u32 = position.into() - 1;
-
-            // if the new score is in the last position, save gas and simply append it to the
-            // leaderboard
-            let next_position = leaderboard.len();
-
-            let prize_spots = *tournament.game_config.prize_spots.into();
-
-            // if the score being submitted is for the next position and there are still prize spots
-            // available, save gas and simply append it to the leaderboard
-            if position_index == next_position && leaderboard.len() < prize_spots.into() {
-                leaderboard.append(token_id);
-            } else {
-                // otherwise we need to insert it into the leaderboard
-                self
-                    ._insert_into_leaderboard(
-                        token_id, position_index, ref leaderboard, prize_spots,
-                    );
-            }
-        }
-
-        fn _append_to_leaderboard(
-            self: @ComponentState<TContractState>, token_id: u64, current_leaderboard: Span<u64>,
-        ) -> Span<u64> {
-            let mut new_leaderboard: Array<u64> = current_leaderboard.into();
-            new_leaderboard.append(token_id);
-            new_leaderboard.span()
-        }
-
-        fn _insert_into_leaderboard(
-            self: @ComponentState<TContractState>,
-            token_id: u64,
-            position_index: u32,
-            ref current_leaderboard: Array<u64>,
-            prize_spots: u8,
-        ) {
-            // Create new leaderboard with inserted score
-            let mut new_leaderboard = ArrayTrait::new();
-            let mut i = 0;
-
-            // Copy scores up to the position
-            loop {
-                if i >= position_index {
-                    break;
-                }
-                new_leaderboard.append(*current_leaderboard.at(i));
-                i += 1;
-            };
-
-            // Insert new score
-            new_leaderboard.append(token_id);
-
-            // Copy remaining scores
-            loop {
-                if i >= current_leaderboard.len() || new_leaderboard.len() >= prize_spots.into() {
-                    break;
-                }
-                new_leaderboard.append(*current_leaderboard.at(i));
-                i += 1;
-            };
-
-            current_leaderboard = new_leaderboard;
-        }
-
-        fn _mark_score_submitted(
-            ref self: ComponentState<TContractState>,
-            ref store: Store,
-            tournament_id: u64,
-            token_id: u64,
-        ) {
-            let game_address = store.get_tournament(tournament_id).game_config.address;
-            let mut registration = store.get_registration(game_address, token_id);
-            registration.has_submitted = true;
-            store.set_registration(@registration);
         }
 
         fn _process_entry_requirement(
@@ -1635,7 +1462,7 @@ pub mod tournament_component {
 
             qualifying_tournament.schedule.assert_tournament_is_finalized(get_block_timestamp());
 
-            // verify position requirements
+            // verify position requirements using leaderboard from store
             let leaderboard = store.get_leaderboard(qualifying_proof_tournament.tournament_id);
             self
                 ._validate_position_requirements(

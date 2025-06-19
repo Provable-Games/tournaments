@@ -1692,11 +1692,7 @@ fn submit_score_multiple_positions() {
 }
 
 #[test]
-#[should_panic(
-    expected: (
-        "Tournament: Score 50 is less than current score of 100 at position 1", 'ENTRYPOINT_FAILED',
-    ),
-)]
+#[should_panic(expected: ("Tournament: Score too low for position", 'ENTRYPOINT_FAILED'))]
 fn submit_score_lower_score() {
     let contracts = setup();
     utils::impersonate(OWNER());
@@ -1820,9 +1816,7 @@ fn submit_score_position_zero() {
 }
 
 #[test]
-#[should_panic(
-    expected: ("Tournament: Must submit for next available position", 'ENTRYPOINT_FAILED'),
-)]
+#[should_panic(expected: ("Tournament: Invalid position", 'ENTRYPOINT_FAILED'))]
 fn submit_score_with_gap() {
     let contracts = setup();
     utils::impersonate(OWNER());
@@ -2581,9 +2575,7 @@ fn state_transitions() {
 }
 
 #[test]
-#[should_panic(
-    expected: ("Tournament: Score 1000 qualifies for higher position than 3", 'ENTRYPOINT_FAILED'),
-)]
+#[should_panic(expected: ("Tournament: Score qualifies for higher position", 'ENTRYPOINT_FAILED'))]
 fn malicious_score_submission() {
     let contracts = setup();
     utils::impersonate(OWNER());
@@ -2642,12 +2634,7 @@ fn malicious_score_submission() {
 }
 
 #[test]
-#[should_panic(
-    expected: (
-        "Tournament: Tie goes to game with lower id. Submitted game id 3 is higher than current game id 2",
-        'ENTRYPOINT_FAILED',
-    ),
-)]
+#[should_panic(expected: ("Tournament: Score too low for position", 'ENTRYPOINT_FAILED'))]
 fn test_submit_score_tie_higher_game_id() {
     // Setup
     let contracts = setup();
@@ -2794,12 +2781,7 @@ fn test_submit_score_tie_higher_game_id_for_lower_position() {
 }
 
 #[test]
-#[should_panic(
-    expected: (
-        "Tournament: For equal scores, game id 2 should be higher than game id above 3",
-        'ENTRYPOINT_FAILED',
-    ),
-)]
+#[should_panic(expected: ("Tournament: Score qualifies for higher position", 'ENTRYPOINT_FAILED'))]
 fn test_submit_score_tie_lower_game_id_for_lower_position() {
     // Setup
     let contracts = setup();
