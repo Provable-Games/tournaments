@@ -19,7 +19,7 @@ starknet.workspace = true
 dojo.workspace = true
 openzeppelin_introspection.workspace = true
 openzeppelin_token.workspace = true
-tournaments_leaderboard = { path = "../leaderboard" }
+leaderboard = { path = "../leaderboard" }
 
 [dev-dependencies]
 dojo_cairo_test.workspace = true

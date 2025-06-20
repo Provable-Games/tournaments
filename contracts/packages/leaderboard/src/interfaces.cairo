@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 use starknet::ContractAddress;
-use tournaments_leaderboard::models::leaderboard::{
+use leaderboard::models::leaderboard::{
     LeaderboardMetadata, LeaderboardEntry, LeaderboardResult,
 };
 

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-use tournaments_leaderboard::interfaces::ILeaderboard;
+use leaderboard::interfaces::ILeaderboard;
 
 /// Leaderboard contract implementation
 #[dojo::contract]
 pub mod Leaderboard {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
-    use tournaments_leaderboard::models::leaderboard::{
+    use leaderboard::models::leaderboard::{
         LeaderboardMetadata, LeaderboardEntry, LeaderboardResult, LeaderboardSubmission,
         LeaderboardEntryCount, LeaderboardCounter,
     };
-    use tournaments_leaderboard::libs::leaderboard::leaderboard::{
+    use leaderboard::libs::leaderboard::leaderboard::{
         LeaderboardConfig, LeaderboardEntry as LibLeaderboardEntry, LeaderboardOperationsImpl,
         LeaderboardUtilsImpl,
     };
@@ -165,7 +165,7 @@ pub mod Leaderboard {
             );
 
             match result {
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::Success => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::Success => {
                     // Update entry count before moving updated_entries
                     let new_count = updated_entries.len().try_into().unwrap();
 
@@ -195,22 +195,22 @@ pub mod Leaderboard {
 
                     LeaderboardResult::Success
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::InvalidPosition => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::InvalidPosition => {
                     LeaderboardResult::InvalidPosition
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::LeaderboardFull => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::LeaderboardFull => {
                     LeaderboardResult::LeaderboardFull
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::ScoreTooLow => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::ScoreTooLow => {
                     LeaderboardResult::ScoreTooLow
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::ScoreTooHigh => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::ScoreTooHigh => {
                     LeaderboardResult::ScoreTooHigh
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::DuplicateEntry => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::DuplicateEntry => {
                     LeaderboardResult::DuplicateEntry
                 },
-                tournaments_leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::InvalidConfig => {
+                leaderboard::libs::leaderboard::leaderboard::LeaderboardResult::InvalidConfig => {
                     LeaderboardResult::InvalidLeaderboard
                 },
             }

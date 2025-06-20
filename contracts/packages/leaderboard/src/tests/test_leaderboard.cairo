@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-use tournaments_leaderboard::libs::leaderboard::leaderboard::{
+use leaderboard::libs::leaderboard::leaderboard::{
     LeaderboardConfig, LeaderboardEntry, LeaderboardResult, LeaderboardOperationsImpl,
     LeaderboardUtilsImpl, ScoreComparatorImpl,
 };

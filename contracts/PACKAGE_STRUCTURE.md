@@ -9,7 +9,7 @@ This document outlines the multi-package structure of the tournament platform, f
 - **README.md**: Overview of the workspace structure
 - **Dojo configuration files**: For deployment and testing
 
-### Package: `tournaments_leaderboard` (`packages/leaderboard/`)
+### Package: `leaderboard` (`packages/leaderboard/`)
 A standalone leaderboard management system that can be used independently.
 
 **Features:**
@@ -40,7 +40,7 @@ packages/leaderboard/
 Core tournament management functionality that depends on the leaderboard package.
 
 **Dependencies:**
-- `tournaments_leaderboard`: For leaderboard functionality
+- `leaderboard`: For leaderboard functionality
 - `openzeppelin_token`: For ERC20/ERC721 support
 - `openzeppelin_introspection`: For interface detection
 
@@ -80,8 +80,8 @@ packages/tournaments/
 
 ```cairo
 // Using the leaderboard package independently
-use tournaments_leaderboard::interfaces::ILeaderboardContract;
-use tournaments_leaderboard::models::leaderboard::LeaderboardResult;
+use leaderboard::interfaces::ILeaderboardContract;
+use leaderboard::models::leaderboard::LeaderboardResult;
 
 // Using the tournament package (which includes leaderboard)
 use tournaments::presets::tournament::Tournament;

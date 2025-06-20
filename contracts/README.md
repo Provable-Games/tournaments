@@ -22,7 +22,7 @@ The main package containing core tournament functionality including:
 - Prize distribution
 - Game integration interfaces
 
-### tournaments_leaderboard
+### leaderboard
 A separate package for leaderboard management providing:
 - Pure Cairo library for leaderboard operations
 - Dojo contract preset for deployment

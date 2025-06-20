@@ -87,7 +87,7 @@ pub mod tournament_component {
 
     // Import leaderboard store helpers
     use tournaments::components::libs::leaderboard_store::{LeaderboardStoreTrait};
-    use tournaments_leaderboard::libs::leaderboard::leaderboard::{LeaderboardResult};
+    use leaderboard::libs::leaderboard::leaderboard::{LeaderboardResult};
 
     use dojo::contract::components::world_provider::{IWorldProvider};
 

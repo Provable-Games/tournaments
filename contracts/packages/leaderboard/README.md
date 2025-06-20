@@ -40,8 +40,8 @@ Full Dojo contract implementation with:
 ## Usage
 
 ```cairo
-use tournaments_leaderboard::interfaces::ILeaderboardContract;
-use tournaments_leaderboard::models::leaderboard::{LeaderboardResult};
+use leaderboard::interfaces::ILeaderboardContract;
+use leaderboard::models::leaderboard::{LeaderboardResult};
 
 // Deploy the leaderboard contract
 let leaderboard_contract = // ... deploy Leaderboard preset

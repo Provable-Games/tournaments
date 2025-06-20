@@ -13,7 +13,7 @@ This package provides the main tournament functionality including:
 
 ## Dependencies
 
-- `tournaments_leaderboard`: Leaderboard management functionality
+- `leaderboard`: Leaderboard management functionality
 - `openzeppelin_token`: Token standards for entry fees and prizes
 - `openzeppelin_introspection`: Interface detection
 - `dojo`: Gaming framework for StarkNet

@@ -1,10 +1,10 @@
 [package]
-name = "tournaments_leaderboard"
+name = "leaderboard"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
-description = "Leaderboard management system for tournament platform"
+description = "Leaderboard management system"
 repository.workspace = true
 license.workspace = true
 

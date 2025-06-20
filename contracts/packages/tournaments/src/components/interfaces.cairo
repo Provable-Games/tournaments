@@ -5,7 +5,7 @@ use tournaments::components::models::game::{TokenMetadata, GameMetadata};
 use tournaments::components::libs::utils::ZERO;
 
 // Re-export leaderboard interface from leaderboard package
-pub use tournaments_leaderboard::interfaces::ILeaderboardContract;
+pub use leaderboard::interfaces::ILeaderboardContract;
 
 pub const IGAMETOKEN_ID: felt252 =
     0x027fd8d2e685b5a61e4516152831e8730c27b25c9f831ec27c1e48a46e55086a;
