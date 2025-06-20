@@ -6,7 +6,7 @@
 
 use starknet::ContractAddress;
 
-use tournaments::components::libs::leaderboard::leaderboard::{
+use tournaments_leaderboard::libs::leaderboard::leaderboard::{
     LeaderboardConfig, LeaderboardEntry, LeaderboardResult, LeaderboardOperationsImpl,
     LeaderboardUtilsImpl,
 };

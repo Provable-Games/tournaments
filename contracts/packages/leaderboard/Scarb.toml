@@ -1,0 +1,30 @@
+[package]
+name = "tournaments_leaderboard"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+description = "Leaderboard management system for tournament platform"
+repository.workspace = true
+license.workspace = true
+
+[lib]
+
+[[target.starknet-contract]]
+sierra = true
+build-external-contracts = ["dojo::world::world_contract::world"]
+
+[dependencies]
+starknet.workspace = true
+dojo.workspace = true
+
+[dev-dependencies]
+dojo_cairo_test.workspace = true
+
+[features]
+default = []
+
+[profile.dev]
+[profile.slot]
+[profile.sepolia]
+[profile.mainnet]

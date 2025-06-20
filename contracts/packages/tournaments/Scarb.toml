@@ -1,0 +1,33 @@
+[package]
+name = "tournaments"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+description = "Core tournament management system"
+repository.workspace = true
+license.workspace = true
+
+[lib]
+
+[[target.starknet-contract]]
+sierra = true
+build-external-contracts = ["dojo::world::world_contract::world"]
+
+[dependencies]
+starknet.workspace = true
+dojo.workspace = true
+openzeppelin_introspection.workspace = true
+openzeppelin_token.workspace = true
+tournaments_leaderboard = { path = "../leaderboard" }
+
+[dev-dependencies]
+dojo_cairo_test.workspace = true
+
+[features]
+default = []
+
+[profile.dev]
+[profile.slot]
+[profile.sepolia]
+[profile.mainnet]

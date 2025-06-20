@@ -69,4 +69,13 @@ dependencies = [
  "dojo_cairo_test",
  "openzeppelin_introspection",
  "openzeppelin_token",
+ "tournaments_leaderboard",
+]
+
+[[package]]
+name = "tournaments_leaderboard"
+version = "0.0.1"
+dependencies = [
+ "dojo",
+ "dojo_cairo_test",
 ]

@@ -8,7 +8,6 @@ pub mod components {
         pub mod utils;
         pub mod lifecycle;
         pub mod schedule;
-        pub mod leaderboard;
         pub mod leaderboard_store;
     }
     pub mod models {
