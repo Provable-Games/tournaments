@@ -66,7 +66,7 @@ dependencies = [
 [[package]]
 name = "denshokan"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/denshokan?branch=main#c2c3b13f67ae1367ec8289388c8dbba4f9bb0da6"
+source = "git+https://github.com/Provable-Games/denshokan?branch=main#0ea3f97758d3084c9e3f3e3045b6751340a71521"
 dependencies = [
  "alexandria_encoding",
  "dojo",
@@ -101,12 +101,12 @@ source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c
 [[package]]
 name = "game_components_denshokan"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
 
 [[package]]
 name = "game_components_metagame"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
 dependencies = [
  "dojo",
  "game_components_denshokan",
@@ -117,7 +117,7 @@ dependencies = [
 [[package]]
 name = "game_components_minigame"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
 dependencies = [
  "dojo",
  "game_components_denshokan",
@@ -129,7 +129,7 @@ dependencies = [
 [[package]]
 name = "game_components_utils"
 version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#27dc8585e0e282f2313ab4f8a0481f47da30c3fe"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
 dependencies = [
  "alexandria_encoding",
  "game_components_metagame",

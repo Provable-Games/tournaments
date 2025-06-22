@@ -197,6 +197,7 @@ pub fn setup() -> TestContracts {
             genre,
             image,
             Option::Some(color),
+            Option::None,
             DEFAULT_NS(),
             denshokan_address,
         );
