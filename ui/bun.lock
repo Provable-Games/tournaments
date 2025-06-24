@@ -34,6 +34,7 @@
         "date-fns": "^4.1.0",
         "framer-motion": "^12.0.6",
         "lucide-react": "^0.469.0",
+        "metagame-sdk": "0.1.2",
         "open": "^10.1.0",
         "react": "^18.3.1",
         "react-day-picker": "8.10.1",
@@ -1149,6 +1150,8 @@
     "mathjs": ["mathjs@12.4.3", "", { "dependencies": { "@babel/runtime": "^7.24.4", "complex.js": "^2.1.1", "decimal.js": "^10.4.3", "escape-latex": "^1.2.0", "fraction.js": "4.3.4", "javascript-natural-sort": "^0.7.1", "seedrandom": "^3.0.5", "tiny-emitter": "^2.1.0", "typed-function": "^4.1.1" }, "bin": { "mathjs": "bin/cli.js" } }, "sha512-oHdGPDbp7gO873xxG90RLq36IuicuKvbpr/bBG5g9c8Obm/VsKVrK9uoRZZHUodohzlnmCEqfDzbR3LH6m+aAQ=="],
 
     "merge2": ["merge2@1.4.1", "", {}, "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg=="],
+
+    "metagame-sdk": ["metagame-sdk@0.1.2", "", { "peerDependencies": { "@dojoengine/sdk": "^1.5.5", "typescript": "^5.0.0", "zustand": "^4.4.7" } }, "sha512-VmCsi+IAeCppXgul6zsDBLGyhTWk6mhVM70pIJfMiifNJP3lVzoDvm4bcwrfYMKtnnknSJoK94ZGnYymk0pRQg=="],
 
     "micro-ftch": ["micro-ftch@0.3.1", "", {}, "sha512-/0LLxhzP0tfiR5hcQebtudP56gUurs2CLkGarnCiB/OqEyUFQ6U3paQi/tgLv0hBJYt2rnr9MNpxz4fiiugstg=="],
 

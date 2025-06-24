@@ -10,15 +10,8 @@ edition = "2024_07"
 sierra = true
 build-external-contracts = [
     "dojo::world::world_contract::world",
-    "game_components_minigame::tests::models::minigame::m_ScoreObjective",
-    "game_components_minigame::tests::models::minigame::m_ScoreObjectiveCount",
-    "game_components_minigame::tests::models::minigame::m_Settings",
-    "game_components_minigame::tests::models::minigame::m_SettingsDetails",
-    "game_components_minigame::tests::models::minigame::m_SettingsCounter",
-    "game_components_minigame::tests::models::minigame::m_Score",
-    "game_components_metagame::tests::models::metagame::m_Context",
-    "game_components_minigame::tests::mocks::minigame_mock::minigame_mock",
-    "game_components_metagame::tests::mocks::metagame_mock::metagame_mock",
+    "game_components_test_starknet::minigame::mocks::minigame_starknet_mock::minigame_starknet_mock",
+    "game_components_test_starknet::metagame::mocks::metagame_starknet_mock::metagame_starknet_mock",
     "denshokan::models::denshokan::m_GameMetadata",
     "denshokan::models::denshokan::m_GameRegistry",
     "denshokan::models::denshokan::m_GameRegistryId",
@@ -42,10 +35,11 @@ build-external-contracts = [
 openzeppelin_introspection = "1.0.0"
 openzeppelin_token = "1.0.0"
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.1" }
-game_components_denshokan = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+game_components_minigame_token = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
 game_components_metagame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
 game_components_minigame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
 game_components_utils = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
+game_components_test_starknet = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
 denshokan = { git = "https://github.com/Provable-Games/denshokan", branch = "main" }
 starknet = "2.10.1"
 

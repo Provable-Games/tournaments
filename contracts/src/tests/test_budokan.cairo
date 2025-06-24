@@ -45,11 +45,11 @@ use budokan::tests::interfaces::{
     IERC721MockDispatcherTrait,
 };
 use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
-use game_components_denshokan::interface::{IDenshokanDispatcher};
-use game_components_minigame::tests::mocks::minigame_mock::{
-    IMinigameMockDispatcher, IMinigameMockDispatcherTrait,
-};
+use game_components_minigame_token::interface::{IMinigameTokenDispatcher};
 use game_components_metagame::interface::{IMETAGAME_ID};
+use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
+    IMinigameStarknetMockDispatcher, IMinigameStarknetMockDispatcherTrait,
+};
 
 use budokan::tests::setup_denshokan;
 
@@ -61,8 +61,8 @@ use openzeppelin_token::erc721::{ERC721Component::{Transfer, Approval}};
 pub struct TestContracts {
     pub world: WorldStorage,
     pub budokan: IBudokanDispatcher,
-    pub minigame: IMinigameMockDispatcher,
-    pub denshokan: IDenshokanDispatcher,
+    pub minigame: IMinigameStarknetMockDispatcher,
+    pub denshokan: IMinigameTokenDispatcher,
     pub erc20: IERC20MockDispatcher,
     pub erc721: IERC721MockDispatcher,
 }

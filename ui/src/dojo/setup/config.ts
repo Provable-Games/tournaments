@@ -16,7 +16,7 @@ export const manifests: Record<ChainId, DojoManifest> = {
 
 export const namespace: Record<ChainId, string> = {
   [ChainId.KATANA_LOCAL]: "budokan_v_1_0_5",
-  [ChainId.WP_PG_SLOT]: "budokan_v_1_0_5",
+  [ChainId.WP_PG_SLOT]: "budokan_1_0_8",
   [ChainId.SN_MAIN]: "budokan_1_0_8",
   [ChainId.SN_SEPOLIA]: "budokan_v_1_0_6",
 };

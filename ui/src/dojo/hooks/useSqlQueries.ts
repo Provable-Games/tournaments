@@ -2,36 +2,6 @@ import { useSqlExecute } from "@/lib/dojo/hooks/useSqlExecute";
 import { useMemo } from "react";
 import { addAddressPadding, BigNumberish } from "starknet";
 
-export const useGetgameNamespaces = () => {
-  const query = useMemo(
-    () => `
-    SELECT namespace 
-    FROM models 
-    WHERE name = 'GameMetadata' AND namespace != 'ds_v1_1_4'
-  `,
-    []
-  );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data, loading, error };
-};
-
-export const useGetGamesMetadata = ({
-  gameNamespaces,
-}: {
-  gameNamespaces: string[];
-}) => {
-  const query = useMemo(() => {
-    if (!gameNamespaces?.length) return null;
-
-    return gameNamespaces
-      .map((namespace) => `SELECT * FROM "${namespace}-GameMetadata"`)
-      .join("\nUNION ALL\n");
-  }, [gameNamespaces]);
-
-  const { data, loading, error } = useSqlExecute(query);
-  return { data, loading, error };
-};
-
 export const useGetGameSettingsCount = ({
   namespace,
   active = false,

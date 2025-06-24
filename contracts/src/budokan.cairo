@@ -32,15 +32,16 @@ pub mod Budokan {
     };
 
     use game_components_minigame::interface::{
-        IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameScoreDispatcher,
-        IMinigameScoreDispatcherTrait, IMINIGAME_ID, IMinigameSettingsDispatcher,
-        IMinigameSettingsDispatcherTrait,
+        IMinigameTokenDataDispatcher, IMinigameTokenDataDispatcherTrait, IMINIGAME_ID,
+        IMinigameSettingsDispatcher, IMinigameSettingsDispatcherTrait,
     };
-    use game_components_metagame::models::context::{GameContextDetails, GameContext};
+    use game_components_metagame::structs::context::{GameContextDetails, GameContext};
     use game_components_metagame::metagame::metagame_component;
     use game_components_metagame::interface::IMetagameContext;
     use game_components_utils::json::create_context_json;
-    use game_components_denshokan::interface::{IDenshokanDispatcher, IDenshokanDispatcherTrait};
+    use game_components_minigame_token::interface::{
+        IMinigameTokenDispatcher, IMinigameTokenDispatcherTrait,
+    };
 
     use openzeppelin_introspection::src5::SRC5Component;
 
@@ -51,6 +52,7 @@ pub mod Budokan {
     #[abi(embed_v0)]
     impl MetagameImpl = metagame_component::MetagameImpl<ContractState>;
     impl MetagameInternalImpl = metagame_component::InternalImpl<ContractState>;
+    impl MetagameInternalContextImpl = metagame_component::InternalContextImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
@@ -77,7 +79,7 @@ pub mod Budokan {
         ref self: ContractState,
         safe_mode: bool,
         test_mode: bool,
-        denshokan_address: ContractAddress,
+        minigame_token_address: ContractAddress,
         registered_tokens: Span<TokenData>,
     ) {
         // Initialize tournament config
@@ -86,7 +88,8 @@ pub mod Budokan {
         store.set_tournament_config(@TournamentConfig { key: VERSION, safe_mode, test_mode });
 
         // Initialize metagame component
-        self.metagame.initializer(DEFAULT_NS(), denshokan_address);
+        self.metagame.initializer(DEFAULT_NS(), minigame_token_address);
+        self.metagame.initialize_context();
 
         // Initialize registered tokens
         let mut tokens_index = 0;
@@ -128,10 +131,10 @@ pub mod Budokan {
         fn has_context(self: @ContractState, token_id: u64) -> bool {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            let denshokan_dispatcher = IDenshokanDispatcher {
-                contract_address: self.denshokan_address(),
+            let minigame_token_dispatcher = IMinigameTokenDispatcher {
+                contract_address: self.minigame_token_address(),
             };
-            let game_address = denshokan_dispatcher.game_address(token_id);
+            let game_address = minigame_token_dispatcher.game_address(token_id);
             let registration = store.get_registration(game_address, token_id);
             registration.tournament_id != 0
         }
@@ -139,10 +142,10 @@ pub mod Budokan {
         fn context(self: @ContractState, token_id: u64) -> GameContextDetails {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
-            let denshokan_dispatcher = IDenshokanDispatcher {
-                contract_address: self.denshokan_address(),
+            let minigame_token_dispatcher = IMinigameTokenDispatcher {
+                contract_address: self.minigame_token_address(),
             };
-            let game_address = denshokan_dispatcher.game_address(token_id);
+            let game_address = minigame_token_dispatcher.game_address(token_id);
             let registration = store.get_registration(game_address, token_id);
             let context = array![
                 GameContext {
@@ -524,7 +527,7 @@ pub mod Budokan {
         fn get_score_for_token_id(
             self: @ContractState, contract_address: ContractAddress, token_id: u64,
         ) -> u32 {
-            let game_dispatcher = IMinigameScoreDispatcher { contract_address };
+            let game_dispatcher = IMinigameTokenDataDispatcher { contract_address };
             game_dispatcher.score(token_id)
         }
 
@@ -895,7 +898,7 @@ pub mod Budokan {
                 let game_address = tournament.game_config.address;
                 let leaderboard = store.get_leaderboard(tournament_id);
                 let registration = store.get_registration(game_address, token_id);
-                let owner = self._get_owner(self.denshokan_address(), token_id.into());
+                let owner = self._get_owner(self.minigame_token_address(), token_id.into());
 
                 if owner == get_caller_address()
                     && registration.tournament_id == tournament.id
@@ -1053,9 +1056,10 @@ pub mod Budokan {
             to: ContractAddress,
             soulbound: bool,
         ) -> u64 {
-            let game_dispatcher = IMinigameDispatcher { contract_address: game_address };
-            game_dispatcher
+            self
+                .metagame
                 .mint(
+                    Option::Some(game_address),
                     player_name,
                     settings_id,
                     start,
@@ -1171,24 +1175,25 @@ pub mod Budokan {
                         // tournament creator is owner of the tournament creator token
                         self
                             ._get_owner(
-                                self.denshokan_address(), tournament.creator_token_id.into(),
+                                self.minigame_token_address(), tournament.creator_token_id.into(),
                             )
                     },
                     Role::GameCreator => {
                         // game creator is owner of token id 0 of the game contract
-                        self._get_owner(self.denshokan_address(), GAME_CREATOR_TOKEN_ID.into())
+                        self._get_owner(self.minigame_token_address(), GAME_CREATOR_TOKEN_ID.into())
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);
                         // Check if leaderboard has enough entries for the position
                         if position.into() <= leaderboard.len() {
                             let winner_token_id = *leaderboard.at(position.into() - 1);
-                            self._get_owner(self.denshokan_address(), winner_token_id.into())
+                            self._get_owner(self.minigame_token_address(), winner_token_id.into())
                         } else {
                             // No entry at this position, default to tournament creator
                             self
                                 ._get_owner(
-                                    self.denshokan_address(), tournament.creator_token_id.into(),
+                                    self.minigame_token_address(),
+                                    tournament.creator_token_id.into(),
                                 )
                         }
                     },
@@ -1232,10 +1237,10 @@ pub mod Budokan {
             // Check if leaderboard has enough entries for the position
             let recipient_address = if prize.payout_position.into() <= leaderboard.len() {
                 let winner_token_id = *leaderboard.at(prize.payout_position.into() - 1);
-                self._get_owner(self.denshokan_address(), winner_token_id.into())
+                self._get_owner(self.minigame_token_address(), winner_token_id.into())
             } else {
                 // No entry at this position, default to tournament creator
-                self._get_owner(self.denshokan_address(), tournament.creator_token_id.into())
+                self._get_owner(self.minigame_token_address(), tournament.creator_token_id.into())
             };
 
             // Transfer prize
@@ -1292,7 +1297,7 @@ pub mod Budokan {
                 "Tournament: Must submit for next available position",
             );
 
-            let game_dispatcher = IMinigameScoreDispatcher {
+            let game_dispatcher = IMinigameTokenDataDispatcher {
                 contract_address: *tournament.game_config.address,
             };
 
@@ -1541,7 +1546,9 @@ pub mod Budokan {
 
             // Return the owner of the qualifying token
             let token_owner = self
-                ._get_owner(self.denshokan_address(), qualifying_proof_tournament.token_id.into());
+                ._get_owner(
+                    self.minigame_token_address(), qualifying_proof_tournament.token_id.into(),
+                );
 
             token_owner
         }

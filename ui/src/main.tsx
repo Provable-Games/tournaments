@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { StarknetProvider } from "@/context/starknet";
+import { MetagameProvider } from "@/context/metagame";
 import { BrowserRouter as Router } from "react-router-dom";
 import { DojoContextProvider } from "@/context/dojo";
 
@@ -11,9 +12,11 @@ async function main() {
     <StrictMode>
       <StarknetProvider>
         <DojoContextProvider>
-          <Router>
-            <App />
-          </Router>
+          <MetagameProvider>
+            <Router>
+              <App />
+            </Router>
+          </MetagameProvider>
         </DojoContextProvider>
       </StarknetProvider>
     </StrictMode>

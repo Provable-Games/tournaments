@@ -4,12 +4,12 @@ use core::option::Option;
 use starknet::{ContractAddress, testing, contract_address_const};
 use dojo::world::{WorldStorage, WorldStorageTrait};
 use dojo_cairo_test::{
-    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
+    spawn_test_world, deploy_contract, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
     WorldStorageTestTrait,
 };
 
 use denshokan::constants::DEFAULT_NS;
-use game_components_denshokan::interface::{IDenshokanDispatcher};
+use game_components_minigame_token::interface::{IMinigameTokenDispatcher};
 use game_components_minigame::interface::{IMinigameDetailsDispatcher};
 
 use denshokan::models::denshokan::{
@@ -17,21 +17,14 @@ use denshokan::models::denshokan::{
     m_MinterRegistryId, m_MinterCounter, m_TokenMetadata, m_TokenCounter, m_TokenPlayerName,
     m_TokenObjective,
 };
-use game_components_minigame::tests::models::minigame::{
-    m_Score, m_ScoreObjective, m_ScoreObjectiveCount, m_Settings, m_SettingsDetails,
-    m_SettingsCounter,
+use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
+    minigame_starknet_mock, IMinigameStarknetMockDispatcher, IMinigameStarknetMockDispatcherTrait,
+    IMinigameStarknetMockInitDispatcher, IMinigameStarknetMockInitDispatcherTrait,
 };
-use game_components_metagame::tests::models::metagame::{m_Context};
-
-use game_components_metagame::tests::mocks::metagame_mock::{
-    metagame_mock, IMetagameMockDispatcher, IMetagameMockInitDispatcher,
-    IMetagameMockInitDispatcherTrait,
+use game_components_test_starknet::metagame::mocks::metagame_starknet_mock::{
+    metagame_starknet_mock, IMetagameStarknetMockDispatcher, IMetagameStarknetMockDispatcherTrait,
+    IMetagameStarknetMockInitDispatcher, IMetagameStarknetMockInitDispatcherTrait,
 };
-use game_components_minigame::tests::mocks::minigame_mock::{
-    minigame_mock, IMinigameMockDispatcher, IMinigameMockDispatcherTrait,
-    IMinigameMockInitDispatcher, IMinigameMockInitDispatcherTrait,
-};
-
 // use denshokan::tests::utils;
 
 // Test constants
@@ -59,17 +52,17 @@ fn GAME_CREATOR_ADDR() -> ContractAddress {
 #[derive(Drop)]
 pub struct TestContracts {
     pub world: WorldStorage,
-    pub denshokan: IDenshokanDispatcher,
-    pub minigame_mock: IMinigameMockDispatcher,
+    pub denshokan: IMinigameTokenDispatcher,
+    pub minigame_mock: IMinigameStarknetMockDispatcher,
     pub minigame_mock_score: IMinigameDetailsDispatcher,
-    pub metagame_mock: IMetagameMockDispatcher,
+    pub metagame_mock: IMetagameStarknetMockDispatcher,
 }
 
 //
 // Setup
 //
 
-fn setup_uninitialized() -> WorldStorage {
+fn setup_uninitialized() -> (WorldStorage, ContractAddress, ContractAddress) {
     testing::set_block_number(1);
     testing::set_block_timestamp(1000);
 
@@ -88,15 +81,6 @@ fn setup_uninitialized() -> WorldStorage {
             TestResource::Model(m_TokenCounter::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TokenPlayerName::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_TokenObjective::TEST_CLASS_HASH.try_into().unwrap()),
-            // Minigame models
-            TestResource::Model(m_ScoreObjective::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_ScoreObjectiveCount::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_Settings::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_SettingsDetails::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_SettingsCounter::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_Score::TEST_CLASS_HASH.try_into().unwrap()),
-            // Metagame models
-            TestResource::Model(m_Context::TEST_CLASS_HASH.try_into().unwrap()),
             // Events
             TestResource::Event(
                 denshokan::denshokan::denshokan::e_Owners::TEST_CLASS_HASH.try_into().unwrap(),
@@ -121,55 +105,46 @@ fn setup_uninitialized() -> WorldStorage {
             ),
             // Contracts
             TestResource::Contract(denshokan::denshokan::denshokan::TEST_CLASS_HASH),
-            TestResource::Contract(minigame_mock::TEST_CLASS_HASH),
-            TestResource::Contract(metagame_mock::TEST_CLASS_HASH),
         ]
             .span(),
     };
 
+    let minigame_mock_address = deploy_contract(
+        minigame_starknet_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
+    );
+    let metagame_mock_address = deploy_contract(
+        metagame_starknet_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
+    );
+
     let mut contract_defs: Array<ContractDef> = array![
         ContractDefTrait::new(@DEFAULT_NS(), @"denshokan")
-            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
-        ContractDefTrait::new(@DEFAULT_NS(), @"minigame_mock")
-            .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
-        ContractDefTrait::new(@DEFAULT_NS(), @"metagame_mock")
             .with_writer_of([dojo::utils::bytearray_hash(@DEFAULT_NS())].span()),
     ];
 
     let mut world: WorldStorage = spawn_test_world([ndef].span());
     world.sync_perms_and_inits(contract_defs.span());
 
-    world
+    (world, minigame_mock_address, metagame_mock_address)
 }
 
 pub fn setup() -> TestContracts {
-    let mut world = setup_uninitialized();
+    let (world, minigame_mock_address, metagame_mock_address) = setup_uninitialized();
 
     let denshokan_address = match world.dns(@"denshokan") {
         Option::Some((address, _)) => address,
         Option::None => panic!("Denshokan contract not found in world DNS"),
     };
 
-    let minigame_mock_address = match world.dns(@"minigame_mock") {
-        Option::Some((address, _)) => address,
-        Option::None => panic!("Game mock contract not found in world DNS"),
-    };
-
-    let metagame_mock_address = match world.dns(@"metagame_mock") {
-        Option::Some((address, _)) => address,
-        Option::None => panic!("App mock contract not found in world DNS"),
-    };
-
-    let denshokan = IDenshokanDispatcher { contract_address: denshokan_address };
-    let minigame_mock = IMinigameMockDispatcher { contract_address: minigame_mock_address };
-    let minigame_mock_init = IMinigameMockInitDispatcher {
+    let denshokan = IMinigameTokenDispatcher { contract_address: denshokan_address };
+    let minigame_mock = IMinigameStarknetMockDispatcher { contract_address: minigame_mock_address };
+    let minigame_mock_init = IMinigameStarknetMockInitDispatcher {
         contract_address: minigame_mock_address,
     };
     let minigame_mock_score = IMinigameDetailsDispatcher {
         contract_address: minigame_mock_address,
     };
-    let metagame_mock = IMetagameMockDispatcher { contract_address: metagame_mock_address };
-    let metagame_mock_init = IMetagameMockInitDispatcher {
+    let metagame_mock = IMetagameStarknetMockDispatcher { contract_address: metagame_mock_address };
+    let metagame_mock_init = IMetagameStarknetMockInitDispatcher {
         contract_address: metagame_mock_address,
     };
 
@@ -182,6 +157,10 @@ pub fn setup() -> TestContracts {
         genre,
         image,
         color,
+        client_url,
+        renderer_address,
+        settings_address,
+        objectives_address,
     ) =
         create_test_game_metadata();
 
@@ -197,9 +176,14 @@ pub fn setup() -> TestContracts {
             genre,
             image,
             Option::Some(color),
-            Option::None,
+            client_url,
+            renderer_address,
+            settings_address,
+            objectives_address,
             DEFAULT_NS(),
             denshokan_address,
+            true,
+            true,
         );
 
     // create game objective
@@ -208,7 +192,7 @@ pub fn setup() -> TestContracts {
     // create game settings
     minigame_mock.create_settings_difficulty("Test Settings", "Test Settings Description", 1);
 
-    metagame_mock_init.initializer(DEFAULT_NS(), denshokan_address);
+    metagame_mock_init.initializer(DEFAULT_NS(), denshokan_address, true);
 
     TestContracts { world, denshokan, minigame_mock, minigame_mock_score, metagame_mock }
 }
@@ -218,7 +202,18 @@ pub fn setup() -> TestContracts {
 //
 
 fn create_test_game_metadata() -> (
-    ContractAddress, felt252, ByteArray, felt252, felt252, felt252, ByteArray, ByteArray,
+    ContractAddress,
+    felt252,
+    ByteArray,
+    felt252,
+    felt252,
+    felt252,
+    ByteArray,
+    ByteArray,
+    Option<ByteArray>,
+    Option<ContractAddress>,
+    Option<ContractAddress>,
+    Option<ContractAddress>,
 ) {
     (
         GAME_CREATOR_ADDR(),
@@ -229,5 +224,9 @@ fn create_test_game_metadata() -> (
         GENRE,
         "https://example.com/image.png",
         "test_color",
+        Option::None,
+        Option::None,
+        Option::None,
+        Option::None,
     )
 }

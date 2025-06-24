@@ -11,9 +11,6 @@ use budokan::tests::{
     },
 };
 use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
-use game_components_minigame::tests::mocks::minigame_mock::{
-    IMinigameMockDispatcher, IMinigameMockDispatcherTrait,
-};
 
 use budokan::models::budokan::{Tournament, Metadata, GameConfig};
 

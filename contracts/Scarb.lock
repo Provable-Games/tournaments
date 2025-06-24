@@ -55,9 +55,10 @@ dependencies = [
  "denshokan",
  "dojo",
  "dojo_cairo_test",
- "game_components_denshokan",
  "game_components_metagame",
  "game_components_minigame",
+ "game_components_minigame_token",
+ "game_components_test_starknet",
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
@@ -66,12 +67,13 @@ dependencies = [
 [[package]]
 name = "denshokan"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/denshokan?branch=main#0ea3f97758d3084c9e3f3e3045b6751340a71521"
+source = "git+https://github.com/Provable-Games/denshokan?branch=main#cf6e3cf8d9abf3e6006039b91e9019de0bed9055"
 dependencies = [
  "alexandria_encoding",
  "dojo",
  "game_components_metagame",
  "game_components_minigame",
+ "game_components_test_starknet",
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
@@ -99,37 +101,50 @@ version = "2.10.1"
 source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c70ddceb1d33ddac86ead"
 
 [[package]]
-name = "game_components_denshokan"
-version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
-
-[[package]]
 name = "game_components_metagame"
-version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#5e1f9ea9253740aa04d5d2cb600f2d7a65de5421"
 dependencies = [
- "dojo",
- "game_components_denshokan",
+ "game_components_minigame_token",
  "game_components_utils",
  "openzeppelin_introspection",
 ]
 
 [[package]]
 name = "game_components_minigame"
-version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#5e1f9ea9253740aa04d5d2cb600f2d7a65de5421"
 dependencies = [
- "dojo",
- "game_components_denshokan",
+ "game_components_minigame_token",
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
 ]
 
 [[package]]
+name = "game_components_minigame_token"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#5e1f9ea9253740aa04d5d2cb600f2d7a65de5421"
+dependencies = [
+ "game_components_minigame",
+]
+
+[[package]]
+name = "game_components_test_starknet"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#5e1f9ea9253740aa04d5d2cb600f2d7a65de5421"
+dependencies = [
+ "game_components_metagame",
+ "game_components_minigame",
+ "game_components_minigame_token",
+ "game_components_utils",
+ "openzeppelin_introspection",
+]
+
+[[package]]
 name = "game_components_utils"
-version = "0.0.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#e5a62cab84842358ba6bf33136bf0b7c3f622dc6"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=main#5e1f9ea9253740aa04d5d2cb600f2d7a65de5421"
 dependencies = [
  "alexandria_encoding",
  "game_components_metagame",

@@ -12,15 +12,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useDojo } from "@/context/dojo";
 import useUIStore from "./hooks/useUIStore";
-import {
-  useGetgameNamespaces,
-  useGetGamesMetadata,
-} from "./dojo/hooks/useSqlQueries";
-import { processGameMetadataFromSql } from "./lib/utils/formatting";
 import { getGames } from "./assets/games";
 import Header from "@/components/Header";
 import LoadingPage from "@/containers/LoadingPage";
 import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkChange";
+import { useMiniGames } from "metagame-sdk/sql";
 
 const NotFound = lazy(() => import("@/containers/NotFound"));
 const Overview = lazy(() => {
@@ -46,31 +42,25 @@ function App() {
   useSubscribeMetricsQuery(namespace);
   useSubscribeTournamentsQuery(namespace);
 
-  const { data: gameNamespaces } = useGetgameNamespaces();
+  const {
+    data: minigames,
+    loading: minigamesLoading,
+    error: minigamesError,
+  } = useMiniGames({
+    limit: 100,
+  });
 
-  const formattedgameNamespaces = gameNamespaces?.map(
-    (namespace) => namespace.namespace
-  );
-
-  const { data: gamesMetadata, loading: isGamesMetadataLoading } =
-    useGetGamesMetadata({
-      gameNamespaces: formattedgameNamespaces || [],
-    });
-
-  const formattedGamesMetadata = useMemo(
-    () => gamesMetadata?.map((game) => processGameMetadataFromSql(game)),
-    [gamesMetadata]
-  );
+  console.log(minigames);
 
   const whitelistedGames = getGames();
 
   // Create a unified array of all games with flags
   const allGames = useMemo(() => {
-    if (!formattedGamesMetadata) return [];
+    if (!minigames) return [];
 
     // Create maps for faster lookups
     const metadataMap = new Map();
-    formattedGamesMetadata.forEach((game) => {
+    minigames.forEach((game) => {
       metadataMap.set(game.contract_address, game);
     });
 
@@ -104,7 +94,7 @@ function App() {
         existsInMetadata: !!metadata,
       };
     });
-  }, [formattedGamesMetadata, whitelistedGames]);
+  }, [minigames, whitelistedGames]);
 
   // Store the stringified version of allGames to detect actual changes
   const allGamesStringified = useMemo(() => {
@@ -120,8 +110,8 @@ function App() {
 
   // Use a separate effect for loading state
   useEffect(() => {
-    setGameDataLoading(isGamesMetadataLoading);
-  }, [isGamesMetadataLoading, setGameDataLoading]);
+    setGameDataLoading(minigamesLoading);
+  }, [minigamesLoading, setGameDataLoading]);
 
   // Use a separate effect for setting game data
   useEffect(() => {

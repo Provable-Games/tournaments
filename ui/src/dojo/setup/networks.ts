@@ -144,7 +144,7 @@ const snMainnetConfig: DojoChainConfig = {
   chainId: ChainId.SN_MAIN,
   name: "Mainnet",
   rpcUrl: "https://api.cartridge.gg/x/starknet/mainnet",
-  toriiUrl: "https://api.cartridge.gg/x/budokan-mainnet-2/torii",
+  toriiUrl: "https://api.cartridge.gg/x/pg-mainnet/torii",
   toriiTokensUrl: "https://api.cartridge.gg/x/pg-mainnet-tokens/torii",
   relayUrl: undefined,
   blastRpc:
