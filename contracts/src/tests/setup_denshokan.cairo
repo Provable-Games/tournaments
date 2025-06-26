@@ -22,7 +22,7 @@ use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
     IMinigameStarknetMockInitDispatcher, IMinigameStarknetMockInitDispatcherTrait,
 };
 use game_components_test_starknet::metagame::mocks::metagame_starknet_mock::{
-    metagame_starknet_mock, IMetagameStarknetMockDispatcher, IMetagameStarknetMockDispatcherTrait,
+    metagame_starknet_mock, IMetagameStarknetMockDispatcher,
     IMetagameStarknetMockInitDispatcher, IMetagameStarknetMockInitDispatcherTrait,
 };
 // use denshokan::tests::utils;

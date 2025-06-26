@@ -28,12 +28,13 @@ pub mod Budokan {
     };
     use openzeppelin_token::erc721::interface::{
         IERC721Dispatcher, IERC721DispatcherTrait, IERC721MetadataDispatcher,
-        IERC721MetadataDispatcherTrait,
+        IERC721MetadataDispatcherTrait, IERC721_ID,
     };
 
     use game_components_minigame::interface::{
-        IMinigameTokenDataDispatcher, IMinigameTokenDataDispatcherTrait, IMINIGAME_ID,
-        IMinigameSettingsDispatcher, IMinigameSettingsDispatcherTrait,
+        IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameTokenDataDispatcher,
+        IMinigameTokenDataDispatcherTrait, IMINIGAME_ID, IMinigameSettingsDispatcher,
+        IMinigameSettingsDispatcherTrait,
     };
     use game_components_metagame::structs::context::{GameContextDetails, GameContext};
     use game_components_metagame::metagame::metagame_component;
@@ -255,6 +256,7 @@ pub mod Budokan {
         /// @param game_config the tournament game configuration.
         /// @param entry_fee and optional entry fee for the tournament.
         /// @param entry_requirement and optional entry requirement.
+        /// @param denshokan_address the address of the denshokan contract.
         /// @return A tuple containing the tournament and the creator's game token id.
         fn create_tournament(
             ref self: ContractState,
@@ -264,12 +266,13 @@ pub mod Budokan {
             game_config: GameConfig,
             entry_fee: Option<EntryFee>,
             entry_requirement: Option<EntryRequirement>,
+            use_denshokan: bool,
         ) -> TournamentModel {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
 
             schedule.assert_is_valid();
-            self._assert_valid_game_config(game_config);
+            self._assert_valid_game_config(game_config, use_denshokan);
 
             if let Option::Some(entry_fee) = entry_fee {
                 self._assert_valid_entry_fee(store, entry_fee, game_config.prize_spots);
@@ -299,11 +302,18 @@ pub mod Budokan {
                     Option::None, // renderer_address
                     creator_rewards_address,
                     false,
+                    use_denshokan,
                 );
 
             store
                 .create_tournament(
-                    creator_token_id, metadata, schedule, game_config, entry_fee, entry_requirement,
+                    creator_token_id,
+                    metadata,
+                    schedule,
+                    game_config,
+                    entry_fee,
+                    entry_requirement,
+                    use_denshokan,
                 )
         }
 
@@ -364,8 +374,9 @@ pub mod Budokan {
                     Option::Some(context_json),
                     Option::None, // client_url
                     Option::None, // renderer_address
-                    mint_to_address,
-                    false,
+                    mint_to_address, // to
+                    false, // soulbound
+                    tournament.use_denshokan // use_denshokan
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -598,7 +609,7 @@ pub mod Budokan {
         }
 
         #[inline(always)]
-        fn _assert_valid_game_config(ref self: ContractState, game_config: GameConfig) {
+        fn _assert_valid_game_config(ref self: ContractState, game_config: GameConfig, use_denshokan: bool) {
             let contract_address = game_config.address;
 
             self._assert_winners_count_greater_than_zero(game_config.prize_spots);
@@ -606,7 +617,11 @@ pub mod Budokan {
 
             let src5_dispatcher = ISRC5Dispatcher { contract_address };
             self._assert_supports_game_interface(src5_dispatcher, contract_address);
-            self.metagame.assert_game_registered(contract_address);
+            if use_denshokan {
+                self.metagame.assert_game_registered(contract_address);
+            } else {
+                self._assert_supports_erc721(src5_dispatcher, contract_address);
+            }
         }
 
         #[inline(always)]
@@ -658,6 +673,18 @@ pub mod Budokan {
             assert!(
                 src5_dispatcher.supports_interface(IMINIGAME_ID),
                 "Tournament: Game address {} does not support IGame interface",
+                address,
+            );
+        }
+
+        #[inline(always)]
+        fn _assert_supports_erc721(
+            self: @ContractState, src5_dispatcher: ISRC5Dispatcher, address: ContractAddress,
+        ) {
+            let address: felt252 = address.into();
+            assert!(
+                src5_dispatcher.supports_interface(IERC721_ID),
+                "Tournament: Game token address {} does not support IERC721 interface",
                 address,
             );
         }
@@ -898,7 +925,11 @@ pub mod Budokan {
                 let game_address = tournament.game_config.address;
                 let leaderboard = store.get_leaderboard(tournament_id);
                 let registration = store.get_registration(game_address, token_id);
-                let owner = self._get_owner(self.minigame_token_address(), token_id.into());
+                let owner = if tournament.use_denshokan {
+                    self._get_owner(self.minigame_token_address(), token_id.into())
+                } else {
+                    self._get_owner(game_address, token_id.into())
+                };
 
                 if owner == get_caller_address()
                     && registration.tournament_id == tournament.id
@@ -1037,10 +1068,17 @@ pub mod Budokan {
         /// @title mint_game
         /// @notice Mints a new game token to the provided player address.
         /// @param game_address The address of the game contract.
-        /// @param settings_id The id of the game settings.
-        /// @param game_schedule The schedule of the game.
         /// @param player_name The name of the player.
-        /// @param to_address The address to mint the game token to.
+        /// @param settings_id The id of the game settings.
+        /// @param start The start time of the game.
+        /// @param end The end time of the game.
+        /// @param objective_ids The ids of the objectives.
+        /// @param context The context of the game.
+        /// @param client_url The client url of the game.
+        /// @param renderer_address The address of the renderer.
+        /// @param to The address to mint the game token to.
+        /// @param soulbound Whether the game token is soulbound.
+        /// @param use_denshokan Whether the game is using denshokan.
         /// @return The game token id.
         fn _mint_game(
             ref self: ContractState,
@@ -1055,22 +1093,39 @@ pub mod Budokan {
             renderer_address: Option<ContractAddress>,
             to: ContractAddress,
             soulbound: bool,
+            use_denshokan: bool,
         ) -> u64 {
-            self
-                .metagame
-                .mint(
-                    Option::Some(game_address),
-                    player_name,
-                    settings_id,
-                    start,
-                    end,
-                    objective_ids,
-                    context,
-                    client_url,
-                    renderer_address,
-                    to,
-                    soulbound,
-                )
+            if use_denshokan {
+                self
+                    .metagame
+                    .mint(
+                        Option::Some(game_address),
+                        player_name,
+                        settings_id,
+                        start,
+                        end,
+                        objective_ids,
+                        context,
+                        client_url,
+                        renderer_address,
+                        to,
+                        soulbound,
+                    )
+            } else {
+                IMinigameDispatcher { contract_address: game_address }
+                    .mint(
+                        player_name,
+                        settings_id,
+                        start,
+                        end,
+                        objective_ids,
+                        Option::None, // no context for non-denshokan games
+                        client_url,
+                        renderer_address,
+                        to,
+                        soulbound,
+                    )
+            }
         }
 
         #[inline(always)]
@@ -1175,24 +1230,47 @@ pub mod Budokan {
                         // tournament creator is owner of the tournament creator token
                         self
                             ._get_owner(
-                                self.minigame_token_address(), tournament.creator_token_id.into(),
+                                if tournament.use_denshokan {
+                                    self.minigame_token_address()
+                                } else {
+                                    tournament.game_config.address
+                                },
+                                tournament.creator_token_id.into(),
                             )
                     },
                     Role::GameCreator => {
                         // game creator is owner of token id 0 of the game contract
-                        self._get_owner(self.minigame_token_address(), GAME_CREATOR_TOKEN_ID.into())
+                        self._get_owner(
+                            if tournament.use_denshokan {
+                                self.minigame_token_address()
+                            } else {
+                                tournament.game_config.address
+                            },
+                            GAME_CREATOR_TOKEN_ID.into(),
+                        )
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);
                         // Check if leaderboard has enough entries for the position
                         if position.into() <= leaderboard.len() {
                             let winner_token_id = *leaderboard.at(position.into() - 1);
-                            self._get_owner(self.minigame_token_address(), winner_token_id.into())
+                            self._get_owner(
+                                if tournament.use_denshokan {
+                                    self.minigame_token_address()
+                                } else {
+                                    tournament.game_config.address
+                                },
+                                winner_token_id.into(),
+                            )
                         } else {
                             // No entry at this position, default to tournament creator
                             self
                                 ._get_owner(
-                                    self.minigame_token_address(),
+                                    if tournament.use_denshokan {
+                                        self.minigame_token_address()
+                                    } else {
+                                        tournament.game_config.address
+                                    },
                                     tournament.creator_token_id.into(),
                                 )
                         }
@@ -1237,10 +1315,21 @@ pub mod Budokan {
             // Check if leaderboard has enough entries for the position
             let recipient_address = if prize.payout_position.into() <= leaderboard.len() {
                 let winner_token_id = *leaderboard.at(prize.payout_position.into() - 1);
-                self._get_owner(self.minigame_token_address(), winner_token_id.into())
+                self._get_owner(if tournament.use_denshokan {
+                    self.minigame_token_address()
+                } else {
+                    tournament.game_config.address
+                }, winner_token_id.into())
             } else {
                 // No entry at this position, default to tournament creator
-                self._get_owner(self.minigame_token_address(), tournament.creator_token_id.into())
+                self._get_owner(
+                    if tournament.use_denshokan {
+                        self.minigame_token_address()
+                    } else {
+                        tournament.game_config.address
+                    },
+                    tournament.creator_token_id.into(),
+                )
             };
 
             // Transfer prize
@@ -1544,10 +1633,17 @@ pub mod Budokan {
                     leaderboard.span(), tournament_type, qualifying_proof_tournament,
                 );
 
+            let tournament = store.get_tournament(tournament_id);
+
             // Return the owner of the qualifying token
             let token_owner = self
                 ._get_owner(
-                    self.minigame_token_address(), qualifying_proof_tournament.token_id.into(),
+                    if tournament.use_denshokan {
+                        self.minigame_token_address()
+                    } else {
+                        tournament.game_config.address
+                    },
+                    qualifying_proof_tournament.token_id.into(),
                 );
 
             token_owner

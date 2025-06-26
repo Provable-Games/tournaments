@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 use core::option::Option;
-use starknet::{ContractAddress, contract_address_const, get_block_timestamp, testing};
+use starknet::{ContractAddress, get_block_timestamp, testing};
 use dojo::world::{WorldStorage, WorldStorageTrait};
 use dojo_cairo_test::{
     spawn_test_world, deploy_contract, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
@@ -54,7 +54,6 @@ use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
 use budokan::tests::setup_denshokan;
 
 use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
-use openzeppelin_token::erc721::interface;
 use openzeppelin_token::erc721::{ERC721Component::{Transfer, Approval}};
 
 #[derive(Drop)]
@@ -315,6 +314,7 @@ fn create_tournament_start_time_in_past() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 }
 
@@ -343,6 +343,7 @@ fn create_tournament_registration_period_too_short() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 }
 
@@ -372,6 +373,7 @@ fn create_tournament_registration_period_too_long() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 }
 
@@ -399,6 +401,7 @@ fn create_tournament_end_time_too_close() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 }
 
@@ -422,6 +425,7 @@ fn create_tournament_tournament_too_long() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 }
 
@@ -445,6 +449,7 @@ fn create_tournament_submission_period_too_short() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 }
 
@@ -468,6 +473,7 @@ fn create_tournament_submission_period_too_long() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 }
 
@@ -598,6 +604,7 @@ fn create_tournament_with_premiums_too_long() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 }
 
@@ -629,7 +636,7 @@ fn create_tournament_with_premiums_not_100() {
     contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement,
+            OWNER(), test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement, true, // use_denshokan
         );
 }
 
@@ -683,6 +690,7 @@ fn create_gated_tournament_with_unsettled_tournament() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 }
 
@@ -758,6 +766,7 @@ fn create_tournament_gated_by_multiple_tournaments() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(gated_tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
@@ -868,6 +877,7 @@ fn create_tournament_gated_by_multiple_tournaments_with_limited_entry() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(gated_tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
@@ -929,6 +939,7 @@ fn allowlist_gated_tournament() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // Verify tournament was created with correct gating
@@ -987,6 +998,7 @@ fn allowlist_gated_tournament_with_entry_limit() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // Verify tournament was created with correct gating
@@ -1042,6 +1054,7 @@ fn allowlist_gated_tournament_unauthorized() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // Start tournament entries
@@ -1093,6 +1106,7 @@ fn allowlist_gated_caller_different_from_qualification_address() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // Verify tournament was created with correct gating
@@ -1104,7 +1118,7 @@ fn allowlist_gated_caller_different_from_qualification_address() {
     // Owner tries to enter tournament using player1s address
     // should panic
     let player1_qualification = Option::Some(QualificationProof::Address(allowed_player));
-    let (tournament_game_token_id, _) = contracts
+    contracts
         .budokan
         .enter_tournament(tournament.id, 'test_player1', OWNER(), player1_qualification);
 }
@@ -1130,6 +1144,7 @@ fn create_tournament_season() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 
     // verify tournament was created with correct schedule
@@ -1317,6 +1332,7 @@ fn use_host_token_to_qualify_into_tournament_gated_tournament() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // attempt to join second tournament using the host token, should panic
@@ -1412,6 +1428,7 @@ fn enter_tournament_wrong_submission_type() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     // attempt to join second tournament using token that did not win first tournament, should panic
@@ -1444,6 +1461,7 @@ fn enter_tournament_season() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_START_TIME().into());
@@ -1480,7 +1498,7 @@ fn submit_score_gas_check() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1635,7 +1653,7 @@ fn submit_score_basic() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1668,7 +1686,7 @@ fn submit_score_multiple_positions() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1725,7 +1743,7 @@ fn submit_score_lower_score() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1761,7 +1779,7 @@ fn submit_score_invalid_position() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -1857,7 +1875,7 @@ fn submit_score_with_gap() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2026,6 +2044,7 @@ fn claim_prizes_with_gated_tokens_criteria() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(tournament.entry_fee == entry_fee, 'Invalid entry fee');
@@ -2071,6 +2090,7 @@ fn claim_prizes_with_gated_tokens_uniform() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(tournament.entry_requirement == entry_requirement, 'Invalid entry requirement');
@@ -2157,6 +2177,7 @@ fn claim_prizes_with_gated_tournaments() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(second_tournament.entry_fee == entry_fee, 'Invalid entry fee');
@@ -2212,6 +2233,7 @@ fn claim_prizes_with_premiums() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     assert(tournament.entry_fee == entry_fee, 'Invalid entry fee');
@@ -2274,6 +2296,7 @@ fn claim_prizes_with_premium_creator_fee() {
             test_game_config(contracts.minigame.contract_address),
             entry_fee,
             entry_requirement,
+            true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2356,7 +2379,7 @@ fn claim_prizes_with_premium_multiple_winners() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement,
+            OWNER(), test_metadata(), test_schedule(), game_config, entry_fee, entry_requirement, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2537,6 +2560,7 @@ fn state_transitions() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::None,
+            true, // use_denshokan
         );
 
     // Test Scheduled state (before registration)
@@ -2623,7 +2647,7 @@ fn malicious_score_submission() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2687,7 +2711,7 @@ fn test_submit_score_tie_higher_game_id() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     let (player1, _) = contracts
@@ -2726,7 +2750,7 @@ fn test_submit_score_tie_lower_game_id() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     let (player1, _) = contracts
@@ -2769,7 +2793,7 @@ fn test_submit_score_tie_higher_game_id_for_lower_position() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2832,7 +2856,7 @@ fn test_submit_score_tie_lower_game_id_for_lower_position() {
     let tournament = contracts
         .budokan
         .create_tournament(
-            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None,
+            OWNER(), test_metadata(), test_schedule(), game_config, Option::None, Option::None, true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -2922,6 +2946,7 @@ fn tournament_with_no_submissions() {
             test_game_config(contracts.minigame.contract_address),
             Option::Some(entry_fee),
             Option::None,
+            true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -3059,6 +3084,7 @@ fn tournament_with_partial_submissions() {
             game_config,
             Option::Some(entry_fee),
             Option::None,
+            true, // use_denshokan
         );
 
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
@@ -3387,6 +3413,7 @@ fn third_party_enter_tournament_with_nft_requirement() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::Some(entry_requirement),
+            true, // use_denshokan
         );
 
     // Start tournament entries
@@ -3472,6 +3499,7 @@ fn third_party_enter_tournament_with_tournament_requirement() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::Some(entry_requirement),
+            true, // use_denshokan
         );
 
     // Start gated tournament entries
@@ -3530,6 +3558,7 @@ fn third_party_enter_tournament_with_allowlist_requirement() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::Some(entry_requirement),
+            true, // use_denshokan
         );
 
     // Start tournament entries
@@ -3543,7 +3572,7 @@ fn third_party_enter_tournament_with_allowlist_requirement() {
 
     // Third party provides different player_address
     let different_address = starknet::contract_address_const::<0x333>();
-    let (game_token_id, _) = contracts
+    contracts
         .budokan
         .enter_tournament(
             tournament.id,
@@ -3572,7 +3601,7 @@ fn third_party_enter_tournament_without_requirement_uses_player_address() {
     utils::impersonate(third_party);
 
     let player_address = starknet::contract_address_const::<0x333>();
-    let (game_token_id, _) = contracts
+    contracts
         .budokan
         .enter_tournament(
             tournament.id,
@@ -3615,6 +3644,7 @@ fn third_party_enter_tournament_respects_entry_limits() {
             test_game_config(contracts.minigame.contract_address),
             Option::None,
             Option::Some(entry_requirement),
+            true, // use_denshokan
         );
 
     // Start tournament entries

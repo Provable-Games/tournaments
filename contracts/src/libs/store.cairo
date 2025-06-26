@@ -112,6 +112,7 @@ pub impl StoreImpl of StoreTrait {
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
+        use_denshokan: bool,
     ) -> Tournament {
         let tournament = Tournament {
             id: self.increment_and_get_tournament_count(),
@@ -123,6 +124,7 @@ pub impl StoreImpl of StoreTrait {
             game_config,
             entry_fee,
             entry_requirement,
+            use_denshokan,
         };
         self.world.write_model(@tournament);
         tournament

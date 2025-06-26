@@ -6,8 +6,7 @@ use budokan::constants::{
 use budokan::tests::{
     constants::{
         TOURNAMENT_NAME, TOURNAMENT_DESCRIPTION, TEST_REGISTRATION_START_TIME,
-        TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, SETTINGS_NAME,
-        SETTINGS_DESCRIPTION, OWNER,
+        TEST_REGISTRATION_END_TIME, TEST_START_TIME, TEST_END_TIME, OWNER,
     },
 };
 use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
@@ -109,8 +108,10 @@ pub fn create_basic_tournament(budokan: IBudokanDispatcher, game: ContractAddres
             test_game_config(game),
             Option::None,
             Option::None,
+            true, // use_denshokan
         )
 }
+
 // pub fn register_tokens_for_test(
 //     tournament: ITournamentMockDispatcher,
 //     erc20: IERC20MockDispatcher,
