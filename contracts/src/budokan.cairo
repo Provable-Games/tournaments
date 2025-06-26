@@ -33,8 +33,10 @@ pub mod Budokan {
 
     use game_components_minigame::interface::{
         IMinigameDispatcher, IMinigameDispatcherTrait, IMinigameTokenDataDispatcher,
-        IMinigameTokenDataDispatcherTrait, IMINIGAME_ID, IMinigameSettingsDispatcher,
-        IMinigameSettingsDispatcherTrait,
+        IMinigameTokenDataDispatcherTrait, IMINIGAME_ID,
+    };
+    use game_components_minigame_settings::interface::{
+        IMinigameSettingsDispatcher, IMinigameSettingsDispatcherTrait,
     };
     use game_components_metagame::structs::context::{GameContextDetails, GameContext};
     use game_components_metagame::metagame::metagame_component;
