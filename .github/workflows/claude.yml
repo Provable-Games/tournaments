@@ -1,9 +1,5 @@
 name: Claude Code
 
-env:
-  SCARB_VERSION: 2.10.1
-  DOJO_VERSION: 1.5.0
-
 on:
   issue_comment:
     types: [created]
@@ -17,15 +13,15 @@ on:
 jobs:
   claude:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') || contains(github.event.issue.labels.*.name, 'claude')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) || contains(github.event.issue.labels.*.name, 'claude'))
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
+      pull-requests: read
+      issues: read
       id-token: write
     steps:
       - name: Checkout repository
@@ -33,20 +29,9 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Install Dojo
-        run: |
-          curl -L -o dojo-linux-x86_64.tar.gz https://github.com/dojoengine/dojo/releases/download/v${{ env.DOJO_VERSION }}/dojo_v${{ env.DOJO_VERSION }}_linux_amd64.tar.gz
-          tar -xzf dojo-linux-x86_64.tar.gz
-          sudo mv sozo /usr/local/bin/
-
-      - name: Setup Scarb
-        uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: ${{ env.SCARB_VERSION }}
-
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git branch:*),Bash(git status),Bash(git diff:*),Bash(git log:*),Bash(git pull:*),Bash(cd:*),Bash(ls:*),Bash(find:*),Bash(grep:*),Bash(cat:*),Bash(pwd),Bash(sozo build),Bash(sozo test),Bash(sozo test -f *),Bash(scarb fmt),Bash(scarb build),Bash(bun install),Bash(bun run:*),Bash(bun test:*),Bash(npm install),Bash(npm run:*),Edit,View"
+
