@@ -9,7 +9,6 @@ on:
     paths-ignore:
       - "ui/**"
       - "**/manifest.json"
-      - ".github/**"
       - "pnpm-lock.yaml"
   push:
     branches:
