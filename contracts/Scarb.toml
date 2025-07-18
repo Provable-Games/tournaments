@@ -12,41 +12,23 @@ build-external-contracts = [
     "dojo::world::world_contract::world",
     "game_components_test_starknet::minigame::mocks::minigame_starknet_mock::minigame_starknet_mock",
     "game_components_test_starknet::metagame::mocks::metagame_starknet_mock::metagame_starknet_mock",
-    "denshokan::models::denshokan::m_GameMetadata",
-    "denshokan::models::denshokan::m_GameRegistry",
-    "denshokan::models::denshokan::m_GameRegistryId",
-    "denshokan::models::denshokan::m_GameCounter",
-    "denshokan::models::denshokan::m_MinterRegistry",
-    "denshokan::models::denshokan::m_MinterRegistryId",
-    "denshokan::models::denshokan::m_MinterCounter",
-    "denshokan::models::denshokan::m_TokenMetadata",
-    "denshokan::models::denshokan::m_TokenCounter",
-    "denshokan::models::denshokan::m_TokenPlayerName",
-    "denshokan::models::denshokan::m_TokenObjective",
-    "denshokan::denshokan::denshokan::e_Owners",
-    "denshokan::denshokan::denshokan::e_ScoreUpdate",
-    "denshokan::denshokan::denshokan::e_ObjectiveData",
-    "denshokan::denshokan::denshokan::e_SettingsData",
-    "denshokan::denshokan::denshokan::e_TokenContextData",
-    "denshokan::denshokan::denshokan",
+    "game_components_token::examples::full_token_contract::FullTokenContract",
+    "game_components_token::examples::minigame_registry_contract::MinigameRegistryContract",
 ]
 
 [dependencies]
 openzeppelin_introspection = "1.0.0"
 openzeppelin_token = "1.0.0"
-dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.5.1" }
-game_components_minigame_token = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_metagame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_minigame = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_minigame_settings = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_minigame_objectives = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_utils = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-game_components_test_starknet = { git = "https://github.com/Provable-Games/game-components", branch = "main" }
-denshokan = { git = "https://github.com/Provable-Games/denshokan", branch = "main" }
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0" }
+game_components_metagame = { git = "https://github.com/Provable-Games/game-components", branch = "feat/claude_architectures" }
+game_components_minigame = { git = "https://github.com/Provable-Games/game-components", branch = "feat/claude_architectures" }
+game_components_utils = { git = "https://github.com/Provable-Games/game-components", branch = "feat/claude_architectures" }
+game_components_test_starknet = { git = "https://github.com/Provable-Games/game-components", branch = "feat/claude_architectures" }
+game_components_token = { git = "https://github.com/Provable-Games/game-components", branch = "feat/claude_architectures" }
 starknet = "2.10.1"
 
 [dev-dependencies]
-dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.5.1" }
+dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.6.0" }
 cairo_test = "2.10.1"
 
 [features]

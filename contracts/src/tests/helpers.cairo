@@ -108,7 +108,6 @@ pub fn create_basic_tournament(budokan: IBudokanDispatcher, game: ContractAddres
             test_game_config(game),
             Option::None,
             Option::None,
-            true, // use_denshokan
         )
 }
 

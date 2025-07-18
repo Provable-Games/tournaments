@@ -16,7 +16,6 @@ pub struct Tournament {
     pub game_config: GameConfig,
     pub entry_fee: Option<EntryFee>,
     pub entry_requirement: Option<EntryRequirement>,
-    pub use_denshokan: bool,
 }
 
 #[derive(Drop, Serde, Introspect)]

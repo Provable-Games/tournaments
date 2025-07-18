@@ -99,7 +99,6 @@ pub impl StoreImpl of StoreTrait {
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
-        use_denshokan: bool,
     ) -> Tournament {
         let id = self.increment_and_get_tournament_count();
         let created_by = starknet::get_caller_address();
@@ -114,7 +113,6 @@ pub impl StoreImpl of StoreTrait {
             game_config,
             entry_fee,
             entry_requirement,
-            use_denshokan,
         };
         self.world.write_model(@tournament);
         tournament

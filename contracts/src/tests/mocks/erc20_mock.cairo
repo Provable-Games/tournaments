@@ -5,7 +5,6 @@ pub trait IERC20MockPublic<TState> {
     fn mint(ref self: TState, recipient: ContractAddress, amount: u256);
 }
 
-
 #[starknet::contract]
 pub mod erc20_mock {
     use starknet::ContractAddress;

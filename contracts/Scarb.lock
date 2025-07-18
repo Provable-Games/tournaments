@@ -52,32 +52,12 @@ dependencies = [
 name = "budokan"
 version = "0.0.1"
 dependencies = [
- "denshokan",
  "dojo",
  "dojo_cairo_test",
  "game_components_metagame",
  "game_components_minigame",
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
- "game_components_minigame_token",
  "game_components_test_starknet",
- "game_components_utils",
- "openzeppelin_introspection",
- "openzeppelin_token",
-]
-
-[[package]]
-name = "denshokan"
-version = "1.5.1"
-source = "git+https://github.com/Provable-Games/denshokan?branch=main#133d59802ee833df68d808705070f6c8dfe415ca"
-dependencies = [
- "alexandria_encoding",
- "dojo",
- "game_components_metagame",
- "game_components_minigame",
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
- "game_components_test_starknet",
+ "game_components_token",
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
@@ -85,16 +65,16 @@ dependencies = [
 
 [[package]]
 name = "dojo"
-version = "1.5.1"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c70ddceb1d33ddac86ead"
+version = "1.6.0"
+source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0#c7d8b321abc711c14bddcf76f41587f6ef21c356"
 dependencies = [
  "dojo_plugin",
 ]
 
 [[package]]
 name = "dojo_cairo_test"
-version = "1.0.12"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c70ddceb1d33ddac86ead"
+version = "1.6.0"
+source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0#c7d8b321abc711c14bddcf76f41587f6ef21c356"
 dependencies = [
  "dojo",
 ]
@@ -102,14 +82,15 @@ dependencies = [
 [[package]]
 name = "dojo_plugin"
 version = "2.10.1"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.5.1#986c3b0c6d647b23847c70ddceb1d33ddac86ead"
+source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0#c7d8b321abc711c14bddcf76f41587f6ef21c356"
 
 [[package]]
 name = "game_components_metagame"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
+source = "git+https://github.com/Provable-Games/game-components?branch=feat%2Fclaude_architectures#5cfe00493783789be6b9ca85772ada038e13446d"
 dependencies = [
- "game_components_minigame_token",
+ "game_components_minigame",
+ "game_components_token",
  "game_components_utils",
  "openzeppelin_introspection",
 ]
@@ -117,68 +98,49 @@ dependencies = [
 [[package]]
 name = "game_components_minigame"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
+source = "git+https://github.com/Provable-Games/game-components?branch=feat%2Fclaude_architectures#5cfe00493783789be6b9ca85772ada038e13446d"
 dependencies = [
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
- "game_components_minigame_token",
+ "game_components_metagame",
+ "game_components_token",
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
 ]
 
 [[package]]
-name = "game_components_minigame_objectives"
-version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
-dependencies = [
- "game_components_minigame_token",
- "openzeppelin_introspection",
-]
-
-[[package]]
-name = "game_components_minigame_settings"
-version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
-dependencies = [
- "game_components_minigame_token",
- "openzeppelin_introspection",
-]
-
-[[package]]
-name = "game_components_minigame_token"
-version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
-dependencies = [
- "game_components_minigame",
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
-]
-
-[[package]]
 name = "game_components_test_starknet"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
+source = "git+https://github.com/Provable-Games/game-components?branch=feat%2Fclaude_architectures#5cfe00493783789be6b9ca85772ada038e13446d"
 dependencies = [
  "game_components_metagame",
  "game_components_minigame",
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
- "game_components_minigame_token",
+ "game_components_token",
  "game_components_utils",
  "openzeppelin_introspection",
+ "openzeppelin_token",
+]
+
+[[package]]
+name = "game_components_token"
+version = "1.5.1"
+source = "git+https://github.com/Provable-Games/game-components?branch=feat%2Fclaude_architectures#5cfe00493783789be6b9ca85772ada038e13446d"
+dependencies = [
+ "game_components_metagame",
+ "game_components_minigame",
+ "game_components_test_starknet",
+ "game_components_utils",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
 ]
 
 [[package]]
 name = "game_components_utils"
 version = "1.5.1"
-source = "git+https://github.com/Provable-Games/game-components?branch=main#fb05353bd8ba1a996a147bf3329b35537aed2a51"
+source = "git+https://github.com/Provable-Games/game-components?branch=feat%2Fclaude_architectures#5cfe00493783789be6b9ca85772ada038e13446d"
 dependencies = [
  "alexandria_encoding",
  "game_components_metagame",
  "game_components_minigame",
- "game_components_minigame_objectives",
- "game_components_minigame_settings",
  "graffiti",
 ]
 
