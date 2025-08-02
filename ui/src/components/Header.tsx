@@ -55,6 +55,8 @@ const Header = () => {
   const isHomeScreen = location.pathname === "/";
   const isLocal = selectedChainConfig.chainId === ChainId.KATANA_LOCAL;
 
+  console.log(account);
+
   // State to control the visibility of the warning banner
   const [showWarning, setShowWarning] = useState(true);
 
@@ -220,13 +222,15 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     key="slot"
-                    active={selectedChainConfig.chainId === ChainId.WP_PG_SLOT}
+                    active={
+                      selectedChainConfig.chainId === ChainId.WP_PG_SLOT_2
+                    }
                     onClick={() => switchToSlot()}
                   >
                     <span className="[&_svg]:w-8 [&_svg]:h-8">
                       <SLOT />
                     </span>
-                    {NetworkId[ChainId.WP_PG_SLOT]}
+                    {NetworkId[ChainId.WP_PG_SLOT_2]}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -11,7 +11,7 @@ sozo build -P sepolia
 # migrate
 #
 echo ">>> Migrate"
-sozo migrate -P sepolia --fee eth
+sozo migrate -P sepolia
 echo "👍"
 
 #-----------------

@@ -12,8 +12,7 @@ export function useTournamentContracts(): ContractAddresses {
   const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
   const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
 
-  const TOURNAMENT_SYSTEM_NAME =
-    isMainnet || isSepolia ? "Budokan" : "tournament_mock";
+  const TOURNAMENT_SYSTEM_NAME = "Budokan";
 
   const tournamentAddress = useDojoSystem(
     TOURNAMENT_SYSTEM_NAME

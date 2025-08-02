@@ -46,9 +46,7 @@ function App() {
     data: minigames,
     loading: minigamesLoading,
     error: minigamesError,
-  } = useMiniGames({
-    limit: 100,
-  });
+  } = useMiniGames({});
 
   console.log(minigames);
 

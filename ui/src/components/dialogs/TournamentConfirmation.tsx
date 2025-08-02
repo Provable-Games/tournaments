@@ -144,11 +144,9 @@ const TournamentConfirmation = ({
                 <div className="flex flex-row items-center gap-2">
                   <TokenGameIcon image={getGameImage(formData.game)} />
                   <span>
-                    {feltToString(
-                      gameData.find(
-                        (game) => game.contract_address === formData.game
-                      )?.name ?? ""
-                    )}
+                    {gameData.find(
+                      (game) => game.contract_address === formData.game
+                    )?.name ?? ""}
                   </span>
                   <a
                     href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.game}`}

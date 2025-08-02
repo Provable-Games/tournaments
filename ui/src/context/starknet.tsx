@@ -64,9 +64,10 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
           return {
             nodeUrl: CHAINS[ChainId.SN_SEPOLIA].chain?.rpcUrls.default.http[0],
           };
-        case CHAINS[ChainId.WP_PG_SLOT].chain:
+        case CHAINS[ChainId.WP_PG_SLOT_2].chain:
           return {
-            nodeUrl: CHAINS[ChainId.WP_PG_SLOT].chain?.rpcUrls.default.http[0],
+            nodeUrl:
+              CHAINS[ChainId.WP_PG_SLOT_2].chain?.rpcUrls.default.http[0],
           };
         case CHAINS[ChainId.KATANA_LOCAL].chain:
           return {

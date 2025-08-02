@@ -2,7 +2,6 @@ import { VERIFIED } from "@/components/Icons";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { Button } from "@/components/ui/button";
 import { GameData } from "@/hooks/useUIStore";
-import { feltToString } from "@/lib/utils";
 
 interface GameButtonProps {
   game: GameData;
@@ -40,7 +39,7 @@ export const GameButton = ({
         disabled={isDisabled}
       >
         <TokenGameIcon image={game.image} />
-        <span className="truncate">{feltToString(game.name)}</span>
+        <span className="truncate">{game.name}</span>
       </Button>
       {comingSoon && (
         <div className="absolute top-1 right-2 flex items-center justify-center rounded-md">

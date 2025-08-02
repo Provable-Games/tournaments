@@ -28,7 +28,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { feltToString } from "@/lib/utils";
 
 const Details = ({ form }: StepProps) => {
   const { gameData } = useUIStore();
@@ -90,11 +89,11 @@ const Details = ({ form }: StepProps) => {
                           <Tooltip delayDuration={50}>
                             <TooltipTrigger asChild>
                               <p className="font-brand text-center truncate w-full 3xl:text-lg">
-                                {feltToString(game.name)}
+                                {game.name}
                               </p>
                             </TooltipTrigger>
                             <TooltipContent className="border-brand bg-black text-neutral 3xl:text-lg">
-                              {feltToString(game.name)}
+                              {game.name}
                             </TooltipContent>
                           </Tooltip>
                         </Card>

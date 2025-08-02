@@ -91,7 +91,6 @@ pub fn deploy_optimized_token_contract(
     name: Option<ByteArray>,
     symbol: Option<ByteArray>,
     base_uri: Option<ByteArray>,
-    game_address: Option<ContractAddress>,
     game_registry_address: Option<ContractAddress>,
     event_relayer_address: Option<ContractAddress>,
 ) -> (IMinigameTokenMixinDispatcher, ERC721ABIDispatcher, ISRC5Dispatcher, ContractAddress) {
@@ -117,17 +116,6 @@ pub fn deploy_optimized_token_contract(
     token_name.serialize(ref constructor_calldata);
     token_symbol.serialize(ref constructor_calldata);
     token_base_uri.serialize(ref constructor_calldata);
-
-    // Serialize game_address Option
-    match game_address {
-        Option::Some(addr) => {
-            constructor_calldata.append(0); // Some variant
-            constructor_calldata.append(addr.into());
-        },
-        Option::None => {
-            constructor_calldata.append(1); // None variant
-        },
-    }
 
     // Serialize game_registry_address Option
     match game_registry_address {
@@ -175,24 +163,9 @@ pub fn setup() -> TestContracts {
         Option::None,
         Option::None,
         Option::None,
-        Option::None,
         Option::Some(minigame_registry_dispatcher.contract_address),
         Option::None,
     );
-
-    // game_creator: ContractAddress,
-    // game_name: ByteArray,
-    // game_description: ByteArray,
-    // game_developer: ByteArray,
-    // game_publisher: ByteArray,
-    // game_genre: ByteArray,
-    // game_image: ByteArray,
-    // game_color: Option<ByteArray>,
-    // client_url: Option<ByteArray>,
-    // renderer_address: Option<ContractAddress>,
-    // settings_address: Option<ContractAddress>,
-    // objectives_address: Option<ContractAddress>,
-    // minigame_token_address: ContractAddress,
 
     // causing an ENTRYPOINT_NOT_FOUND somewhere
     minigame_init_dispatcher.initializer(

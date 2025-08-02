@@ -46,6 +46,9 @@ pub mod Budokan {
     use game_components_token::core::interface::{
         IMinigameTokenDispatcher, IMinigameTokenDispatcherTrait,
     };
+    use game_components_token::examples::minigame_registry_contract::{
+        IMinigameRegistryDispatcher, IMinigameRegistryDispatcherTrait,
+    };
 
     use openzeppelin_introspection::src5::SRC5Component;
 
@@ -1220,11 +1223,28 @@ pub mod Budokan {
                             )
                     },
                     Role::GameCreator => {
-                        // game creator is owner of token id 0 of the game contract
-                        self._get_owner(
-                            game_token_address,
-                            GAME_CREATOR_TOKEN_ID.into(),
-                        )
+                        // Check if the game token has a minigame registry
+                        let game_token_dispatcher = IMinigameTokenDispatcher {
+                            contract_address: game_token_address,
+                        };
+                        let minigame_registry_address = game_token_dispatcher.game_registry_address();
+                        let minigame_registry = IMinigameRegistryDispatcher {
+                            contract_address: minigame_registry_address,
+                        };
+                        // If it has a registry, get the owner of the game creator token
+                        if !minigame_registry_address.is_zero() {
+                            let game_id = minigame_registry.game_id_from_address(tournament.game_config.address);
+                            self._get_owner(
+                                minigame_registry_address,
+                                game_id.into(),
+                            )
+                        } else {
+                            // Otherwise, the game creator is the owner of token ID 0
+                            self._get_owner(
+                                game_token_address,
+                                GAME_CREATOR_TOKEN_ID.into(),
+                            )
+                        }
                     },
                     Role::Position(position) => {
                         let leaderboard = store.get_leaderboard(tournament_id);

@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@cartridge/connector": "^0.7.13",
-    "@cartridge/controller": "^0.7.13",
+    "@cartridge/connector": "0.9.1",
+    "@cartridge/controller": "0.9.1",
     "@cartridge/presets": "^0.5.4",
     "@dojoengine/core": "1.5.5",
     "@dojoengine/create-burner": "1.5.5",
@@ -40,7 +40,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.0.6",
     "lucide-react": "^0.469.0",
-    "metagame-sdk": "0.1.2",
+    "metagame-sdk": "0.1.9",
     "open": "^10.1.0",
     "react": "^18.3.1",
     "react-day-picker": "8.10.1",

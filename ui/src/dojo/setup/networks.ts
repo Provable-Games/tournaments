@@ -15,14 +15,14 @@ import {
 
 export enum ChainId {
   KATANA_LOCAL = "KATANA_LOCAL",
-  WP_PG_SLOT = "WP_PG_SLOT",
+  WP_PG_SLOT_2 = "WP_PG_SLOT_2",
   SN_MAIN = "SN_MAIN",
   SN_SEPOLIA = "SN_SEPOLIA",
 }
 
 export enum NetworkId {
   KATANA_LOCAL = "KATANA_LOCAL",
-  WP_PG_SLOT = "SLOT",
+  WP_PG_SLOT_2 = "SLOT",
   SN_MAIN = "MAINNET",
   SN_SEPOLIA = "SEPOLIA",
 }
@@ -98,10 +98,10 @@ const localKatanaConfig: DojoChainConfig = {
 
 const slotKatanaConfig: DojoChainConfig = {
   chain: undefined, // derive from this
-  chainId: ChainId.WP_PG_SLOT,
+  chainId: ChainId.WP_PG_SLOT_2,
   name: "PG Slot",
-  rpcUrl: "https://api.cartridge.gg/x/pg-slot/katana",
-  toriiUrl: "https://api.cartridge.gg/x/pg-slot/torii",
+  rpcUrl: "https://api.cartridge.gg/x/pg-slot-2/katana",
+  toriiUrl: "https://api.cartridge.gg/x/pg-slot-2/torii",
   toriiTokensUrl: "",
   relayUrl: undefined,
   blastRpc: undefined,
@@ -193,7 +193,7 @@ const makeDojoChainConfig = (config: DojoChainConfig): DojoChainConfig => {
 export const CHAINS: Record<ChainId, DojoChainConfig> = {
   [ChainId.SN_MAIN]: makeDojoChainConfig(snMainnetConfig),
   [ChainId.SN_SEPOLIA]: makeDojoChainConfig(snSepoliaConfig),
-  [ChainId.WP_PG_SLOT]: makeDojoChainConfig(slotKatanaConfig),
+  [ChainId.WP_PG_SLOT_2]: makeDojoChainConfig(slotKatanaConfig),
   [ChainId.KATANA_LOCAL]: makeDojoChainConfig(localKatanaConfig),
 };
 

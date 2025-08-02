@@ -1,7 +1,7 @@
 {
   "world": {
     "class_hash": "0x685ed02eefa98fe7e208aa295042e9bbad8029b0d3d6f0ba2b32546efe0a1f9",
-    "address": "0x6628f851b0e5b94246486c33d332af71922114c004732baf932a5da4dab4bb2",
+    "address": "0x3fcff8ebdff3a82dfb72246cecbffabbd22ecfe47d34ad7cb809f982ffda206",
     "seed": "budokan",
     "name": "Budokan",
     "entrypoints": [
@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x437fdc316dd5ee1c81c2d9a16437ec5075ef4f0c8109ff6c91d93753a802893",
-      "class_hash": "0x265d45542225d7bb3d1cdac0a9a19add1e238856b367f26d8a0f219dba1e9c2",
+      "address": "0xca8c5819f8fe5eb76c2f9e082344ed9bef0bb5aafaff5dbf524e3ac0b6ccd2",
+      "class_hash": "0x4abbf255177b1c61d5ff3aa83af0ad3410b62a48e7ff8b9ae16efe46484a23",
       "abi": [
         {
           "type": "impl",
@@ -2556,7 +2556,7 @@
       "init_calldata": [
         "0",
         "0",
-        "0x06f55060a64c8bcb1ac735fb5b743f75e442716b051b92801f793ae187354f65",
+        "0x01577ca1fb06c82066c78ff9088fe3d5ef639a7658bfe7edffec76df03afeedb",
         "0"
       ],
       "tag": "budokan_1_0_8-Budokan",

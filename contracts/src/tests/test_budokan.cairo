@@ -45,7 +45,9 @@ use budokan::tests::interfaces::{
     IERC721MockDispatcherTrait,
 };
 use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
-use game_components_token::interface::{IMinigameTokenMixinDispatcher};
+use game_components_token::interface::{
+    IMinigameTokenMixinDispatcher, IMinigameTokenMixinDispatcherTrait,
+};
 use game_components_metagame::interface::{IMETAGAME_ID};
 use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
     IMinigameStarknetMockDispatcher, IMinigameStarknetMockDispatcherTrait,
@@ -55,6 +57,7 @@ use budokan::tests::setup_denshokan;
 
 use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
 use openzeppelin_token::erc721::{ERC721Component::{Transfer, Approval}};
+use openzeppelin_token::erc721::interface::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 #[derive(Drop)]
 pub struct TestContracts {
@@ -1251,7 +1254,7 @@ fn enter_tournament() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Provided Token ID 2 does not match Token ID 2 at leaderboard position 1 for tournament 1",
+        "Tournament: Provided Token ID 1 does not match Token ID 1 at leaderboard position 1 for tournament 1",
         'ENTRYPOINT_FAILED',
     ),
 )]
@@ -1341,7 +1344,7 @@ fn use_host_token_to_qualify_into_tournament_gated_tournament() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Provided Token ID 4 does not match Token ID 4 at leaderboard position 1 for tournament 1",
+        "Tournament: Provided Token ID 3 does not match Token ID 3 at leaderboard position 1 for tournament 1",
         'ENTRYPOINT_FAILED',
     ),
 )]
@@ -2333,6 +2336,98 @@ fn claim_prizes_with_premium_creator_fee() {
     );
 }
 
+
+#[test]
+fn claim_prizes_with_premium_game_fee() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create entry fee with 10% creator fee and 90% to winner
+    let entry_fee = Option::Some(
+        EntryFee {
+            token_address: contracts.erc20.contract_address,
+            amount: 100, // 100 tokens per entry
+            distribution: array![90].span(), // 90% to winner
+            tournament_creator_share: Option::None,
+            game_creator_share: Option::Some(10),
+        },
+    );
+
+    let entry_requirement = Option::None;
+
+    let tournament = contracts
+        .budokan
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(contracts.minigame.contract_address),
+            entry_fee,
+            entry_requirement,
+        );
+
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // Enter tournament with two players
+    utils::impersonate(OWNER());
+    contracts.erc20.approve(contracts.budokan.contract_address, 100);
+    let (first_entry_token_id, _) = contracts
+        .budokan
+        .enter_tournament(tournament.id, "test_player1", OWNER(), Option::None);
+
+    let player2 = starknet::contract_address_const::<0x456>();
+    utils::impersonate(player2);
+    contracts.erc20.mint(player2, 100);
+    contracts.erc20.approve(contracts.budokan.contract_address, 100);
+    let (player2_game_token, _) = contracts
+        .budokan
+        .enter_tournament(tournament.id, "test_player2", player2, Option::None);
+
+    let minigame_registry_address = contracts.denshokan.game_registry_address();
+    let minigame_registry_erc721_dispatcher = IERC721Dispatcher { 
+        contract_address: minigame_registry_address,
+    };
+    let game_creator = minigame_registry_erc721_dispatcher
+        .owner_of(1);
+
+    let creator_initial_balance = contracts.erc20.balance_of(game_creator);
+
+    testing::set_block_timestamp(TEST_END_TIME().into());
+
+    // Set scores (player2 wins)
+    contracts.minigame.end_game(first_entry_token_id, 1);
+    contracts.minigame.end_game(player2_game_token, 2);
+
+    utils::impersonate(OWNER());
+
+    contracts.budokan.submit_score(tournament.id, player2_game_token, 1);
+
+    // Advance time to tournament submission period
+    testing::set_block_timestamp((TEST_END_TIME() + MIN_SUBMISSION_PERIOD).into());
+
+    // Claim gsme creator fee
+    contracts.budokan.claim_prize(tournament.id, PrizeType::EntryFees(Role::GameCreator));
+
+    // Verify game creator fee distribution (10% of 200 total = 20)
+    assert!(
+        contracts.erc20.balance_of(game_creator) == creator_initial_balance + 20, "Invalid game creator fee",
+    );
+
+    // Check initial balances
+    let winner_initial_balance = contracts.erc20.balance_of(player2);
+
+    contracts.budokan.claim_prize(tournament.id, PrizeType::EntryFees(Role::Position(1)));
+
+    // Verify winner prize distribution (90% of 200 total = 180)
+    assert!(
+        contracts.erc20.balance_of(player2) == winner_initial_balance + 180,
+        "Invalid winner distribution, expected: {}, actual: {}",
+        winner_initial_balance + 180,
+        contracts.erc20.balance_of(player2),
+    );
+}
+
 #[test]
 fn claim_prizes_with_premium_multiple_winners() {
     let contracts = setup();
@@ -2674,7 +2769,7 @@ fn malicious_score_submission() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Tie goes to game with lower id. Submitted game id 4 is higher than current game id 3",
+        "Tournament: Tie goes to game with lower id. Submitted game id 3 is higher than current game id 2",
         'ENTRYPOINT_FAILED',
     ),
 )]
@@ -2820,7 +2915,7 @@ fn test_submit_score_tie_higher_game_id_for_lower_position() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: For equal scores, game id 3 should be higher than game id above 4",
+        "Tournament: For equal scores, game id 2 should be higher than game id above 3",
         'ENTRYPOINT_FAILED',
     ),
 )]

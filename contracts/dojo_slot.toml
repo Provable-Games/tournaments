@@ -7,10 +7,10 @@ seed = "budokan"
 default = "budokan_1_0_8"
 
 [env]
-rpc_url = "https://api.cartridge.gg/x/game-components/katana"
+rpc_url = "https://api.cartridge.gg/x/pg-slot-2/katana"
 account_address = "0x127fd5f1fe78a71f8bcd1fec63e3fe2f0486b6ecd5c86a0466c3a21fa5cfcec"
 private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
-# world_address = "0x04254b770ec69289dae26a6b488cc75689b3765171423cae8d648323ae4de44a"
+world_address = "0x3fcff8ebdff3a82dfb72246cecbffabbd22ecfe47d34ad7cb809f982ffda206"
 
 [writers]
 # Tournament
@@ -20,7 +20,7 @@ private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 "budokan_1_0_8-Budokan" = [
     "0", # safe_mode
     "0", # test_mode
-    "0x06f55060a64c8bcb1ac735fb5b743f75e442716b051b92801f793ae187354f65", # denshokan address
+    "0x01577ca1fb06c82066c78ff9088fe3d5ef639a7658bfe7edffec76df03afeedb", # denshokan address
     "0", # array length
     # "0x0", # token address
     # "0", # token type

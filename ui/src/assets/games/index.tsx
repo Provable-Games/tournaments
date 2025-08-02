@@ -94,35 +94,35 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x0035389eec883a077ca4cc036cbe17fc802d297a08e8d7e930781de9ed492d05",
-        name: "0x4c6f6f74205375727669766f72",
+        name: "Loot Survivor",
         image: "https://lootsurvivor.io/favicon-32x32.png",
         url: "https://lootsurvivor.io",
       },
       {
         contract_address:
           "0x075bd3616602ebec162c920492e4d032155fd0d199f1ed44edcb2eec120feb3d",
-        name: "0x4461726b2053687566666c65",
+        name: "Dark Shuffle",
         image: "https://darkshuffle.io/favicon.svg",
         url: "https://darkshuffle.io",
       },
       {
         contract_address:
           "0x075bd3616602ebec142c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
-        name: "0x7a4b756265",
+        name: "zKube",
         image: "https://zkube.io/favicon.svg",
         url: "https://zkube.io",
       },
       {
         contract_address:
           "0x075bd3616652ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
-        name: "0x446f70652057617273",
+        name: "Dope Wars",
         image: "https://dopewars.gg/favicon.ico",
         url: "https://dopewars.gg",
       },
       {
         contract_address:
           "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
-        name: "0x4a6f6b657273204f66204e656f6e",
+        name: "Jokers of Neon",
         image: "https://jokersofneon.com/icon.png",
         url: "https://jokersofneon.com",
       },
