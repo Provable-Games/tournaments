@@ -6,7 +6,9 @@ seed = "DNC"
 
 [env]
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
-world_address = "0x3fcff8ebdff3a82dfb72246cecbffabbd22ecfe47d34ad7cb809f982ffda206"
+world_address = "0x38f6eb0186dfd1e072fa3b289b88e1c67b0baf1bd76cc6987f4a93258c69c4d"
+account_address = "0x065d2AB17338b5AffdEbAF95E2D79834B5f30Bac596fF55563c62C3c98700150"
+private_key = "0x0625adf89082edbffac775d64e9a5bba11483f6ef97c0925fb0433cb79d88581"
 
 [namespace]
 default = "budokan_1_0_8"
@@ -18,10 +20,6 @@ default = "budokan_1_0_8"
 "budokan_1_0_8-Budokan" = [
     "0", # safe_mode
     "0", # test_mode
-    "0x0466f3c79b045ade0bd19a4dc2835c1cf9af7bea0166a6c1df9e9ad73dbf4cb6", # denshokan address
-    "2", # array length
-    "0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7", # token address
-    "0", # token type
-    "0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D", # token address
-    "0", # token type
+    "0x01fd7f186c0bb99f8d128f1eb40dbe3c7657df381957417f8c9a40804c005545", # denshokan address
+    "0", # array length - ON SEPOLIA ALL TOKENS ARE REGISTERED
 ]

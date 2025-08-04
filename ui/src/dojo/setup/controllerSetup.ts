@@ -44,10 +44,7 @@ export const initializeController = (
     preset: "budokan",
     slot: "pg-mainnet-tokens",
     tokens: {
-      erc20: [
-        "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
-        "0x0264be95a4a2ace20add68cb321acdccd2f9f8440ee1c7abd85da44ddab01085",
-      ],
+      erc20: ["eth", "strk", "lords", "usdc", "usdt"],
     },
     policies,
   }) as never as Connector;

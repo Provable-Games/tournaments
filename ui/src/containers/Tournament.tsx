@@ -8,7 +8,6 @@ import {
   SPACE_INVADER_SOLID,
 } from "@/components/Icons";
 import { useNavigate, useParams } from "react-router-dom";
-import EntrantsTable from "@/components/tournament/table/EntrantsTable";
 import TournamentTimeline from "@/components/TournamentTimeline";
 import {
   bigintToHex,
@@ -132,7 +131,7 @@ const Tournament = () => {
 
   const tournamentModel = state.getEntity(tournamentEntityId)?.models[namespace]
     ?.Tournament as TournamentModel;
-    
+
   const entryCountModel = useModel(
     tournamentEntityId,
     getModelsMapping(namespace).EntryCount
@@ -446,7 +445,7 @@ const Tournament = () => {
               sideOffset={5}
               className="bg-black text-neutral border border-brand-muted px-2 py-1 rounded text-sm z-50"
             >
-              {gameName ? feltToString(gameName) : "Unknown"}
+              {gameName ? gameName : "Unknown"}
             </TooltipContent>
           </Tooltip>
           <EntryRequirements
@@ -688,27 +687,13 @@ const Tournament = () => {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-5">
-            {!isStarted ? (
-              <EntrantsTable
-                tournamentId={tournamentModel?.id}
-                entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
-                gameAddress={tournamentModel?.game_config?.address}
-                gameNamespace={gameNamespace ?? ""}
-              />
-            ) : isStarted ? (
-              <ScoreTable
-                tournamentId={tournamentModel?.id}
-                entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
-                gameAddress={tournamentModel?.game_config?.address}
-                gameNamespace={gameNamespace ?? ""}
-                gameScoreModel={gameScoreModel ?? ""}
-                gameScoreAttribute={gameScoreAttribute ?? ""}
-                isEnded={isEnded}
-                leaderboardModel={leaderboardModel}
-              />
-            ) : (
-              <></>
-            )}
+            <ScoreTable
+              tournamentId={tournamentModel?.id}
+              entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
+              gameAddress={tournamentModel?.game_config?.address}
+              isStarted={isStarted}
+              isEnded={isEnded}
+            />
             <MyEntries
               tournamentId={tournamentModel?.id}
               gameAddress={tournamentModel?.game_config?.address}

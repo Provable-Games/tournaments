@@ -70,7 +70,7 @@ export const useSystemCalls = () => {
     tournamentId: BigNumberish,
     tournamentName: string,
     tournamentModel: Tournament,
-    player_name: BigNumberish,
+    player_name: ByteArray,
     player_address: BigNumberish,
     qualification: CairoOption<QualificationProofEnum>,
     duration: number,
@@ -243,14 +243,6 @@ export const useSystemCalls = () => {
   ) => {
     const executableTournament = prepareForExecution(tournament);
     const game = getGameName(tournament.game_config.address);
-    console.log(
-      address!,
-      executableTournament.metadata,
-      executableTournament.schedule,
-      executableTournament.game_config,
-      executableTournament.entry_fee,
-      executableTournament.entry_requirement
-    );
     try {
       let calls = [];
       const createCall = {
@@ -314,11 +306,7 @@ export const useSystemCalls = () => {
         calls.push(addPrizesCall);
       }
 
-      console.log(calls);
-
       const tx = await account?.execute(calls);
-
-      console.log("Transaction executed:", tx);
 
       await waitForTournamentCreation(Number(tournament.id));
 

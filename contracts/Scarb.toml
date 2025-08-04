@@ -8,6 +8,7 @@ edition = "2024_07"
 
 [[target.starknet-contract]]
 sierra = true
+casm = true
 build-external-contracts = [
     "dojo::world::world_contract::world",
     "game_components_test_starknet::minigame::mocks::minigame_starknet_mock::minigame_starknet_mock",

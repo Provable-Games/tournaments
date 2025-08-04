@@ -98,6 +98,12 @@ export const useGetTournamentQuery = (
               "Eq",
               addAddressPadding(tournamentId)
             ),
+            MemberClause(
+              getModelsMapping(namespace).Registration,
+              "tournament_id",
+              "Eq",
+              addAddressPadding(tournamentId)
+            ),
           ]).build()
         )
         .withEntityModels([
@@ -106,6 +112,7 @@ export const useGetTournamentQuery = (
           getModelsMapping(namespace).Prize,
           getModelsMapping(namespace).PrizeClaim,
           getModelsMapping(namespace).Leaderboard,
+          getModelsMapping(namespace).Registration,
         ])
         .includeHashedKeys(),
     [tournamentId, namespace]

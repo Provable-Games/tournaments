@@ -172,44 +172,40 @@ export const useGetMyTournamentsCount = ({
   namespace,
   address,
   gameAddresses,
+  tokenIds,
   fromTournamentId,
 }: {
   namespace: string;
   address: string;
   gameAddresses: string[];
+  tokenIds: string[];
   fromTournamentId?: string;
 }) => {
+  const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
   const query = useMemo(
     () => `
-    WITH account_tokens AS (
-      SELECT 
-        token_id,
-        '0x' || substr('000000000000000000000000' || substr(substr(token_id, 1, instr(token_id, ':') - 1), 3), -64) as parsed_game_address,
-        substr(token_id, instr(token_id, ':') + 1) as parsed_token_id
-      FROM token_balances
-      WHERE account_address = "${address}" 
-        AND contract_address IN (${gameAddresses
-          .map((addr) => `"${addr}"`)
-          .join(",")})
-    ),
-    registered_tournaments AS (
-      SELECT DISTINCT r.tournament_id, a.parsed_game_address
+    WITH registered_tournaments AS (
+      SELECT DISTINCT r.tournament_id
       FROM '${namespace}-Registration' r
-      JOIN account_tokens a ON r.game_token_id = a.parsed_token_id
+      WHERE r.game_address IN (${gameAddresses
+        .map((addr) => `"${addr}"`)
+        .join(",")}) AND r.game_token_id IN (${tokenIds
+      .map((id) => `"${id}"`)
+      .join(",")})
     ),
     filtered_tournaments AS (
       SELECT rt.tournament_id
       FROM registered_tournaments rt
       JOIN '${namespace}-Tournament' t 
         ON rt.tournament_id = t.id
-          AND rt.parsed_game_address = t.'game_config.address'
           ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
     )
     SELECT COUNT(DISTINCT tournament_id) as count
     FROM filtered_tournaments
   `,
-    [namespace, address, gameAddresses, fromTournamentId]
+    [namespace, address, gameAddresses, tokenIdsKey, fromTournamentId]
   );
+  console.log(query);
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
 };
@@ -372,6 +368,7 @@ export const useGetMyTournaments = ({
   namespace,
   address,
   gameAddresses,
+  tokenIds,
   gameFilters,
   fromTournamentId,
   active = false,
@@ -382,6 +379,7 @@ export const useGetMyTournaments = ({
   namespace: string;
   address: string | null;
   gameAddresses: string[];
+  tokenIds: string[];
   gameFilters: string[];
   fromTournamentId?: string;
   active?: boolean;
@@ -393,6 +391,7 @@ export const useGetMyTournaments = ({
     () => JSON.stringify(gameAddresses),
     [gameAddresses]
   );
+  const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
   const gameFiltersKey = useMemo(
     () => JSON.stringify(gameFilters),
     [gameFilters]
@@ -401,21 +400,14 @@ export const useGetMyTournaments = ({
     () =>
       address && active
         ? `
-    WITH account_tokens AS (
-      SELECT 
-        token_id,
-        '0x' || substr('000000000000000000000000' || substr(substr(token_id, 1, instr(token_id, ':') - 1), 3), -64) as parsed_game_address,
-        substr(token_id, instr(token_id, ':') + 1) as parsed_token_id
-      FROM token_balances
-      WHERE account_address = "${address}" 
-        AND contract_address IN (${gameAddresses
-          .map((addr) => `"${addr}"`)
-          .join(",")})
-    ),
-    registered_tournaments AS (
-      SELECT DISTINCT r.tournament_id, a.parsed_game_address
+    WITH registered_tournaments AS (
+      SELECT DISTINCT r.tournament_id
       FROM '${namespace}-Registration' r
-      JOIN account_tokens a ON r.game_token_id = a.parsed_token_id
+      WHERE r.game_address IN (${gameAddresses
+        .map((addr) => `"${addr}"`)
+        .join(",")}) AND r.game_token_id IN (${tokenIds
+            .map((id) => `"${id}"`)
+            .join(",")})
     )
     SELECT 
       t.*,
@@ -445,7 +437,6 @@ export const useGetMyTournaments = ({
     FROM registered_tournaments rt
     JOIN '${namespace}-Tournament' t 
       ON rt.tournament_id = t.id
-        AND rt.parsed_game_address = t.'game_config.address'
     LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
     LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
     WHERE 1=1
@@ -467,6 +458,7 @@ export const useGetMyTournaments = ({
       namespace,
       address,
       gameAddressesKey,
+      tokenIdsKey,
       gameFiltersKey,
       fromTournamentId,
       sortBy,
@@ -475,6 +467,7 @@ export const useGetMyTournaments = ({
       active,
     ]
   );
+  console.log(query);
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data, loading, error, refetch };
 };

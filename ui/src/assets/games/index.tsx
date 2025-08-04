@@ -7,12 +7,19 @@ export interface Game {
   image: string;
   url: string;
   controllerOnly?: boolean;
+  playUrl?: string;
 }
 
 export const getGameUrl = (gameAddress: string): string => {
   const games = getGames();
   const game = games.find((game) => game.contract_address === gameAddress);
   return game?.url || "";
+};
+
+export const getPlayUrl = (gameAddress: string): string => {
+  const games = getGames();
+  const game = games.find((game) => game.contract_address === gameAddress);
+  return game?.playUrl || "";
 };
 
 export const getGameName = (gameAddress: string): string => {
@@ -48,9 +55,18 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x04359aee29873cd9603207d29b4140468bac3e042aa10daab2e1a8b2dd60ef7b",
-        name: "0x4461726b2053687566666c65",
+        name: "Dark Shuffle",
         image: "https://darkshuffle.dev/favicon.svg",
         url: "https://darkshuffle.dev",
+        controllerOnly: true,
+      },
+      {
+        contract_address:
+          "0x04dc9a55b49fea275851b31df48af9fadcc6512b486f04a4034cfdc5afbea02f",
+        name: "Death Mountain",
+        image: "https://darkshuffle.dev/favicon.svg",
+        url: "https://lootsurvivor.io",
+        playUrl: "https://lootsurvivor.io/survivor/play?id=",
         controllerOnly: true,
       },
     ];
@@ -59,7 +75,7 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x01e1c477f2ef896fd638b50caa31e3aa8f504d5c6cb3c09c99cd0b72523f07f7",
-        name: "0x4461726b2053687566666c65",
+        name: "Dark Shuffle",
         image: "https://darkshuffle.io/favicon.svg",
         url: "https://darkshuffle.io",
         controllerOnly: true,
@@ -67,7 +83,7 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x072e1affe9a2d0a1852238073bc2f81e059ad7ab500e788046ac2f0b89b0c94a",
-        name: "0x4c6f6f74205375727669766f72",
+        name: "Death Mountain",
         image: "https://lootsurvivor.io/favicon-32x32.png",
         url: "https://lootsurvivor.io",
         controllerOnly: true,
@@ -75,7 +91,7 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
-        name: "0x4a6f6b657273204f66204e656f6e",
+        name: "Jokers Of Neon",
         image: "https://jokersofneon.com/icon.png",
         url: "https://jokersofneon.com",
         controllerOnly: true,
@@ -83,7 +99,7 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x04fd5df500e6c6615e4423258639f189455672bc841ba58f1c781ac7c5ff4bd8",
-        name: "0x7a4b756265",
+        name: "zKube",
         image: "https://app.zkube.xyz/assets/pwa-512x512.png",
         url: "https://app.zkube.xyz/",
         controllerOnly: true,

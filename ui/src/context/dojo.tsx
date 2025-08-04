@@ -40,6 +40,8 @@ export const DojoContextProvider = ({ children }: { children: ReactNode }) => {
   const currentValue = useContext(DojoContext);
   const { chain } = useNetwork();
 
+  console.log(chain);
+
   if (currentValue) {
     throw new Error("DojoProvider can only be used once");
   }
@@ -70,7 +72,6 @@ export const DojoContextProvider = ({ children }: { children: ReactNode }) => {
     init<SchemaType>({
       client: {
         toriiUrl: selectedChainConfig.toriiUrl!,
-        relayUrl: selectedChainConfig.relayUrl ?? "",
         worldAddress: manifest.world.address ?? "",
       },
       domain: {

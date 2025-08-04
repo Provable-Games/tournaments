@@ -71,6 +71,7 @@ export type DojoChainConfig = {
   testnet?: boolean;
   nativeCurrency?: NativeCurrency;
   explorers?: ChainExplorers;
+  denshokanAddress?: string;
 };
 
 const localKatanaConfig: DojoChainConfig = {
@@ -124,7 +125,7 @@ const snSepoliaConfig: DojoChainConfig = {
   chainId: ChainId.SN_SEPOLIA,
   name: "Starknet Sepolia",
   rpcUrl: "https://api.cartridge.gg/x/starknet/sepolia",
-  toriiUrl: "https://api.cartridge.gg/x/budokan-sepolia/torii",
+  toriiUrl: "https://api.cartridge.gg/x/pg-sepolia-2/torii",
   toriiTokensUrl: "",
   relayUrl: undefined,
   blastRpc: undefined,
@@ -137,6 +138,8 @@ const snSepoliaConfig: DojoChainConfig = {
   accountClassHash: undefined,
   ethAddress: sepolia.nativeCurrency.address,
   connectorIds: [supportedConnectorIds.CONTROLLER],
+  denshokanAddress:
+    "0x1fd7f186c0bb99f8d128f1eb40dbe3c7657df381957417f8c9a40804c005545",
 };
 
 const snMainnetConfig: DojoChainConfig = {
@@ -174,6 +177,10 @@ const makeDojoChainConfig = (config: DojoChainConfig): DojoChainConfig => {
       testnet: chain.testnet ?? true,
       nativeCurrency: chain.nativeCurrency,
       rpcUrls: {
+        default: { http: [] },
+        public: { http: [] },
+      },
+      paymasterRpcUrls: {
         default: { http: [] },
         public: { http: [] },
       },

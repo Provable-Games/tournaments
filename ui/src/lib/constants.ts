@@ -1,6 +1,7 @@
 import { ETH, LORDS } from "@/components/Icons";
 
-export const TOURNAMENT_VERSION_KEY: string = "0x302e302e31";
+export const TOURNAMENT_VERSION_KEY: string =
+  "0x000000000000000000000000000000000000000000000000000000302e302e31";
 
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;

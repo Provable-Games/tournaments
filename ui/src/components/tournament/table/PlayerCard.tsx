@@ -1,20 +1,16 @@
 import { displayAddress } from "@/lib/utils";
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { feltToString } from "@/lib/utils";
 import { VERIFIED, QUESTION } from "@/components/Icons";
 
 export const PlayerDetails = ({
   playerName,
-  ownerAddress,
-  usernames,
+  username,
   metadata,
   isEnded,
   hasSubmitted,
 }: {
   playerName: string;
-  ownerAddress: string;
-  usernames: Map<string, string> | undefined;
+  username: string;
   metadata: string;
   isEnded: boolean;
   hasSubmitted: boolean;
@@ -24,14 +20,11 @@ export const PlayerDetails = ({
       <div className="flex flex-col gap-2 px-4">
         <div className="flex flex-row gap-2">
           <span className="text-brand-muted">Player Name:</span>
-          <span className="truncate">{feltToString(playerName)}</span>
+          <span className="truncate">{playerName}</span>
         </div>
         <div className="flex flex-row gap-2">
           <span className="text-brand-muted">Owner:</span>
-          <span>
-            {usernames?.get(ownerAddress) ||
-              displayAddress(ownerAddress ?? "0x0")}
-          </span>
+          <span>{username}</span>
         </div>
       </div>
       <div className="w-full h-0.5 bg-brand/50" />
@@ -71,6 +64,10 @@ export const MobilePlayerCard = ({
   ownerAddress: string;
   isEnded: boolean;
 }) => {
+  const username =
+    usernames?.get(ownerAddress ?? "0x0") ||
+    displayAddress(ownerAddress ?? "0x0");
+  console.log("selectedPlayer", selectedPlayer);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:hidden">
@@ -80,12 +77,11 @@ export const MobilePlayerCard = ({
 
         {selectedPlayer && (
           <PlayerDetails
-            playerName={selectedPlayer.registration?.player_name}
-            ownerAddress={ownerAddress}
-            usernames={usernames}
-            metadata={selectedPlayer.registration?.metadata}
+            playerName={selectedPlayer.game?.player_name}
+            username={username}
+            metadata={selectedPlayer.game?.metadata}
             isEnded={isEnded}
-            hasSubmitted={selectedPlayer.registration?.has_submitted}
+            hasSubmitted={selectedPlayer.game?.has_submitted}
           />
         )}
       </DialogContent>

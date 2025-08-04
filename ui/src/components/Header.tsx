@@ -56,6 +56,7 @@ const Header = () => {
   const isLocal = selectedChainConfig.chainId === ChainId.KATANA_LOCAL;
 
   console.log(account);
+  console.log("Selected Chain Config:", selectedChainConfig);
 
   // State to control the visibility of the warning banner
   const [showWarning, setShowWarning] = useState(true);

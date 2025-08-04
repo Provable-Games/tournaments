@@ -4,19 +4,23 @@ import { useEffect } from "react";
 
 interface PaginationProps {
   currentPage: number;
-  setCurrentPage: (page: number) => void;
   totalPages: number;
+  nextPage: () => void;
+  previousPage: () => void;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  goToPage: (page: number) => void;
 }
 
 const Pagination = ({
   currentPage,
-  setCurrentPage,
   totalPages,
+  nextPage,
+  previousPage,
+  hasNextPage,
+  hasPreviousPage,
+  goToPage,
 }: PaginationProps) => {
-  const handleClick = (page: number) => {
-    setCurrentPage(page);
-  };
-
   const renderPageNumbers = () => {
     const pages: (number | string)[] = [];
 
@@ -59,8 +63,8 @@ const Pagination = ({
         <Button
           key={`page-${page}`}
           size={"xs"}
-          variant={currentPage === page ? "default" : "outline"}
-          onClick={() => handleClick(page as number)}
+          variant={currentPage + 1 === page ? "default" : "outline"}
+          onClick={() => goToPage(page as number)}
           className="justify-center shrink-0"
         >
           {page}
@@ -69,16 +73,16 @@ const Pagination = ({
     });
   };
 
-  // Add a useEffect to handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      // Force re-render when window is resized
-      setCurrentPage(currentPage);
-    };
+  // // Add a useEffect to handle window resize
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     // Force re-render when window is resized
+  //     setCurrentPage(currentPage);
+  //   };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [currentPage, setCurrentPage]);
+  //   window.addEventListener("resize", handleResize);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, [currentPage, setCurrentPage]);
 
   return (
     <div
@@ -90,8 +94,8 @@ const Pagination = ({
       <Button
         size={"xs"}
         variant={"outline"}
-        onClick={() => currentPage > 1 && handleClick(currentPage - 1)}
-        disabled={currentPage === 1}
+        onClick={() => previousPage()}
+        disabled={!hasPreviousPage}
         className="shrink-0"
       >
         <WEDGE_LEFT />
@@ -104,8 +108,8 @@ const Pagination = ({
       <Button
         size={"xs"}
         variant={"outline"}
-        onClick={() => currentPage < totalPages && handleClick(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        onClick={() => nextPage()}
+        disabled={!hasNextPage}
         className="shrink-0"
       >
         <WEDGE_RIGHT />

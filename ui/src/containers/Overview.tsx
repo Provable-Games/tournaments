@@ -20,11 +20,13 @@ import {
   useGetMyTournaments,
   useGetMyTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
+import { useGameTokens } from "metagame-sdk";
 import {
   bigintToHex,
   feltToString,
   indexAddress,
   stringToFelt,
+  padAddress,
 } from "@/lib/utils";
 import { addAddressPadding } from "starknet";
 import { useDojo } from "@/context/dojo";
@@ -39,6 +41,7 @@ import { SchemaType } from "@/generated/models.gen";
 import useTournamentStore, { TournamentTab } from "@/hooks/tournamentStore";
 import { STARTING_TOURNAMENT_ID } from "@/lib/constants";
 import { LoadingSpinner } from "@/components/ui/spinner";
+import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 
 const SORT_OPTIONS = {
   upcoming: [
@@ -61,7 +64,7 @@ const SORT_OPTIONS = {
 } as const;
 
 const Overview = () => {
-  const { namespace } = useDojo();
+  const { namespace, selectedChainConfig } = useDojo();
   const { address } = useAccount();
   const { chain } = useNetwork();
   const {
@@ -89,6 +92,8 @@ const Overview = () => {
     setIsLoading,
     processTournamentsFromRaw,
   } = useTournamentStore();
+
+  const { tournamentAddress } = useTournamentContracts();
 
   useEffect(() => {
     if (chain) {
@@ -154,13 +159,25 @@ const Overview = () => {
   }, [address]);
 
   const gameAddresses = useMemo(() => {
-    return gameData?.map((game) => indexAddress(game.contract_address));
+    return gameData?.map((game) => padAddress(game.contract_address));
   }, [gameData]);
+
+  const { data: gameTokens } = useGameTokens({
+    mintedByAddress: padAddress(tournamentAddress),
+    owner: address,
+  });
+
+  const gameTokenIds = useMemo(() => {
+    return gameTokens?.map((game) =>
+      addAddressPadding(game.token_id.toString(16))
+    );
+  }, [gameTokens]);
 
   const { data: myTournamentsCount } = useGetMyTournamentsCount({
     namespace: namespace,
     address: queryAddress ?? "",
     gameAddresses: gameAddresses ?? [],
+    tokenIds: gameTokenIds,
     fromTournamentId: fromTournamentId,
   });
 
@@ -260,7 +277,8 @@ const Overview = () => {
     useGetMyTournaments({
       namespace: namespace,
       address: queryAddress,
-      gameAddresses: gameAddresses ?? [],
+      gameAddresses: gameAddresses,
+      tokenIds: gameTokenIds,
       gameFilters: gameFilters,
       limit: 12,
       offset: currentPage * 12,
@@ -268,6 +286,9 @@ const Overview = () => {
       sortBy: currentSortBy,
       fromTournamentId: fromTournamentId,
     });
+
+  console.log(gameTokens);
+  console.log(myTournaments);
 
   // Process and store tournaments when data is loaded
   useEffect(() => {

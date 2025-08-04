@@ -19,8 +19,6 @@ pub mod Budokan {
         ScheduleTrait, ScheduleImpl, ScheduleAssertionsTrait, ScheduleAssertionsImpl,
     };
 
-    // use dojo::contract::components::world_provider::{IWorldProvider};
-
     use openzeppelin_introspection::interface::{ISRC5Dispatcher, ISRC5DispatcherTrait};
     use openzeppelin_token::erc20::interface::{
         IERC20Dispatcher, IERC20DispatcherTrait, IERC20MetadataDispatcher,
@@ -166,8 +164,6 @@ pub mod Budokan {
                 },
             ]
                 .span();
-            // let context = array![GameContext { name: "Tournament ID", value: format!("{}", 0) }]
-            //     .span();
             GameContextDetails {
                 name: "Budokan", description: "The onchain tournament system", id: Option::Some(registration.tournament_id.try_into().unwrap()), context: context,
             }
@@ -297,7 +293,6 @@ pub mod Budokan {
             let tournament_id = tournament_metrics.total_tournaments + 1;
 
             let empty_objective_ids: Span<u32> = array![].span();
-            let context = self._create_context(tournament_id);
 
             // mint a game to the tournament creator for reward distribution
             let creator_token_id = self
@@ -308,7 +303,7 @@ pub mod Budokan {
                     Option::Some(schedule.game.start),
                     Option::Some(schedule.game.end),
                     Option::Some(empty_objective_ids),
-                    Option::Some(context),
+                    Option::None, // creator token, so we don't want to give it context
                     Option::None, // client_url
                     Option::None, // renderer_address
                     creator_rewards_address,
@@ -619,12 +614,12 @@ pub mod Budokan {
         #[inline(always)]
         fn _assert_valid_game_config(ref self: ContractState, game_config: GameConfig) {
             let contract_address = game_config.address;
+            let src5_dispatcher = ISRC5Dispatcher { contract_address };
+            self._assert_supports_game_interface(src5_dispatcher, contract_address);
 
             self._assert_winners_count_greater_than_zero(game_config.prize_spots);
             self._assert_settings_exists(contract_address, game_config.settings_id);
 
-            let src5_dispatcher = ISRC5Dispatcher { contract_address };
-            self._assert_supports_game_interface(src5_dispatcher, contract_address);
             self.metagame.assert_game_registered(contract_address);
         }
 
@@ -695,7 +690,9 @@ pub mod Budokan {
 
         #[inline(always)]
         fn _assert_settings_exists(self: @ContractState, game: ContractAddress, settings_id: u32) {
-            let settings_dispatcher = IMinigameSettingsDispatcher { contract_address: game };
+            let minigame_dispatcher = IMinigameDispatcher { contract_address: game };
+            let settings_address = minigame_dispatcher.settings_address();
+            let settings_dispatcher = IMinigameSettingsDispatcher { contract_address: settings_address };
             let settings_exist = settings_dispatcher.settings_exist(settings_id);
             let game_address: felt252 = game.into();
             assert!(
@@ -1105,7 +1102,7 @@ pub mod Budokan {
                     start,
                     end,
                     objective_ids,
-                    Option::None, // no context for non-denshokan games
+                    context,
                     client_url,
                     renderer_address,
                     to,

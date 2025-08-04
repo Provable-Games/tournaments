@@ -18,7 +18,7 @@ import {
   formatNumber,
   displayAddress,
 } from "@/lib/utils";
-import { addAddressPadding, BigNumberish } from "starknet";
+import { addAddressPadding, BigNumberish, byteArray } from "starknet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
@@ -109,7 +109,7 @@ export function EnterTournamentDialog({
         feltToString(tournamentModel?.metadata.name),
         tournamentModel,
         // (Number(entryCountModel?.count) ?? 0) + 1,
-        stringToFelt(playerName.trim()),
+        byteArray.byteArrayFromString(playerName.trim()),
         addAddressPadding(address!),
         qualificationProof,
         // gameCount
