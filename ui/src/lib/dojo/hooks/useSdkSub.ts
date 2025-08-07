@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { BigNumberish } from "starknet";
-import { SubscriptionQueryType, ParsedEntity } from "@dojoengine/sdk";
+import { ParsedEntity } from "@dojoengine/sdk";
 import { useDojo } from "@/context/dojo";
 import { SchemaType } from "@/generated/models.gen";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
-
-export type TournamentSubQuery = SubscriptionQueryType<SchemaType>;
 
 export type EntityResult = {
   entityId: BigNumberish;

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { BigNumberish } from "starknet";
-import { QueryType, ParsedEntity } from "@dojoengine/sdk";
+import { ParsedEntity } from "@dojoengine/sdk";
 import { useDojo } from "@/context/dojo";
 import { SchemaType } from "@/generated/models.gen";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useNetwork } from "@starknet-react/core";
-
-export type TournamentGetQuery = QueryType<SchemaType>;
 
 export type EntityResult<N extends string = string> = {
   entityId: BigNumberish;

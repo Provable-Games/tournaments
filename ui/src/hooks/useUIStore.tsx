@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { GameMetadata } from "metagame-sdk";
 import { TabType } from "@/components/overview/TournamentTabs";
-import { feltToString } from "@/lib/utils";
 
 export interface GameData extends GameMetadata {
   isWhitelisted: boolean;

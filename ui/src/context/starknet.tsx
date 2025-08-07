@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Chain, mainnet, sepolia } from "@starknet-react/chains";
+import { Chain } from "@starknet-react/chains";
 import {
   jsonRpcProvider,
   StarknetConfig,

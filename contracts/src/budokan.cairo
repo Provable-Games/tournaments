@@ -40,7 +40,6 @@ pub mod Budokan {
     use game_components_metagame::metagame::MetagameComponent;
     use game_components_metagame::extensions::context::interface::IMetagameContext;
     use game_components_metagame::extensions::context::context::ContextComponent;
-    use game_components_utils::json::create_context_json;
     use game_components_token::core::interface::{
         IMinigameTokenDispatcher, IMinigameTokenDispatcherTrait,
     };
@@ -288,9 +287,6 @@ pub mod Budokan {
             if let Option::Some(entry_requirement) = entry_requirement {
                 self._assert_valid_entry_requirement(store, entry_requirement);
             }
-
-            let tournament_metrics = store.get_platform_metrics();
-            let tournament_id = tournament_metrics.total_tournaments + 1;
 
             let empty_objective_ids: Span<u32> = array![].span();
 

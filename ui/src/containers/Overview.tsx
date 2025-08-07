@@ -23,7 +23,6 @@ import {
 import { useGameTokens } from "metagame-sdk";
 import {
   bigintToHex,
-  feltToString,
   indexAddress,
   stringToFelt,
   padAddress,
@@ -64,7 +63,7 @@ const SORT_OPTIONS = {
 } as const;
 
 const Overview = () => {
-  const { namespace, selectedChainConfig } = useDojo();
+  const { namespace } = useDojo();
   const { address } = useAccount();
   const { chain } = useNetwork();
   const {
@@ -534,11 +533,11 @@ const Overview = () => {
                   >
                     <GameIcon image={getGameImage(filter)} />
                     <span className="text-lg 2xl:text-2xl font-brand">
-                      {feltToString(
+                      {
                         gameData.find(
                           (game) => game.contract_address === filter
                         )?.name!
-                      )}
+                      }
                     </span>
                     <span
                       className="w-4 h-4 sm:w-6 sm:h-6 text-brand-muted cursor-pointer"

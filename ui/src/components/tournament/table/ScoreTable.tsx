@@ -15,7 +15,6 @@ import {
 } from "@/components/tournament/containers/TournamentCard";
 import ScoreRow from "@/components/tournament/table/ScoreRow";
 import EntrantRow from "@/components/tournament/table/EntrantRow";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { padAddress } from "@/lib/utils";
 
@@ -43,7 +42,6 @@ const ScoreTable = ({
     games,
     pagination: {
       currentPage,
-      totalPages,
       hasNextPage,
       hasPreviousPage,
       goToPage,
@@ -54,7 +52,7 @@ const ScoreTable = ({
     context: {
       name: "Budokan",
       attributes: {
-        "Tournament ID": tournamentId.toString(),
+        "Tournament ID": tournamentId?.toString() ?? "0",
       },
     },
     pagination: {
@@ -65,18 +63,11 @@ const ScoreTable = ({
     minted_by_address: padAddress(tournamentAddress),
   });
 
-  console.log("Subscribed Games:", games);
-
-  const state = useDojoStore((state) => state);
-  console.log(state);
-
   const ownerAddresses = useMemo(
     () => games?.map((game) => game?.owner ?? "0x0"),
     [games]
   );
   const { usernames } = useGetUsernames(ownerAddresses ?? []);
-
-  console.log(currentPage);
 
   return (
     <TournamentCard showCard={showScores}>

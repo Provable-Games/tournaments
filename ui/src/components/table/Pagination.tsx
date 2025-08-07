@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { WEDGE_LEFT, WEDGE_RIGHT } from "@/components/Icons";
-import { useEffect } from "react";
 
 interface PaginationProps {
   currentPage: number;

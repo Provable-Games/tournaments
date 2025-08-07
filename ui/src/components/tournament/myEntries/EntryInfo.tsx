@@ -1,5 +1,6 @@
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { Tournament } from "@/generated/models.gen";
+import { useMemo } from "react";
 
 interface EntryInfoProps {
   entryNumber: string;
@@ -14,6 +15,10 @@ const EntryInfo = ({
 }: EntryInfoProps) => {
   const settings =
     tournamentModel?.game_config?.settings_id === 0 ? "Default" : "Custom";
+  const parsedImage = useMemo(
+    () => (tokenMetadata ? JSON.parse(tokenMetadata)?.image : ""),
+    [tokenMetadata]
+  );
   return (
     <HoverCardContent
       className="w-80 py-4 px-0 text-sm z-50"
@@ -33,7 +38,7 @@ const EntryInfo = ({
         <div className="w-full h-0.5 bg-brand/50" />
         {tokenMetadata !== "" ? (
           <img
-            src={JSON.parse(tokenMetadata)?.image}
+            src={parsedImage}
             alt="metadata"
             className="w-full h-auto px-4"
           />

@@ -472,28 +472,6 @@ export const useGetMyTournaments = ({
   return { data, loading, error, refetch };
 };
 
-export const useGetTokenOwnerQuery = (
-  tokenAddress: string,
-  tokenIds: string[]
-) => {
-  const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
-  const query = useMemo(
-    () =>
-      tokenIds.length > 0
-        ? `
-    SELECT account_address
-    FROM [token_balances]
-    WHERE token_id IN (
-      ${tokenIds.map((id) => `"${tokenAddress}:${id}"`).join(",")}
-    )
-  `
-        : null,
-    [tokenAddress, tokenIdsKey]
-  );
-  const { data, loading, error } = useSqlExecute(query);
-  return { data, loading, error };
-};
-
 export const useGetAccountTokenIds = (
   address: string | null,
   tokenAddresses: string[],

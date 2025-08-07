@@ -9,21 +9,9 @@ import {
 } from "@/components/Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import TournamentTimeline from "@/components/TournamentTimeline";
-import {
-  bigintToHex,
-  feltToString,
-  formatTime,
-  indexAddress,
-} from "@/lib/utils";
+import { bigintToHex, feltToString, formatTime } from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
-import { useAccount } from "@starknet-react/core";
-import {
-  useSubscribeGamesQuery,
-  // useGetGameCounterQuery,
-  useGetTournamentQuery,
-  useSubscribeScoresQuery,
-  useGetScoresQuery,
-} from "@/dojo/hooks/useSdkQueries";
+import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import {
   Tournament as TournamentModel,
@@ -59,7 +47,6 @@ import PrizesContainer from "@/components/tournament/prizes/PrizesContainer";
 import { ClaimPrizesDialog } from "@/components/dialogs/ClaimPrizes";
 import { SubmitScoresDialog } from "@/components/dialogs/SubmitScores";
 import {
-  useGetAccountTokenIds,
   useGetTournaments,
   useGetTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
@@ -77,7 +64,6 @@ import { ChainId } from "@/dojo/setup/networks";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
-  const { address } = useAccount();
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const { namespace, selectedChainConfig } = useDojo();
@@ -89,7 +75,6 @@ const Tournament = () => {
   const [addPrizesDialogOpen, setAddPrizesDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tournamentExists, setTournamentExists] = useState(false);
-  const [prevEntryCount, setPrevEntryCount] = useState<number | null>(null);
   const { data: tournamentsCount } = useGetTournamentsCount({
     namespace: namespace,
   });
@@ -206,17 +191,6 @@ const Tournament = () => {
   const gameName = gameData.find(
     (game) => game.contract_address === gameAddress
   )?.name;
-
-  // subscribe and fetch game scores
-  useSubscribeScoresQuery(
-    gameNamespace ?? undefined,
-    gameScoreModel ?? undefined
-  );
-  useGetScoresQuery(gameNamespace ?? "", gameScoreModel ?? "");
-
-  useSubscribeGamesQuery({
-    gameNamespace: gameNamespace ?? "",
-  });
 
   const [isOverflowing, setIsOverflowing] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -380,35 +354,6 @@ const Tournament = () => {
       entry_count: tournament.entry_count,
     };
   });
-
-  // get owned game tokens
-
-  const queryAddress = useMemo(() => {
-    if (!address || address === "0x0") return null;
-    return indexAddress(address);
-  }, [address]);
-
-  const queryGameAddress = useMemo(() => {
-    if (!gameAddress || gameAddress === "0x0") return null;
-    return indexAddress(gameAddress);
-  }, [gameAddress]);
-
-  const entryCount = Number(entryCountModel?.count);
-
-  const { data: ownedTokens, refetch: refetchOwnedTokens } =
-    useGetAccountTokenIds(queryAddress, [queryGameAddress ?? "0x0"], true);
-
-  useEffect(() => {
-    if (prevEntryCount !== null && prevEntryCount !== entryCount) {
-      const timer = setTimeout(() => {
-        refetchOwnedTokens();
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-
-    setPrevEntryCount(entryCount);
-  }, [entryCount, prevEntryCount]);
 
   if (loading) {
     return <LoadingPage message={`Loading tournament...`} />;
@@ -697,10 +642,6 @@ const Tournament = () => {
             <MyEntries
               tournamentId={tournamentModel?.id}
               gameAddress={tournamentModel?.game_config?.address}
-              gameNamespace={gameNamespace ?? ""}
-              gameScoreModel={gameScoreModel ?? ""}
-              gameScoreAttribute={gameScoreAttribute ?? ""}
-              ownedTokens={ownedTokens}
               tournamentModel={tournamentModel}
             />
           </div>

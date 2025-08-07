@@ -62,11 +62,12 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x04dc9a55b49fea275851b31df48af9fadcc6512b486f04a4034cfdc5afbea02f",
+          "0x05111300a337dfb892fda7e594a80c229f239caf0f337dc864b681b9a77555b7",
         name: "Death Mountain",
         image: "https://darkshuffle.dev/favicon.svg",
-        url: "https://lootsurvivor.io",
-        playUrl: "https://lootsurvivor.io/survivor/play?id=",
+        url: "https://loot-survivor-2-git-next-provable-games.vercel.app/",
+        playUrl:
+          "https://loot-survivor-2-git-next-provable-games.vercel.app/survivor/play?id=",
         controllerOnly: true,
       },
     ];

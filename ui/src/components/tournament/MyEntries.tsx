@@ -1,18 +1,10 @@
 import { DOLLAR } from "@/components/Icons";
-import {
-  useGetGameMetadataInListQuery,
-  useGetRegistrationsForTournamentInTokenListQuery,
-} from "@/dojo/hooks/useSdkQueries";
 import { useSubscribeGameTokens } from "metagame-sdk";
-import { indexAddress } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount } from "@starknet-react/core";
-import { BigNumberish, addAddressPadding } from "starknet";
-import { bigintToHex } from "@/lib/utils";
+import { BigNumberish } from "starknet";
 import EntryCard from "@/components/tournament/myEntries/EntryCard";
-import { TokenMetadata, Tournament } from "@/generated/models.gen";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
-import { useDojo } from "@/context/dojo";
+import { Tournament } from "@/generated/models.gen";
 import {
   TournamentCard,
   TournamentCardTitle,
@@ -25,20 +17,12 @@ import {
 interface MyEntriesProps {
   tournamentId: BigNumberish;
   gameAddress: string;
-  gameNamespace: string;
-  gameScoreModel: string;
-  gameScoreAttribute: string;
-  ownedTokens: any[];
   tournamentModel: Tournament;
 }
 
 const MyEntries = ({
   tournamentId,
   gameAddress,
-  gameNamespace,
-  gameScoreModel,
-  gameScoreAttribute,
-  ownedTokens,
   tournamentModel,
 }: MyEntriesProps) => {
   const { address } = useAccount();
@@ -50,7 +34,7 @@ const MyEntries = ({
     context: {
       name: "Budokan",
       attributes: {
-        "Tournament ID": tournamentId.toString(),
+        "Tournament ID": tournamentId?.toString() ?? "0",
       },
     },
     owner: address,
