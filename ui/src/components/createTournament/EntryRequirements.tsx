@@ -472,7 +472,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                                                   }
                                                 }}
                                               >
-                                                {feltToString(game.name)}
+                                                {game.name}
                                                 <span className="flex items-center justify-center">
                                                   <TokenGameIcon
                                                     size="xs"
@@ -608,9 +608,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                                                       side="top"
                                                       className="bg-black text-neutral border border-brand-muted px-2 py-1 rounded text-sm"
                                                     >
-                                                      {name
-                                                        ? feltToString(name)
-                                                        : "Unknown"}
+                                                      {name ? name : "Unknown"}
                                                     </TooltipContent>
                                                   </Tooltip>
                                                 </div>

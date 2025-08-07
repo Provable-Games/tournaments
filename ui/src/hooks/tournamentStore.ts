@@ -171,7 +171,7 @@ const useTournamentStore = create<TournamentState>((set, get) => ({
       );
       return {
         tournament: processedTournament,
-        prizes: processedPrizes,
+        prizes: processedPrizes!,
         entryCount: Number(tournament.entry_count),
       };
     });

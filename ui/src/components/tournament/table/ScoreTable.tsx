@@ -1,6 +1,6 @@
 import Pagination from "@/components/table/Pagination";
 import { USER } from "@/components/Icons";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BigNumberish } from "starknet";
 import { useSubscribeGameTokens } from "metagame-sdk";
 import { useGetUsernames } from "@/hooks/useController";
@@ -68,6 +68,12 @@ const ScoreTable = ({
     [games]
   );
   const { usernames } = useGetUsernames(ownerAddresses ?? []);
+
+  useEffect(() => {
+    if (games.length > 0) {
+      setShowScores(true);
+    }
+  }, []);
 
   return (
     <TournamentCard showCard={showScores}>

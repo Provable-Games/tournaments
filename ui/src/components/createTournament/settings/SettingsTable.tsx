@@ -1,5 +1,3 @@
-import { formatGameSettings } from "@/lib/utils/formatting";
-
 interface SettingsTableProps {
   hasSettings: boolean;
   settings: any[];
@@ -18,18 +16,19 @@ const SettingsTable = ({ hasSettings, settings }: SettingsTableProps) => {
     );
   }
 
-  const formattedSettings = formatGameSettings(settings);
+  // Convert settings object to array of { key, value }
+  const entries = Object.entries(settings);
 
   return (
     <div className="overflow-y-auto flex flex-col border border-brand rounded-lg p-5 gap-2 h-[250px]">
-      {formattedSettings.map((setting, index) => (
+      {entries.map(([key, value], index) => (
         <div
           key={index}
           className="hover:bg-brand/5 transition-colors rounded-lg border border-brand-muted flex flex-row justify-between items-center"
         >
-          <div className="p-2 text-sm font-medium">{setting.formattedKey}</div>
+          <div className="p-2 text-sm font-medium">{key}</div>
           <div className="p-2 pr-4 text-sm text-muted-foreground text-right">
-            {setting.formattedValue}
+            {String(value)}
           </div>
         </div>
       ))}

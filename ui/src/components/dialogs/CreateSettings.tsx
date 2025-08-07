@@ -4,16 +4,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import SettingsCarousel from "@/components/createTournament/settings/SettingsCarousel";
 import TokenGameIcon from "../icons/TokenGameIcon";
 import useUIStore from "@/hooks/useUIStore";
-import { GameSettings } from "metagame-sdk";
 import SettingsDisplay from "../createTournament/settings/SettingsDisplay";
+import { useState } from "react";
 
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   game: string;
-  settings: GameSettings | undefined;
+  settings: any[];
+  value: string;
+  onChange: (value: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  settingsCount: number;
+  totalPages: number;
+  isLoadingSettings: boolean;
 }
 
 export const SettingsDialog = ({
@@ -21,10 +29,19 @@ export const SettingsDialog = ({
   onOpenChange,
   game,
   settings,
+  value,
+  onChange,
+  currentPage,
+  setCurrentPage,
+  settingsCount,
+  totalPages,
+  isLoadingSettings,
 }: SettingsDialogProps) => {
   const { getGameImage, getGameName } = useUIStore();
 
-  const noSettings = !settings;
+  const [selectedSetting, setSelectedSetting] = useState<number | null>(null);
+
+  const noSettings = !Object.values(settings)?.length;
 
   const noSettingsDisplay = () => {
     if (noSettings) {
@@ -57,16 +74,33 @@ export const SettingsDialog = ({
                 <TokenGameIcon size="lg" image={getGameImage(game)} />
                 <h3 className="text-2xl font-brand">{getGameName(game)}</h3>
               </div>
-              <SettingsDisplay
-                currentSetting={settings}
-                currentSettingId={settings.settings_id}
-                onChange={() => undefined}
-                setOpen={onOpenChange}
-                value={settings.settings_id.toString()}
-                close={() => undefined}
-                setSelectedSetting={() => undefined}
-                selectable={false}
-              />
+              {selectedSetting === null ? (
+                <SettingsCarousel
+                  game={game}
+                  settings={settings}
+                  value={value}
+                  setOpen={onOpenChange}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  setSelectedSetting={setSelectedSetting}
+                  settingsCount={settingsCount}
+                  totalPages={totalPages}
+                  isLoadingSettings={isLoadingSettings}
+                />
+              ) : (
+                <SettingsDisplay
+                  currentSetting={settings.find(
+                    (setting) => setting.settings_id === selectedSetting
+                  )}
+                  currentSettingId={selectedSetting}
+                  onChange={onChange}
+                  setOpen={onOpenChange}
+                  value={value}
+                  close={() => setSelectedSetting(null)}
+                  setSelectedSetting={setSelectedSetting}
+                  selectable={true}
+                />
+              )}
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { feltToString } from "@/lib/utils";
 import { useDojo } from "@/context/dojo";
 import { useGetTournaments } from "@/dojo/hooks/useSqlQueries";
-import TournamentGames from "@/components/play/TournamentGames";
+// import TournamentGames from "@/components/play/TournamentGames";
 import { processPrizesFromSql } from "@/lib/utils/formatting";
 import { processTournamentFromSql } from "@/lib/utils/formatting";
 import { Tournament } from "@/generated/models.gen";
@@ -85,12 +85,12 @@ const Play = () => {
                 })}
               </div>
             </div>
-            {selectedTournament && (
+            {/* {selectedTournament && (
               <>
                 <div className="w-full h-0.5 bg-brand/25" />
                 <TournamentGames tournament={selectedTournament} />
               </>
-            )}
+            )} */}
           </div>
         </Card>
       </div>

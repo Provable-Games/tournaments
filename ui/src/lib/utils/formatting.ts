@@ -180,14 +180,14 @@ export const getSubmittableScores = (
   leaderboard: Leaderboard
 ) => {
   const submittedTokenIds = leaderboard?.token_ids ?? [];
-  const leaderboardWithPositions = currentLeaderboard.map((score, index) => ({
-    ...score,
+  const leaderboardWithPositions = currentLeaderboard.map((game, index) => ({
+    ...game,
     position: index + 1,
   }));
   // if no scores have been submitted then we can submit the whole leaderboard
-  const newSubmissions = leaderboardWithPositions.map((score) => ({
-    tokenId: score.game_token_id,
-    position: score.position,
+  const newSubmissions = leaderboardWithPositions.map((game) => ({
+    tokenId: game.token_id,
+    position: game.position,
   }));
   if (submittedTokenIds.length === 0) {
     return newSubmissions;
@@ -654,7 +654,7 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
 export const processPrizesFromSql = (
   prizes: any,
   tournamentId: BigNumberish
-): Prize[] => {
+): Prize[] | null => {
   return prizes
     ? prizes
         .split("|")

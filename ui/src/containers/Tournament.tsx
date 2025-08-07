@@ -6,6 +6,7 @@ import {
   MONEY,
   GIFT,
   SPACE_INVADER_SOLID,
+  SLIDERS,
 } from "@/components/Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import TournamentTimeline from "@/components/TournamentTimeline";
@@ -36,7 +37,6 @@ import {
   processTournamentFromSql,
 } from "@/lib/utils/formatting";
 import useModel from "@/dojo/hooks/useModel";
-import { useGameEndpoints } from "@/dojo/hooks/useGameEndpoints";
 import { EnterTournamentDialog } from "@/components/dialogs/EnterTournament";
 import ScoreTable from "@/components/tournament/table/ScoreTable";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
@@ -61,6 +61,9 @@ import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadingPage from "@/containers/LoadingPage";
 import { ChainId } from "@/dojo/setup/networks";
+import { Badge } from "@/components/ui/badge";
+import { SettingsDialog } from "@/components/dialogs/Settings";
+import { useSettings } from "metagame-sdk/sql";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
@@ -73,6 +76,7 @@ const Tournament = () => {
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [submitScoresDialogOpen, setSubmitScoresDialogOpen] = useState(false);
   const [addPrizesDialogOpen, setAddPrizesDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tournamentExists, setTournamentExists] = useState(false);
   const { data: tournamentsCount } = useGetTournamentsCount({
@@ -183,9 +187,6 @@ const Tournament = () => {
   const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
   const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
   const tokens = formatTokens(registeredTokens, isMainnet, isSepolia);
-
-  const { gameNamespace, gameScoreModel, gameScoreAttribute } =
-    useGameEndpoints(tournamentModel?.game_config?.address);
 
   const gameAddress = tournamentModel?.game_config?.address;
   const gameName = gameData.find(
@@ -355,6 +356,11 @@ const Tournament = () => {
     };
   });
 
+  const { data: setting } = useSettings({
+    gameAddresses: [gameAddress],
+    settingsIds: [Number(tournamentModel?.game_config?.settings_id)],
+  });
+
   if (loading) {
     return <LoadingPage message={`Loading tournament...`} />;
   }
@@ -380,7 +386,10 @@ const Tournament = () => {
           </span>
           <Tooltip delayDuration={50}>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center cursor-pointer">
+              <div
+                className="flex items-center justify-center cursor-pointer"
+                onClick={() => setSettingsDialogOpen(true)}
+              >
                 <TokenGameIcon image={getGameImage(gameAddress)} size={"md"} />
               </div>
             </TooltipTrigger>
@@ -393,6 +402,17 @@ const Tournament = () => {
               {gameName ? gameName : "Unknown"}
             </TooltipContent>
           </Tooltip>
+          {setting[0] && (
+            <div
+              className="hidden sm:flex h-10 text-brand flex-row items-center gap-1 w-full border-2 border-brand-muted p-2 bg-black rounded-lg hover:cursor-pointer"
+              onClick={() => setSettingsDialogOpen(true)}
+            >
+              <span className="w-8">
+                <SLIDERS />
+              </span>
+              <span className="hidden sm:block text-xs">{setting[0].name}</span>
+            </div>
+          )}
           <EntryRequirements
             tournamentModel={tournamentModel}
             tournamentsData={tournamentsData}
@@ -412,7 +432,9 @@ const Tournament = () => {
               className="uppercase [&_svg]:w-6 [&_svg]:h-6"
               onClick={() => setEnterDialogOpen(true)}
             >
-              <SPACE_INVADER_SOLID />
+              <span className="hidden sm:block">
+                <SPACE_INVADER_SOLID />
+              </span>
 
               <span>Enter</span>
               <span className="hidden sm:block">|</span>
@@ -474,11 +496,6 @@ const Tournament = () => {
             open={submitScoresDialogOpen}
             onOpenChange={setSubmitScoresDialogOpen}
             tournamentModel={tournamentModel}
-            namespace={namespace}
-            gameNamespace={gameNamespace ?? ""}
-            gameScoreModel={gameScoreModel ?? ""}
-            gameScoreAttribute={gameScoreAttribute ?? ""}
-            gameAddress={tournamentModel?.game_config?.address}
             leaderboard={leaderboardModel}
           />
           <ClaimPrizesDialog
@@ -496,6 +513,12 @@ const Tournament = () => {
             tournamentName={feltToString(tournamentModel?.metadata?.name ?? "")}
             leaderboardSize={leaderboardSize}
           />
+          <SettingsDialog
+            open={settingsDialogOpen}
+            onOpenChange={setSettingsDialogOpen}
+            game={gameAddress}
+            settings={setting[0]}
+          />
         </div>
       </div>
       <div className="flex flex-col gap-5 overflow-y-auto pb-5 sm:pb-0">
@@ -506,17 +529,29 @@ const Tournament = () => {
                 {feltToString(tournamentModel?.metadata?.name ?? "")}
               </span>
               <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg">
-                <div className="flex flex-row gap-2">
-                  <span className="hidden sm:block">Winners:</span>
+                <div className="flex flex-row gap-2 hidden sm:flex">
+                  <span>Winners:</span>
                   <span className="text-brand">Top {leaderboardSize}</span>
                 </div>
-                <div className="flex flex-row gap-2">
-                  <span className="hidden sm:block">Registration:</span>
+                <Badge
+                  variant="outline"
+                  className="text-xs p-1 rounded-md sm:hidden text-brand"
+                >
+                  {leaderboardSize} Winners
+                </Badge>
+                <div className="flex flex-row gap-2 hidden sm:flex">
+                  <span>Registration:</span>
                   <span className="text-brand">
                     {registrationType.charAt(0).toUpperCase() +
                       registrationType.slice(1)}
                   </span>
                 </div>
+                <Badge
+                  variant="outline"
+                  className="text-xs p-1 rounded-md sm:hidden text-brand"
+                >
+                  Open
+                </Badge>
               </div>
             </div>
             <div className="hidden sm:flex flex-row 3xl:text-lg">

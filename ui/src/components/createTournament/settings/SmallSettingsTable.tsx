@@ -1,5 +1,3 @@
-import { formatGameSettings } from "@/lib/utils/formatting";
-
 interface SmallSettingsTableProps {
   hasSettings: boolean;
   settings: any[];
@@ -20,11 +18,11 @@ const SmallSettingsTable = ({
     );
   }
 
-  const formattedSettings = formatGameSettings(settings);
+  const entries = Object.entries(settings);
 
   return (
     <div className="flex flex-row gap-2 overflow-x-auto pb-2">
-      {formattedSettings.map((item, index) => (
+      {entries.map(([key, value], index) => (
         <div
           key={index}
           className="border border-brand-muted rounded-lg p-3 bg-background hover:bg-brand/10 transition-colors flex-shrink-0"
@@ -32,10 +30,10 @@ const SmallSettingsTable = ({
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
               <span className="text-sm font-medium text-brand-muted">
-                {item.formattedKey}
+                {key}
               </span>
               <span className="text-xs text-muted-foreground">
-                {item.formattedValue}
+                {String(value)}
               </span>
             </div>
           </div>

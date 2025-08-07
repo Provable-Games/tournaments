@@ -38,9 +38,9 @@ const SettingsCarousel = ({
           {Object.entries(settings).map(([key, setting]) => (
             <SettingsCard
               key={key}
-              settings_id={Number(key)}
+              settings_id={Number(setting.settings_id)}
               setting={setting}
-              onClick={() => setSelectedSetting(Number(key))}
+              onClick={() => setSelectedSetting(Number(setting.settings_id))}
               value={value}
             />
           ))}

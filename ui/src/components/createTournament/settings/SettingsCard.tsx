@@ -1,5 +1,3 @@
-import { feltToString } from "@/lib/utils";
-
 interface SettingsCardProps {
   settings_id: number;
   setting: any;
@@ -22,7 +20,7 @@ const SettingsCard = ({
       onClick={onClick}
     >
       <div className="flex flex-row justify-between items-center">
-        <h3 className="font-brand">{feltToString(setting.name)}</h3>
+        <h3 className="font-brand">{setting.name}</h3>
         <p className={isSelected ? "text-black" : "text-brand-muted"}>
           {`#${settings_id}`}
         </p>
