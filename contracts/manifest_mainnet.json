@@ -2340,10 +2340,7 @@
           ]
         }
       ],
-      "init_calldata": [
-        "0",
-        "0"
-      ],
+      "init_calldata": ["0", "0"],
       "tag": "budokan_1_0_8-Budokan",
       "selector": "0x136d85f09247c2abed73c6a49b54d7d0b1d6cb2986984609d7eb90249ddce2d",
       "systems": [
@@ -2365,15 +2362,9 @@
       "class_hash": "0x78422219d4ff90eaca938acd91e8d1dfed47be96340e1e13c348638d8825566",
       "tag": "budokan_1_0_8-EntryCount",
       "selector": "0x1c20443ad06e7afeb2c2b1278491c4f7c38b64fe247c9db79af999cd9a43190"
-      "class_hash": "0x78422219d4ff90eaca938acd91e8d1dfed47be96340e1e13c348638d8825566",
-      "tag": "budokan_1_0_8-EntryCount",
-      "selector": "0x1c20443ad06e7afeb2c2b1278491c4f7c38b64fe247c9db79af999cd9a43190"
     },
     {
       "members": [],
-      "class_hash": "0x4c9aa5cf3f03bd208fcfc809bbefd59074e319870fd54e699df593d2df01b4d",
-      "tag": "budokan_1_0_8-GameCounter",
-      "selector": "0x5b2c1672b1ceeba80f7868137ebb45cda88f12f1982b487c5657a7f96717e66"
       "class_hash": "0x4c9aa5cf3f03bd208fcfc809bbefd59074e319870fd54e699df593d2df01b4d",
       "tag": "budokan_1_0_8-GameCounter",
       "selector": "0x5b2c1672b1ceeba80f7868137ebb45cda88f12f1982b487c5657a7f96717e66"
@@ -2383,15 +2374,9 @@
       "class_hash": "0x2184a8d33905eed66c3a80bd753a579aadd0b8dd0652f9f513dc7f1949f53c4",
       "tag": "budokan_1_0_8-GameMetadata",
       "selector": "0x27dad0ee3b88ca1b8ad280e47c272bd082fb2e88aa50b49d304184bdca38930"
-      "class_hash": "0x2184a8d33905eed66c3a80bd753a579aadd0b8dd0652f9f513dc7f1949f53c4",
-      "tag": "budokan_1_0_8-GameMetadata",
-      "selector": "0x27dad0ee3b88ca1b8ad280e47c272bd082fb2e88aa50b49d304184bdca38930"
     },
     {
       "members": [],
-      "class_hash": "0xc7d0fa176501a408da3e5553695e9ed1c70bbc71198f8e0b9494fc0bad144f",
-      "tag": "budokan_1_0_8-Leaderboard",
-      "selector": "0x780922e2e32acbc8c7ee78cdeb5d4e0180e6d0adfacbba7d431328a29d07b88"
       "class_hash": "0xc7d0fa176501a408da3e5553695e9ed1c70bbc71198f8e0b9494fc0bad144f",
       "tag": "budokan_1_0_8-Leaderboard",
       "selector": "0x780922e2e32acbc8c7ee78cdeb5d4e0180e6d0adfacbba7d431328a29d07b88"
@@ -2401,15 +2386,9 @@
       "class_hash": "0x6e355bb1e763375ddfaa59349b5f86c52af1ed6d956f42ae40d532aef6c608f",
       "tag": "budokan_1_0_8-PlatformMetrics",
       "selector": "0x12fab074646f3b36282683754455de2106a8153c919240830411d861adc7eb"
-      "class_hash": "0x6e355bb1e763375ddfaa59349b5f86c52af1ed6d956f42ae40d532aef6c608f",
-      "tag": "budokan_1_0_8-PlatformMetrics",
-      "selector": "0x12fab074646f3b36282683754455de2106a8153c919240830411d861adc7eb"
     },
     {
       "members": [],
-      "class_hash": "0x52ade26b349972115690eb0977b3fe8f574f20bbf8a91ffe5d1763c6135077",
-      "tag": "budokan_1_0_8-Prize",
-      "selector": "0x25eefb250b7371f68208d50e3a87f58d7de03e5d7f86a48b6fd0630177830bb"
       "class_hash": "0x52ade26b349972115690eb0977b3fe8f574f20bbf8a91ffe5d1763c6135077",
       "tag": "budokan_1_0_8-Prize",
       "selector": "0x25eefb250b7371f68208d50e3a87f58d7de03e5d7f86a48b6fd0630177830bb"
@@ -2419,15 +2398,9 @@
       "class_hash": "0x32f594f0064b023859ad5cb18831a5880e310d9c4a898b75c02e1b2d7b17001",
       "tag": "budokan_1_0_8-PrizeClaim",
       "selector": "0x43de9f2c7666f3eb18ae96646be27edf6e516d0fb5d42f98d4c271b002b9e97"
-      "class_hash": "0x32f594f0064b023859ad5cb18831a5880e310d9c4a898b75c02e1b2d7b17001",
-      "tag": "budokan_1_0_8-PrizeClaim",
-      "selector": "0x43de9f2c7666f3eb18ae96646be27edf6e516d0fb5d42f98d4c271b002b9e97"
     },
     {
       "members": [],
-      "class_hash": "0x53e107f6f0a290d417c6c0f28df9fd199f8c7666cb61ac1fb24ea9da9519489",
-      "tag": "budokan_1_0_8-PrizeMetrics",
-      "selector": "0x1ac687546125a0aa764daf11ef8342d670bdc2ce3eddcb8c11670a3e9a3af75"
       "class_hash": "0x53e107f6f0a290d417c6c0f28df9fd199f8c7666cb61ac1fb24ea9da9519489",
       "tag": "budokan_1_0_8-PrizeMetrics",
       "selector": "0x1ac687546125a0aa764daf11ef8342d670bdc2ce3eddcb8c11670a3e9a3af75"
@@ -2437,15 +2410,9 @@
       "class_hash": "0x32fc5a1520015d90590fbedd6f4ce012d7c6a08e786f2a8b0ca2d2715302533",
       "tag": "budokan_1_0_8-QualificationEntries",
       "selector": "0x1c8a09b3e029c25ae2ed196b70610c05c105e9f26a5848cceb48508b3943973"
-      "class_hash": "0x32fc5a1520015d90590fbedd6f4ce012d7c6a08e786f2a8b0ca2d2715302533",
-      "tag": "budokan_1_0_8-QualificationEntries",
-      "selector": "0x1c8a09b3e029c25ae2ed196b70610c05c105e9f26a5848cceb48508b3943973"
     },
     {
       "members": [],
-      "class_hash": "0x240dd50803b66aba4fd8232426f68469c592e4a88fd9c5bc9ec11fc6a6315f4",
-      "tag": "budokan_1_0_8-Registration",
-      "selector": "0x2d132780ce16e46ed57c3b5d96f59c81a1005e0eab20c6e813346fd0c13c786"
       "class_hash": "0x240dd50803b66aba4fd8232426f68469c592e4a88fd9c5bc9ec11fc6a6315f4",
       "tag": "budokan_1_0_8-Registration",
       "selector": "0x2d132780ce16e46ed57c3b5d96f59c81a1005e0eab20c6e813346fd0c13c786"
@@ -2455,15 +2422,9 @@
       "class_hash": "0x7538cc093e191e767f1caf8ea3f1c4818e319db41d8f760e48753cb2e420156",
       "tag": "budokan_1_0_8-Score",
       "selector": "0x1732437541242850c77fc4b1b18d1e2e2e7974ce925ebc8f5dab050e5be8273"
-      "class_hash": "0x7538cc093e191e767f1caf8ea3f1c4818e319db41d8f760e48753cb2e420156",
-      "tag": "budokan_1_0_8-Score",
-      "selector": "0x1732437541242850c77fc4b1b18d1e2e2e7974ce925ebc8f5dab050e5be8273"
     },
     {
       "members": [],
-      "class_hash": "0x1209baf4f84faefa02c38ae721ddc691755ff4ea5993861fa22d822c913ab5b",
-      "tag": "budokan_1_0_8-Settings",
-      "selector": "0x2c51178446c843474e45e7c405a603c2245c7dd333a9a348024a4f3bea6dd47"
       "class_hash": "0x1209baf4f84faefa02c38ae721ddc691755ff4ea5993861fa22d822c913ab5b",
       "tag": "budokan_1_0_8-Settings",
       "selector": "0x2c51178446c843474e45e7c405a603c2245c7dd333a9a348024a4f3bea6dd47"
@@ -2473,15 +2434,9 @@
       "class_hash": "0x4e0c7a60762ca47580e47d2d2dcb27dd5ad33262075cb9b126d670e97c67837",
       "tag": "budokan_1_0_8-SettingsCounter",
       "selector": "0x1eda2914764c70a978dd7d67791dd476968bc22d267c09f465024dca9ae8de3"
-      "class_hash": "0x4e0c7a60762ca47580e47d2d2dcb27dd5ad33262075cb9b126d670e97c67837",
-      "tag": "budokan_1_0_8-SettingsCounter",
-      "selector": "0x1eda2914764c70a978dd7d67791dd476968bc22d267c09f465024dca9ae8de3"
     },
     {
       "members": [],
-      "class_hash": "0x5a1e9671225dd42b4085d3fb27a7543ee87f0cb687514002e7b4d9fa77c78a1",
-      "tag": "budokan_1_0_8-SettingsDetails",
-      "selector": "0xac50a71f5a4f01cdebac226b60e7fbee6b934a84fbdfe6f04dd55f85e9fc02"
       "class_hash": "0x5a1e9671225dd42b4085d3fb27a7543ee87f0cb687514002e7b4d9fa77c78a1",
       "tag": "budokan_1_0_8-SettingsDetails",
       "selector": "0xac50a71f5a4f01cdebac226b60e7fbee6b934a84fbdfe6f04dd55f85e9fc02"
@@ -2491,15 +2446,9 @@
       "class_hash": "0x4f8543d252f818a4efbbacf72260a4f3a757a91291878742681f6f8c4cd534e",
       "tag": "budokan_1_0_8-Token",
       "selector": "0x2c4bdc0d2be4f3cbdb01ab6fb4ad349010d21f49118b8becc35fd26b87cbdde"
-      "class_hash": "0x4f8543d252f818a4efbbacf72260a4f3a757a91291878742681f6f8c4cd534e",
-      "tag": "budokan_1_0_8-Token",
-      "selector": "0x2c4bdc0d2be4f3cbdb01ab6fb4ad349010d21f49118b8becc35fd26b87cbdde"
     },
     {
       "members": [],
-      "class_hash": "0x336f9d3953c032d579de6675aa25e2903ea50708399ca5ec3312ee3480e7cca",
-      "tag": "budokan_1_0_8-TokenMetadata",
-      "selector": "0x63d045447af573765fa2e5f0202ee67fb1a34df1e1b603a67eedcad63401167"
       "class_hash": "0x336f9d3953c032d579de6675aa25e2903ea50708399ca5ec3312ee3480e7cca",
       "tag": "budokan_1_0_8-TokenMetadata",
       "selector": "0x63d045447af573765fa2e5f0202ee67fb1a34df1e1b603a67eedcad63401167"
