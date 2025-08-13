@@ -164,7 +164,10 @@ pub mod Budokan {
             ]
                 .span();
             GameContextDetails {
-                name: "Budokan", description: "The onchain tournament system", id: Option::Some(registration.tournament_id.try_into().unwrap()), context: context,
+                name: "Budokan",
+                description: "The onchain tournament system",
+                id: Option::Some(registration.tournament_id.try_into().unwrap()),
+                context: context,
             }
         }
     }
@@ -308,12 +311,7 @@ pub mod Budokan {
 
             store
                 .create_tournament(
-                    creator_token_id,
-                    metadata,
-                    schedule,
-                    game_config,
-                    entry_fee,
-                    entry_requirement,
+                    creator_token_id, metadata, schedule, game_config, entry_fee, entry_requirement,
                 )
         }
 
@@ -375,7 +373,7 @@ pub mod Budokan {
                     Option::None, // client_url
                     Option::None, // renderer_address
                     mint_to_address, // to
-                    false, // soulbound
+                    false // soulbound
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -688,7 +686,9 @@ pub mod Budokan {
         fn _assert_settings_exists(self: @ContractState, game: ContractAddress, settings_id: u32) {
             let minigame_dispatcher = IMinigameDispatcher { contract_address: game };
             let settings_address = minigame_dispatcher.settings_address();
-            let settings_dispatcher = IMinigameSettingsDispatcher { contract_address: settings_address };
+            let settings_dispatcher = IMinigameSettingsDispatcher {
+                contract_address: settings_address,
+            };
             let settings_exist = settings_dispatcher.settings_exist(settings_id);
             let game_address: felt252 = game.into();
             assert!(
@@ -922,7 +922,8 @@ pub mod Budokan {
                 let game_address = tournament.game_config.address;
                 let leaderboard = store.get_leaderboard(tournament_id);
                 let registration = store.get_registration(game_address, token_id);
-                let game_token_address = IMinigameDispatcher { contract_address: game_address }.token_address();
+                let game_token_address = IMinigameDispatcher { contract_address: game_address }
+                    .token_address();
                 let owner = self._get_owner(game_token_address, token_id.into());
 
                 if owner == get_caller_address()
@@ -1202,41 +1203,35 @@ pub mod Budokan {
 
                 let prize_amount = self._calculate_payout(share.into(), total_pool);
 
-                let game_dispatcher = IMinigameDispatcher { contract_address: tournament.game_config.address };
+                let game_dispatcher = IMinigameDispatcher {
+                    contract_address: tournament.game_config.address,
+                };
                 let game_token_address = game_dispatcher.token_address();
 
                 // Get recipient address
                 let recipient_address = match role {
                     Role::TournamentCreator => {
                         // tournament creator is owner of the tournament creator token
-                        self
-                            ._get_owner(
-                                game_token_address,
-                                tournament.creator_token_id.into(),
-                            )
+                        self._get_owner(game_token_address, tournament.creator_token_id.into())
                     },
                     Role::GameCreator => {
                         // Check if the game token has a minigame registry
                         let game_token_dispatcher = IMinigameTokenDispatcher {
                             contract_address: game_token_address,
                         };
-                        let minigame_registry_address = game_token_dispatcher.game_registry_address();
+                        let minigame_registry_address = game_token_dispatcher
+                            .game_registry_address();
                         let minigame_registry = IMinigameRegistryDispatcher {
                             contract_address: minigame_registry_address,
                         };
                         // If it has a registry, get the owner of the game creator token
                         if !minigame_registry_address.is_zero() {
-                            let game_id = minigame_registry.game_id_from_address(tournament.game_config.address);
-                            self._get_owner(
-                                minigame_registry_address,
-                                game_id.into(),
-                            )
+                            let game_id = minigame_registry
+                                .game_id_from_address(tournament.game_config.address);
+                            self._get_owner(minigame_registry_address, game_id.into())
                         } else {
                             // Otherwise, the game creator is the owner of token ID 0
-                            self._get_owner(
-                                game_token_address,
-                                GAME_CREATOR_TOKEN_ID.into(),
-                            )
+                            self._get_owner(game_token_address, GAME_CREATOR_TOKEN_ID.into())
                         }
                     },
                     Role::Position(position) => {
@@ -1244,17 +1239,10 @@ pub mod Budokan {
                         // Check if leaderboard has enough entries for the position
                         if position.into() <= leaderboard.len() {
                             let winner_token_id = *leaderboard.at(position.into() - 1);
-                            self._get_owner(
-                                game_token_address,
-                                winner_token_id.into(),
-                            )
+                            self._get_owner(game_token_address, winner_token_id.into())
                         } else {
                             // No entry at this position, default to tournament creator
-                            self
-                                ._get_owner(
-                                    game_token_address,
-                                    tournament.creator_token_id.into(),
-                                )
+                            self._get_owner(game_token_address, tournament.creator_token_id.into())
                         }
                     },
                 };
@@ -1294,7 +1282,9 @@ pub mod Budokan {
                     prize.payout_position, tournament.game_config.prize_spots.into(),
                 );
 
-            let game_dispatcher = IMinigameDispatcher { contract_address: tournament.game_config.address };
+            let game_dispatcher = IMinigameDispatcher {
+                contract_address: tournament.game_config.address,
+            };
             let game_token_address = game_dispatcher.token_address();
 
             // Check if leaderboard has enough entries for the position
@@ -1303,10 +1293,7 @@ pub mod Budokan {
                 self._get_owner(game_token_address, winner_token_id.into())
             } else {
                 // No entry at this position, default to tournament creator
-                self._get_owner(
-                    game_token_address,
-                    tournament.creator_token_id.into(),
-                )
+                self._get_owner(game_token_address, tournament.creator_token_id.into())
             };
 
             // Transfer prize
@@ -1612,15 +1599,14 @@ pub mod Budokan {
 
             let tournament = store.get_tournament(tournament_id);
 
-            let game_dispatcher = IMinigameDispatcher { contract_address: tournament.game_config.address };
+            let game_dispatcher = IMinigameDispatcher {
+                contract_address: tournament.game_config.address,
+            };
             let game_token_address = game_dispatcher.token_address();
 
             // Return the owner of the qualifying token
             let token_owner = self
-                ._get_owner(
-                    game_token_address,
-                    qualifying_proof_tournament.token_id.into(),
-                );
+                ._get_owner(game_token_address, qualifying_proof_tournament.token_id.into());
 
             token_owner
         }
@@ -1700,7 +1686,10 @@ pub mod Budokan {
             ]
                 .span();
             GameContextDetails {
-                name: "Budokan", description: "The onchain tournament system", id: Option::Some(tournament_id.try_into().unwrap()), context: context,
+                name: "Budokan",
+                description: "The onchain tournament system",
+                id: Option::Some(tournament_id.try_into().unwrap()),
+                context: context,
             }
         }
     }

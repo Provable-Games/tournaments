@@ -198,9 +198,7 @@ pub fn setup() -> TestContracts {
     erc20.mint(OWNER(), STARTING_BALANCE);
     erc721.mint(OWNER(), 1);
 
-    minigame.create_settings_difficulty(
-        "test_settings", "test_settings", 1,
-    );
+    minigame.create_settings_difficulty("test_settings", "test_settings", 1);
 
     // drop all events
     utils::drop_all_events(world.dispatcher.contract_address);
@@ -2385,11 +2383,10 @@ fn claim_prizes_with_premium_game_fee() {
         .enter_tournament(tournament.id, "test_player2", player2, Option::None);
 
     let minigame_registry_address = contracts.denshokan.game_registry_address();
-    let minigame_registry_erc721_dispatcher = IERC721Dispatcher { 
+    let minigame_registry_erc721_dispatcher = IERC721Dispatcher {
         contract_address: minigame_registry_address,
     };
-    let game_creator = minigame_registry_erc721_dispatcher
-        .owner_of(1);
+    let game_creator = minigame_registry_erc721_dispatcher.owner_of(1);
 
     let creator_initial_balance = contracts.erc20.balance_of(game_creator);
 
@@ -2411,7 +2408,8 @@ fn claim_prizes_with_premium_game_fee() {
 
     // Verify game creator fee distribution (10% of 200 total = 20)
     assert!(
-        contracts.erc20.balance_of(game_creator) == creator_initial_balance + 20, "Invalid game creator fee",
+        contracts.erc20.balance_of(game_creator) == creator_initial_balance + 20,
+        "Invalid game creator fee",
     );
 
     // Check initial balances
@@ -2944,7 +2942,7 @@ fn test_submit_score_tie_lower_game_id_for_lower_position() {
         .enter_tournament(tournament.id, "player2", OWNER(), Option::None);
 
     testing::set_block_timestamp(TEST_END_TIME().into());
-    
+
     // Set equal scores for both players
     contracts.minigame.end_game(token_id1, 100); // First player (lower ID)
     contracts.minigame.end_game(token_id2, 100); // Second player (higher ID)

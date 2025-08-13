@@ -110,7 +110,6 @@ pub fn create_basic_tournament(budokan: IBudokanDispatcher, game: ContractAddres
             Option::None,
         )
 }
-
 // pub fn register_tokens_for_test(
 //     tournament: ITournamentMockDispatcher,
 //     erc20: IERC20MockDispatcher,

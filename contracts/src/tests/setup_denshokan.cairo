@@ -3,12 +3,19 @@
 use starknet::{ContractAddress, contract_address_const};
 use starknet::syscalls::deploy_syscall;
 use game_components_minigame::interface::{IMinigameDispatcher, IMinigameDispatcherTrait};
-use game_components_token::interface::{IMinigameTokenMixinDispatcher, IMinigameTokenMixinDispatcherTrait};
+use game_components_token::interface::{
+    IMinigameTokenMixinDispatcher, IMinigameTokenMixinDispatcherTrait,
+};
 use game_components_token::examples::{
     full_token_contract::FullTokenContract,
-    minigame_registry_contract::{MinigameRegistryContract, IMinigameRegistryDispatcher, IMinigameRegistryDispatcherTrait},
+    minigame_registry_contract::{
+        MinigameRegistryContract, IMinigameRegistryDispatcher, IMinigameRegistryDispatcherTrait,
+    },
 };
-use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{minigame_starknet_mock, IMinigameStarknetMockDispatcher, IMinigameStarknetMockInitDispatcher, IMinigameStarknetMockInitDispatcherTrait};
+use game_components_test_starknet::minigame::mocks::minigame_starknet_mock::{
+    minigame_starknet_mock, IMinigameStarknetMockDispatcher, IMinigameStarknetMockInitDispatcher,
+    IMinigameStarknetMockInitDispatcherTrait,
+};
 use openzeppelin_token::erc721::interface::{ERC721ABIDispatcher};
 use openzeppelin_introspection::interface::ISRC5Dispatcher;
 use dojo_cairo_test::deploy_contract;
@@ -50,7 +57,9 @@ pub struct TestContracts {
 pub fn deploy_mock_game() -> (
     IMinigameDispatcher, IMinigameStarknetMockInitDispatcher, IMinigameStarknetMockDispatcher,
 ) {
-    let contract_address = deploy_contract(minigame_starknet_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span());
+    let contract_address = deploy_contract(
+        minigame_starknet_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
+    );
 
     let minigame_dispatcher = IMinigameDispatcher { contract_address };
     let minigame_init_dispatcher = IMinigameStarknetMockInitDispatcher { contract_address };
@@ -81,7 +90,9 @@ pub fn deploy_minigame_registry_contract_with_params(
         },
     }
 
-    let contract_address = deploy_contract(MinigameRegistryContract::TEST_CLASS_HASH.try_into().unwrap(), constructor_calldata.span());
+    let contract_address = deploy_contract(
+        MinigameRegistryContract::TEST_CLASS_HASH.try_into().unwrap(), constructor_calldata.span(),
+    );
 
     let minigame_registry_dispatcher = IMinigameRegistryDispatcher { contract_address };
     minigame_registry_dispatcher
@@ -139,7 +150,9 @@ pub fn deploy_optimized_token_contract(
         },
     }
 
-    let contract_address = deploy_contract(FullTokenContract::TEST_CLASS_HASH.try_into().unwrap(), constructor_calldata.span());
+    let contract_address = deploy_contract(
+        FullTokenContract::TEST_CLASS_HASH.try_into().unwrap(), constructor_calldata.span(),
+    );
 
     let token_dispatcher = IMinigameTokenMixinDispatcher { contract_address };
     let erc721_dispatcher = ERC721ABIDispatcher { contract_address };
@@ -153,13 +166,11 @@ pub fn setup() -> TestContracts {
     let (_, minigame_init_dispatcher, minigame_mock_dispatcher) = deploy_mock_game();
 
     let minigame_registry_dispatcher = deploy_minigame_registry_contract_with_params(
-        "TestGame",
-        "TT",
-        "https://test.com/",
-        Option::None,
+        "TestGame", "TT", "https://test.com/", Option::None,
     );
 
-    let (token_dispatcher, _erc721_dispatcher, _src5_dispatcher, _contract_address) = deploy_optimized_token_contract(
+    let (token_dispatcher, _erc721_dispatcher, _src5_dispatcher, _contract_address) =
+        deploy_optimized_token_contract(
         Option::None,
         Option::None,
         Option::None,
@@ -168,21 +179,22 @@ pub fn setup() -> TestContracts {
     );
 
     // causing an ENTRYPOINT_NOT_FOUND somewhere
-    minigame_init_dispatcher.initializer(
-        contract_address_const::<'GAME_CREATOR'>(),
-        "TestGame",
-        "TestGame",
-        "TestDev",
-        "TestPub",
-        "Genre",
-        "Image",
-        Option::None,
-        Option::None,
-        Option::None,
-        Option::Some(minigame_mock_dispatcher.contract_address),
-        Option::Some(minigame_mock_dispatcher.contract_address),
-        token_dispatcher.contract_address,
-    );
+    minigame_init_dispatcher
+        .initializer(
+            contract_address_const::<'GAME_CREATOR'>(),
+            "TestGame",
+            "TestGame",
+            "TestDev",
+            "TestPub",
+            "Genre",
+            "Image",
+            Option::None,
+            Option::None,
+            Option::None,
+            Option::Some(minigame_mock_dispatcher.contract_address),
+            Option::Some(minigame_mock_dispatcher.contract_address),
+            token_dispatcher.contract_address,
+        );
 
     TestContracts { denshokan: token_dispatcher, minigame_mock: minigame_mock_dispatcher }
 }
