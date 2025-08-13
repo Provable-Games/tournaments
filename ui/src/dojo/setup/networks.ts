@@ -139,7 +139,7 @@ const snSepoliaConfig: DojoChainConfig = {
   ethAddress: sepolia.nativeCurrency.address,
   connectorIds: [supportedConnectorIds.CONTROLLER],
   denshokanAddress:
-    "0x1fd7f186c0bb99f8d128f1eb40dbe3c7657df381957417f8c9a40804c005545",
+    "0x06a1102ed881e0d6d689295db5819dd1d15f0d55cbe10e1b87587c2ea1ec8da4",
 };
 
 const snMainnetConfig: DojoChainConfig = {

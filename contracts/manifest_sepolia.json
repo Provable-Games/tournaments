@@ -1,7 +1,7 @@
 {
   "world": {
-    "class_hash": "0x685ed02eefa98fe7e208aa295042e9bbad8029b0d3d6f0ba2b32546efe0a1f9",
-    "address": "0x38f6eb0186dfd1e072fa3b289b88e1c67b0baf1bd76cc6987f4a93258c69c4d",
+    "class_hash": "0x13d92333361bb7049c1232c0a5404e2c19082ededc3a73d75cb33fa952adec7",
+    "address": "0x29f11cefb67df8a3962ba60816800ccf196f9497ae781bb4bc8589f8e245753",
     "seed": "DNC",
     "name": "Realms World",
     "entrypoints": [
@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x12ce19b75b38f3c9df65f482a232cc232d1d712af92fd155d2d10102e190689",
-      "class_hash": "0xa03df0992af6de93b842730ff848f4841189d355cf09860dfea593931ce019",
+      "address": "0x72207e125d04a03906f9bb3f5b5aa912ec8c1cf707a05edb4803f940fcdd795",
+      "class_hash": "0x2840819729d7682747595a89c91c71c2792c9723f75fe0effc7c558b86c14c5",
       "abi": [
         {
           "type": "impl",
@@ -2556,7 +2556,7 @@
       "init_calldata": [
         "0",
         "0",
-        "0x01fd7f186c0bb99f8d128f1eb40dbe3c7657df381957417f8c9a40804c005545",
+        "0x06a1102ed881e0d6d689295db5819dd1d15f0d55cbe10e1b87587c2ea1ec8da4",
         "0"
       ],
       "tag": "budokan_1_0_8-Budokan",

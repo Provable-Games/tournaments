@@ -49,7 +49,7 @@ const EntrantRow = ({
           <HoverCardTrigger asChild>
             <div className="flex flex-row items-center sm:gap-2 px-2 hover:cursor-pointer hover:bg-brand/25 hover:border-brand/30 border border-transparent rounded transition-all duration-200 3xl:text-lg">
               <span className="w-4 flex-none font-brand">
-                {index + 1 + colIndex * 5 + (currentPage - 1) * 10}.
+                {index + 1 + colIndex * 5 + currentPage * 10}.
               </span>
               <span className="w-6 3xl:w-8 flex-none">
                 <USER />
