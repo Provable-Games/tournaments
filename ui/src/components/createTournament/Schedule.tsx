@@ -148,8 +148,6 @@ const Schedule = ({ form }: StepProps) => {
         (endTime.getTime() - startTime.getTime()) / 1000
       );
 
-      console.log("durationInSeconds", durationInSeconds);
-
       // Only update if it's a valid duration (at least 15 minutes)
       if (durationInSeconds >= 900) {
         form.setValue("duration", durationInSeconds);

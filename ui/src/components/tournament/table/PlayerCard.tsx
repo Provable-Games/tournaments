@@ -67,7 +67,6 @@ export const MobilePlayerCard = ({
   const username =
     usernames?.get(ownerAddress ?? "0x0") ||
     displayAddress(ownerAddress ?? "0x0");
-  console.log("selectedPlayer", selectedPlayer);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:hidden">

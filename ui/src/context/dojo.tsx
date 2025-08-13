@@ -40,8 +40,6 @@ export const DojoContextProvider = ({ children }: { children: ReactNode }) => {
   const currentValue = useContext(DojoContext);
   const { chain } = useNetwork();
 
-  console.log(chain);
-
   if (currentValue) {
     throw new Error("DojoProvider can only be used once");
   }

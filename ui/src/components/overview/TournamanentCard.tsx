@@ -166,8 +166,6 @@ export const TournamentCard = ({
     }
   };
 
-  console.log(tournament);
-
   return (
     <Card
       variant="outline"

@@ -205,7 +205,6 @@ export const useGetMyTournamentsCount = ({
   `,
     [namespace, address, gameAddresses, tokenIdsKey, fromTournamentId]
   );
-  console.log(query);
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
 };
@@ -467,7 +466,6 @@ export const useGetMyTournaments = ({
       active,
     ]
   );
-  console.log(query);
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data, loading, error, refetch };
 };

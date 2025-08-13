@@ -148,8 +148,6 @@ const BonusPrizes = ({ form }: StepProps) => {
     checkBalances();
   }, [newPrize.token?.address, newPrize.amount]);
 
-  console.log(form.watch("bonusPrizes"));
-
   return (
     <FormField
       control={form.control}

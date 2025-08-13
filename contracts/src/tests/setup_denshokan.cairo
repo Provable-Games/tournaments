@@ -178,7 +178,6 @@ pub fn setup() -> TestContracts {
         Option::None,
     );
 
-    // causing an ENTRYPOINT_NOT_FOUND somewhere
     minigame_init_dispatcher
         .initializer(
             contract_address_const::<'GAME_CREATOR'>(),

@@ -40,8 +40,6 @@ const MyEntries = ({
     owner: address,
   });
 
-  console.log(ownedGames);
-
   const myEntriesCount = useMemo(() => {
     return ownedGames?.length ?? 0;
   }, [ownedGames]);

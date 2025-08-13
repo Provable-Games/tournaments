@@ -286,9 +286,6 @@ const Overview = () => {
       fromTournamentId: fromTournamentId,
     });
 
-  console.log(gameTokens);
-  console.log(myTournaments);
-
   // Process and store tournaments when data is loaded
   useEffect(() => {
     // Set loading state based on current tab's loading status

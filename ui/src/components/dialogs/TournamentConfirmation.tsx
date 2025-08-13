@@ -47,8 +47,6 @@ const TournamentConfirmation = ({
   const { gameData, getGameImage } = useUIStore();
   const [isCreating, setIsCreating] = useState(false);
 
-  console.log(formData.settings);
-
   const { data: setting } = useSettings({
     settingsIds: [Number(formData.settings)],
   });
