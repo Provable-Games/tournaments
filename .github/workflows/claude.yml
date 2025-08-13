@@ -2,7 +2,7 @@ name: Claude Code
 
 env:
   SCARB_VERSION: 2.10.1
-  DOJO_VERSION: 1.6.0-alpha.2
+  DOJO_VERSION: 1.6.0
 
 on:
   issue_comment:
