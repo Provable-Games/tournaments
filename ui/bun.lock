@@ -4,8 +4,8 @@
     "": {
       "name": "ui",
       "dependencies": {
-        "@cartridge/connector": "0.9.1",
-        "@cartridge/controller": "0.9.1",
+        "@cartridge/connector": "0.9.3",
+        "@cartridge/controller": "0.9.3",
         "@cartridge/presets": "^0.5.4",
         "@dojoengine/core": "1.6.0",
         "@dojoengine/create-burner": "1.6.0",
@@ -125,11 +125,11 @@
 
     "@babel/types": ["@babel/types@7.26.9", "", { "dependencies": { "@babel/helper-string-parser": "^7.25.9", "@babel/helper-validator-identifier": "^7.25.9" } }, "sha512-Y3IR1cRnOxOCDvMmNiym7XpXQ93iGDDPHx+Zj+NM+rg0fBaShfQLkg+hKPaZCEvg5N/LeCo4+Rj/i3FuJsIQaw=="],
 
-    "@cartridge/connector": ["@cartridge/connector@0.9.1", "", { "dependencies": { "@cartridge/controller": "0.9.1" }, "peerDependencies": { "@starknet-react/core": "4.0.1-beta.4" } }, "sha512-+dQsxgVdZa3twq8zIfmAwEkE/Hme3XClO7WKH24jV1fTubhJaaYxZsa11iDCKPZ+ZIUKv15g4kBO/alpfxaZeA=="],
+    "@cartridge/connector": ["@cartridge/connector@0.9.3", "", { "dependencies": { "@cartridge/controller": "0.9.3" }, "peerDependencies": { "@starknet-react/core": "4.0.1-beta.4" } }, "sha512-9b8LbyAzd4LMFwGUL5i7L1hbjo4i4Y/1Tt0NmzOQ0XR2HLGEl4u/WmEdjC9ukO97X2J+MqE7qYaPIXUQKI86gA=="],
 
-    "@cartridge/controller": ["@cartridge/controller@0.9.1", "", { "dependencies": { "@cartridge/controller-wasm": "^0.2.3", "@cartridge/penpal": "^6.2.4", "@starknet-io/types-js": "^0.8.4", "@telegram-apps/sdk": "^2.4.0", "@turnkey/sdk-browser": "^4.0.0", "@walletconnect/ethereum-provider": "^2.20.0", "cbor-x": "^1.5.0", "ethers": "^6.13.5", "mipd": "^0.0.7" }, "peerDependencies": { "@metamask/sdk": "^0.32.1", "@solana/web3.js": "^1.98.0", "open": "^10.1.0", "starknet": "^7.6.2", "starknetkit": "^2.6.1" } }, "sha512-T1pBOK6BGZba3Zh6xKoux7B5Q69syBJzp14l4wh1vROqM1AESbheyJKjWCKCauwV3afsC6RneuRW9+wA2avrtw=="],
+    "@cartridge/controller": ["@cartridge/controller@0.9.3", "", { "dependencies": { "@cartridge/controller-wasm": "^0.2.7", "@cartridge/penpal": "^6.2.4", "@starknet-io/types-js": "^0.8.4", "@telegram-apps/sdk": "^2.4.0", "@turnkey/sdk-browser": "^4.0.0", "@walletconnect/ethereum-provider": "^2.20.0", "cbor-x": "^1.5.0", "ethers": "^6.13.5", "mipd": "^0.0.7" }, "peerDependencies": { "@metamask/sdk": "^0.32.1", "@solana/web3.js": "^1.98.0", "open": "^10.1.0", "starknet": "^7.6.2", "starknetkit": "^2.6.1" } }, "sha512-Aw54gfgxgiHsNmVolqBRBVY293rcT3NH5E1kreU8foirgfemsntt/G8+DJok4RCkK+gmZgV4PGywJ++/3f3REg=="],
 
-    "@cartridge/controller-wasm": ["@cartridge/controller-wasm@0.2.6", "", {}, "sha512-bm2iarm/3Sw12dLz4+of5xO3OpC/e8SzoWIIRuxBOwx6VjD5wms++AZVS5Wa+rknTNNMBatnSHLgg49Ys1cAdQ=="],
+    "@cartridge/controller-wasm": ["@cartridge/controller-wasm@0.2.7", "", {}, "sha512-VF4kcrnxfsqNOhrBLTtHH9maFyLr5ITYbAJ4c9iUorTwmXiryQP32kkXsrOUnSw2KZ/PPoP3y5/DQjeairvIwQ=="],
 
     "@cartridge/penpal": ["@cartridge/penpal@6.2.4", "", {}, "sha512-tdpOnSJJBFMlgLZ1+z9Ho5e6cG5EgMAb1Cmmh1lGT2tmplogU/XPMjLE6CwvKAPDoe6a38iMnbH+ySTAWWIOKA=="],
 
