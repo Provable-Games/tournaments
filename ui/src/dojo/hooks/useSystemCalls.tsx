@@ -6,6 +6,9 @@ import {
   EntryFee,
   QualificationProofEnum,
   PrizeTypeEnum,
+  TokenTypeDataEnum,
+  ERC20Data,
+  ERC721Data,
 } from "@/generated/models.gen";
 import {
   Account,
@@ -16,6 +19,7 @@ import {
   byteArray,
   Uint256,
   AccountInterface,
+  CairoCustomEnum,
 } from "starknet";
 import { feltToString } from "@/lib/utils";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
@@ -419,6 +423,105 @@ export const useSystemCalls = () => {
     return await resolvedClient.erc721_mock.balanceOf(address);
   };
 
+  const getTokenInfo = async (tokenAddress: string) => {
+    try {
+      if (!account) return null;
+      const nameResult = await account.callContract({
+        contractAddress: tokenAddress,
+        entrypoint: "name",
+        calldata: [],
+      });
+
+      const nameByteArray: ByteArray = {
+        data: nameResult.slice(0, -2),
+        pending_word: nameResult[nameResult.length - 2],
+        pending_word_len: nameResult[nameResult.length - 1],
+      };
+
+      const symbolResult = await account.callContract({
+        contractAddress: tokenAddress,
+        entrypoint: "symbol",
+        calldata: [],
+      });
+
+      const symbolByteArray: ByteArray = {
+        data: symbolResult.slice(0, -2),
+        pending_word: symbolResult[symbolResult.length - 2],
+        pending_word_len: symbolResult[symbolResult.length - 1],
+      };
+
+      // Convert ByteArray to string for name and symbol
+      const name = nameResult
+        ? byteArray.stringFromByteArray(nameByteArray)
+        : "";
+      const symbol = symbolResult
+        ? byteArray.stringFromByteArray(symbolByteArray)
+        : "";
+
+      return { name, symbol };
+    } catch (error) {
+      console.error("Error fetching token info:", error);
+      return null;
+    }
+  };
+
+  const registerToken = async (
+    tokenAddress: string,
+    tokenType: "erc20" | "erc721",
+    tokenId?: string
+  ) => {
+    try {
+      let tokenTypeData: TokenTypeDataEnum;
+      let calls = [];
+
+      if (tokenType === "erc20") {
+        tokenTypeData = new CairoCustomEnum({
+          erc20: { amount: 1 } as ERC20Data,
+          erc721: undefined,
+        });
+
+        // Add ERC20 approval call for 1 unit
+        calls.push({
+          contractAddress: tokenAddress,
+          entrypoint: "approve",
+          calldata: CallData.compile([
+            tournamentAddress,
+            { low: "1", high: "0" } // Approve 1 unit
+          ]),
+        });
+      } else {
+        tokenTypeData = new CairoCustomEnum({
+          erc20: undefined,
+          erc721: { id: tokenId || "1" } as ERC721Data,
+        });
+
+        // Add ERC721 approval call
+        calls.push({
+          contractAddress: tokenAddress,
+          entrypoint: "approve",
+          calldata: CallData.compile([
+            tournamentAddress,
+            { low: tokenId || "1", high: "0" } // Token ID as u256
+          ]),
+        });
+      }
+
+      // Add register token call
+      calls.push({
+        contractAddress: tournamentAddress,
+        entrypoint: "register_token",
+        calldata: CallData.compile([tokenAddress, tokenTypeData]),
+      });
+
+      const tx = await account?.execute(calls);
+
+      return tx;
+    } catch (error) {
+      console.error("Error executing register token:", error);
+      throw error;
+    }
+  };
+
   return {
     approveAndEnterTournament,
     submitScores,
@@ -431,5 +534,7 @@ export const useSystemCalls = () => {
     mintErc20,
     getErc20Balance,
     getErc721Balance,
+    getTokenInfo,
+    registerToken,
   };
 };

@@ -8,12 +8,16 @@ import { useDojoSystem } from "@/dojo/hooks/useDojoSystem";
 import { useDojo } from "@/context/dojo";
 import { useSubscribeTokensQuery } from "@/dojo/hooks/useSdkQueries";
 import TokenBox from "@/components/registerToken/TokenBox";
+import TokenCard from "@/components/registerToken/TokenCard";
 import { Token } from "@/generated/models.gen";
-import { displayAddress } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { ARROW_LEFT } from "@/components/Icons";
+import { ARROW_LEFT, QUESTION } from "@/components/Icons";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
+import { indexAddress } from "@/lib/utils";
+import { mainnetNFTs } from "@/lib/nfts";
+import { useTokenUris } from "@/hooks/useTokenUris";
 
 const RegisterToken = () => {
   const { address } = useAccount();
@@ -26,18 +30,50 @@ const RegisterToken = () => {
   const [_tokenId, setTokenId] = useState("");
   const [tokenBalance, setTokenBalance] = useState<Record<string, bigint>>({});
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
+  const [tokenInfo, setTokenInfo] = useState<{
+    name: string;
+    symbol: string;
+  } | null>(null);
+  const [loadingTokenInfo, setLoadingTokenInfo] = useState(false);
   const isMainnet = selectedChainConfig?.chainId === "SN_MAIN";
 
   const state = useDojoStore((state) => state);
   const tokens = state.getEntitiesByModel(namespace, "Token");
 
+  // For token preview image fetching
+  const tokenUris = useTokenUris(_tokenAddress ? [_tokenAddress] : []);
+
   useSubscribeTokensQuery(namespace);
 
-  const { mintErc20, mintErc721, getBalanceGeneral } = useSystemCalls();
+  const {
+    mintErc20,
+    mintErc721,
+    getBalanceGeneral,
+    registerToken,
+    getTokenInfo,
+  } = useSystemCalls();
 
-  const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChangeAddress = async (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setTokenAddress(value);
+
+    // Reset token info when address changes
+    setTokenInfo(null);
+
+    // If address looks like a valid contract address, fetch token info
+    if (value.length >= 60 && value.startsWith("0x")) {
+      setLoadingTokenInfo(true);
+      try {
+        const info = await getTokenInfo(value);
+        console.log(info);
+        setTokenInfo(info);
+      } catch (error) {
+        console.error("Failed to fetch token info:", error);
+        setTokenInfo(null);
+      } finally {
+        setLoadingTokenInfo(false);
+      }
+    }
   };
 
   const handleChangeTokenId = (e: ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +114,40 @@ const RegisterToken = () => {
     setTimeout(() => {
       setCopiedStates((prev) => ({ ...prev, [standard]: false }));
     }, 2000);
+  };
+
+  const handleRegisterToken = async () => {
+    if (!tokenType || !_tokenAddress || !address) return;
+
+    try {
+      await registerToken(
+        _tokenAddress,
+        tokenType as "erc20" | "erc721",
+        _tokenId
+      );
+      // Reset form after successful registration
+      setTokenAddress("");
+      setTokenId("");
+      setTokenType(null);
+    } catch (error) {
+      console.error("Failed to register token:", error);
+    }
+  };
+
+  const getTokenPreviewImage = () => {
+    if (!_tokenAddress || !tokenType) return null;
+
+    if (tokenType === "erc20") {
+      return getTokenLogoUrl(selectedChainConfig?.chainId ?? "", _tokenAddress);
+    } else {
+      const whitelistedImage = mainnetNFTs.find(
+        (nft) => indexAddress(nft.address) === indexAddress(_tokenAddress)
+      )?.image;
+      if (whitelistedImage) {
+        return whitelistedImage;
+      }
+      return tokenUris[_tokenAddress]?.image ?? null;
+    }
   };
 
   return (
@@ -139,23 +209,11 @@ const RegisterToken = () => {
             ) : (
               <>
                 {!!tokens && tokens.length > 0 ? (
-                  <div className="flex flex-row gap-2 justify-center">
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-brand/50">
                     {tokens.map((token) => {
                       const tokenModel = token.models[namespace].Token as Token;
                       return (
-                        <Button
-                          key={token.entityId}
-                          variant="outline"
-                          className="relative"
-                        >
-                          {tokenModel?.name}
-                          <span className="absolute top-0 text-xs uppercase text-terminal-green/75">
-                            {tokenModel?.token_type}
-                          </span>
-                          <span className="absolute bottom-0 text-xs uppercase text-terminal-green/75">
-                            {displayAddress(tokenModel?.address!)}
-                          </span>
-                        </Button>
+                        <TokenCard key={token.entityId} token={tokenModel} />
                       );
                     })}
                   </div>
@@ -178,7 +236,7 @@ const RegisterToken = () => {
             <div className="flex flex-col gap-2 px-4">
               <div className="flex flex-row items-center gap-2">
                 <div className="flex flex-col items-center gap-2">
-                  <h3 className="text-xl uppercase">Select Token Type</h3>
+                  <h3 className="text-sm uppercase">Select Token Type</h3>
                   <div className="flex flex-row gap-2">
                     <Button
                       variant={tokenType === "erc20" ? "default" : "outline"}
@@ -195,17 +253,45 @@ const RegisterToken = () => {
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <h3 className="text-xl uppercase">Paste Contract Address</h3>
+                  <div className="flex items-center justify-between w-[700px]">
+                    <h3 className="text-sm uppercase">Paste Contract Address</h3>
+                    {/* Token Preview above input on the right */}
+                    {(tokenInfo || loadingTokenInfo) && (
+                      <div className="flex items-center gap-2">
+                        {loadingTokenInfo ? (
+                          <div className="w-5 h-5 border border-brand/20 border-t-brand rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            {getTokenPreviewImage() ? (
+                              <img
+                                src={getTokenPreviewImage()!}
+                                className="w-6 h-6 rounded-full object-cover"
+                                alt="Token logo"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 flex items-center justify-center">
+                                <QUESTION />
+                              </div>
+                            )}
+                            <span className="text-sm font-bold">
+                              {tokenInfo?.symbol} • {tokenType?.toUpperCase()}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <Input
                     type="text"
                     name="tokenAddress"
                     onChange={handleChangeAddress}
-                    className="p-1 m-2 h-12 w-[700px] 2xl:text-2xl"
+                    className="p-3 h-12 w-[700px] text-sm"
+                    placeholder="0x..."
                   />
                 </div>
                 {tokenType === "erc721" && (
                   <div className="flex flex-col items-center gap-2">
-                    <h3 className="text-xl">Enter Token ID</h3>
+                    <h3 className="text-sm uppercase">Enter Token ID</h3>
                     <Input
                       type="number"
                       name="tokenId"
@@ -214,18 +300,20 @@ const RegisterToken = () => {
                     />
                   </div>
                 )}
-                {/* <Button
+              </div>
+              <div className="flex justify-center">
+                <Button
                   onClick={handleRegisterToken}
                   disabled={
-                    tokenAddress == "" ||
+                    _tokenAddress === "" ||
                     tokenType === null ||
-                    (tokenType === TokenDataEnum.erc721
-                      ? tokenId === ""
-                      : false)
+                    (tokenType === "erc721" && _tokenId === "") ||
+                    !address
                   }
+                  className="w-1/2 h-14 text-lg font-bold uppercase flex items-center justify-center"
                 >
-                  Register Token
-                </Button> */}
+                  REGISTER TOKEN
+                </Button>
               </div>
             </div>
           </div>
