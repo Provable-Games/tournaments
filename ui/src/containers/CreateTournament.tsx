@@ -79,6 +79,7 @@ const formSchema = z.object({
       token: z.custom<FormToken>().optional(),
       amount: z.number().min(0).optional(),
       value: z.number().min(0).optional(),
+      tokenDecimals: z.number().min(0).max(18).optional(),
       creatorFeePercentage: z.number().min(0).max(100).optional(),
       gameFeePercentage: z.number().min(0).max(100).optional(),
       prizeDistribution: z
@@ -99,6 +100,7 @@ const formSchema = z.object({
           token: z.custom<FormToken>(),
           amount: z.number().min(0),
           position: z.number().min(1),
+          tokenDecimals: z.number().min(0).max(18).optional(),
         }),
         z.object({
           type: z.literal("ERC721"),

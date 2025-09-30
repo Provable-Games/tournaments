@@ -54,7 +54,7 @@ export function AddPrizesDialog({
   const { address } = useAccount();
   const { namespace, selectedChainConfig } = useDojo();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndAddPrizes, getBalanceGeneral } = useSystemCalls();
+  const { approveAndAddPrizes, getBalanceGeneral, getTokenDecimals } = useSystemCalls();
   const [selectedToken, setSelectedToken] = useState<FormToken | undefined>(
     undefined
   );
@@ -75,6 +75,7 @@ export function AddPrizesDialog({
   );
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -185,7 +186,41 @@ export function AddPrizesDialog({
     try {
       let prizesToAdd: Prize[] = [];
 
-      prizesToAdd = currentPrizes.map((prize, index) => ({
+      // Filter out prizes with 0 amounts to avoid transaction errors
+      const validPrizes = currentPrizes.filter(prize => {
+        if (prize.tokenType === "ERC20") {
+          return prize.amount && prize.amount > 0;
+        }
+        return true; // ERC721 prizes are always valid if they have a tokenId
+      });
+
+      // Fetch decimals for all unique ERC20 token addresses
+      const uniqueERC20Addresses = Array.from(
+        new Set(
+          validPrizes
+            .filter(prize => prize.tokenType === "ERC20")
+            .map(prize => prize.tokenAddress)
+        )
+      );
+
+      const decimalsPromises = uniqueERC20Addresses.map(async (address) => {
+        if (!tokenDecimals[address]) {
+          const decimals = await getTokenDecimals(address);
+          return { address, decimals };
+        }
+        return { address, decimals: tokenDecimals[address] };
+      });
+
+      const decimalsResults = await Promise.all(decimalsPromises);
+      const newDecimals = decimalsResults.reduce((acc, { address, decimals }) => {
+        acc[address] = decimals;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Update decimals state
+      setTokenDecimals(prev => ({ ...prev, ...newDecimals }));
+
+      prizesToAdd = validPrizes.map((prize, index) => ({
         id: Number(prizeCount) + index + 1,
         tournament_id: tournamentId,
         token_address: prize.tokenAddress,
@@ -194,7 +229,7 @@ export function AddPrizesDialog({
             ? new CairoCustomEnum({
                 erc20: {
                   amount: addAddressPadding(
-                    bigintToHex(prize.amount! * 10 ** 18)
+                    bigintToHex(prize.amount! * 10 ** (newDecimals[prize.tokenAddress] || 18))
                   ),
                 },
                 erc721: undefined,
@@ -327,11 +362,26 @@ export function AddPrizesDialog({
       // Check if any token has insufficient balance
       let insufficient = false;
 
+      // Get decimals for balance checking
+      const erc20Addresses = aggregatedPrizesArray
+        .filter((prize: any) => prize.tokenType === "ERC20")
+        .map((prize: any) => prize.tokenAddress);
+      
+      const decimalsForBalance: Record<string, number> = {};
+      for (const address of erc20Addresses) {
+        if (!tokenDecimals[address]) {
+          decimalsForBalance[address] = await getTokenDecimals(address);
+        } else {
+          decimalsForBalance[address] = tokenDecimals[address];
+        }
+      }
+
       for (const prize of aggregatedPrizesArray) {
         if (prize.tokenType === "ERC20") {
-          // For ERC20, check if balance >= amount
+          // For ERC20, check if balance >= amount using correct decimals
           const tokenBalance = BigInt(balances[prize.tokenAddress] || "0");
-          const requiredAmount = BigInt(Math.floor(prize.amount * 10 ** 18)); // Convert to wei
+          const decimals = decimalsForBalance[prize.tokenAddress] || 18;
+          const requiredAmount = BigInt(Math.floor(prize.amount * 10 ** decimals));
 
           if (tokenBalance < requiredAmount) {
             insufficient = true;

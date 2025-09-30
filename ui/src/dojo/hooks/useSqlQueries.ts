@@ -179,14 +179,14 @@ export const useGetMyTournamentsCount = ({
   fromTournamentId,
 }: {
   namespace: string;
-  address: string;
+  address: string | null;
   gameAddresses: string[];
   tokenIds: string[];
   fromTournamentId?: string;
 }) => {
   const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
   const query = useMemo(
-    () => `
+    () => address ? `
     WITH registered_tournaments AS (
       SELECT DISTINCT r.tournament_id
       FROM '${namespace}-Registration' r
@@ -205,7 +205,7 @@ export const useGetMyTournamentsCount = ({
     )
     SELECT COUNT(DISTINCT tournament_id) as count
     FROM filtered_tournaments
-  `,
+  ` : null,
     [namespace, address, gameAddresses, tokenIdsKey, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);

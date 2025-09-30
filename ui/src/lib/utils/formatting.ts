@@ -122,7 +122,7 @@ export const processTournamentData = (
       ? new CairoOption(CairoOptionVariant.Some, {
           token_address: formData.entryFees?.token?.address!,
           amount: addAddressPadding(
-            bigintToHex(formData.entryFees?.amount! * 10 ** 18)
+            bigintToHex(formData.entryFees?.amount! * 10 ** (formData.entryFees?.tokenDecimals || 18))
           ),
           distribution: formData.entryFees?.prizeDistribution?.map(
             (prize) => prize.percentage
@@ -160,7 +160,7 @@ export const processPrizes = (
       prize.type === "ERC20"
         ? new CairoCustomEnum({
             erc20: {
-              amount: addAddressPadding(bigintToHex(prize.amount! * 10 ** 18)),
+              amount: addAddressPadding(bigintToHex(prize.amount! * 10 ** (prize.tokenDecimals || 18))),
             },
             erc721: undefined,
           })
@@ -489,14 +489,17 @@ export const calculatePrizeValue = (
   prize: {
     type: "erc20" | "erc721";
     value: bigint[] | bigint;
+    address?: string;
   },
   symbol: string,
-  prices: Record<string, number | undefined>
+  prices: Record<string, number | undefined>,
+  tokenDecimals?: Record<string, number>
 ): number => {
   if (prize.type !== "erc20") return 0;
 
   const price = prices[symbol];
-  const amount = Number(prize.value) / 10 ** 18;
+  const decimals = tokenDecimals?.[prize.address || ""] || 18;
+  const amount = Number(prize.value) / 10 ** decimals;
 
   // If no price is available, just return the token amount
   if (price === undefined) return amount;
@@ -507,13 +510,15 @@ export const calculatePrizeValue = (
 
 export const calculateTotalValue = (
   groupedPrizes: TokenPrizes,
-  prices: TokenPrices
+  prices: TokenPrices,
+  tokenDecimals?: Record<string, number>
 ) => {
   return Object.entries(groupedPrizes)
     .filter(([_, prize]) => prize.type === "erc20")
     .reduce((total, [symbol, prize]) => {
       const price = prices[symbol];
-      const amount = Number(prize.value) / 10 ** 18;
+      const decimals = tokenDecimals?.[prize.address || ""] || 18;
+      const amount = Number(prize.value) / 10 ** decimals;
 
       if (price === undefined) return total;
 

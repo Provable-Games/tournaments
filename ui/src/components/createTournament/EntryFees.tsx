@@ -24,9 +24,11 @@ import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
 import { TokenValue } from "@/components/createTournament/containers/TokenValue";
 import { useDojo } from "@/context/dojo";
+import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 
 const EntryFees = ({ form }: StepProps) => {
   const { selectedChainConfig } = useDojo();
+  const { getTokenDecimals } = useSystemCalls();
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -106,8 +108,18 @@ const EntryFees = ({ form }: StepProps) => {
                           <div className="flex justify-center sm:justify-start pt-4 sm:pt-6">
                             <TokenDialog
                               selectedToken={form.watch("entryFees.token")}
-                              onSelect={(token) => {
+                              onSelect={async (token) => {
                                 tokenField.onChange(token);
+                                // Fetch token decimals and set it in the form
+                                if (token.address && token.token_type === "erc20") {
+                                  try {
+                                    const decimals = await getTokenDecimals(token.address);
+                                    form.setValue("entryFees.tokenDecimals", decimals);
+                                  } catch (error) {
+                                    console.error("Failed to fetch token decimals:", error);
+                                    form.setValue("entryFees.tokenDecimals", 18); // Default to 18
+                                  }
+                                }
                               }}
                               type="erc20"
                             />

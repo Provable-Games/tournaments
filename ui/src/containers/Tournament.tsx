@@ -14,6 +14,7 @@ import { bigintToHex, feltToString, formatTime } from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
 import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import {
   Tournament as TournamentModel,
   Prize,
@@ -70,6 +71,7 @@ const Tournament = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const { namespace, selectedChainConfig } = useDojo();
+  const { getTokenDecimals } = useSystemCalls();
   const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
@@ -79,6 +81,8 @@ const Tournament = () => {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tournamentExists, setTournamentExists] = useState(false);
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
+  const [tokenDecimalsLoading, setTokenDecimalsLoading] = useState(false);
   const { data: tournamentsCount } = useGetTournamentsCount({
     namespace: namespace,
   });
@@ -266,9 +270,57 @@ const Tournament = () => {
     ],
   });
 
+  // Fetch token decimals for all ERC20 tokens
+  useEffect(() => {
+    const fetchTokenDecimals = async () => {
+      if (tokenDecimalsLoading) return; // Prevent multiple simultaneous fetches
+      
+      const erc20TokenAddresses = tokens
+        .filter(token => token.token_type === "erc20")
+        .map(token => token.address);
+      
+      const entryFeeTokenAddress = entryFeeToken;
+      const allTokenAddresses = [...erc20TokenAddresses];
+      if (entryFeeTokenAddress && !allTokenAddresses.includes(entryFeeTokenAddress)) {
+        allTokenAddresses.push(entryFeeTokenAddress);
+      }
+
+      // Check if we already have all the decimals we need
+      const missingAddresses = allTokenAddresses.filter(addr => !(addr in tokenDecimals));
+      if (missingAddresses.length === 0) return;
+
+      setTokenDecimalsLoading(true);
+      const decimalsMap: Record<string, number> = { ...tokenDecimals };
+      
+      // Use Promise.all to fetch decimals in parallel instead of sequential for loop
+      const decimalsPromises = missingAddresses.map(async (address) => {
+        try {
+          const decimals = await getTokenDecimals(address);
+          return { address, decimals };
+        } catch (error) {
+          console.error(`Failed to fetch decimals for token ${address}:`, error);
+          return { address, decimals: 18 }; // Default to 18
+        }
+      });
+
+      const results = await Promise.all(decimalsPromises);
+      results.forEach(({ address, decimals }) => {
+        decimalsMap[address] = decimals;
+      });
+      
+      setTokenDecimals(decimalsMap);
+      setTokenDecimalsLoading(false);
+    };
+
+    if (tokens.length > 0 && !tokenDecimalsLoading) {
+      fetchTokenDecimals();
+    }
+  }, [tokens, entryFeeToken]);
+
   const totalPrizesValueUSD = calculateTotalValue(
     groupedByTokensPrizes,
-    prices
+    prices,
+    tokenDecimals
   );
 
   const totalPrizeNFTs = countTotalNFTs(groupedByTokensPrizes);
@@ -277,10 +329,13 @@ const Tournament = () => {
   const entryFeeLoading = isTokenLoading(entryFeeTokenSymbol ?? "");
 
   const entryFee = hasEntryFee
-    ? (
-        Number(BigInt(tournamentModel?.entry_fee.Some?.amount!) / 10n ** 18n) *
-        Number(entryFeePrice)
-      ).toFixed(2)
+    ? (() => {
+        const entryFeeDecimals = tokenDecimals[entryFeeToken ?? ""] || 18;
+        return (
+          Number(BigInt(tournamentModel?.entry_fee.Some?.amount!) / 10n ** BigInt(entryFeeDecimals)) *
+          Number(entryFeePrice)
+        ).toFixed(2);
+      })()
     : "Free";
 
   const isStarted =

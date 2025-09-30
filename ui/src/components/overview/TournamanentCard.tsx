@@ -78,7 +78,7 @@ export const TournamentCard = ({
     ],
   });
 
-  const totalPrizesValueUSD = calculateTotalValue(groupedPrizes, prices);
+  const totalPrizesValueUSD = calculateTotalValue(groupedPrizes, prices, undefined);
   const totalPrizeNFTs = countTotalNFTs(groupedPrizes);
 
   const startDate = new Date(Number(tournament.schedule.game.start) * 1000);

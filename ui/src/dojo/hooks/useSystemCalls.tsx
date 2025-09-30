@@ -423,6 +423,21 @@ export const useSystemCalls = () => {
     return await resolvedClient.erc721_mock.balanceOf(address);
   };
 
+  const getTokenDecimals = async (tokenAddress: string) => {
+    try {
+      if (!account) return 18; // Default to 18 if no account
+      const decimalsResult = await account.callContract({
+        contractAddress: tokenAddress,
+        entrypoint: "decimals",
+        calldata: [],
+      });
+      return Number(decimalsResult?.[0] || 18);
+    } catch (error) {
+      console.error("Error fetching token decimals:", error);
+      return 18; // Default to 18 on error
+    }
+  };
+
   const getTokenInfo = async (tokenAddress: string) => {
     try {
       if (!account) return null;
@@ -534,6 +549,7 @@ export const useSystemCalls = () => {
     mintErc20,
     getErc20Balance,
     getErc721Balance,
+    getTokenDecimals,
     getTokenInfo,
     registerToken,
   };

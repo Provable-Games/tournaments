@@ -94,7 +94,7 @@ const TournamentConfirmation = ({
         value: (prize.percentage * (formData.entryFees?.value ?? 0)) / 100,
       };
     });
-  }, [prizeDistributionString]);
+  }, [prizeDistributionString, formData.entryFees?.amount, formData.entryFees?.value, formData.entryFees?.token?.address]);
 
   const handleConfirm = async () => {
     setIsCreating(true);

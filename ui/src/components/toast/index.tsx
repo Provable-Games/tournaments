@@ -63,8 +63,8 @@ export const useToastMessages = (): ToastMessages => {
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 Starts in: ${formatTime(startsIn)}`,
-              `⏳ Live for: ${formatTime(duration)}`,
+              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
+              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
               "",
               `Join here for a chance win exciting prizes: https://budokan.gg/tournament/${tournamentId}`,
             ].join("\n")}
@@ -99,8 +99,8 @@ export const useToastMessages = (): ToastMessages => {
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 Starts in: ${formatTime(startsIn)}`,
-              `⏳ Live for: ${formatTime(duration)}`,
+              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
+              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
               "",
               `Enter now: https://budokan.gg/tournament/${tournamentId}`,
             ].join("\n")}

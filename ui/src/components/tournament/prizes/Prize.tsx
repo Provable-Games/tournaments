@@ -13,7 +13,6 @@ import {
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { TokenPrizes } from "@/lib/types";
 import { getTokenLogoUrl } from "@/lib/tokensMeta";
-import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Token } from "@/generated/models.gen";
 import { QUESTION } from "@/components/Icons";
@@ -23,6 +22,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDojo } from "@/context/dojo";
+import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
+import { useEffect, useState } from "react";
 
 interface PrizeProps {
   position: number;
@@ -33,9 +34,39 @@ interface PrizeProps {
 
 const Prize = ({ position, prizes, prices, tokens }: PrizeProps) => {
   const { selectedChainConfig } = useDojo();
+  const { getTokenDecimals } = useSystemCalls();
   const totalPrizeNFTs = countTotalNFTs(prizes);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
-  const totalPrizesValueUSD = calculateTotalValue(prizes, prices);
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
+  
+  // Fetch token decimals for all ERC20 prizes
+  useEffect(() => {
+    const fetchDecimals = async () => {
+      const erc20Addresses = Object.values(prizes)
+        .filter(prize => prize.type === "erc20")
+        .map(prize => prize.address);
+      
+      const decimalsPromises = erc20Addresses.map(async (address) => {
+        if (!tokenDecimals[address]) {
+          const decimals = await getTokenDecimals(address);
+          return { address, decimals };
+        }
+        return { address, decimals: tokenDecimals[address] };
+      });
+
+      const results = await Promise.all(decimalsPromises);
+      const newDecimals = results.reduce((acc, { address, decimals }) => {
+        acc[address] = decimals;
+        return acc;
+      }, {} as Record<string, number>);
+
+      setTokenDecimals(prev => ({ ...prev, ...newDecimals }));
+    };
+
+    fetchDecimals();
+  }, [prizes, getTokenDecimals]);
+
+  const totalPrizesValueUSD = calculateTotalValue(prizes, prices, tokenDecimals);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -66,6 +97,7 @@ const Prize = ({ position, prizes, prices, tokens }: PrizeProps) => {
             const token = tokens.find(
               (token) => token.address === prize.address
             );
+            const decimals = tokenDecimals[prize.address] || 18;
             return (
               <div
                 key={symbol}
@@ -74,7 +106,7 @@ const Prize = ({ position, prizes, prices, tokens }: PrizeProps) => {
                 {prize.type === "erc20" ? (
                   <div className="flex flex-row gap-1 items-center">
                     <span>{`${formatNumber(
-                      Number(prize.value) / 10 ** 18
+                      Number(prize.value) / 10 ** decimals
                     )}`}</span>
                     {getTokenLogoUrl(chainId, prize.address) ? (
                       <img
@@ -159,13 +191,14 @@ const Prize = ({ position, prizes, prices, tokens }: PrizeProps) => {
               ) : Object.entries(prizes).length > 0 ? (
                 <div className="flex flex-row items-center gap-2 font-brand xl:text-lg 3xl:text-2xl">
                   {Object.entries(prizes).map(([symbol, prize]) => {
+                    const decimals = tokenDecimals[prize.address] || 18;
                     return (
                       <div
                         className="flex flex-row items-center gap-2"
                         key={symbol}
                       >
                         <span className="whitespace-nowrap">{`${formatNumber(
-                          Number(prize.value) / 10 ** 18
+                          Number(prize.value) / 10 ** decimals
                         )}`}</span>
                         <div className="w-6 h-6">
                           <img

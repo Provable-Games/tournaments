@@ -170,7 +170,7 @@ const Overview = () => {
 
   const { data: myTournamentsCount } = useGetMyTournamentsCount({
     namespace: namespace,
-    address: queryAddress ?? "",
+    address: queryAddress,
     gameAddresses: gameAddresses ?? [],
     tokenIds: gameTokenIds,
     fromTournamentId: fromTournamentId,

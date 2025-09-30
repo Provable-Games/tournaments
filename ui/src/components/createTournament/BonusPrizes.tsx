@@ -57,7 +57,7 @@ const BonusPrizes = ({ form }: StepProps) => {
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
-  const { getBalanceGeneral } = useSystemCalls();
+  const { getBalanceGeneral, getTokenDecimals } = useSystemCalls();
 
   const uniqueTokenSymbols = useMemo(() => {
     const bonusPrizes = form.watch("bonusPrizes") || [];
@@ -131,8 +131,15 @@ const BonusPrizes = ({ form }: StepProps) => {
 
   useEffect(() => {
     const checkBalances = async () => {
-      const balances = await getBalanceGeneral(newPrize.token?.address ?? "");
-      const amount = (newPrize.amount ?? 0) * 10 ** 18;
+      if (!newPrize.token?.address || !newPrize.amount) {
+        setHasInsufficientBalance(false);
+        return;
+      }
+      
+      const balances = await getBalanceGeneral(newPrize.token.address);
+      const decimals = await getTokenDecimals(newPrize.token.address);
+      const amount = (newPrize.amount ?? 0) * 10 ** decimals;
+      
       if (balances < BigInt(amount)) {
         setHasInsufficientBalance(true);
       } else {
@@ -182,23 +189,37 @@ const BonusPrizes = ({ form }: StepProps) => {
                         className="sm:hidden"
                         type="button"
                         disabled={!isValidPrize() || hasInsufficientBalance}
-                        onClick={() => {
+                        onClick={async () => {
                           const currentPrizes = form.watch("bonusPrizes") || [];
                           if (
                             newPrize.tokenType === "ERC20" &&
                             newPrize.amount &&
                             totalDistributionPercentage === 100
                           ) {
-                            form.setValue("bonusPrizes", [
-                              ...currentPrizes,
-                              ...prizeDistributions.map((prize) => ({
+                            // Fetch token decimals for ERC20 tokens
+                            let tokenDecimals = 18;
+                            try {
+                              tokenDecimals = await getTokenDecimals(newPrize.token.address);
+                            } catch (error) {
+                              console.error("Failed to fetch token decimals:", error);
+                            }
+                            
+                            // Filter out prizes with 0 amount to avoid transaction errors
+                            const validPrizes = prizeDistributions
+                              .map((prize) => ({
                                 type: "ERC20" as const,
                                 token: newPrize.token,
                                 amount:
                                   ((newPrize.amount ?? 0) * prize.percentage) /
                                   100,
                                 position: prize.position,
-                              })),
+                                tokenDecimals,
+                              }))
+                              .filter((prize) => prize.amount > 0);
+
+                            form.setValue("bonusPrizes", [
+                              ...currentPrizes,
+                              ...validPrizes,
                             ]);
                           } else if (
                             newPrize.tokenType === "ERC721" &&
@@ -320,22 +341,36 @@ const BonusPrizes = ({ form }: StepProps) => {
                     className="hidden sm:block"
                     type="button"
                     disabled={!isValidPrize() || hasInsufficientBalance}
-                    onClick={() => {
+                    onClick={async () => {
                       const currentPrizes = form.watch("bonusPrizes") || [];
                       if (
                         newPrize.tokenType === "ERC20" &&
                         newPrize.amount &&
                         totalDistributionPercentage === 100
                       ) {
-                        form.setValue("bonusPrizes", [
-                          ...currentPrizes,
-                          ...prizeDistributions.map((prize) => ({
+                        // Fetch token decimals for ERC20 tokens
+                        let tokenDecimals = 18;
+                        try {
+                          tokenDecimals = await getTokenDecimals(newPrize.token.address);
+                        } catch (error) {
+                          console.error("Failed to fetch token decimals:", error);
+                        }
+                        
+                        // Filter out prizes with 0 amount to avoid transaction errors
+                        const validPrizes = prizeDistributions
+                          .map((prize) => ({
                             type: "ERC20" as const,
                             token: newPrize.token,
                             amount:
                               ((newPrize.amount ?? 0) * prize.percentage) / 100,
                             position: prize.position,
-                          })),
+                            tokenDecimals,
+                          }))
+                          .filter((prize) => prize.amount > 0);
+
+                        form.setValue("bonusPrizes", [
+                          ...currentPrizes,
+                          ...validPrizes,
                         ]);
                       } else if (
                         newPrize.tokenType === "ERC721" &&
