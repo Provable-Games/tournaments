@@ -93,6 +93,7 @@ function App() {
             ? "https://darkshuffle.io/favicon.svg"
             : metadata?.image
           : whitelisted?.image,
+        name: whitelisted?.name ? whitelisted?.name : metadata?.name,
         // Add flags
         isWhitelisted: !!whitelisted,
         existsInMetadata: !!metadata,
