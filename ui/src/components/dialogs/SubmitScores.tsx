@@ -11,7 +11,7 @@ import { useAccount } from "@starknet-react/core";
 import { Leaderboard, Tournament } from "@/generated/models.gen";
 import { padAddress, feltToString, getOrdinalSuffix } from "@/lib/utils";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
-import { useSubscribeGameTokens } from "metagame-sdk";
+import { useGameTokens } from "metagame-sdk";
 import { getSubmittableScores } from "@/lib/utils/formatting";
 import { useState } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
@@ -38,7 +38,7 @@ export function SubmitScoresDialog({
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 
-  const { games } = useSubscribeGameTokens({
+  const { games } = useGameTokens({
     context: {
       name: "Budokan",
       attributes: {
@@ -46,11 +46,11 @@ export function SubmitScoresDialog({
       },
     },
     pagination: {
-      pageSize: leaderboardSize,
-      sortBy: "score",
-      sortOrder: "desc",
+      pageSize: leaderboardSize || 10,
     },
-    minted_by_address: padAddress(tournamentAddress),
+    sortBy: "score",
+    sortOrder: "desc",
+    mintedByAddress: padAddress(tournamentAddress),
   });
 
   const submittableScores = getSubmittableScores(games, leaderboard);

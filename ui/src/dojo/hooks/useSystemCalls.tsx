@@ -238,6 +238,97 @@ export const useSystemCalls = () => {
     }
   };
 
+  const approveAndAddPrizesBatched = async (
+    tournamentId: BigNumberish,
+    tournamentName: string,
+    prizes: Prize[],
+    showToast: boolean,
+    prizeTotalUsd: number,
+    totalCurrentPrizes: number,
+    batchSize: number = 50
+  ) => {
+    try {
+      // First, execute all approvals in one transaction
+      const approvalCalls = Object.values(
+        prizes.reduce((acc: { [key: string]: any }, prize) => {
+          const tokenAddress = prize.token_address;
+          if (!acc[tokenAddress]) {
+            acc[tokenAddress] = {
+              contractAddress: tokenAddress,
+              entrypoint: "approve",
+              calldata: CallData.compile([
+                tournamentAddress,
+                prize.token_type.variant.erc20?.amount!,
+                "0",
+              ]),
+              totalAmount: BigInt(prize.token_type.variant.erc20?.amount! || 0),
+            };
+          } else {
+            // Sum the amounts for the same token
+            acc[tokenAddress].totalAmount += BigInt(
+              prize.token_type.variant.erc20?.amount! || 0
+            );
+            // Update calldata with new total
+            acc[tokenAddress].calldata = CallData.compile([
+              tournamentAddress,
+              acc[tokenAddress].totalAmount.toString(),
+              "0",
+            ]);
+          }
+          return acc;
+        }, {})
+      ).map(({ contractAddress, entrypoint, calldata }) => ({
+        contractAddress,
+        entrypoint,
+        calldata,
+      }));
+
+      if (approvalCalls.length > 0) {
+        await account?.execute(approvalCalls);
+      }
+
+      // Split prizes into batches and execute sequentially
+      const batches = [];
+      for (let i = 0; i < prizes.length; i += batchSize) {
+        batches.push(prizes.slice(i, i + batchSize));
+      }
+
+      let addedPrizesCount = 0;
+      for (const [index, batch] of batches.entries()) {
+        const calls = batch.map((prize) => ({
+          contractAddress: tournamentAddress,
+          entrypoint: "add_prize",
+          calldata: CallData.compile([
+            prize.tournament_id,
+            prize.token_address,
+            prize.token_type,
+            prize.payout_position,
+          ]),
+        }));
+
+        console.log(`Processing batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
+        
+        const tx = await account?.execute(calls);
+        
+        // Wait for this batch to be processed
+        addedPrizesCount += batch.length;
+        await waitForAddPrizes(totalCurrentPrizes + addedPrizesCount);
+
+        // Show toast only on the last batch if requested
+        if (showToast && tx && index === batches.length - 1) {
+          showPrizeAddition({
+            tournamentName,
+            tournamentId: Number(tournamentId).toString(),
+            prizeTotalUsd,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error executing batched add prizes:", error);
+      throw error;
+    }
+  };
+
   const createTournamentAndApproveAndAddPrizes = async (
     tournament: Tournament,
     prizes: Prize[],
@@ -309,6 +400,8 @@ export const useSystemCalls = () => {
         calls.push(addPrizesCall);
       }
 
+      console.log(calls);
+
       const tx = await account?.execute(calls);
 
       await waitForTournamentCreation(Number(tournament.id));
@@ -326,6 +419,110 @@ export const useSystemCalls = () => {
       }
     } catch (error) {
       console.error("Error executing create tournament:", error);
+      throw error;
+    }
+  };
+
+  const createTournamentAndApproveAndAddPrizesBatched = async (
+    tournament: Tournament,
+    prizes: Prize[],
+    entryFeeUsdCost: number,
+    duration: number,
+    batchSize: number = 50
+  ) => {
+    const executableTournament = prepareForExecution(tournament);
+    const game = getGameName(tournament.game_config.address);
+    try {
+      // First, create the tournament with approvals
+      let initialCalls = [];
+      const createCall = {
+        contractAddress: tournamentAddress,
+        entrypoint: "create_tournament",
+        calldata: CallData.compile([
+          address!,
+          executableTournament.metadata,
+          executableTournament.schedule,
+          executableTournament.game_config,
+          executableTournament.entry_fee,
+          executableTournament.entry_requirement,
+        ]),
+      };
+      initialCalls.push(createCall);
+      
+      const summedCalls = Object.values(
+        prizes.reduce((acc: { [key: string]: any }, prize) => {
+          const tokenAddress = prize.token_address;
+          if (!acc[tokenAddress]) {
+            acc[tokenAddress] = {
+              contractAddress: tokenAddress,
+              entrypoint: "approve",
+              calldata: CallData.compile([
+                tournamentAddress,
+                prize.token_type.variant.erc20?.amount!,
+                "0",
+              ]),
+              totalAmount: BigInt(prize.token_type.variant.erc20?.amount! || 0),
+            };
+          } else {
+            // Sum the amounts for the same token
+            acc[tokenAddress].totalAmount += BigInt(
+              prize.token_type.variant.erc20?.amount! || 0
+            );
+            // Update calldata with new total
+            acc[tokenAddress].calldata = CallData.compile([
+              tournamentAddress,
+              acc[tokenAddress].totalAmount.toString(),
+              "0",
+            ]);
+          }
+          return acc;
+        }, {})
+      ).map(({ contractAddress, entrypoint, calldata }) => ({
+        contractAddress,
+        entrypoint,
+        calldata,
+      }));
+      initialCalls.push(...summedCalls);
+
+      // Execute tournament creation with approvals
+      const tx = await account?.execute(initialCalls);
+      await waitForTournamentCreation(Number(tournament.id));
+
+      // Split prizes into batches and execute sequentially
+      const batches = [];
+      for (let i = 0; i < prizes.length; i += batchSize) {
+        batches.push(prizes.slice(i, i + batchSize));
+      }
+
+      for (const [index, batch] of batches.entries()) {
+        const calls = batch.map((prize) => ({
+          contractAddress: tournamentAddress,
+          entrypoint: "add_prize",
+          calldata: CallData.compile([
+            prize.tournament_id,
+            prize.token_address,
+            prize.token_type,
+            prize.payout_position,
+          ]),
+        }));
+
+        console.log(`Processing prize batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
+        await account?.execute(calls);
+      }
+
+      if (tx) {
+        showTournamentCreation({
+          tournamentName: feltToString(tournament.metadata.name),
+          tournamentId: Number(tournament.id).toString(),
+          game,
+          hasEntryFee: tournament.entry_fee.isSome(),
+          entryFeeUsdCost: entryFeeUsdCost,
+          startsIn: Number(tournament.schedule.game.start) - Date.now() / 1000,
+          duration,
+        });
+      }
+    } catch (error) {
+      console.error("Error executing create tournament with batched prizes:", error);
       throw error;
     }
   };
@@ -501,7 +698,7 @@ export const useSystemCalls = () => {
           entrypoint: "approve",
           calldata: CallData.compile([
             tournamentAddress,
-            { low: "1", high: "0" } // Approve 1 unit
+            { low: "1", high: "0" }, // Approve 1 unit
           ]),
         });
       } else {
@@ -516,7 +713,7 @@ export const useSystemCalls = () => {
           entrypoint: "approve",
           calldata: CallData.compile([
             tournamentAddress,
-            { low: tokenId || "1", high: "0" } // Token ID as u256
+            { low: tokenId || "1", high: "0" }, // Token ID as u256
           ]),
         });
       }
@@ -541,7 +738,9 @@ export const useSystemCalls = () => {
     approveAndEnterTournament,
     submitScores,
     approveAndAddPrizes,
+    approveAndAddPrizesBatched,
     createTournamentAndApproveAndAddPrizes,
+    createTournamentAndApproveAndAddPrizesBatched,
     claimPrizes,
     endGame,
     getBalanceGeneral,

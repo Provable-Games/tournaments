@@ -82,7 +82,7 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x079fdfdf5db57b6e1afc91553b21160b9ff126d59ed014299ba5b85fb1ddaa17",
+          "0x05e2dfbdc3c193de629e5beb116083b06bd944c1608c9c793351d5792ba29863",
         name: "Loot Survivor",
         image: "https://lootsurvivor.io/favicon-32x32.png",
         url: "https://tournaments.lootsurvivor.io/",

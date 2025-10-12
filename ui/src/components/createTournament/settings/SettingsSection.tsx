@@ -28,11 +28,10 @@ const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
     settingsIds: [field.value],
   });
 
-  const { settings: allSettings } = useSettings({
+  const { totalCount: settingsCount } = useSettings({
     gameAddresses: [form.watch("game")],
+    fetchCount: true,
   });
-
-  const settingsCount = allSettings.length;
 
   const totalPages = Math.ceil((settingsCount ?? 0) / settingsPerPage);
 
@@ -61,7 +60,7 @@ const GameSettingsField = ({ form, field }: GameSettingsFieldProps) => {
         onChange={field.onChange}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
-        settingsCount={settingsCount}
+        settingsCount={settingsCount ?? 0}
         totalPages={totalPages}
         isLoadingSettings={isLoadingSettings}
       />

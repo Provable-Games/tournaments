@@ -31,8 +31,8 @@ mod tests {
     mod helpers;
     #[cfg(test)]
     mod test_budokan;
-    // #[cfg(test)]
-    // mod test_budokan_stress_tests;
+    #[cfg(test)]
+    mod test_budokan_stress_tests;
     pub mod interfaces;
     pub mod constants;
     pub mod utils;

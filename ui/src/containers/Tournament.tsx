@@ -81,7 +81,9 @@ const Tournament = () => {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tournamentExists, setTournamentExists] = useState(false);
-  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
+    {}
+  );
   const [tokenDecimalsLoading, setTokenDecimalsLoading] = useState(false);
   const { data: tournamentsCount } = useGetTournamentsCount({
     namespace: namespace,
@@ -274,31 +276,39 @@ const Tournament = () => {
   useEffect(() => {
     const fetchTokenDecimals = async () => {
       if (tokenDecimalsLoading) return; // Prevent multiple simultaneous fetches
-      
+
       const erc20TokenAddresses = tokens
-        .filter(token => token.token_type === "erc20")
-        .map(token => token.address);
-      
+        .filter((token) => token.token_type === "erc20")
+        .map((token) => token.address);
+
       const entryFeeTokenAddress = entryFeeToken;
       const allTokenAddresses = [...erc20TokenAddresses];
-      if (entryFeeTokenAddress && !allTokenAddresses.includes(entryFeeTokenAddress)) {
+      if (
+        entryFeeTokenAddress &&
+        !allTokenAddresses.includes(entryFeeTokenAddress)
+      ) {
         allTokenAddresses.push(entryFeeTokenAddress);
       }
 
       // Check if we already have all the decimals we need
-      const missingAddresses = allTokenAddresses.filter(addr => !(addr in tokenDecimals));
+      const missingAddresses = allTokenAddresses.filter(
+        (addr) => !(addr in tokenDecimals)
+      );
       if (missingAddresses.length === 0) return;
 
       setTokenDecimalsLoading(true);
       const decimalsMap: Record<string, number> = { ...tokenDecimals };
-      
+
       // Use Promise.all to fetch decimals in parallel instead of sequential for loop
       const decimalsPromises = missingAddresses.map(async (address) => {
         try {
           const decimals = await getTokenDecimals(address);
           return { address, decimals };
         } catch (error) {
-          console.error(`Failed to fetch decimals for token ${address}:`, error);
+          console.error(
+            `Failed to fetch decimals for token ${address}:`,
+            error
+          );
           return { address, decimals: 18 }; // Default to 18
         }
       });
@@ -307,7 +317,7 @@ const Tournament = () => {
       results.forEach(({ address, decimals }) => {
         decimalsMap[address] = decimals;
       });
-      
+
       setTokenDecimals(decimalsMap);
       setTokenDecimalsLoading(false);
     };
@@ -332,8 +342,10 @@ const Tournament = () => {
     ? (() => {
         const entryFeeDecimals = tokenDecimals[entryFeeToken ?? ""] || 18;
         return (
-          Number(BigInt(tournamentModel?.entry_fee.Some?.amount!) / 10n ** BigInt(entryFeeDecimals)) *
-          Number(entryFeePrice)
+          Number(
+            BigInt(tournamentModel?.entry_fee.Some?.amount!) /
+              10n ** BigInt(entryFeeDecimals)
+          ) * Number(entryFeePrice)
         ).toFixed(2);
       })()
     : "Free";
@@ -522,7 +534,7 @@ const Tournament = () => {
               disabled={allClaimed}
             >
               <MONEY />
-              {allPrizes.length === 0 ? (
+              {claimablePrizeTypes.length === 0 ? (
                 <span className="hidden sm:block">No Prizes</span>
               ) : allClaimed ? (
                 <span className="hidden sm:block">Prizes Claimed</span>
