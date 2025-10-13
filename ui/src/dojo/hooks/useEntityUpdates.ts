@@ -20,7 +20,7 @@ export const useEntityUpdates = () => {
           Number(totalTournaments)
         );
       },
-      20000
+      30000
     );
   };
 
@@ -37,7 +37,7 @@ export const useEntityUpdates = () => {
           Number(entryCount) + 1
         );
       },
-      20000
+      30000
     );
   };
 
@@ -53,7 +53,7 @@ export const useEntityUpdates = () => {
           Number(prizeCount)
         );
       },
-      20000
+      30000
     );
   };
 
@@ -66,7 +66,7 @@ export const useEntityUpdates = () => {
       () => {
         return true;
       },
-      20000
+      30000
     );
   };
 
