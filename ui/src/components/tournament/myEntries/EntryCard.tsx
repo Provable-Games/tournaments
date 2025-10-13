@@ -109,7 +109,7 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
             <p className="text-sm font-medium">{game.player_name ?? ""}</p>
           </TooltipContent>
         </Tooltip>
-        {isActive && (
+        {isActive && !gameOver && (
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <Button
               size="sm"
@@ -130,7 +130,7 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
         <div className="flex flex-row items-center justify-center w-full px-2">
           {gameOver ? (
             <>
-              <p className="text-xs 3xl:text-sm text-red">Game Over</p>
+              <p className="text-xs 3xl:text-sm text-destructive">Game Over</p>
             </>
           ) : isActive ? (
             <>
