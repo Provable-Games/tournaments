@@ -55,7 +55,7 @@ export const useToastMessages = (): ToastMessages => {
           <p>Entered tournament {tournamentName}</p>
           <XShareButton
             text={[
-              `I've just entered "${tournamentName}" on @budokan_gg, the onchain gaming arena.`,
+              `I just entered "${tournamentName}" on Budokan, the premier onchain gaming arena.`,
               "",
               `🎮 ${game}`,
               `🎫 ${
@@ -63,10 +63,16 @@ export const useToastMessages = (): ToastMessages => {
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
-              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
+              `🏁 ${
+                startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
+              }`,
+              `⏳ ${
+                startsIn <= 0
+                  ? `Ends in: ${formatTime(duration + startsIn)}`
+                  : `Live for: ${formatTime(duration)}`
+              }`,
               "",
-              `Join here for a chance win exciting prizes: https://budokan.gg/tournament/${tournamentId}`,
+              `Join the fun now at @budokan_gg for a chance to win exciting prizes!`,
             ].join("\n")}
             className="w-fit"
           />
@@ -91,7 +97,7 @@ export const useToastMessages = (): ToastMessages => {
           <p>Created tournament {tournamentName}</p>
           <XShareButton
             text={[
-              `I just created tournament "${tournamentName}" on @budokan_gg, the onchain gaming arena.`,
+              `I just created tournament "${tournamentName}" on Budokan, the premier onchain gaming arena.`,
               "",
               `🎮 ${game}`,
               `🎫 ${
@@ -99,10 +105,16 @@ export const useToastMessages = (): ToastMessages => {
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
-              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
+              `🏁 ${
+                startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
+              }`,
+              `⏳ ${
+                startsIn <= 0
+                  ? `Ends in: ${formatTime(duration + startsIn)}`
+                  : `Live for: ${formatTime(duration)}`
+              }`,
               "",
-              `Enter now: https://budokan.gg/tournament/${tournamentId}`,
+              `Join the fun now at @budokan_gg!`,
             ].join("\n")}
             className="w-fit"
           />
