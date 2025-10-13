@@ -104,7 +104,7 @@ const Tournament = () => {
         timeoutId = window.setTimeout(() => {
           setTournamentExists(false);
           setLoading(false);
-        }, 5000);
+        }, 20000);
       }
     };
 

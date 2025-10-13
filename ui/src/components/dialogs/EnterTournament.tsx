@@ -222,6 +222,7 @@ export function EnterTournamentDialog({
   const { games } = useGameTokens({
     owner: address,
     gameAddresses: requiredTournamentGameAddresses,
+    includeMetadata: false,
   });
 
   const ownedGameIds = useMemo(() => {

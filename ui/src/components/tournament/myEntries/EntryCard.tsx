@@ -35,6 +35,7 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
   const hasStarted = (game?.lifecycle.start ?? 0) < currentDate;
 
   const hasEnded = (game?.lifecycle.end ?? 0) < currentDate;
+  const gameOver = game?.game_over;
 
   const isActive = hasStarted && !hasEnded;
 
@@ -127,7 +128,11 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
           </div>
         )}
         <div className="flex flex-row items-center justify-center w-full px-2">
-          {isActive ? (
+          {gameOver ? (
+            <>
+              <p className="text-xs 3xl:text-sm text-red">Game Over</p>
+            </>
+          ) : isActive ? (
             <>
               <p className="text-xs 3xl:text-sm text-success">Active</p>
             </>

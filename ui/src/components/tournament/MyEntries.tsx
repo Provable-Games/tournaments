@@ -40,6 +40,7 @@ const MyEntries = ({
       },
     },
     owner: address ?? "0x0",
+    includeMetadata: false,
   });
 
   const myEntriesCount = useMemo(() => {

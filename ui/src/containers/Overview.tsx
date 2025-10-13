@@ -162,6 +162,7 @@ const Overview = () => {
   const { games: gameTokens } = useGameTokens({
     mintedByAddress: padAddress(tournamentAddress),
     owner: address,
+    includeMetadata: false,
   });
 
   const gameTokenIds = useMemo(() => {

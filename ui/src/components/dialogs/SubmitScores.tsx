@@ -51,6 +51,7 @@ export function SubmitScoresDialog({
     sortBy: "score",
     sortOrder: "desc",
     mintedByAddress: padAddress(tournamentAddress),
+    includeMetadata: false,
   });
 
   const submittableScores = getSubmittableScores(games, leaderboard);
