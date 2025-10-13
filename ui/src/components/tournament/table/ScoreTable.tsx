@@ -65,6 +65,7 @@ const ScoreTable = ({
     sortBy: "score",
     sortOrder: "desc",
     mintedByAddress: padAddress(tournamentAddress),
+    includeMetadata: true,
   });
 
   const ownerAddresses = useMemo(
