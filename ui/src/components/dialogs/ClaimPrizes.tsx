@@ -49,12 +49,12 @@ export function ClaimPrizesDialog({
     
     try {
       // Use batched version if there are many prizes to claim
-      if (claimablePrizeTypes.length > 50) {
+      if (claimablePrizeTypes.length > 30) {
         await claimPrizesBatched(
           tournamentModel?.id,
           feltToString(tournamentModel?.metadata.name),
           claimablePrizeTypes,
-          50, // batch size
+          30, // batch size
           (current, total) => setBatchProgress({ current, total })
         );
       } else {

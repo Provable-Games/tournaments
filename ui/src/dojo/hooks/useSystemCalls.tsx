@@ -244,7 +244,7 @@ export const useSystemCalls = () => {
     showToast: boolean,
     prizeTotalUsd: number,
     totalCurrentPrizes: number,
-    batchSize: number = 50,
+    batchSize: number = 30,
     onProgress?: (current: number, total: number) => void
   ) => {
     try {
@@ -616,7 +616,7 @@ export const useSystemCalls = () => {
     tournamentId: BigNumberish,
     tournamentName: string,
     prizes: Array<PrizeTypeEnum>,
-    batchSize: number = 50,
+    batchSize: number = 30,
     onProgress?: (current: number, total: number) => void
   ) => {
     try {

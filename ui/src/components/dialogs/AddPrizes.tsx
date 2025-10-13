@@ -87,6 +87,7 @@ export function AddPrizesDialog({
   const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
     {}
   );
+  const [percentageArrayInput, setPercentageArrayInput] = useState<string>("");
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -122,6 +123,61 @@ export function AddPrizesDialog({
   };
 
   const isERC20 = newPrize.tokenType === "ERC20";
+
+  const handlePercentageArrayPaste = () => {
+    try {
+      // Parse the input - support both array format [50,30,20] and comma-separated 50,30,20
+      let percentages: number[];
+      const trimmedInput = percentageArrayInput.trim();
+
+      if (trimmedInput.startsWith("[") && trimmedInput.endsWith("]")) {
+        // Parse as JSON array
+        percentages = JSON.parse(trimmedInput);
+      } else {
+        // Parse as comma-separated values
+        percentages = trimmedInput.split(",").map((p) => parseFloat(p.trim()));
+      }
+
+      // Validate the array
+      if (!Array.isArray(percentages)) {
+        alert("Please provide a valid array of percentages");
+        return;
+      }
+
+      if (percentages.length !== leaderboardSize) {
+        alert(
+          `Please provide exactly ${leaderboardSize} percentages (you provided ${percentages.length})`
+        );
+        return;
+      }
+
+      // Check all values are numbers and positive
+      if (!percentages.every((p) => typeof p === "number" && p >= 0)) {
+        alert("All values must be positive numbers");
+        return;
+      }
+
+      // Check total equals 100
+      const total = percentages.reduce((sum, p) => sum + p, 0);
+      if (Math.abs(total - 100) > 0.01) {
+        alert(`Percentages must sum to 100% (current sum: ${total}%)`);
+        return;
+      }
+
+      // Apply the percentages
+      setPrizeDistributions(
+        percentages.map((percentage, index) => ({
+          position: index + 1,
+          percentage,
+        }))
+      );
+
+      // Clear the input
+      setPercentageArrayInput("");
+    } catch (error) {
+      alert("Invalid format. Please use format like [50,30,20] or 50,30,20");
+    }
+  };
 
   useEffect(() => {
     if (open && leaderboardSize) {
@@ -264,14 +320,14 @@ export function AddPrizesDialog({
       }));
 
       // Use batched version if there are many prizes
-      if (prizesToAdd.length > 50) {
+      if (prizesToAdd.length > 30) {
         await approveAndAddPrizesBatched(
           tournamentName,
           prizesToAdd,
           true,
           totalValue,
           Number(prizeCount),
-          50, // batch size
+          30, // batch size
           (current, total) => setBatchProgress({ current, total })
         );
       } else {
@@ -693,6 +749,34 @@ export function AddPrizesDialog({
               {/* Distribution Settings (for ERC20 only) */}
               {isERC20 && (
                 <>
+                  {/* Percentage Array Input */}
+                  <div className="space-y-2">
+                    <div className="flex flex-row items-center gap-2">
+                      <span className="min-w-[100px]">Quick Entry</span>
+                      <span className="text-sm text-neutral">
+                        Paste an array of {leaderboardSize} percentages
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={`e.g., [50, 30, 20] or 50,30,20 (${leaderboardSize} values)`}
+                        value={percentageArrayInput}
+                        onChange={(e) =>
+                          setPercentageArrayInput(e.target.value)
+                        }
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePercentageArrayPaste}
+                        disabled={!percentageArrayInput.trim()}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <div className="flex flex-row items-center gap-2">
                       <span className="min-w-[100px]">Distribution</span>
