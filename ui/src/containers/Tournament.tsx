@@ -732,6 +732,7 @@ const Tournament = () => {
               prices={prices}
               pricesLoading={pricesLoading}
               tokens={tokens}
+              tokenDecimals={tokenDecimals}
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-5">

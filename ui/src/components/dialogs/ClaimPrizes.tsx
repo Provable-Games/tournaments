@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
+import { LoadingSpinner } from "@/components/ui/spinner";
 
 interface ClaimPrizesDialogProps {
   open: boolean;
@@ -34,17 +36,39 @@ export function ClaimPrizesDialog({
 }: ClaimPrizesDialogProps) {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
-  const { claimPrizes } = useSystemCalls();
+  const { claimPrizes, claimPrizesBatched } = useSystemCalls();
   const { selectedChainConfig } = useDojo();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
-  const handleClaimPrizes = () => {
-    claimPrizes(
-      tournamentModel?.id,
-      feltToString(tournamentModel?.metadata.name),
-      claimablePrizeTypes
-    );
+  const handleClaimPrizes = async () => {
+    setIsProcessing(true);
+    setBatchProgress(null);
+    
+    try {
+      // Use batched version if there are many prizes to claim
+      if (claimablePrizeTypes.length > 50) {
+        await claimPrizesBatched(
+          tournamentModel?.id,
+          feltToString(tournamentModel?.metadata.name),
+          claimablePrizeTypes,
+          50, // batch size
+          (current, total) => setBatchProgress({ current, total })
+        );
+      } else {
+        await claimPrizes(
+          tournamentModel?.id,
+          feltToString(tournamentModel?.metadata.name),
+          claimablePrizeTypes
+        );
+      }
+      onOpenChange(false); // Close dialog after success
+    } finally {
+      setIsProcessing(false);
+      setBatchProgress(null);
+    }
   };
 
   const sortedClaimablePrizes = claimablePrizes.sort((a, b) => {
@@ -57,6 +81,19 @@ export function ClaimPrizesDialog({
         <DialogHeader>
           <DialogTitle>Distribute Prizes</DialogTitle>
         </DialogHeader>
+        {batchProgress && (
+          <div className="bg-brand/10 border border-brand p-4 rounded-lg mx-5">
+            <div className="flex items-center gap-3">
+              <LoadingSpinner />
+              <div>
+                <p className="font-semibold">Processing Transactions</p>
+                <p className="text-sm text-muted-foreground">
+                  Batch {batchProgress.current} of {batchProgress.total} - Please do not close this window
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="space-y-2 px-5 py-2 max-h-[300px] overflow-y-auto">
           {sortedClaimablePrizes.map((prize, index) => {
             const prizeAmount =
@@ -96,11 +133,23 @@ export function ClaimPrizesDialog({
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           {address ? (
-            <DialogClose asChild>
-              <Button disabled={!address} onClick={handleClaimPrizes}>
-                Distribute
-              </Button>
-            </DialogClose>
+            <Button 
+              disabled={!address || isProcessing} 
+              onClick={handleClaimPrizes}
+            >
+              {isProcessing ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  {batchProgress ? (
+                    <span>Batch {batchProgress.current}/{batchProgress.total}</span>
+                  ) : (
+                    <span>Processing...</span>
+                  )}
+                </div>
+              ) : (
+                "Distribute"
+              )}
+            </Button>
           ) : (
             <Button onClick={() => connect()}>Connect Wallet</Button>
           )}

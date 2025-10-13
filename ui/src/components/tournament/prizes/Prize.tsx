@@ -22,51 +22,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDojo } from "@/context/dojo";
-import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface PrizeProps {
   position: number;
   prizes: TokenPrizes;
   prices: TokenPrices;
   tokens: Token[];
+  tokenDecimals: Record<string, number>;
 }
 
-const Prize = ({ position, prizes, prices, tokens }: PrizeProps) => {
+const Prize = ({
+  position,
+  prizes,
+  prices,
+  tokens,
+  tokenDecimals,
+}: PrizeProps) => {
   const { selectedChainConfig } = useDojo();
-  const { getTokenDecimals } = useSystemCalls();
   const totalPrizeNFTs = countTotalNFTs(prizes);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
-  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
-  
-  // Fetch token decimals for all ERC20 prizes
-  useEffect(() => {
-    const fetchDecimals = async () => {
-      const erc20Addresses = Object.values(prizes)
-        .filter(prize => prize.type === "erc20")
-        .map(prize => prize.address);
-      
-      const decimalsPromises = erc20Addresses.map(async (address) => {
-        if (!tokenDecimals[address]) {
-          const decimals = await getTokenDecimals(address);
-          return { address, decimals };
-        }
-        return { address, decimals: tokenDecimals[address] };
-      });
 
-      const results = await Promise.all(decimalsPromises);
-      const newDecimals = results.reduce((acc, { address, decimals }) => {
-        acc[address] = decimals;
-        return acc;
-      }, {} as Record<string, number>);
-
-      setTokenDecimals(prev => ({ ...prev, ...newDecimals }));
-    };
-
-    fetchDecimals();
-  }, [prizes, getTokenDecimals]);
-
-  const totalPrizesValueUSD = calculateTotalValue(prizes, prices, tokenDecimals);
+  const totalPrizesValueUSD = calculateTotalValue(
+    prizes,
+    prices,
+    tokenDecimals
+  );
 
   const chainId = selectedChainConfig?.chainId ?? "";
 

@@ -13,6 +13,9 @@ import {
   TournamentCardTitle,
 } from "@/components/tournament/containers/TournamentCard";
 import { Token } from "@/generated/models.gen";
+import { Button } from "@/components/ui/button";
+import { PrizesTableDialog } from "@/components/dialogs/PrizesTable";
+import { TableProperties } from "lucide-react";
 
 interface PrizesContainerProps {
   prizesExist: boolean;
@@ -23,6 +26,7 @@ interface PrizesContainerProps {
   prices: TokenPrices;
   pricesLoading: boolean;
   tokens: Token[];
+  tokenDecimals: Record<string, number>;
 }
 
 const PrizesContainer = ({
@@ -34,8 +38,10 @@ const PrizesContainer = ({
   prices,
   pricesLoading,
   tokens,
+  tokenDecimals,
 }: PrizesContainerProps) => {
   const [showPrizes, setShowPrizes] = useState(false);
+  const [showTableDialog, setShowTableDialog] = useState(false);
 
   useEffect(() => {
     setShowPrizes(prizesExist);
@@ -71,6 +77,17 @@ const PrizesContainer = ({
           </div>
         </TournamentCardTitle>
         <div className="flex flex-row items-center gap-2">
+          {prizesExist && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTableDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <TableProperties className="w-4 h-4" />
+              <span className="hidden sm:inline">Table View</span>
+            </Button>
+          )}
           <TournamentCardSwitch
             checked={showPrizes}
             onCheckedChange={setShowPrizes}
@@ -114,6 +131,7 @@ const PrizesContainer = ({
                         prizes={prizes}
                         prices={prices}
                         tokens={tokens}
+                        tokenDecimals={tokenDecimals}
                       />
                     ))}
                 </>
@@ -122,6 +140,14 @@ const PrizesContainer = ({
           )}
         </div>
       </TournamentCardContent>
+      <PrizesTableDialog
+        open={showTableDialog}
+        onOpenChange={setShowTableDialog}
+        groupedPrizes={groupedPrizes}
+        prices={prices}
+        tokens={tokens}
+        tokenDecimals={tokenDecimals}
+      />
     </TournamentCard>
   );
 };

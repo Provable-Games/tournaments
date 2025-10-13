@@ -54,7 +54,7 @@ export function AddPrizesDialog({
   const { address } = useAccount();
   const { namespace, selectedChainConfig } = useDojo();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndAddPrizes, getBalanceGeneral, getTokenDecimals } = useSystemCalls();
+  const { approveAndAddPrizes, approveAndAddPrizesBatched, getBalanceGeneral, getTokenDecimals } = useSystemCalls();
   const [selectedToken, setSelectedToken] = useState<FormToken | undefined>(
     undefined
   );
@@ -70,6 +70,7 @@ export function AddPrizesDialog({
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [onConfirmation, setOnConfirmation] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const [_tokenBalances, setTokenBalances] = useState<Record<string, bigint>>(
     {}
   );
@@ -131,6 +132,8 @@ export function AddPrizesDialog({
   useEffect(() => {
     if (!open) {
       setOnConfirmation(false);
+      setBatchProgress(null);
+      setIsSubmitting(false);
     }
   }, [open]);
 
@@ -244,14 +247,28 @@ export function AddPrizesDialog({
         claimed: false,
       }));
 
-      await approveAndAddPrizes(
-        tournamentId,
-        tournamentName,
-        prizesToAdd,
-        true,
-        totalValue,
-        Number(prizeCount)
-      );
+      // Use batched version if there are many prizes
+      if (prizesToAdd.length > 50) {
+        await approveAndAddPrizesBatched(
+          tournamentId,
+          tournamentName,
+          prizesToAdd,
+          true,
+          totalValue,
+          Number(prizeCount),
+          50, // batch size
+          (current, total) => setBatchProgress({ current, total })
+        );
+      } else {
+        await approveAndAddPrizes(
+          tournamentId,
+          tournamentName,
+          prizesToAdd,
+          true,
+          totalValue,
+          Number(prizeCount)
+        );
+      }
 
       setCurrentPrizes([]);
       setSelectedToken(undefined);
@@ -419,6 +436,19 @@ export function AddPrizesDialog({
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4 overflow-y-auto">
+            {batchProgress && (
+              <div className="bg-brand/10 border border-brand p-4 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <LoadingSpinner />
+                  <div>
+                    <p className="font-semibold">Processing Transactions</p>
+                    <p className="text-sm text-muted-foreground">
+                      Batch {batchProgress.current} of {batchProgress.total} - Please do not close this window
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="bg-muted/50 p-4 rounded-lg">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Prize Summary</h3>
@@ -530,7 +560,13 @@ export function AddPrizesDialog({
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <LoadingSpinner />
-                    <span>Adding...</span>
+                    {batchProgress ? (
+                      <span>
+                        Processing batch {batchProgress.current} of {batchProgress.total}...
+                      </span>
+                    ) : (
+                      <span>Adding...</span>
+                    )}
                   </div>
                 ) : (
                   "Confirm & Submit"

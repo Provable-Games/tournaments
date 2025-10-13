@@ -42,7 +42,7 @@ export const initializeController = (
     chains: chainRpcUrls,
     defaultChainId: stringToFelt(defaultChainId).toString(),
     preset: "budokan",
-    slot: "pg-mainnet-4",
+    slot: "pg-mainnet-7",
     tokens: {
       erc20: ["strk"],
     },

@@ -245,10 +245,11 @@ export const useSystemCalls = () => {
     showToast: boolean,
     prizeTotalUsd: number,
     totalCurrentPrizes: number,
-    batchSize: number = 50
+    batchSize: number = 50,
+    onProgress?: (current: number, total: number) => void
   ) => {
     try {
-      // First, execute all approvals in one transaction
+      // Calculate all approvals needed
       const approvalCalls = Object.values(
         prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
@@ -283,11 +284,7 @@ export const useSystemCalls = () => {
         calldata,
       }));
 
-      if (approvalCalls.length > 0) {
-        await account?.execute(approvalCalls);
-      }
-
-      // Split prizes into batches and execute sequentially
+      // Split prizes into batches
       const batches = [];
       for (let i = 0; i < prizes.length; i += batchSize) {
         batches.push(prizes.slice(i, i + batchSize));
@@ -295,7 +292,15 @@ export const useSystemCalls = () => {
 
       let addedPrizesCount = 0;
       for (const [index, batch] of batches.entries()) {
-        const calls = batch.map((prize) => ({
+        let calls = [];
+        
+        // Add approvals to the first batch
+        if (index === 0 && approvalCalls.length > 0) {
+          calls.push(...approvalCalls);
+        }
+        
+        // Add prize calls
+        const prizeCalls = batch.map((prize) => ({
           contractAddress: tournamentAddress,
           entrypoint: "add_prize",
           calldata: CallData.compile([
@@ -305,10 +310,23 @@ export const useSystemCalls = () => {
             prize.payout_position,
           ]),
         }));
+        calls.push(...prizeCalls);
 
-        console.log(`Processing batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
+        console.log(`Processing batch ${index + 1}/${batches.length} with ${prizeCalls.length} prizes${index === 0 && approvalCalls.length > 0 ? ` and ${approvalCalls.length} approvals` : ''}`);
+        
+        // Call progress callback
+        if (onProgress) {
+          onProgress(index + 1, batches.length);
+        }
         
         const tx = await account?.execute(calls);
+        
+        if (tx?.transaction_hash) {
+          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          // Wait for the transaction to be accepted on L2
+          await account?.waitForTransaction(tx.transaction_hash);
+          console.log(`Transaction ${tx.transaction_hash} confirmed`);
+        }
         
         // Wait for this batch to be processed
         addedPrizesCount += batch.length;
@@ -433,8 +451,7 @@ export const useSystemCalls = () => {
     const executableTournament = prepareForExecution(tournament);
     const game = getGameName(tournament.game_config.address);
     try {
-      // First, create the tournament with approvals
-      let initialCalls = [];
+      // Create tournament call
       const createCall = {
         contractAddress: tournamentAddress,
         entrypoint: "create_tournament",
@@ -447,9 +464,9 @@ export const useSystemCalls = () => {
           executableTournament.entry_requirement,
         ]),
       };
-      initialCalls.push(createCall);
       
-      const summedCalls = Object.values(
+      // Calculate all approvals
+      const approvalCalls = Object.values(
         prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
           if (!acc[tokenAddress]) {
@@ -482,20 +499,27 @@ export const useSystemCalls = () => {
         entrypoint,
         calldata,
       }));
-      initialCalls.push(...summedCalls);
 
-      // Execute tournament creation with approvals
-      const tx = await account?.execute(initialCalls);
-      await waitForTournamentCreation(Number(tournament.id));
-
-      // Split prizes into batches and execute sequentially
+      // Split prizes into batches
       const batches = [];
       for (let i = 0; i < prizes.length; i += batchSize) {
         batches.push(prizes.slice(i, i + batchSize));
       }
 
+      let tx;
       for (const [index, batch] of batches.entries()) {
-        const calls = batch.map((prize) => ({
+        let calls = [];
+        
+        // First batch includes tournament creation and approvals
+        if (index === 0) {
+          calls.push(createCall);
+          if (approvalCalls.length > 0) {
+            calls.push(...approvalCalls);
+          }
+        }
+        
+        // Add prize calls
+        const prizeCalls = batch.map((prize) => ({
           contractAddress: tournamentAddress,
           entrypoint: "add_prize",
           calldata: CallData.compile([
@@ -505,9 +529,23 @@ export const useSystemCalls = () => {
             prize.payout_position,
           ]),
         }));
+        calls.push(...prizeCalls);
 
-        console.log(`Processing prize batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
-        await account?.execute(calls);
+        console.log(`Processing batch ${index + 1}/${batches.length} with ${prizeCalls.length} prizes${index === 0 ? `, tournament creation, and ${approvalCalls.length} approvals` : ''}`);
+        
+        tx = await account?.execute(calls);
+        
+        if (tx?.transaction_hash) {
+          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          // Wait for the transaction to be accepted on L2
+          await account?.waitForTransaction(tx.transaction_hash);
+          console.log(`Transaction ${tx.transaction_hash} confirmed`);
+        }
+        
+        // Wait for tournament creation after first batch
+        if (index === 0) {
+          await waitForTournamentCreation(Number(tournament.id));
+        }
       }
 
       if (tx) {
@@ -549,6 +587,54 @@ export const useSystemCalls = () => {
       }
     } catch (error) {
       console.error("Error executing distribute prizes:", error);
+      throw error;
+    }
+  };
+
+  const claimPrizesBatched = async (
+    tournamentId: BigNumberish,
+    tournamentName: string,
+    prizes: Array<PrizeTypeEnum>,
+    batchSize: number = 50,
+    onProgress?: (current: number, total: number) => void
+  ) => {
+    try {
+      // Split prizes into batches
+      const batches = [];
+      for (let i = 0; i < prizes.length; i += batchSize) {
+        batches.push(prizes.slice(i, i + batchSize));
+      }
+
+      let tx;
+      for (const [index, batch] of batches.entries()) {
+        const calls = batch.map((prize) => ({
+          contractAddress: tournamentAddress,
+          entrypoint: "claim_prize",
+          calldata: CallData.compile([tournamentId, prize]),
+        }));
+
+        console.log(`Processing claim batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
+        
+        // Call progress callback
+        if (onProgress) {
+          onProgress(index + 1, batches.length);
+        }
+        
+        tx = await account?.execute(calls);
+        
+        if (tx?.transaction_hash) {
+          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          // Wait for the transaction to be accepted on L2
+          await account?.waitForTransaction(tx.transaction_hash);
+          console.log(`Transaction ${tx.transaction_hash} confirmed`);
+        }
+      }
+
+      if (tx) {
+        showPrizeDistribution(tournamentName);
+      }
+    } catch (error) {
+      console.error("Error executing batched prize claims:", error);
       throw error;
     }
   };
@@ -742,6 +828,7 @@ export const useSystemCalls = () => {
     createTournamentAndApproveAndAddPrizes,
     createTournamentAndApproveAndAddPrizesBatched,
     claimPrizes,
+    claimPrizesBatched,
     endGame,
     getBalanceGeneral,
     mintErc721,
