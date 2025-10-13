@@ -54,7 +54,12 @@ export function AddPrizesDialog({
   const { address } = useAccount();
   const { namespace, selectedChainConfig } = useDojo();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndAddPrizes, approveAndAddPrizesBatched, getBalanceGeneral, getTokenDecimals } = useSystemCalls();
+  const {
+    approveAndAddPrizes,
+    approveAndAddPrizesBatched,
+    getBalanceGeneral,
+    getTokenDecimals,
+  } = useSystemCalls();
   const [selectedToken, setSelectedToken] = useState<FormToken | undefined>(
     undefined
   );
@@ -70,13 +75,18 @@ export function AddPrizesDialog({
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [onConfirmation, setOnConfirmation] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [_tokenBalances, setTokenBalances] = useState<Record<string, bigint>>(
     {}
   );
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
-  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
+    {}
+  );
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -190,7 +200,7 @@ export function AddPrizesDialog({
       let prizesToAdd: Prize[] = [];
 
       // Filter out prizes with 0 amounts to avoid transaction errors
-      const validPrizes = currentPrizes.filter(prize => {
+      const validPrizes = currentPrizes.filter((prize) => {
         if (prize.tokenType === "ERC20") {
           return prize.amount && prize.amount > 0;
         }
@@ -201,8 +211,8 @@ export function AddPrizesDialog({
       const uniqueERC20Addresses = Array.from(
         new Set(
           validPrizes
-            .filter(prize => prize.tokenType === "ERC20")
-            .map(prize => prize.tokenAddress)
+            .filter((prize) => prize.tokenType === "ERC20")
+            .map((prize) => prize.tokenAddress)
         )
       );
 
@@ -215,13 +225,16 @@ export function AddPrizesDialog({
       });
 
       const decimalsResults = await Promise.all(decimalsPromises);
-      const newDecimals = decimalsResults.reduce((acc, { address, decimals }) => {
-        acc[address] = decimals;
-        return acc;
-      }, {} as Record<string, number>);
+      const newDecimals = decimalsResults.reduce(
+        (acc, { address, decimals }) => {
+          acc[address] = decimals;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       // Update decimals state
-      setTokenDecimals(prev => ({ ...prev, ...newDecimals }));
+      setTokenDecimals((prev) => ({ ...prev, ...newDecimals }));
 
       prizesToAdd = validPrizes.map((prize, index) => ({
         id: Number(prizeCount) + index + 1,
@@ -232,7 +245,10 @@ export function AddPrizesDialog({
             ? new CairoCustomEnum({
                 erc20: {
                   amount: addAddressPadding(
-                    bigintToHex(prize.amount! * 10 ** (newDecimals[prize.tokenAddress] || 18))
+                    bigintToHex(
+                      prize.amount! *
+                        10 ** (newDecimals[prize.tokenAddress] || 18)
+                    )
                   ),
                 },
                 erc721: undefined,
@@ -250,7 +266,6 @@ export function AddPrizesDialog({
       // Use batched version if there are many prizes
       if (prizesToAdd.length > 50) {
         await approveAndAddPrizesBatched(
-          tournamentId,
           tournamentName,
           prizesToAdd,
           true,
@@ -261,7 +276,6 @@ export function AddPrizesDialog({
         );
       } else {
         await approveAndAddPrizes(
-          tournamentId,
           tournamentName,
           prizesToAdd,
           true,
@@ -383,7 +397,7 @@ export function AddPrizesDialog({
       const erc20Addresses = aggregatedPrizesArray
         .filter((prize: any) => prize.tokenType === "ERC20")
         .map((prize: any) => prize.tokenAddress);
-      
+
       const decimalsForBalance: Record<string, number> = {};
       for (const address of erc20Addresses) {
         if (!tokenDecimals[address]) {
@@ -398,7 +412,9 @@ export function AddPrizesDialog({
           // For ERC20, check if balance >= amount using correct decimals
           const tokenBalance = BigInt(balances[prize.tokenAddress] || "0");
           const decimals = decimalsForBalance[prize.tokenAddress] || 18;
-          const requiredAmount = BigInt(Math.floor(prize.amount * 10 ** decimals));
+          const requiredAmount = BigInt(
+            Math.floor(prize.amount * 10 ** decimals)
+          );
 
           if (tokenBalance < requiredAmount) {
             insufficient = true;
@@ -443,7 +459,8 @@ export function AddPrizesDialog({
                   <div>
                     <p className="font-semibold">Processing Transactions</p>
                     <p className="text-sm text-muted-foreground">
-                      Batch {batchProgress.current} of {batchProgress.total} - Please do not close this window
+                      Batch {batchProgress.current} of {batchProgress.total} -
+                      Please do not close this window
                     </p>
                   </div>
                 </div>
@@ -562,7 +579,8 @@ export function AddPrizesDialog({
                     <LoadingSpinner />
                     {batchProgress ? (
                       <span>
-                        Processing batch {batchProgress.current} of {batchProgress.total}...
+                        Processing batch {batchProgress.current} of{" "}
+                        {batchProgress.total}...
                       </span>
                     ) : (
                       <span>Adding...</span>

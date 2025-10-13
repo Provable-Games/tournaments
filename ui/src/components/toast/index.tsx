@@ -24,7 +24,6 @@ interface TournamentCreationParams {
 
 interface PrizeAdditionParams {
   tournamentName: string;
-  tournamentId: string;
   prizeTotalUsd: number;
 }
 
@@ -55,18 +54,25 @@ export const useToastMessages = (): ToastMessages => {
           <p>Entered tournament {tournamentName}</p>
           <XShareButton
             text={[
-              `I've just entered "${tournamentName}" on @budokan_gg, the onchain gaming arena.`,
+              `I just entered the "${tournamentName}" tournament on Budokan, the premier onchain gaming arena.`,
               "",
+              `🆔 Tournament ID: ${tournamentId}`,
               `🎮 ${game}`,
               `🎫 ${
                 hasEntryFee
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
-              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
+              `🏁 ${
+                startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
+              }`,
+              `⏳ ${
+                startsIn <= 0
+                  ? `Ends in: ${formatTime(duration + startsIn)}`
+                  : `Live for: ${formatTime(duration)}`
+              }`,
               "",
-              `Join here for a chance win exciting prizes: https://budokan.gg/tournament/${tournamentId}`,
+              `Join the fun now at @budokan_gg for a chance to win exciting prizes!`,
             ].join("\n")}
             className="w-fit"
           />
@@ -91,18 +97,25 @@ export const useToastMessages = (): ToastMessages => {
           <p>Created tournament {tournamentName}</p>
           <XShareButton
             text={[
-              `I just created tournament "${tournamentName}" on @budokan_gg, the onchain gaming arena.`,
+              `I just created the "${tournamentName}" tournament on Budokan, the premier onchain gaming arena.`,
               "",
+              `🆔 Tournament ID: ${tournamentId}`,
               `🎮 ${game}`,
               `🎫 ${
                 hasEntryFee
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
-              `🏁 ${startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`}`,
-              `⏳ ${startsIn <= 0 ? `Ends in: ${formatTime(duration + startsIn)}` : `Live for: ${formatTime(duration)}`}`,
+              `🏁 ${
+                startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
+              }`,
+              `⏳ ${
+                startsIn <= 0
+                  ? `Ends in: ${formatTime(duration + startsIn)}`
+                  : `Live for: ${formatTime(duration)}`
+              }`,
               "",
-              `Enter now: https://budokan.gg/tournament/${tournamentId}`,
+              `Join the fun now at @budokan_gg!`,
             ].join("\n")}
             className="w-fit"
           />
@@ -116,25 +129,24 @@ export const useToastMessages = (): ToastMessages => {
   ) => {
     toast({
       title: "Submitted Scores!",
-      description: `Submitted scores for tournament ${tournamentName}`,
+      description: `Submitted scores for the "${tournamentName}" tournament`,
     });
   };
 
   const showPrizeAddition: ToastMessages["showPrizeAddition"] = ({
     tournamentName,
-    tournamentId,
     prizeTotalUsd,
   }) => {
     toast({
       title: "Added Prize!",
       description: (
         <div className="flex flex-col gap-1">
-          <p>Added prize to {tournamentName}</p>
+          <p>Added prize to the "{tournamentName}" tournament</p>
           <XShareButton
             text={[
-              `I just added $${prizeTotalUsd} to the prize pool for "${tournamentName}" on @budokan_gg, the onchain gaming arena.`,
+              `I just added $${prizeTotalUsd} to the prize pool for the "${tournamentName}" tournament on Budokan, the premier onchain gaming arena.`,
               "",
-              `Enter now: https://budokan.gg/tournament/${tournamentId}`,
+              `Join the fun now at @budokan_gg!`,
             ].join("\n")}
             className="w-fit"
           />
@@ -148,7 +160,7 @@ export const useToastMessages = (): ToastMessages => {
   ) => {
     toast({
       title: "Distributed Prizes!",
-      description: `Distributed prizes for tournament ${tournamentName}`,
+      description: `Distributed prizes for the "${tournamentName}" tournament`,
     });
   };
 
