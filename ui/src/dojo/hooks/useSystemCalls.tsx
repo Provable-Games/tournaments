@@ -228,7 +228,6 @@ export const useSystemCalls = () => {
       if (showToast && tx) {
         showPrizeAddition({
           tournamentName,
-          tournamentId: Number(tournamentId).toString(),
           prizeTotalUsd,
         });
       }
@@ -293,12 +292,12 @@ export const useSystemCalls = () => {
       let addedPrizesCount = 0;
       for (const [index, batch] of batches.entries()) {
         let calls = [];
-        
+
         // Add approvals to the first batch
         if (index === 0 && approvalCalls.length > 0) {
           calls.push(...approvalCalls);
         }
-        
+
         // Add prize calls
         const prizeCalls = batch.map((prize) => ({
           contractAddress: tournamentAddress,
@@ -312,22 +311,32 @@ export const useSystemCalls = () => {
         }));
         calls.push(...prizeCalls);
 
-        console.log(`Processing batch ${index + 1}/${batches.length} with ${prizeCalls.length} prizes${index === 0 && approvalCalls.length > 0 ? ` and ${approvalCalls.length} approvals` : ''}`);
-        
+        console.log(
+          `Processing batch ${index + 1}/${batches.length} with ${
+            prizeCalls.length
+          } prizes${
+            index === 0 && approvalCalls.length > 0
+              ? ` and ${approvalCalls.length} approvals`
+              : ""
+          }`
+        );
+
         // Call progress callback
         if (onProgress) {
           onProgress(index + 1, batches.length);
         }
-        
+
         const tx = await account?.execute(calls);
-        
+
         if (tx?.transaction_hash) {
-          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          console.log(
+            `Waiting for transaction ${tx.transaction_hash} to be confirmed...`
+          );
           // Wait for the transaction to be accepted on L2
           await account?.waitForTransaction(tx.transaction_hash);
           console.log(`Transaction ${tx.transaction_hash} confirmed`);
         }
-        
+
         // Wait for this batch to be processed
         addedPrizesCount += batch.length;
         await waitForAddPrizes(totalCurrentPrizes + addedPrizesCount);
@@ -336,7 +345,6 @@ export const useSystemCalls = () => {
         if (showToast && tx && index === batches.length - 1) {
           showPrizeAddition({
             tournamentName,
-            tournamentId: Number(tournamentId).toString(),
             prizeTotalUsd,
           });
         }
@@ -464,7 +472,7 @@ export const useSystemCalls = () => {
           executableTournament.entry_requirement,
         ]),
       };
-      
+
       // Calculate all approvals
       const approvalCalls = Object.values(
         prizes.reduce((acc: { [key: string]: any }, prize) => {
@@ -509,7 +517,7 @@ export const useSystemCalls = () => {
       let tx;
       for (const [index, batch] of batches.entries()) {
         let calls = [];
-        
+
         // First batch includes tournament creation and approvals
         if (index === 0) {
           calls.push(createCall);
@@ -517,7 +525,7 @@ export const useSystemCalls = () => {
             calls.push(...approvalCalls);
           }
         }
-        
+
         // Add prize calls
         const prizeCalls = batch.map((prize) => ({
           contractAddress: tournamentAddress,
@@ -531,17 +539,27 @@ export const useSystemCalls = () => {
         }));
         calls.push(...prizeCalls);
 
-        console.log(`Processing batch ${index + 1}/${batches.length} with ${prizeCalls.length} prizes${index === 0 ? `, tournament creation, and ${approvalCalls.length} approvals` : ''}`);
-        
+        console.log(
+          `Processing batch ${index + 1}/${batches.length} with ${
+            prizeCalls.length
+          } prizes${
+            index === 0
+              ? `, tournament creation, and ${approvalCalls.length} approvals`
+              : ""
+          }`
+        );
+
         tx = await account?.execute(calls);
-        
+
         if (tx?.transaction_hash) {
-          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          console.log(
+            `Waiting for transaction ${tx.transaction_hash} to be confirmed...`
+          );
           // Wait for the transaction to be accepted on L2
           await account?.waitForTransaction(tx.transaction_hash);
           console.log(`Transaction ${tx.transaction_hash} confirmed`);
         }
-        
+
         // Wait for tournament creation after first batch
         if (index === 0) {
           await waitForTournamentCreation(Number(tournament.id));
@@ -560,7 +578,10 @@ export const useSystemCalls = () => {
         });
       }
     } catch (error) {
-      console.error("Error executing create tournament with batched prizes:", error);
+      console.error(
+        "Error executing create tournament with batched prizes:",
+        error
+      );
       throw error;
     }
   };
@@ -613,17 +634,23 @@ export const useSystemCalls = () => {
           calldata: CallData.compile([tournamentId, prize]),
         }));
 
-        console.log(`Processing claim batch ${index + 1}/${batches.length} with ${calls.length} prizes`);
-        
+        console.log(
+          `Processing claim batch ${index + 1}/${batches.length} with ${
+            calls.length
+          } prizes`
+        );
+
         // Call progress callback
         if (onProgress) {
           onProgress(index + 1, batches.length);
         }
-        
+
         tx = await account?.execute(calls);
-        
+
         if (tx?.transaction_hash) {
-          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          console.log(
+            `Waiting for transaction ${tx.transaction_hash} to be confirmed...`
+          );
           // Wait for the transaction to be accepted on L2
           await account?.waitForTransaction(tx.transaction_hash);
           console.log(`Transaction ${tx.transaction_hash} confirmed`);
