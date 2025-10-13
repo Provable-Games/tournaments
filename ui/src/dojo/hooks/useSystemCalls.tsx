@@ -164,7 +164,6 @@ export const useSystemCalls = () => {
   };
 
   const approveAndAddPrizes = async (
-    tournamentId: BigNumberish,
     tournamentName: string,
     prizes: Prize[],
     showToast: boolean,
@@ -238,7 +237,6 @@ export const useSystemCalls = () => {
   };
 
   const approveAndAddPrizesBatched = async (
-    tournamentId: BigNumberish,
     tournamentName: string,
     prizes: Prize[],
     showToast: boolean,
