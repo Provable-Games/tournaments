@@ -18,19 +18,21 @@ interface MyEntriesProps {
   tournamentId: BigNumberish;
   gameAddress: string;
   tournamentModel: Tournament;
+  totalEntryCount: number;
 }
 
 const MyEntries = ({
   tournamentId,
   gameAddress,
   tournamentModel,
+  totalEntryCount,
 }: MyEntriesProps) => {
   const { address } = useAccount();
   // const state = useDojoStore((state) => state);
   // const { namespace } = useDojo();
   const [showMyEntries, setShowMyEntries] = useState(false);
 
-  const { games: ownedGames } = useGameTokens({
+  const { games: ownedGames, refetch } = useGameTokens({
     context: {
       name: "Budokan",
       attributes: {
@@ -47,10 +49,11 @@ const MyEntries = ({
   useEffect(() => {
     if (address) {
       setShowMyEntries(myEntriesCount > 0);
+      refetch();
     } else {
       setShowMyEntries(false);
     }
-  }, [address, myEntriesCount]);
+  }, [address, myEntriesCount, totalEntryCount]);
 
   return (
     <TournamentCard showCard={showMyEntries}>

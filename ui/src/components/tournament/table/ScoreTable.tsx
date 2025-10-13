@@ -81,6 +81,10 @@ const ScoreTable = ({
     }
   }, [games, hasInitialized]);
 
+  useEffect(() => {
+    refetch();
+  }, [entryCount]);
+
   return (
     <TournamentCard showCard={showScores}>
       <TournamentCardHeader>

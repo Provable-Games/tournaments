@@ -747,6 +747,9 @@ const Tournament = () => {
               tournamentId={tournamentModel?.id}
               gameAddress={tournamentModel?.game_config?.address}
               tournamentModel={tournamentModel}
+              totalEntryCount={
+                entryCountModel ? Number(entryCountModel.count) : 0
+              }
             />
           </div>
         </div>
