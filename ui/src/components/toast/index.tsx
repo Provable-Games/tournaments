@@ -57,6 +57,7 @@ export const useToastMessages = (): ToastMessages => {
             text={[
               `I just entered "${tournamentName}" on Budokan, the premier onchain gaming arena.`,
               "",
+              `🆔 ${tournamentId}`,
               `🎮 ${game}`,
               `🎫 ${
                 hasEntryFee
