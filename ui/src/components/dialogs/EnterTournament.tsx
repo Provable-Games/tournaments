@@ -28,7 +28,7 @@ import {
   useGetUsernames,
   useConnectController,
 } from "@/hooks/useController";
-import { CHECK, X, COIN, FAT_ARROW_RIGHT, USER } from "@/components/Icons";
+import { CHECK, X, COIN, USER } from "@/components/Icons";
 import {
   useGetAccountTokenIds,
   useGetTournamentRegistrants,
@@ -52,6 +52,7 @@ interface EnterTournamentDialogProps {
   tokens: Token[];
   tournamentsData: Tournament[];
   duration: number;
+  totalPrizesValueUSD: number;
 }
 
 // Update the proof type to make tournamentId and position optional
@@ -80,6 +81,7 @@ export function EnterTournamentDialog({
   tokens,
   tournamentsData,
   duration,
+  totalPrizesValueUSD,
 }: EnterTournamentDialogProps) {
   const { namespace, selectedChainConfig } = useDojo();
   const { address } = useAccount();
@@ -117,7 +119,8 @@ export function EnterTournamentDialog({
         // gameCount
         duration,
         entryFeeUsdCost,
-        Number(entryCountModel?.count ?? 0)
+        Number(entryCountModel?.count ?? 0),
+        totalPrizesValueUSD
       );
 
       setPlayerName("");
@@ -705,27 +708,27 @@ export function EnterTournamentDialog({
 
   // display the entry fee distribution
 
-  const creatorShare = Number(
-    tournamentModel?.entry_fee.Some?.tournament_creator_share.Some ?? 0n
-  );
-  const gameShare = Number(
-    tournamentModel?.entry_fee.Some?.game_creator_share.Some ?? 0n
-  );
-  const prizePoolShare = 100 - creatorShare - gameShare;
-  const creatorAmount =
-    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-      (creatorShare / 100)) /
-    10 ** 18;
+  // const creatorShare = Number(
+  //   tournamentModel?.entry_fee.Some?.tournament_creator_share.Some ?? 0n
+  // );
+  // const gameShare = Number(
+  //   tournamentModel?.entry_fee.Some?.game_creator_share.Some ?? 0n
+  // );
+  // const prizePoolShare = 100 - creatorShare - gameShare;
+  // const creatorAmount =
+  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+  //     (creatorShare / 100)) /
+  //   10 ** 18;
 
-  const gameAmount =
-    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-      (gameShare / 100)) /
-    10 ** 18;
+  // const gameAmount =
+  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+  //     (gameShare / 100)) /
+  //   10 ** 18;
 
-  const prizePoolAmount =
-    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-      (prizePoolShare / 100)) /
-    10 ** 18;
+  // const prizePoolAmount =
+  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+  //     (prizePoolShare / 100)) /
+  //   10 ** 18;
 
   const isController = isControllerAccount(connector!);
 
@@ -780,7 +783,7 @@ export function EnterTournamentDialog({
                       </div>
                     ))}
                 </div>
-                <span className="w-10 rotate-90">
+                {/* <span className="w-10 rotate-90">
                   <FAT_ARROW_RIGHT />
                 </span>
                 <div className="flex flex-row items-center gap-2 w-full">
@@ -851,7 +854,7 @@ export function EnterTournamentDialog({
                       </span>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           )}

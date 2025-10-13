@@ -559,6 +559,7 @@ const Tournament = () => {
             tokens={tokens}
             tournamentsData={tournamentsData}
             duration={durationSeconds}
+            totalPrizesValueUSD={totalPrizesValueUSD}
           />
           <SubmitScoresDialog
             open={submitScoresDialogOpen}

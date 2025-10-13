@@ -10,6 +10,7 @@ interface TournamentEntryParams {
   hasEntryFee: boolean;
   startsIn: number;
   duration: number;
+  prizeTotalUsd: number;
 }
 
 interface TournamentCreationParams {
@@ -46,6 +47,7 @@ export const useToastMessages = (): ToastMessages => {
     hasEntryFee,
     startsIn,
     duration,
+    prizeTotalUsd,
   }) => {
     toast({
       title: "Entered Tournament!",
@@ -63,6 +65,7 @@ export const useToastMessages = (): ToastMessages => {
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
               }`,
+              `💰 Prize pool: $${roundUSDPrice(prizeTotalUsd)}`,
               `🏁 ${
                 startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
               }`,
@@ -105,9 +108,6 @@ export const useToastMessages = (): ToastMessages => {
                 hasEntryFee
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
                   : "Free Entry"
-              }`,
-              `🏁 ${
-                startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
               }`,
               `⏳ ${
                 startsIn <= 0

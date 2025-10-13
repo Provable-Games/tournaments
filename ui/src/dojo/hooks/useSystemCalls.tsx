@@ -78,7 +78,8 @@ export const useSystemCalls = () => {
     qualification: CairoOption<QualificationProofEnum>,
     duration: number,
     entryFeeUsdCost: number,
-    entryCount: number
+    entryCount: number,
+    prizeTotalUsd: number
   ) => {
     const startsIn =
       Number(tournamentModel.schedule.game.start) - Date.now() / 1000;
@@ -120,6 +121,7 @@ export const useSystemCalls = () => {
           hasEntryFee: entryFeeToken.isSome(),
           startsIn,
           duration,
+          prizeTotalUsd,
         });
       }
     } catch (error) {
