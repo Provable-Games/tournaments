@@ -1,7 +1,7 @@
 {
   "world": {
     "class_hash": "0x13d92333361bb7049c1232c0a5404e2c19082ededc3a73d75cb33fa952adec7",
-    "address": "0x757092d4bb00c86fd6d96429fc351f4a7d0409e08cc29d62eddd1c284cac6dc",
+    "address": "0x785401cf74071ec444e37dbbd87281aba48afc86570b1a1537193d1ce39086f",
     "seed": "DNC",
     "name": "Realms World",
     "entrypoints": [
@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x1db6fcda8eefcf806f29d888c8085644b8a9ea9ba74e28a6b4af4bd4ec256af",
-      "class_hash": "0x53e90f87680bd075f47e078d6f1b2b4d664041a571158eba76097edc90ea86f",
+      "address": "0x57c8cd92cfbedd2bac670b776d371d40ea96f13d9dc8c2da6ef83a6c4d3922f",
+      "class_hash": "0x6d5b3ad20f1d2ccc0956473f5f5065613c8b55418b8732400314760c4c9dff6",
       "abi": [
         {
           "type": "impl",
@@ -1383,20 +1383,6 @@
         },
         {
           "type": "enum",
-          "name": "core::bool",
-          "variants": [
-            {
-              "name": "False",
-              "type": "()"
-            },
-            {
-              "name": "True",
-              "type": "()"
-            }
-          ]
-        },
-        {
-          "type": "enum",
           "name": "budokan::models::budokan::TokenType",
           "variants": [
             {
@@ -1438,14 +1424,6 @@
           "name": "dojo_init",
           "inputs": [
             {
-              "name": "safe_mode",
-              "type": "core::bool"
-            },
-            {
-              "name": "test_mode",
-              "type": "core::bool"
-            },
-            {
               "name": "default_token_address",
               "type": "core::starknet::contract_address::ContractAddress"
             },
@@ -1461,6 +1439,20 @@
           "type": "impl",
           "name": "GameContextImpl",
           "interface_name": "game_components_metagame::extensions::context::interface::IMetagameContext"
+        },
+        {
+          "type": "enum",
+          "name": "core::bool",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
+            }
+          ]
         },
         {
           "type": "interface",
@@ -2565,9 +2557,7 @@
         }
       ],
       "init_calldata": [
-        "0",
-        "0",
-        "0x0610aba32da98547f9f65fe0195cc60c08f1ef6fa2f2a0fc03e35f1c29319fd3",
+        "0x02334dc9c950c74c3228e2a343d495ae36f0b4edf06767a679569e9f9de08776",
         "0"
       ],
       "tag": "budokan_1_0_8-Budokan",
@@ -2645,12 +2635,6 @@
       "class_hash": "0x1640dcae030c33bcc936adc57aff14c5a07412ef2aa98be7cc52ac24c6cdab",
       "tag": "budokan_1_0_8-Tournament",
       "selector": "0xf41a2a77547bd69c79b96690e60659eae31edaebe1264f4834223c58b47a95"
-    },
-    {
-      "members": [],
-      "class_hash": "0x78b5621af550199c19b374122b507ddcc97dbc0bc66b9c93750dc9142c39c1",
-      "tag": "budokan_1_0_8-TournamentConfig",
-      "selector": "0x61ce439ec6990eeac768f58770deef8943aa55901c9eacf99ac5f37bc3be8d7"
     },
     {
       "members": [],

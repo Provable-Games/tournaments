@@ -6,7 +6,7 @@ seed = "DNC"
 
 [env]
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia/rpc/v0_8"
-world_address = "0x757092d4bb00c86fd6d96429fc351f4a7d0409e08cc29d62eddd1c284cac6dc"
+world_address = "0x785401cf74071ec444e37dbbd87281aba48afc86570b1a1537193d1ce39086f"
 
 [namespace]
 default = "budokan_1_0_8"
@@ -16,6 +16,6 @@ default = "budokan_1_0_8"
 
 [init_call_args]
 "budokan_1_0_8-Budokan" = [
-    "0x0610aba32da98547f9f65fe0195cc60c08f1ef6fa2f2a0fc03e35f1c29319fd3", # denshokan address
+    "0x02334dc9c950c74c3228e2a343d495ae36f0b4edf06767a679569e9f9de08776", # denshokan address
     "0", # array length - ON SEPOLIA ALL TOKENS ARE REGISTERED
 ]
