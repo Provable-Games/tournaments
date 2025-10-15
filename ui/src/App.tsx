@@ -2,7 +2,6 @@ import MobileFooter from "@/components/MobileFooter";
 import { Routes, Route, useParams } from "react-router-dom";
 import {
   useGetTokensQuery,
-  useGetMetricsQuery,
   useSubscribeMetricsQuery,
   useSubscribeTournamentsQuery,
 } from "@/dojo/hooks/useSdkQueries";
