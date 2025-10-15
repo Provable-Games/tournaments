@@ -45,7 +45,8 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
   const gameImage = getGameImage(gameAddress);
 
   const registrationEntityId = useMemo(
-    () => getEntityIdFromKeys([BigInt(gameAddress), BigInt(game.token_id!)]),
+    () =>
+      getEntityIdFromKeys([BigInt(gameAddress ?? 0), BigInt(game.token_id!)]),
     [gameAddress, game.token_id]
   );
 

@@ -40,10 +40,7 @@ export function SubmitScoresDialog({
 
   const { games } = useGameTokens({
     context: {
-      name: "Budokan",
-      attributes: {
-        "Tournament ID": tournamentModel?.id?.toString() ?? "0",
-      },
+      id: Number(tournamentModel?.id) ?? 0,
     },
     pagination: {
       pageSize: leaderboardSize || 10,

@@ -111,7 +111,8 @@ export const useGetTournamentQuery = (
           getModelsMapping(namespace).Leaderboard,
           getModelsMapping(namespace).Registration,
         ])
-        .includeHashedKeys(),
+        .includeHashedKeys()
+        .withLimit(10000),
     [tournamentId, namespace]
   );
 

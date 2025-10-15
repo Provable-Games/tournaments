@@ -38,7 +38,6 @@ function App() {
   useResetDojoOnNetworkChange();
 
   useGetTokensQuery(namespace);
-  useGetMetricsQuery(namespace);
   useSubscribeMetricsQuery(namespace);
   useSubscribeTournamentsQuery(namespace);
 

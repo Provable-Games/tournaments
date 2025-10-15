@@ -54,10 +54,7 @@ const ScoreTable = ({
     loading,
   } = useGameTokens({
     context: {
-      name: "Budokan",
-      attributes: {
-        "Tournament ID": tournamentId?.toString() ?? "0",
-      },
+      id: Number(tournamentId) ?? 0,
     },
     pagination: {
       pageSize: 10,

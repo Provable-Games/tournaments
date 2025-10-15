@@ -13,6 +13,8 @@ import {
   TournamentCardMetric,
   TournamentCardSwitch,
 } from "./containers/TournamentCard";
+import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
+import { padAddress } from "@/lib/utils";
 
 interface MyEntriesProps {
   tournamentId: BigNumberish;
@@ -28,19 +30,17 @@ const MyEntries = ({
   totalEntryCount,
 }: MyEntriesProps) => {
   const { address } = useAccount();
-  // const state = useDojoStore((state) => state);
-  // const { namespace } = useDojo();
+  const { tournamentAddress } = useTournamentContracts();
   const [showMyEntries, setShowMyEntries] = useState(false);
 
   const { games: ownedGames, refetch } = useGameTokens({
     context: {
-      name: "Budokan",
-      attributes: {
-        "Tournament ID": tournamentId?.toString() ?? "0",
-      },
+      id: Number(tournamentId) ?? 0,
     },
     owner: address ?? "0x0",
+    mintedByAddress: padAddress(tournamentAddress),
     includeMetadata: false,
+    limit: 10000,
   });
 
   const myEntriesCount = useMemo(() => {
