@@ -122,7 +122,10 @@ export const processTournamentData = (
       ? new CairoOption(CairoOptionVariant.Some, {
           token_address: formData.entryFees?.token?.address!,
           amount: addAddressPadding(
-            bigintToHex(formData.entryFees?.amount! * 10 ** (formData.entryFees?.tokenDecimals || 18))
+            bigintToHex(
+              formData.entryFees?.amount! *
+                10 ** (formData.entryFees?.tokenDecimals || 18)
+            )
           ),
           distribution: formData.entryFees?.prizeDistribution?.map(
             (prize) => prize.percentage
@@ -160,7 +163,9 @@ export const processPrizes = (
       prize.type === "ERC20"
         ? new CairoCustomEnum({
             erc20: {
-              amount: addAddressPadding(bigintToHex(prize.amount! * 10 ** (prize.tokenDecimals || 18))),
+              amount: addAddressPadding(
+                bigintToHex(prize.amount! * 10 ** (prize.tokenDecimals || 18))
+              ),
             },
             erc721: undefined,
           })
@@ -180,30 +185,29 @@ export const getSubmittableScores = (
   leaderboard: Leaderboard
 ) => {
   const submittedTokenIds = leaderboard?.token_ids ?? [];
+
+  // Create a Set of submitted token IDs for O(1) lookup
+  const submittedTokenIdSet = new Set(
+    submittedTokenIds.map((id) => id.toString())
+  );
+
+  // Map the current leaderboard with positions based on their current order
+  // This assumes currentLeaderboard is already sorted by score (highest to lowest)
   const leaderboardWithPositions = currentLeaderboard.map((game, index) => ({
     ...game,
     position: index + 1,
   }));
-  // if no scores have been submitted then we can submit the whole leaderboard
-  const newSubmissions = leaderboardWithPositions.map((game) => ({
-    tokenId: game.token_id,
-    position: game.position,
-  }));
-  if (submittedTokenIds.length === 0) {
-    return newSubmissions;
-  } else {
-    // TODO: Handle the case where some scores have been submitted
-    // const submittedScores = submittedTokenIds.map((tokenId, index) => ({
-    //   tokenId: tokenId,
-    //   position: index + 1,
-    // }));
-    // const correctlySubmittedScores = submittedScores.filter((score) =>
-    //   leaderboardWithPositions.some(
-    //     (position) => position.tokenId === score.tokenId
-    //   )
-    // );
-    return [];
-  }
+
+  // Filter out already submitted scores but keep their positions intact
+  // Only return scores that haven't been submitted yet
+  const newSubmissions = leaderboardWithPositions
+    .filter((game) => !submittedTokenIdSet.has(game.token_id.toString()))
+    .map((game) => ({
+      tokenId: game.token_id,
+      position: game.position, // Keep the original position based on score ranking
+    }));
+
+  return newSubmissions;
 };
 
 export const extractEntryFeePrizes = (

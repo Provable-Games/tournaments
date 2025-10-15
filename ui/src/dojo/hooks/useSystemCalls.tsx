@@ -165,6 +165,63 @@ export const useSystemCalls = () => {
     }
   };
 
+  const submitScoresBatched = async (
+    tournamentId: BigNumberish,
+    tournamentName: string,
+    submissions: Array<{
+      tokenId: BigNumberish;
+      position: BigNumberish;
+    }>,
+    batchSize: number = 30,
+    onProgress?: (current: number, total: number) => void
+  ) => {
+    try {
+      // Split submissions into batches
+      const batches = [];
+      for (let i = 0; i < submissions.length; i += batchSize) {
+        batches.push(submissions.slice(i, i + batchSize));
+      }
+
+      let tx;
+      for (const [index, batch] of batches.entries()) {
+        const calls = batch.map((submission) => ({
+          contractAddress: tournamentAddress,
+          entrypoint: "submit_score",
+          calldata: CallData.compile([
+            tournamentId,
+            submission.tokenId,
+            submission.position,
+          ]),
+        }));
+
+        console.log(`Processing score submission batch ${index + 1}/${batches.length} with ${calls.length} scores`);
+        
+        // Call progress callback
+        if (onProgress) {
+          onProgress(index + 1, batches.length);
+        }
+        
+        tx = await account?.execute(calls);
+        
+        if (tx?.transaction_hash) {
+          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          // Wait for the transaction to be accepted on L2
+          await account?.waitForTransaction(tx.transaction_hash);
+          console.log(`Transaction ${tx.transaction_hash} confirmed`);
+        }
+      }
+
+      await waitForSubmitScores(tournamentId);
+
+      if (tx) {
+        showScoreSubmission(tournamentName);
+      }
+    } catch (error) {
+      console.error("Error executing batched submit scores:", error);
+      throw error;
+    }
+  };
+
   const approveAndAddPrizes = async (
     tournamentName: string,
     prizes: Prize[],
@@ -850,6 +907,7 @@ export const useSystemCalls = () => {
   return {
     approveAndEnterTournament,
     submitScores,
+    submitScoresBatched,
     approveAndAddPrizes,
     approveAndAddPrizesBatched,
     createTournamentAndApproveAndAddPrizes,

@@ -32,8 +32,9 @@ export function SubmitScoresDialog({
 }: SubmitScoresDialogProps) {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
-  const { submitScores } = useSystemCalls();
+  const { submitScores, submitScoresBatched } = useSystemCalls();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const { tournamentAddress } = useTournamentContracts();
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
@@ -55,16 +56,31 @@ export function SubmitScoresDialog({
 
   const handleSubmitScores = async () => {
     setIsSubmitting(true);
+    setBatchProgress(null);
     try {
-      await submitScores(
-        tournamentModel?.id,
-        feltToString(tournamentModel?.metadata.name),
-        submittableScores
-      );
+      // Use batched version if there are many scores to submit
+      if (submittableScores.length > 30) {
+        await submitScoresBatched(
+          tournamentModel?.id,
+          feltToString(tournamentModel?.metadata.name),
+          submittableScores,
+          30, // batch size
+          (current, total) => setBatchProgress({ current, total })
+        );
+      } else {
+        await submitScores(
+          tournamentModel?.id,
+          feltToString(tournamentModel?.metadata.name),
+          submittableScores
+        );
+      }
       setIsSubmitting(false);
+      setBatchProgress(null);
+      onOpenChange(false); // Close dialog after success
     } catch (error) {
       console.error("Failed to submit scores:", error);
       setIsSubmitting(false);
+      setBatchProgress(null);
     }
   };
 
@@ -74,6 +90,19 @@ export function SubmitScoresDialog({
         <DialogHeader>
           <DialogTitle>Submit Scores</DialogTitle>
         </DialogHeader>
+        {batchProgress && (
+          <div className="bg-brand/10 border border-brand p-4 rounded-lg mx-5">
+            <div className="flex items-center gap-3">
+              <LoadingSpinner />
+              <div>
+                <p className="font-semibold">Processing Transactions</p>
+                <p className="text-sm text-muted-foreground">
+                  Batch {batchProgress.current} of {batchProgress.total} - Please do not close this window
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <span className="text-center">
             Submitting {submittableScores.length} scores
@@ -112,7 +141,11 @@ export function SubmitScoresDialog({
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <LoadingSpinner />
-                  <span>Submitting...</span>
+                  {batchProgress ? (
+                    <span>Batch {batchProgress.current}/{batchProgress.total}</span>
+                  ) : (
+                    <span>Submitting...</span>
+                  )}
                 </div>
               ) : (
                 "Submit"
