@@ -66,6 +66,7 @@ const MyEntries = ({
     tournamentId,
     tokenIds: tokenIds,
     active: tokenIds.length > 0 && Number(tournamentId) > 0,
+    limit: 1000,
   });
 
   const processedEntries = useMemo(() => {

@@ -547,7 +547,7 @@ export const useGetMyTournamentEntries = ({
   tokenIds,
   active = false,
   offset = 0,
-  limit = 5,
+  limit = 1000,
 }: {
   namespace: string;
   tournamentId: BigNumberish;
@@ -576,7 +576,6 @@ export const useGetMyTournamentEntries = ({
         : null,
     [namespace, tournamentId, tokenIdsKey, offset, limit, active]
   );
-  console.log(query);
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data, loading, error, refetch };
 };
