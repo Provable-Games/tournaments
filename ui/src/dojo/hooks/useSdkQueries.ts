@@ -98,12 +98,6 @@ export const useGetTournamentQuery = (
               "Eq",
               padU64(BigInt(tournamentId))
             ),
-            MemberClause(
-              getModelsMapping(namespace).Registration,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
           ]).build()
         )
         .withEntityModels([
@@ -112,7 +106,6 @@ export const useGetTournamentQuery = (
           getModelsMapping(namespace).Prize,
           getModelsMapping(namespace).PrizeClaim,
           getModelsMapping(namespace).Leaderboard,
-          getModelsMapping(namespace).Registration,
         ])
         .includeHashedKeys()
         .withLimit(10000),

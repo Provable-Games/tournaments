@@ -186,15 +186,17 @@ export const useGetMyTournamentsCount = ({
 }) => {
   const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
   const query = useMemo(
-    () => address ? `
+    () =>
+      address
+        ? `
     WITH registered_tournaments AS (
       SELECT DISTINCT r.tournament_id
       FROM '${namespace}-Registration' r
       WHERE r.game_address IN (${gameAddresses
         .map((addr) => `"${addr}"`)
         .join(",")}) AND r.game_token_id IN (${tokenIds
-      ?.map((id) => `"${id}"`)
-      .join(",")})
+            ?.map((id) => `"${id}"`)
+            .join(",")})
     ),
     filtered_tournaments AS (
       SELECT rt.tournament_id
@@ -205,7 +207,8 @@ export const useGetMyTournamentsCount = ({
     )
     SELECT COUNT(DISTINCT tournament_id) as count
     FROM filtered_tournaments
-  ` : null,
+  `
+        : null,
     [namespace, address, gameAddresses, tokenIdsKey, fromTournamentId]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
@@ -502,71 +505,6 @@ export const useGetAccountTokenIds = (
   return { data, loading, error, refetch };
 };
 
-export const useGetTournamentEntrants = ({
-  namespace,
-  tournamentId,
-  gameNamespace,
-  gameAddress,
-  offset = 0,
-  limit = 5,
-}: {
-  namespace: string;
-  tournamentId: BigNumberish;
-  gameNamespace: string;
-  gameAddress: string;
-  offset?: number;
-  limit?: number;
-}) => {
-  const isValidInput = useMemo(() => {
-    return Boolean(
-      namespace &&
-        tournamentId &&
-        gameNamespace &&
-        gameAddress &&
-        typeof offset === "number" &&
-        typeof limit === "number"
-    );
-  }, [namespace, tournamentId, gameNamespace, offset, limit]);
-
-  const query = useMemo(
-    () =>
-      isValidInput
-        ? `
-    SELECT 
-    r.tournament_id,
-    r.entry_number,
-    r.game_token_id,
-    r.has_submitted,
-    m.player_name,
-    m."lifecycle.mint",
-    t.account_address
-    FROM '${namespace}-Registration' r
-    LEFT JOIN '${gameNamespace}-TokenMetadata' m 
-      ON r.game_token_id = m.token_id
-    INNER JOIN token_balances t
-      ON ('${gameAddress}' || ':' || r.game_token_id) = t.token_id
-      AND t.contract_address = '${gameAddress}'
-      AND t.balance != '0x0000000000000000000000000000000000000000000000000000000000000000'
-    WHERE r.tournament_id = "${addAddressPadding(tournamentId)}"
-    ORDER BY r.entry_number DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `
-        : null,
-    [
-      isValidInput,
-      namespace,
-      tournamentId,
-      offset,
-      limit,
-      gameNamespace,
-      gameAddress,
-    ]
-  );
-  const { data, loading, error, refetch } = useSqlExecute(query);
-  return { data, loading, error, refetch };
-};
-
 export const useGetTournamentLeaderboards = ({
   namespace,
   tournamentIds,
@@ -601,6 +539,46 @@ export const useGetTournamentLeaderboards = ({
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data, loading, error };
+};
+
+export const useGetMyTournamentEntries = ({
+  namespace,
+  tournamentId,
+  tokenIds,
+  active = false,
+  offset = 0,
+  limit = 5,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  tokenIds: number[];
+  active?: boolean;
+  offset?: number;
+  limit?: number;
+}) => {
+  const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
+  console.log(tokenIds);
+  const query = useMemo(
+    () =>
+      active
+        ? `
+    SELECT *
+    FROM '${namespace}-Registration'
+    WHERE tournament_id = '${padU64(
+      BigInt(tournamentId)
+    )}' AND game_token_id IN (${tokenIds
+            .map((id) => `"${padU64(BigInt(id))}"`)
+            .join(",")})
+    ORDER BY game_token_id DESC
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `
+        : null,
+    [namespace, tournamentId, tokenIdsKey, offset, limit, active]
+  );
+  console.log(query);
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data, loading, error, refetch };
 };
 
 export const useGetTournamentRegistrants = ({

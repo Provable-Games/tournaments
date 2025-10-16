@@ -1,7 +1,8 @@
 import { DOLLAR } from "@/components/Icons";
-import { useGameTokens } from "metagame-sdk";
-import { useEffect, useMemo, useState } from "react";
+import { useGameTokens, useGameTokensCount } from "metagame-sdk/sql";
+import { useEffect, useState, useMemo } from "react";
 import { useAccount } from "@starknet-react/core";
+import { useGetMyTournamentEntries } from "@/dojo/hooks/useSqlQueries";
 import { BigNumberish } from "starknet";
 import EntryCard from "@/components/tournament/myEntries/EntryCard";
 import { Tournament } from "@/generated/models.gen";
@@ -15,6 +16,7 @@ import {
 } from "./containers/TournamentCard";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { padAddress } from "@/lib/utils";
+import { useDojo } from "@/context/dojo";
 
 interface MyEntriesProps {
   tournamentId: BigNumberish;
@@ -29,9 +31,18 @@ const MyEntries = ({
   tournamentModel,
   totalEntryCount,
 }: MyEntriesProps) => {
+  const { namespace } = useDojo();
   const { address } = useAccount();
   const { tournamentAddress } = useTournamentContracts();
   const [showMyEntries, setShowMyEntries] = useState(false);
+
+  const { count: myEntriesCount } = useGameTokensCount({
+    context: {
+      id: Number(tournamentId),
+    },
+    owner: address ?? "0x0",
+    mintedByAddress: padAddress(tournamentAddress),
+  });
 
   const { games: ownedGames, refetch } = useGameTokens({
     context: {
@@ -40,12 +51,32 @@ const MyEntries = ({
     owner: address ?? "0x0",
     mintedByAddress: padAddress(tournamentAddress),
     includeMetadata: false,
-    limit: 10000,
+    sortBy: "token_id",
+    sortOrder: "desc",
+    limit: 1000,
   });
 
-  const myEntriesCount = useMemo(() => {
-    return ownedGames?.length ?? 0;
-  }, [ownedGames]);
+  const tokenIds = useMemo(
+    () => ownedGames?.map((game) => game.token_id) || [],
+    [ownedGames]
+  );
+
+  const { data: myEntries } = useGetMyTournamentEntries({
+    namespace,
+    tournamentId,
+    tokenIds: tokenIds,
+    active: tokenIds.length > 0 && Number(tournamentId) > 0,
+  });
+
+  const processedEntries = useMemo(() => {
+    if (!myEntries || myEntries.length === 0) return [];
+    // Sort entries by their score in descending order
+    const processedEntries = myEntries.map((entry) => ({
+      ...entry,
+      game_token_id: Number(entry.game_token_id),
+    }));
+    return processedEntries;
+  }, [myEntries]);
 
   useEffect(() => {
     if (address) {
@@ -83,6 +114,7 @@ const MyEntries = ({
                 gameAddress={gameAddress}
                 game={game}
                 tournamentModel={tournamentModel}
+                registration={processedEntries[index]}
               />
             ))}
           </div>

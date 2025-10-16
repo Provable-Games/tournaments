@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
 import { Card } from "@/components/ui/card";
@@ -13,23 +12,21 @@ import { TooltipTrigger } from "@/components/ui/tooltip";
 import { Tooltip } from "@/components/ui/tooltip";
 import useUIStore from "@/hooks/useUIStore";
 import { GameTokenData } from "metagame-sdk";
-import {
-  Tournament,
-  Registration,
-  getModelsMapping,
-} from "@/generated/models.gen";
-import useModel from "@/dojo/hooks/useModel";
-import { useDojo } from "@/context/dojo";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { Tournament } from "@/generated/models.gen";
 
 interface EntryCardProps {
   gameAddress: string;
   game: GameTokenData;
   tournamentModel: Tournament;
+  registration: any;
 }
 
-const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
-  const { namespace } = useDojo();
+const EntryCard = ({
+  gameAddress,
+  game,
+  tournamentModel,
+  registration,
+}: EntryCardProps) => {
   const { getGameImage, getGameName } = useUIStore();
   const currentDate = BigInt(new Date().getTime()) / 1000n;
   const hasStarted = (game?.lifecycle.start ?? 0) < currentDate;
@@ -44,18 +41,7 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
   const gameName = getGameName(gameAddress);
   const gameImage = getGameImage(gameAddress);
 
-  const registrationEntityId = useMemo(
-    () =>
-      getEntityIdFromKeys([BigInt(gameAddress ?? 0), BigInt(game.token_id!)]),
-    [gameAddress, game.token_id]
-  );
-
-  const registrationModel = useModel(
-    registrationEntityId,
-    getModelsMapping(namespace).Registration
-  ) as unknown as Registration;
-
-  const entryNumber = registrationModel?.entry_number;
+  const entryNumber = registration?.entry_number;
 
   if (!entryNumber) {
     return null;
@@ -82,7 +68,7 @@ const EntryCard = ({ gameAddress, game, tournamentModel }: EntryCardProps) => {
           </TooltipContent>
         </Tooltip>
         <div className="absolute top-1 left-1 text-xs 3xl:text-sm">
-          #{Number(registrationModel.entry_number)}
+          #{Number(entryNumber)}
         </div>
         <HoverCard openDelay={50} closeDelay={0}>
           <HoverCardTrigger asChild>

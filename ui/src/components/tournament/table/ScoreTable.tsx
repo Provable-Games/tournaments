@@ -54,7 +54,7 @@ const ScoreTable = ({
     loading,
   } = useGameTokens({
     context: {
-      id: Number(tournamentId) ?? 0,
+      id: Number(tournamentId),
     },
     pagination: {
       pageSize: 10,

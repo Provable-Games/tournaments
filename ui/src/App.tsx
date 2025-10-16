@@ -1,15 +1,9 @@
 import MobileFooter from "@/components/MobileFooter";
 import { Routes, Route, useParams } from "react-router-dom";
-import {
-  useGetTokensQuery,
-  useSubscribeMetricsQuery,
-  useSubscribeTournamentsQuery,
-} from "@/dojo/hooks/useSdkQueries";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useMemo, useRef, useState, Suspense, lazy } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useDojo } from "@/context/dojo";
 import useUIStore from "./hooks/useUIStore";
 import { getGames } from "./assets/games";
 import Header from "@/components/Header";
@@ -31,14 +25,13 @@ const RegisterToken = lazy(() => import("@/containers/RegisterToken"));
 const CreateTournament = lazy(() => import("@/containers/CreateTournament"));
 
 function App() {
-  const { namespace } = useDojo();
   const { setGameData, setGameDataLoading } = useUIStore();
 
   useResetDojoOnNetworkChange();
 
-  useGetTokensQuery(namespace);
-  useSubscribeMetricsQuery(namespace);
-  useSubscribeTournamentsQuery(namespace);
+  // useGetTokensQuery(namespace);
+  // useSubscribeMetricsQuery(namespace);
+  // useSubscribeTournamentsQuery(namespace);
 
   const { minigames, loading: minigamesLoading } = useMiniGames({});
 
