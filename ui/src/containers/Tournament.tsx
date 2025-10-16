@@ -12,7 +12,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import TournamentTimeline from "@/components/TournamentTimeline";
 import { bigintToHex, feltToString, formatTime } from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
-import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
+import {
+  useGetTournamentQuery,
+  useSubscribeTournamentQuery,
+} from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import {
@@ -117,7 +120,7 @@ const Tournament = () => {
   }, [id, tournamentsCount]);
 
   useGetTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
-  // useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
+  useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
 
   const tournamentEntityId = useMemo(
     () => getEntityIdFromKeys([BigInt(id!)]),

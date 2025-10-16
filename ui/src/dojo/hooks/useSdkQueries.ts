@@ -130,44 +130,16 @@ export const useSubscribeTournamentQuery = (
           OrComposeClause([
             KeysClause(
               [
-                getModelsMapping(namespace).Tournament,
                 getModelsMapping(namespace).EntryCount,
                 getModelsMapping(namespace).Registration,
-                getModelsMapping(namespace).Prize,
               ],
               []
-            ),
-            MemberClause(
-              getModelsMapping(namespace).Tournament,
-              "id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
-            MemberClause(
-              getModelsMapping(namespace).EntryCount,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
-            MemberClause(
-              getModelsMapping(namespace).Registration,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
-            MemberClause(
-              getModelsMapping(namespace).Prize,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
             ),
           ]).build()
         )
         .withEntityModels([
-          getModelsMapping(namespace).Tournament,
           getModelsMapping(namespace).EntryCount,
           getModelsMapping(namespace).Registration,
-          getModelsMapping(namespace).Prize,
         ])
         .includeHashedKeys(),
     [tournamentId, namespace]
