@@ -86,9 +86,12 @@ export const useGetTournamentQuery = (
               "Eq",
               padU64(BigInt(tournamentId))
             ),
-            // KeysClause(
-            //   getModelsMapping(namespace).PrizeClaim as `${string}-${string}`[], [undefined]
-            // ),
+            MemberClause(
+              getModelsMapping(namespace).PrizeClaim,
+              "tournament_id",
+              "Eq",
+              padU64(BigInt(tournamentId))
+            ),
             MemberClause(
               getModelsMapping(namespace).Leaderboard,
               "tournament_id",
@@ -224,8 +227,7 @@ export const useSubscribeTournamentsQuery = (namespace: string) => {
           getModelsMapping(namespace).Prize,
           getModelsMapping(namespace).PrizeClaim,
         ])
-        .includeHashedKeys()
-        .withLimit(100000),
+        .includeHashedKeys(),
     [namespace]
   );
 
