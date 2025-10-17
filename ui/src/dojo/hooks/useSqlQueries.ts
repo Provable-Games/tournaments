@@ -557,7 +557,6 @@ export const useGetMyTournamentEntries = ({
   limit?: number;
 }) => {
   const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
-  console.log(tokenIds);
   const query = useMemo(
     () =>
       active
@@ -687,4 +686,197 @@ export const useGetTournamentQualificationEntries = ({
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data, loading, error };
+};
+
+export const useGetTournamentPrizes = ({
+  namespace,
+  tournamentId,
+  active = false,
+  startPosition = 1,
+  endPosition = 3,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+  startPosition?: number;
+  endPosition?: number;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    SELECT * FROM '${namespace}-Prize'
+    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+      AND payout_position >= ${startPosition}
+      AND payout_position <= ${endPosition}
+    ORDER BY payout_position ASC
+  `
+        : null,
+    [namespace, tournamentId, active, startPosition, endPosition]
+  );
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data, loading, error, refetch };
+};
+
+export const useGetTournamentPrizesAggregations = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    WITH prize_data AS (
+      SELECT 
+        p.*,
+        p."token_type.erc20.amount" as erc20_amount,
+        p."token_type.erc721.id" as erc721_id,
+        CASE 
+          WHEN p.token_type = 'erc721' THEN 1
+          ELSE 0
+        END as is_nft
+      FROM '${namespace}-Prize' p
+      WHERE p.tournament_id = '${padU64(BigInt(tournamentId))}'
+    ),
+    token_aggregates AS (
+      SELECT 
+        pd.token_address,
+        pd.token_type,
+        t.symbol,
+        t.name,
+        CASE 
+          WHEN pd.token_type = 'erc20' THEN 
+            GROUP_CONCAT(
+              CASE 
+                WHEN pd.erc20_amount IS NOT NULL AND pd.erc20_amount != 'NULL' 
+                THEN pd.erc20_amount
+                ELSE NULL 
+              END,
+              ','
+            )
+          ELSE NULL
+        END as total_amount,
+        COUNT(CASE WHEN pd.token_type = 'erc721' THEN 1 END) as nft_count
+      FROM prize_data pd
+      LEFT JOIN '${namespace}-Token' t ON pd.token_address = t.address
+      GROUP BY pd.token_address, pd.token_type, t.symbol, t.name
+    ),
+    position_count AS (
+      SELECT COUNT(DISTINCT payout_position) as distinct_positions
+      FROM prize_data
+    ),
+    final_aggregates AS (
+      SELECT 
+        COUNT(*) as total_prizes,
+        MAX(payout_position) as lowest_prize_position,
+        SUM(is_nft) as total_nfts,
+        COUNT(DISTINCT token_address) as unique_tokens
+      FROM prize_data
+    )
+    SELECT 
+      fa.total_prizes,
+      fa.lowest_prize_position,
+      fa.total_nfts,
+      fa.unique_tokens,
+      pc.distinct_positions,
+      (
+        SELECT GROUP_CONCAT(
+          json_object(
+            'tokenAddress', token_address,
+            'tokenType', token_type,
+            'tokenSymbol', symbol,
+            'tokenName', name,
+            'totalAmount', total_amount,
+            'nftCount', nft_count
+          ),
+          '|'
+        )
+        FROM token_aggregates
+        WHERE token_address IS NOT NULL
+      ) as token_totals
+    FROM final_aggregates fa
+    CROSS JOIN position_count pc
+  `
+        : null,
+    [namespace, tournamentId, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+
+  // Parse the token_totals string into an array and sum hex amounts
+  const parsedData = data?.[0]
+    ? {
+        ...data[0],
+        token_totals: data[0].token_totals
+          ? data[0].token_totals
+              .split("|")
+              .map((item: string) => {
+                try {
+                  const parsed = JSON.parse(item);
+                  if (parsed.totalAmount && parsed.tokenType === "erc20") {
+                    // Sum all hex amounts from the comma-separated list
+                    const amounts = parsed.totalAmount
+                      .split(",")
+                      .filter((a: string) => a && a !== "NULL");
+                    const totalAmount = amounts.reduce(
+                      (sum: bigint, hexAmount: string) => {
+                        try {
+                          return sum + BigInt(hexAmount);
+                        } catch (e) {
+                          console.warn(
+                            "Failed to parse hex amount:",
+                            hexAmount,
+                            e
+                          );
+                          return sum;
+                        }
+                      },
+                      0n
+                    );
+                    return { ...parsed, totalAmount: totalAmount.toString() };
+                  }
+                  return parsed;
+                } catch {
+                  return null;
+                }
+              })
+              .filter(Boolean)
+          : [],
+      }
+    : null;
+
+  return { data: parsedData, loading, error };
+};
+
+export const useGetTournamentPrizePositions = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    SELECT DISTINCT payout_position
+    FROM '${namespace}-Prize'
+    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+    ORDER BY payout_position ASC
+  `
+        : null,
+    [namespace, tournamentId, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return {
+    data: data?.map((row) => row.payout_position) || [],
+    loading,
+    error,
+  };
 };

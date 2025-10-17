@@ -10,6 +10,8 @@ import Header from "@/components/Header";
 import LoadingPage from "@/containers/LoadingPage";
 import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkChange";
 import { useMiniGames } from "metagame-sdk/sql";
+import { useSubscribeTournamentsQuery } from "./dojo/hooks/useSdkQueries";
+import { useDojo } from "./context/dojo";
 
 const NotFound = lazy(() => import("@/containers/NotFound"));
 const Overview = lazy(() => {
@@ -25,13 +27,14 @@ const RegisterToken = lazy(() => import("@/containers/RegisterToken"));
 const CreateTournament = lazy(() => import("@/containers/CreateTournament"));
 
 function App() {
+  const { namespace } = useDojo();
   const { setGameData, setGameDataLoading } = useUIStore();
 
   useResetDojoOnNetworkChange();
 
   // useGetTokensQuery(namespace);
   // useSubscribeMetricsQuery(namespace);
-  // useSubscribeTournamentsQuery(namespace);
+  useSubscribeTournamentsQuery(namespace);
 
   const { minigames, loading: minigamesLoading } = useMiniGames({});
 
