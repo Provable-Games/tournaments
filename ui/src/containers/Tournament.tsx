@@ -330,6 +330,10 @@ const Tournament = () => {
     }
   }, [tokens, entryFeeToken]);
 
+  tokenDecimals[
+    "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8"
+  ] = 6;
+
   const totalPrizesValueUSD = calculateTotalValue(
     groupedByTokensPrizes,
     prices,
