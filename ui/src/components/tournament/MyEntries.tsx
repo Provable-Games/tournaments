@@ -36,13 +36,14 @@ const MyEntries = ({
   const { tournamentAddress } = useTournamentContracts();
   const [showMyEntries, setShowMyEntries] = useState(false);
 
-  const { count: myEntriesCount } = useGameTokensCount({
-    context: {
-      id: Number(tournamentId),
-    },
-    owner: address ?? "0x0",
-    mintedByAddress: padAddress(tournamentAddress),
-  });
+  const { count: myEntriesCount, refetch: refetchMyEntriesCount } =
+    useGameTokensCount({
+      context: {
+        id: Number(tournamentId),
+      },
+      owner: address ?? "0x0",
+      mintedByAddress: padAddress(tournamentAddress),
+    });
 
   const { games: ownedGames, refetch } = useGameTokens({
     context: {
@@ -82,11 +83,17 @@ const MyEntries = ({
   useEffect(() => {
     if (address) {
       setShowMyEntries(myEntriesCount > 0);
+      refetchMyEntriesCount();
       refetch();
     } else {
       setShowMyEntries(false);
     }
   }, [address, myEntriesCount, totalEntryCount]);
+
+  useEffect(() => {
+    refetchMyEntriesCount();
+    refetch();
+  }, [totalEntryCount]);
 
   return (
     <TournamentCard showCard={showMyEntries}>
