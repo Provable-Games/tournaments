@@ -81,6 +81,95 @@ export const useGetGameSettings = ({
   return { data, loading, error };
 };
 
+export const useGetTokens = ({
+  namespace,
+  active = false,
+  limit = 20,
+  offset = 0,
+  search = "",
+  tokenType,
+}: {
+  namespace: string;
+  active?: boolean;
+  limit?: number;
+  offset?: number;
+  search?: string;
+  tokenType?: "erc20" | "erc721";
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && active
+        ? `
+    SELECT *
+    FROM '${namespace}-Token'
+    WHERE is_registered = 1
+    ${search ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')` : ""}
+    ${tokenType ? `AND token_type = '${tokenType}'` : ""}
+    ORDER BY name ASC
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `
+        : null,
+    [namespace, active, limit, offset, search, tokenType]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data, loading, error };
+};
+
+export const useGetTokensCount = ({
+  namespace,
+  active = false,
+  search = "",
+  tokenType,
+}: {
+  namespace: string;
+  active?: boolean;
+  search?: string;
+  tokenType?: "erc20" | "erc721";
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && active
+        ? `
+    SELECT COUNT(*) as count
+    FROM '${namespace}-Token'
+    WHERE is_registered = 1
+    ${search ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')` : ""}
+    ${tokenType ? `AND token_type = '${tokenType}'` : ""}
+  `
+        : null,
+    [namespace, active, search, tokenType]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error };
+};
+
+export const useGetTokenByAddress = ({
+  namespace,
+  address,
+  active = false,
+}: {
+  namespace: string;
+  address: string;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && address && active
+        ? `
+    SELECT *
+    FROM '${namespace}-Token'
+    WHERE address = '${address}'
+    AND is_registered = 1
+    LIMIT 1
+  `
+        : null,
+    [namespace, address, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data: data?.[0], loading, error };
+};
+
 export const useGetTournamentsCount = ({
   namespace,
   fromTournamentId,
@@ -307,51 +396,89 @@ export const useGetTournaments = ({
     () =>
       active
         ? `
+    WITH tournament_data AS (
+      SELECT 
+      t.*,
+      CASE 
+          WHEN COUNT(p.tournament_id) = 0 THEN NULL
+          ELSE GROUP_CONCAT(
+              json_object(
+                  'prizeId', p.id,
+                  'position', p.payout_position,
+                  'tokenType', p.token_type,
+                  'tokenAddress', p.token_address,
+                  'amount', CASE 
+                      WHEN p.token_type = 'erc20' THEN p."token_type.erc20.amount"
+                      WHEN p.token_type = 'erc721' THEN p."token_type.erc721.id"
+                      ELSE NULL 
+                  END,
+                  'isValid', CASE 
+                      WHEN p.token_type = 'erc20' AND p."token_type.erc20.amount" IS NOT NULL THEN 1
+                      WHEN p.token_type = 'erc721' AND p."token_type.erc721.id" IS NOT NULL THEN 1
+                      ELSE 0
+                  END
+              ),
+              '|'
+          )
+      END as prizes,
+      COALESCE(e.count, 0) as entry_count
+      FROM '${namespace}-Tournament' as t
+      LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
+      LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
+      ${getTournamentWhereClause(
+        status,
+        currentTime ?? 0n,
+        tournamentIds,
+        fromTournamentId
+      )}
+          ${
+            gameFilters.length > 0
+              ? `AND t.'game_config.address' IN (${gameFilters
+                  .map((address) => `'${address}'`)
+                  .join(",")})`
+              : ""
+          }
+      GROUP BY t.id
+      ${getSortClause(sortBy)}
+      LIMIT ${limit}
+      OFFSET ${offset}
+    ),
+    unique_tokens AS (
+      SELECT DISTINCT 
+        p.token_address,
+        p.token_type,
+        tk.symbol,
+        tk.name
+      FROM tournament_data td
+      JOIN '${namespace}-Prize' p ON td.id = p.tournament_id
+      LEFT JOIN '${namespace}-Token' tk ON p.token_address = tk.address
+      WHERE p.token_type = 'erc20' AND tk.is_registered = 1
+      
+      UNION
+      
+      SELECT DISTINCT
+        td.'entry_fee.Some.token_address' as token_address,
+        'erc20' as token_type,
+        tk.symbol,
+        tk.name
+      FROM tournament_data td
+      LEFT JOIN '${namespace}-Token' tk ON td.'entry_fee.Some.token_address' = tk.address
+      WHERE td.'entry_fee.Some.token_address' IS NOT NULL 
+        AND td.'entry_fee.Some.token_address' != 'NULL'
+        AND tk.is_registered = 1
+    )
     SELECT 
-    t.*,
-    CASE 
-        WHEN COUNT(p.tournament_id) = 0 THEN NULL
-        ELSE GROUP_CONCAT(
-            json_object(
-                'prizeId', p.id,
-                'position', p.payout_position,
-                'tokenType', p.token_type,
-                'tokenAddress', p.token_address,
-                'amount', CASE 
-                    WHEN p.token_type = 'erc20' THEN p."token_type.erc20.amount"
-                    WHEN p.token_type = 'erc721' THEN p."token_type.erc721.id"
-                    ELSE NULL 
-                END,
-                'isValid', CASE 
-                    WHEN p.token_type = 'erc20' AND p."token_type.erc20.amount" IS NOT NULL THEN 1
-                    WHEN p.token_type = 'erc721' AND p."token_type.erc721.id" IS NOT NULL THEN 1
-                    ELSE 0
-                END
-            ),
-            '|'
-        )
-    END as prizes,
-    COALESCE(e.count, 0) as entry_count
-    FROM '${namespace}-Tournament' as t
-    LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
-    LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
-    ${getTournamentWhereClause(
-      status,
-      currentTime ?? 0n,
-      tournamentIds,
-      fromTournamentId
-    )}
-        ${
-          gameFilters.length > 0
-            ? `AND t.'game_config.address' IN (${gameFilters
-                .map((address) => `'${address}'`)
-                .join(",")})`
-            : ""
-        }
-    GROUP BY t.id
-    ${getSortClause(sortBy)}
-    LIMIT ${limit}
-    OFFSET ${offset}
+      td.*,
+      (SELECT GROUP_CONCAT(
+        json_object(
+          'address', token_address,
+          'type', token_type,
+          'symbol', symbol,
+          'name', name
+        ),
+        '|'
+      ) FROM unique_tokens) as unique_prize_tokens
+    FROM tournament_data td
   `
         : null,
     [
@@ -368,7 +495,22 @@ export const useGetTournaments = ({
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
-  return { data, loading, error, refetch };
+  
+  // Parse the unique tokens from the first result
+  const uniqueTokens = data?.[0]?.unique_prize_tokens
+    ? data[0].unique_prize_tokens
+        .split("|")
+        .map((item: string) => {
+          try {
+            return JSON.parse(item);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+    : [];
+
+  return { data, loading, error, refetch, uniqueTokens };
 };
 
 export const useGetMyTournaments = ({
@@ -415,50 +557,88 @@ export const useGetMyTournaments = ({
         .join(",")}) AND r.game_token_id IN (${tokenIds
             .map((id) => `"${id}"`)
             .join(",")})
+    ),
+    tournament_data AS (
+      SELECT 
+        t.*,
+        CASE 
+          WHEN COUNT(p.tournament_id) = 0 THEN NULL
+          ELSE GROUP_CONCAT(
+            json_object(
+              'prizeId', p.id,
+              'position', p.payout_position,
+              'tokenType', p.token_type,
+              'tokenAddress', p.token_address,
+              'amount', CASE 
+                WHEN p.token_type = 'erc20' THEN p."token_type.erc20.amount"
+                WHEN p.token_type = 'erc721' THEN p."token_type.erc721.id"
+                ELSE NULL 
+              END,
+              'isValid', CASE 
+                WHEN p.token_type = 'erc20' AND p."token_type.erc20.amount" IS NOT NULL THEN 1
+                WHEN p.token_type = 'erc721' AND p."token_type.erc721.id" IS NOT NULL THEN 1
+                ELSE 0
+              END
+            ),
+            '|'
+          )
+        END as prizes,
+        COALESCE(e.count, 0) as entry_count
+      FROM registered_tournaments rt
+      JOIN '${namespace}-Tournament' t 
+        ON rt.tournament_id = t.id
+      LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
+      LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
+      WHERE 1=1
+      ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
+      ${
+        gameFilters.length > 0
+          ? `AND t.'game_config.address' IN (${gameFilters
+              .map((address) => `'${address}'`)
+              .join(",")})`
+          : ""
+      }
+      GROUP BY t.id
+      ${getSortClause(sortBy)}
+      LIMIT ${limit}
+      OFFSET ${offset}
+    ),
+    unique_tokens AS (
+      SELECT DISTINCT 
+        p.token_address,
+        p.token_type,
+        tk.symbol,
+        tk.name
+      FROM tournament_data td
+      JOIN '${namespace}-Prize' p ON td.id = p.tournament_id
+      LEFT JOIN '${namespace}-Token' tk ON p.token_address = tk.address
+      WHERE p.token_type = 'erc20' AND tk.is_registered = 1
+      
+      UNION
+      
+      SELECT DISTINCT
+        td.'entry_fee.Some.token_address' as token_address,
+        'erc20' as token_type,
+        tk.symbol,
+        tk.name
+      FROM tournament_data td
+      LEFT JOIN '${namespace}-Token' tk ON td.'entry_fee.Some.token_address' = tk.address
+      WHERE td.'entry_fee.Some.token_address' IS NOT NULL 
+        AND td.'entry_fee.Some.token_address' != 'NULL'
+        AND tk.is_registered = 1
     )
     SELECT 
-      t.*,
-      CASE 
-        WHEN COUNT(p.tournament_id) = 0 THEN NULL
-        ELSE GROUP_CONCAT(
-          json_object(
-            'prizeId', p.id,
-            'position', p.payout_position,
-            'tokenType', p.token_type,
-            'tokenAddress', p.token_address,
-            'amount', CASE 
-              WHEN p.token_type = 'erc20' THEN p."token_type.erc20.amount"
-              WHEN p.token_type = 'erc721' THEN p."token_type.erc721.id"
-              ELSE NULL 
-            END,
-            'isValid', CASE 
-              WHEN p.token_type = 'erc20' AND p."token_type.erc20.amount" IS NOT NULL THEN 1
-              WHEN p.token_type = 'erc721' AND p."token_type.erc721.id" IS NOT NULL THEN 1
-              ELSE 0
-            END
-          ),
-          '|'
-        )
-      END as prizes,
-      COALESCE(e.count, 0) as entry_count
-    FROM registered_tournaments rt
-    JOIN '${namespace}-Tournament' t 
-      ON rt.tournament_id = t.id
-    LEFT JOIN '${namespace}-Prize' p ON t.id = p.tournament_id
-    LEFT JOIN '${namespace}-EntryCount' e ON t.id = e.tournament_id
-    WHERE 1=1
-    ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
-    ${
-      gameFilters.length > 0
-        ? `AND t.'game_config.address' IN (${gameFilters
-            .map((address) => `'${address}'`)
-            .join(",")})`
-        : ""
-    }
-    GROUP BY t.id
-    ${getSortClause(sortBy)}
-    LIMIT ${limit}
-    OFFSET ${offset}
+      td.*,
+      (SELECT GROUP_CONCAT(
+        json_object(
+          'address', token_address,
+          'type', token_type,
+          'symbol', symbol,
+          'name', name
+        ),
+        '|'
+      ) FROM unique_tokens) as unique_prize_tokens
+    FROM tournament_data td
     `
         : null,
     [
@@ -475,7 +655,22 @@ export const useGetMyTournaments = ({
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
-  return { data, loading, error, refetch };
+  
+  // Parse the unique tokens from the first result
+  const uniqueTokens = data?.[0]?.unique_prize_tokens
+    ? data[0].unique_prize_tokens
+        .split("|")
+        .map((item: string) => {
+          try {
+            return JSON.parse(item);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+    : [];
+
+  return { data, loading, error, refetch, uniqueTokens };
 };
 
 export const useGetAccountTokenIds = (

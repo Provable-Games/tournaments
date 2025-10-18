@@ -146,6 +146,11 @@ export const useEkuboPrices = ({
         }
 
         const pricePromises = tokens.map(async (token) => {
+          // Manual override for USDC - always return price of 1
+          if (token === "USDC" || token === "USDCe") {
+            return { token, price: 1, timedOut: false, error: false };
+          }
+
           // Create a timeout promise
           const timeoutPromise = new Promise<PriceResult>((resolve) => {
             setTimeout(() => {

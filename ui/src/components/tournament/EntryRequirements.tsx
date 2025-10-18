@@ -31,7 +31,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
+import { useGetTokenByAddress } from "@/dojo/hooks/useSqlQueries";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EntryRequirements = ({
   tournamentModel,
@@ -44,15 +45,6 @@ const EntryRequirements = ({
     return null;
   }
   const { namespace, selectedChainConfig } = useDojo();
-  const state = useDojoStore((state) => state);
-
-  const tokenModels = state.getEntitiesByModel(namespace, "Token");
-  const registeredTokens = tokenModels.map(
-    (model) => model.models[namespace].Token
-  ) as Token[];
-  const erc721Tokens = registeredTokens.filter(
-    (token) => token.token_type === "erc721"
-  );
 
   const navigate = useNavigate();
 
@@ -67,15 +59,19 @@ const EntryRequirements = ({
     [entryRequirement]
   );
 
-  const token = useMemo(
-    () =>
-      erc721Tokens.find(
-        (token) =>
-          token.address ===
-          entryRequirement?.entry_requirement_type?.variant.token
-      ),
-    [erc721Tokens, entryRequirement]
+  const tokenAddress = useMemo(
+    () => entryRequirement?.entry_requirement_type?.variant.token,
+    [entryRequirement]
   );
+
+  // Fetch token data using SQL query
+  const { data: tokenData, loading: tokenLoading } = useGetTokenByAddress({
+    namespace,
+    address: tokenAddress || "",
+    active: activeVariant === "token" && !!tokenAddress,
+  });
+
+  const token = tokenData as Token | undefined;
 
   const tournament = useMemo(
     () =>
@@ -108,7 +104,11 @@ const EntryRequirements = ({
           <span className="w-8">
             <COIN />
           </span>
-          <span className="hidden sm:block text-xs">{token?.name}</span>
+          {tokenLoading ? (
+            <Skeleton className="hidden sm:block h-4 w-20" />
+          ) : (
+            <span className="hidden sm:block text-xs">{token?.name}</span>
+          )}
         </div>
       );
     } else if (activeVariant === "tournament") {
@@ -145,20 +145,26 @@ const EntryRequirements = ({
             <span className="w-8">
               <COIN />
             </span>
-            <span>{token?.name}</span>
-            <span
-              className="text-brand-muted hover:cursor-pointer"
-              onClick={() => {
-                if (blockExplorerExists) {
-                  window.open(
-                    `${selectedChainConfig.blockExplorerUrl}nft-contract/${token?.address}`,
-                    "_blank"
-                  );
-                }
-              }}
-            >
-              {displayAddress(token?.address ?? "0x0")}
-            </span>
+            {tokenLoading ? (
+              <Skeleton className="h-4 w-32" />
+            ) : (
+              <>
+                <span>{token?.name}</span>
+                <span
+                  className="text-brand-muted hover:cursor-pointer"
+                  onClick={() => {
+                    if (blockExplorerExists) {
+                      window.open(
+                        `${selectedChainConfig.blockExplorerUrl}nft-contract/${token?.address}`,
+                        "_blank"
+                      );
+                    }
+                  }}
+                >
+                  {displayAddress(token?.address ?? "0x0")}
+                </span>
+              </>
+            )}
           </div>
           {!!hasEntryLimit && (
             <div className="flex flex-row items-center gap-2">

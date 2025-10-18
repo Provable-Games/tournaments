@@ -1,9 +1,6 @@
 import { motion } from "framer-motion";
 import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
-import {
-  calculatePrizeValue,
-  countTotalNFTs,
-} from "@/lib/utils/formatting";
+import { calculatePrizeValue, countTotalNFTs } from "@/lib/utils/formatting";
 import {
   HoverCard,
   HoverCardContent,
@@ -73,7 +70,12 @@ const Prize = ({
             const token = tokens.find((t) => t.address === prize.address);
             const symbol = token?.symbol || key;
             const hasPrice = prices[symbol] !== undefined;
-            const USDValue = calculatePrizeValue(prize, symbol, prices, tokenDecimals);
+            const USDValue = calculatePrizeValue(
+              prize,
+              symbol,
+              prices,
+              tokenDecimals
+            );
             return {
               key,
               symbol,
@@ -83,16 +85,13 @@ const Prize = ({
             };
           })
           .sort((a, b) => b.USDValue - a.USDValue) // Sort by USDValue in descending order
-          .map(({ key, symbol, prize, hasPrice, USDValue }) => {
+          .map(({ key, prize, hasPrice, USDValue }) => {
             const token = tokens.find(
               (token) => token.address === prize.address
             );
             const decimals = tokenDecimals[prize.address] || 18;
             return (
-              <div
-                key={key}
-                className="flex justify-between items-center px-4"
-              >
+              <div key={key} className="flex justify-between items-center px-4">
                 {prize.type === "erc20" ? (
                   <div className="flex flex-row gap-1 items-center">
                     <span>{`${formatNumber(
@@ -182,7 +181,9 @@ const Prize = ({
                 <div className="flex flex-row items-center gap-2 font-brand xl:text-lg 3xl:text-2xl">
                   {Object.entries(prizes).map(([key, prize]) => {
                     const decimals = tokenDecimals[prize.address] || 18;
-                    const token = tokens.find((t) => t.address === prize.address);
+                    const token = tokens.find(
+                      (t) => t.address === prize.address
+                    );
                     const symbol = token?.symbol || key;
                     return (
                       <div

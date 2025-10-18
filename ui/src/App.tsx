@@ -10,7 +10,9 @@ import Header from "@/components/Header";
 import LoadingPage from "@/containers/LoadingPage";
 import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkChange";
 import { useMiniGames } from "metagame-sdk/sql";
-import { useSubscribeTournamentsQuery } from "./dojo/hooks/useSdkQueries";
+import {
+  useSubscribeTournamentsQuery,
+} from "./dojo/hooks/useSdkQueries";
 import { useDojo } from "./context/dojo";
 
 const NotFound = lazy(() => import("@/containers/NotFound"));
