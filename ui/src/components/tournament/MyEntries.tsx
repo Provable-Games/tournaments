@@ -51,7 +51,7 @@ const MyEntries = ({
     },
     owner: address ?? "0x0",
     mintedByAddress: padAddress(tournamentAddress),
-    includeMetadata: false,
+    includeMetadata: true,
     sortBy: "token_id",
     sortOrder: "desc",
     limit: 1000,

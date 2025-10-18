@@ -1,20 +1,17 @@
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { feltToString, formatTime } from "@/lib/utils";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { SOLID_CLOCK, USER } from "@/components/Icons";
 import { useNavigate } from "react-router-dom";
 import { Tournament, Token, Prize } from "@/generated/models.gen";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useDojo } from "@/context/dojo";
 import {
   groupPrizesByTokens,
-  getErc20TokenSymbols,
   calculateTotalValue,
   countTotalNFTs,
   extractEntryFeePrizes,
-  formatTokens,
 } from "@/lib/utils/formatting";
-import { useEkuboPrices } from "@/hooks/useEkuboPrices";
 import { TabType } from "@/components/overview/TournamentTabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -25,6 +22,8 @@ import {
 import useUIStore from "@/hooks/useUIStore";
 import { Badge } from "@/components/ui/badge";
 import { ChainId } from "@/dojo/setup/networks";
+import { TokenPrices } from "@/hooks/useEkuboPrices";
+import { getTokenLogoUrl } from "@/lib/tokensMeta";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -32,6 +31,10 @@ interface TournamentCardProps {
   status: TabType;
   prizes: Prize[] | null;
   entryCount: number;
+  tokens: Token[];
+  tokenPrices: TokenPrices;
+  pricesLoading: boolean;
+  tokenDecimals: Record<string, number>;
 }
 
 export const TournamentCard = ({
@@ -40,20 +43,14 @@ export const TournamentCard = ({
   status,
   prizes,
   entryCount,
+  tokens,
+  tokenPrices,
+  pricesLoading,
+  tokenDecimals,
 }: TournamentCardProps) => {
-  const { namespace, selectedChainConfig } = useDojo();
+  const { selectedChainConfig } = useDojo();
   const navigate = useNavigate();
-  const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
-
-  // token entities
-  const tokenModels = state.getEntitiesByModel(namespace, "Token");
-  const registeredTokens = tokenModels.map(
-    (model) => model.models[namespace].Token
-  ) as Token[];
-  const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
-  const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
-  const tokens = formatTokens(registeredTokens, isMainnet, isSepolia);
 
   const entryFeeToken = tournament?.entry_fee.Some?.token_address;
   const entryFeeTokenSymbol = tokens.find(
@@ -70,16 +67,39 @@ export const TournamentCard = ({
 
   const groupedPrizes = groupPrizesByTokens(allPrizes, tokens);
 
-  const erc20TokenSymbols = getErc20TokenSymbols(groupedPrizes);
-  const { prices, isLoading: pricesLoading } = useEkuboPrices({
-    tokens: [
-      ...erc20TokenSymbols,
-      ...(entryFeeTokenSymbol ? [entryFeeTokenSymbol] : []),
-    ],
-  });
-
-  const totalPrizesValueUSD = calculateTotalValue(groupedPrizes, prices, undefined);
+  const totalPrizesValueUSD = calculateTotalValue(
+    groupedPrizes,
+    tokenPrices,
+    tokenDecimals
+  );
   const totalPrizeNFTs = countTotalNFTs(groupedPrizes);
+
+  // Get unique ERC20 tokens from prizes for display
+  const uniqueErc20Tokens = useMemo(() => {
+    const tokenMap = new Map<
+      string,
+      { address: string; symbol: string; logo?: string }
+    >();
+
+    Object.entries(groupedPrizes).forEach(([, prize]) => {
+      if (prize.type === "erc20") {
+        const token = tokens.find((t) => t.address === prize.address);
+        if (token && !tokenMap.has(token.address)) {
+          const logo = getTokenLogoUrl(
+            selectedChainConfig.chainId ?? ChainId.SN_MAIN,
+            token.address
+          );
+          tokenMap.set(token.address, {
+            address: token.address,
+            symbol: token.symbol,
+            logo,
+          });
+        }
+      }
+    });
+
+    return Array.from(tokenMap.values());
+  }, [groupedPrizes, tokens, selectedChainConfig.chainId]);
 
   const startDate = new Date(Number(tournament.schedule.game.start) * 1000);
   const endDate = new Date(Number(tournament.schedule.game.end) * 1000);
@@ -107,10 +127,15 @@ export const TournamentCard = ({
   const hasEntryFee = tournament?.entry_fee.isSome();
 
   const entryFee = tournament?.entry_fee.isSome()
-    ? (
-        Number(BigInt(tournament?.entry_fee.Some?.amount!) / 10n ** 18n) *
-        Number(prices[entryFeeTokenSymbol ?? ""])
-      ).toFixed(2)
+    ? (() => {
+        const entryFeeDecimals = tokenDecimals[entryFeeToken ?? ""] || 18;
+        return (
+          Number(
+            BigInt(tournament?.entry_fee.Some?.amount!) /
+              10n ** BigInt(entryFeeDecimals)
+          ) * Number(tokenPrices[entryFeeTokenSymbol ?? ""] ?? 0)
+        ).toFixed(2);
+      })()
     : "Free";
 
   const renderDuration = (seconds: number) => {
@@ -291,7 +316,8 @@ export const TournamentCard = ({
                   <p>
                     {Number(entryLimit) === 1
                       ? `${Number(entryLimit)} entry`
-                      : `${Number(entryLimit)} entries`} per qualification
+                      : `${Number(entryLimit)} entries`}{" "}
+                    per qualification
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -332,8 +358,40 @@ export const TournamentCard = ({
             <span className="text-brand-muted">Fee:</span>
             {pricesLoading ? (
               <Skeleton className="h-6 w-16 bg-brand/20" />
+            ) : hasEntryFee ? (
+              <div className="flex flex-col items-center gap-1">
+                {entryFeeTokenSymbol && (
+                  <Tooltip delayDuration={50}>
+                    <TooltipTrigger asChild>
+                      <div className="relative hidden sm:block">
+                        {(() => {
+                          const entryFeeTokenLogo = getTokenLogoUrl(
+                            selectedChainConfig.chainId ?? ChainId.SN_MAIN,
+                            entryFeeToken ?? ""
+                          );
+                          return entryFeeTokenLogo ? (
+                            <img
+                              src={entryFeeTokenLogo}
+                              alt={entryFeeTokenSymbol}
+                              className="w-5 h-5 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-brand/20 flex items-center justify-center text-xs">
+                              {entryFeeTokenSymbol.slice(0, 1)}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center">
+                      <p>{entryFeeTokenSymbol}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <span>${entryFee}</span>
+              </div>
             ) : (
-              <span>{hasEntryFee ? `$${entryFee}` : "FREE"}</span>
+              <span>FREE</span>
             )}
           </div>
           <div className="flex flex-row items-center gap-2">
@@ -341,15 +399,48 @@ export const TournamentCard = ({
             {pricesLoading ? (
               <Skeleton className="h-6 w-16 bg-brand/20" />
             ) : totalPrizesValueUSD > 0 || totalPrizeNFTs > 0 ? (
-              <div className="flex flex-row items-center gap-2">
-                {totalPrizesValueUSD > 0 && (
-                  <span>${totalPrizesValueUSD.toFixed(2)}</span>
+              <div className="flex flex-col items-center gap-1">
+                {uniqueErc20Tokens.length > 0 && (
+                  <div className="hidden sm:flex flex-row gap-1 items-center">
+                    {uniqueErc20Tokens.slice(0, 3).map((token, idx) => (
+                      <Tooltip key={idx} delayDuration={50}>
+                        <TooltipTrigger asChild>
+                          <div className="relative">
+                            {token.logo ? (
+                              <img
+                                src={token.logo}
+                                alt={token.symbol}
+                                className="w-5 h-5 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-brand/20 flex items-center justify-center text-xs">
+                                {token.symbol.slice(0, 1)}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center">
+                          <p>{token.symbol}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {uniqueErc20Tokens.length > 3 && (
+                      <span className="text-xs text-brand-muted">
+                        +{uniqueErc20Tokens.length - 3}
+                      </span>
+                    )}
+                  </div>
                 )}
-                {totalPrizeNFTs > 0 && (
-                  <span>
-                    {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
-                  </span>
-                )}
+                <div className="flex flex-row items-center gap-2">
+                  {totalPrizesValueUSD > 0 && (
+                    <span>${totalPrizesValueUSD.toFixed(2)}</span>
+                  )}
+                  {totalPrizeNFTs > 0 && (
+                    <span>
+                      {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <span>No Prizes</span>

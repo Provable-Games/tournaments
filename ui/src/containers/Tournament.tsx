@@ -12,15 +12,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import TournamentTimeline from "@/components/TournamentTimeline";
 import { bigintToHex, feltToString, formatTime } from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
-import {
-  useGetTournamentQuery,
-  useSubscribeTournamentQuery,
-} from "@/dojo/hooks/useSdkQueries";
+import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import {
   Tournament as TournamentModel,
-  Prize,
   Token,
   EntryCount,
   getModelsMapping,
@@ -30,14 +26,8 @@ import {
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useDojo } from "@/context/dojo";
 import {
-  calculateTotalValue,
-  countTotalNFTs,
   extractEntryFeePrizes,
-  formatTokens,
   getClaimablePrizes,
-  getErc20TokenSymbols,
-  groupPrizesByPositions,
-  groupPrizesByTokens,
   processTournamentFromSql,
 } from "@/lib/utils/formatting";
 import useModel from "@/dojo/hooks/useModel";
@@ -51,8 +41,11 @@ import PrizesContainer from "@/components/tournament/prizes/PrizesContainer";
 import { ClaimPrizesDialog } from "@/components/dialogs/ClaimPrizes";
 import { SubmitScoresDialog } from "@/components/dialogs/SubmitScores";
 import {
+  useGetTournamentPrizesAggregations,
   useGetTournaments,
   useGetTournamentsCount,
+  useGetTokenByAddress,
+  useGetTokens,
 } from "@/dojo/hooks/useSqlQueries";
 import NotFound from "@/containers/NotFound";
 import {
@@ -64,7 +57,6 @@ import useUIStore from "@/hooks/useUIStore";
 import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadingPage from "@/containers/LoadingPage";
-import { ChainId } from "@/dojo/setup/networks";
 import { Badge } from "@/components/ui/badge";
 import { SettingsDialog } from "@/components/dialogs/Settings";
 import { useSettings } from "metagame-sdk/sql";
@@ -73,7 +65,7 @@ const Tournament = () => {
   const { id } = useParams<{ id: string }>();
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const { namespace, selectedChainConfig } = useDojo();
+  const { namespace } = useDojo();
   const { getTokenDecimals } = useSystemCalls();
   const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
@@ -120,7 +112,6 @@ const Tournament = () => {
   }, [id, tournamentsCount]);
 
   useGetTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
-  useSubscribeTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
 
   const tournamentEntityId = useMemo(
     () => getEntityIdFromKeys([BigInt(id!)]),
@@ -148,16 +139,6 @@ const Tournament = () => {
     totalSubmissions ===
     Math.min(Number(entryCountModel?.count), leaderboardSize);
 
-  const tournamentPrizes = state.getEntitiesByModel(namespace, "Prize");
-
-  const prizes: Prize[] = (tournamentPrizes
-    ?.filter(
-      (detail) =>
-        detail.models?.[namespace]?.Prize?.tournament_id === Number(id)
-    )
-    .map((detail) => detail.models[namespace].Prize) ??
-    []) as unknown as Prize[];
-
   const { tournamentCreatorShare, gameCreatorShare, distributionPrizes } =
     extractEntryFeePrizes(
       tournamentModel?.id,
@@ -165,7 +146,7 @@ const Tournament = () => {
       entryCountModel?.count ?? 0
     );
 
-  const allPrizes = [...distributionPrizes, ...prizes];
+  const allPrizes = [...distributionPrizes];
 
   const tournamentClaimedPrizes = state.getEntitiesByModel(
     namespace,
@@ -187,15 +168,6 @@ const Tournament = () => {
 
   const allClaimed = claimablePrizes.length === 0;
 
-  const tokenModels = state.getEntitiesByModel(namespace, "Token");
-  const registeredTokens = tokenModels.map(
-    (model) => model.models[namespace].Token
-  ) as Token[];
-
-  const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
-  const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
-  const tokens = formatTokens(registeredTokens, isMainnet, isSepolia);
-
   const gameAddress = tournamentModel?.game_config?.address;
   const gameName = gameData.find(
     (game) => game.contract_address === gameAddress
@@ -210,8 +182,10 @@ const Tournament = () => {
     // Function to check overflow
     const checkOverflow = () => {
       if (textRef.current) {
+        // Check both horizontal overflow and if text is clipped vertically
         const isTextOverflowing =
-          textRef.current.scrollWidth > textRef.current.clientWidth;
+          textRef.current.scrollWidth > textRef.current.clientWidth ||
+          textRef.current.scrollHeight > textRef.current.clientHeight;
         setIsOverflowing(isTextOverflowing);
       }
     };
@@ -237,10 +211,6 @@ const Tournament = () => {
     };
   }, [tournamentModel?.metadata.description]);
 
-  const groupedByTokensPrizes = groupPrizesByTokens(allPrizes, tokens);
-
-  const erc20TokenSymbols = getErc20TokenSymbols(groupedByTokensPrizes);
-
   const durationSeconds = Number(
     BigInt(tournamentModel?.schedule?.game?.end ?? 0n) -
       BigInt(tournamentModel?.schedule?.game?.start ?? 0n)
@@ -250,59 +220,171 @@ const Tournament = () => {
     ? "open"
     : "fixed";
 
-  const groupedPrizes = groupPrizesByPositions(allPrizes, tokens);
-
-  const lowestPrizePosition =
-    Object.keys(groupedPrizes).length > 0
-      ? Math.max(...Object.keys(groupedPrizes).map(Number))
-      : 0;
-
   const hasEntryFee = tournamentModel?.entry_fee.isSome();
 
   const entryFeeToken = tournamentModel?.entry_fee.Some?.token_address;
-  const entryFeeTokenSymbol = tokens.find(
-    (t) => t.address === entryFeeToken
-  )?.symbol;
 
-  const {
-    prices,
-    isLoading: pricesLoading,
-    isTokenLoading,
-  } = useEkuboPrices({
-    tokens: [
-      ...erc20TokenSymbols,
-      ...(entryFeeTokenSymbol ? [entryFeeTokenSymbol] : []),
-    ],
+  // Fetch entry fee token data using SQL query
+  const { data: entryFeeTokenData } = useGetTokenByAddress({
+    namespace,
+    address: entryFeeToken || "",
+    active: hasEntryFee && !!entryFeeToken,
   });
 
-  // Fetch token decimals for all ERC20 tokens
+  const entryFeeTokenSymbol = (entryFeeTokenData as Token)?.symbol;
+
+  console.log(entryFeeTokenSymbol, entryFeeTokenData);
+
+  const tournamentId = tournamentModel?.id;
+
+  // Fetch aggregated data
+  const { data: aggregations, loading: aggregationsLoading } =
+    useGetTournamentPrizesAggregations({
+      namespace,
+      tournamentId: tournamentId ?? 0,
+      active: !!tournamentId,
+    });
+
+  // Extract unique token symbols from aggregated data and entry fee prizes
+  const erc20TokenSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+
+    // From aggregated data
+    if (aggregations?.token_totals) {
+      aggregations.token_totals.forEach((tokenTotal: any) => {
+        if (tokenTotal.tokenSymbol && tokenTotal.tokenType === "erc20") {
+          symbols.add(tokenTotal.tokenSymbol);
+        }
+      });
+    }
+
+    return Array.from(symbols);
+  }, [aggregations?.token_totals]);
+
+  // Extract unique token addresses for fetching token data
+  const uniqueTokenAddresses = useMemo(() => {
+    const addresses = new Set<string>();
+
+    // From aggregated data
+    if (aggregations?.token_totals) {
+      aggregations.token_totals.forEach((tokenTotal: any) => {
+        if (tokenTotal.tokenAddress) {
+          addresses.add(tokenTotal.tokenAddress);
+        }
+      });
+    }
+
+    // Add entry fee token
+    if (entryFeeToken) {
+      addresses.add(entryFeeToken);
+    }
+
+    return Array.from(addresses);
+  }, [aggregations?.token_totals, entryFeeToken]);
+
+  // Fetch token data for all unique addresses in this tournament
+  const { data: tokensData } = useGetTokens({
+    namespace,
+    active: uniqueTokenAddresses.length > 0,
+    limit: 100, // Should be enough for tournament tokens
+  });
+
+  // Filter tokens to only include those used in this tournament
+  const tournamentTokens = useMemo(() => {
+    if (!tokensData) return [];
+    return (tokensData as Token[]).filter((token) =>
+      uniqueTokenAddresses.includes(token.address)
+    );
+  }, [tokensData, uniqueTokenAddresses]);
+
+  // Add entry fee token symbol to the list
+  const allTokenSymbols = useMemo(() => {
+    const symbols = [...erc20TokenSymbols];
+    if (entryFeeTokenSymbol && !symbols.includes(entryFeeTokenSymbol)) {
+      symbols.push(entryFeeTokenSymbol);
+    }
+    return symbols;
+  }, [erc20TokenSymbols, entryFeeTokenSymbol]);
+
+  // Fetch prices for all ERC20 tokens
+  const {
+    prices: ownPrices,
+    isLoading: ownPricesLoading,
+    isTokenLoading,
+  } = useEkuboPrices({
+    tokens: allTokenSymbols,
+  });
+
+  // Use prop prices if provided, otherwise use own prices
+  const prices = ownPrices;
+  const pricesLoading = ownPricesLoading;
+
+  // Calculate total value in USD using aggregated data
+  const totalPrizesValueUSD = useMemo(() => {
+    if (!aggregations?.token_totals || pricesLoading) return 0;
+
+    // Calculate USD from aggregated database prizes
+    const dbPrizesUSD = aggregations.token_totals.reduce(
+      (total: number, tokenTotal: any) => {
+        if (tokenTotal.tokenType === "erc20" && tokenTotal.totalAmount) {
+          const decimals = tokenDecimals[tokenTotal.tokenAddress] || 18;
+          const amount = BigInt(tokenTotal.totalAmount);
+          const price = prices[tokenTotal.tokenSymbol || ""] || 0;
+
+          return (
+            total + Number(amount / 10n ** BigInt(decimals)) * Number(price)
+          );
+        }
+        return total;
+      },
+      0
+    );
+
+    return dbPrizesUSD;
+  }, [aggregations?.token_totals, prices, pricesLoading, tokenDecimals]);
+
+  // Fetch token decimals only for tokens used in this tournament
   useEffect(() => {
     const fetchTokenDecimals = async () => {
-      if (tokenDecimalsLoading) return; // Prevent multiple simultaneous fetches
+      if (tokenDecimalsLoading || !aggregations?.token_totals) return;
 
-      const erc20TokenAddresses = tokens
-        .filter((token) => token.token_type === "erc20")
-        .map((token) => token.address);
+      // Collect unique token addresses from tournament prizes
+      const tournamentTokenAddresses = new Set<string>();
 
-      const entryFeeTokenAddress = entryFeeToken;
-      const allTokenAddresses = [...erc20TokenAddresses];
-      if (
-        entryFeeTokenAddress &&
-        !allTokenAddresses.includes(entryFeeTokenAddress)
-      ) {
-        allTokenAddresses.push(entryFeeTokenAddress);
+      // Add tokens from aggregated prize data
+      aggregations.token_totals.forEach((tokenTotal: any) => {
+        if (tokenTotal.tokenAddress && tokenTotal.tokenType === "erc20") {
+          tournamentTokenAddresses.add(tokenTotal.tokenAddress);
+        }
+      });
+
+      // Add entry fee token if exists
+      if (entryFeeToken) {
+        tournamentTokenAddresses.add(entryFeeToken);
       }
 
-      // Check if we already have all the decimals we need
-      const missingAddresses = allTokenAddresses.filter(
+      // Add tokens from entry fee prizes
+      [
+        ...distributionPrizes,
+        ...tournamentCreatorShare,
+        ...gameCreatorShare,
+      ].forEach((prize) => {
+        if (prize.token_type?.variant?.erc20 && prize.token_address) {
+          tournamentTokenAddresses.add(prize.token_address);
+        }
+      });
+
+      // Filter to only include addresses we don't already have decimals for
+      const missingAddresses = Array.from(tournamentTokenAddresses).filter(
         (addr) => !(addr in tokenDecimals)
       );
+
       if (missingAddresses.length === 0) return;
 
       setTokenDecimalsLoading(true);
       const decimalsMap: Record<string, number> = { ...tokenDecimals };
 
-      // Use Promise.all to fetch decimals in parallel instead of sequential for loop
+      // Fetch decimals in parallel
       const decimalsPromises = missingAddresses.map(async (address) => {
         try {
           const decimals = await getTokenDecimals(address);
@@ -325,22 +407,21 @@ const Tournament = () => {
       setTokenDecimalsLoading(false);
     };
 
-    if (tokens.length > 0 && !tokenDecimalsLoading) {
+    if (!tokenDecimalsLoading) {
       fetchTokenDecimals();
     }
-  }, [tokens, entryFeeToken]);
+  }, [
+    aggregations?.token_totals,
+    entryFeeToken,
+    distributionPrizes,
+    tournamentCreatorShare,
+    gameCreatorShare,
+    tokenDecimalsLoading,
+    tokenDecimals,
+    getTokenDecimals,
+  ]);
 
-  tokenDecimals[
-    "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8"
-  ] = 6;
-
-  const totalPrizesValueUSD = calculateTotalValue(
-    groupedByTokensPrizes,
-    prices,
-    tokenDecimals
-  );
-
-  const totalPrizeNFTs = countTotalNFTs(groupedByTokensPrizes);
+  console.log(tokenDecimals);
 
   const entryFeePrice = prices[entryFeeTokenSymbol ?? ""];
   const entryFeeLoading = isTokenLoading(entryFeeTokenSymbol ?? "");
@@ -389,8 +470,6 @@ const Tournament = () => {
     if (isStarted) return "live";
     return "upcoming";
   }, [isStarted, isEnded, isSubmitted]);
-
-  const hasPrizes = Object.keys(groupedPrizes).length > 0;
 
   // handle fetching of tournament data if there is a tournament entry requirement
 
@@ -563,7 +642,7 @@ const Tournament = () => {
             tournamentModel={tournamentModel}
             entryCountModel={entryCountModel}
             // gameCount={gameCount}
-            tokens={tokens}
+            tokens={tournamentTokens}
             tournamentsData={tournamentsData}
             duration={durationSeconds}
             totalPrizesValueUSD={totalPrizesValueUSD}
@@ -597,7 +676,7 @@ const Tournament = () => {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-5 overflow-y-auto pb-5 sm:pb-0">
+      <div className="flex flex-col gap-5 overflow-y-auto pb-5 pr-2 sm:pr-0 sm:pb-0">
         <div className="flex flex-col gap-1 sm:gap-2">
           <div className="flex flex-row items-center h-8 sm:h-12 justify-between">
             <div className="flex flex-row gap-5">
@@ -732,15 +811,19 @@ const Tournament = () => {
               />
             </div>
             <PrizesContainer
-              prizesExist={hasPrizes}
-              lowestPrizePosition={lowestPrizePosition}
-              groupedPrizes={groupedPrizes}
-              totalPrizesValueUSD={totalPrizesValueUSD}
-              totalPrizeNFTs={totalPrizeNFTs}
+              tournamentId={tournamentModel?.id}
+              tokens={tournamentTokens}
+              tokenDecimals={tokenDecimals}
+              entryFeePrizes={[
+                ...distributionPrizes,
+                ...tournamentCreatorShare,
+                ...gameCreatorShare,
+              ]}
               prices={prices}
               pricesLoading={pricesLoading}
-              tokens={tokens}
-              tokenDecimals={tokenDecimals}
+              aggregations={aggregations}
+              aggregationsLoading={aggregationsLoading}
+              totalPrizesValueUSD={totalPrizesValueUSD}
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-5">

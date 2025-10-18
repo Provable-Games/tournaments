@@ -1,10 +1,6 @@
 import { motion } from "framer-motion";
 import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
-import {
-  calculatePrizeValue,
-  calculateTotalValue,
-  countTotalNFTs,
-} from "@/lib/utils/formatting";
+import { calculatePrizeValue, countTotalNFTs } from "@/lib/utils/formatting";
 import {
   HoverCard,
   HoverCardContent,
@@ -43,11 +39,18 @@ const Prize = ({
   const totalPrizeNFTs = countTotalNFTs(prizes);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
 
-  const totalPrizesValueUSD = calculateTotalValue(
-    prizes,
-    prices,
-    tokenDecimals
-  );
+  // Calculate total USD value with proper token symbol lookup
+  const totalPrizesValueUSD = Object.entries(prizes)
+    .filter(([_, prize]) => prize.type === "erc20")
+    .reduce((total, [key, prize]) => {
+      const token = tokens.find((t) => t.address === prize.address);
+      const symbol = token?.symbol || key;
+      const price = prices[symbol];
+      const decimals = tokenDecimals[prize.address] || 18;
+      const amount = Number(prize.value) / 10 ** decimals;
+      if (price === undefined) return total;
+      return total + price * amount;
+    }, 0);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -63,10 +66,18 @@ const Prize = ({
       <div className="w-full bg-brand/50 h-0.5" />
       <div className="flex flex-col gap-2">
         {Object.entries(prizes)
-          .map(([symbol, prize]) => {
-            const hasPrice = prices[symbol];
-            const USDValue = calculatePrizeValue(prize, symbol, prices);
+          .map(([key, prize]) => {
+            const token = tokens.find((t) => t.address === prize.address);
+            const symbol = token?.symbol || key;
+            const hasPrice = prices[symbol] !== undefined;
+            const USDValue = calculatePrizeValue(
+              prize,
+              symbol,
+              prices,
+              tokenDecimals
+            );
             return {
+              key,
               symbol,
               prize,
               hasPrice,
@@ -74,16 +85,13 @@ const Prize = ({
             };
           })
           .sort((a, b) => b.USDValue - a.USDValue) // Sort by USDValue in descending order
-          .map(({ symbol, prize, hasPrice, USDValue }) => {
+          .map(({ key, prize, hasPrice, USDValue }) => {
             const token = tokens.find(
               (token) => token.address === prize.address
             );
             const decimals = tokenDecimals[prize.address] || 18;
             return (
-              <div
-                key={symbol}
-                className="flex justify-between items-center px-4"
-              >
+              <div key={key} className="flex justify-between items-center px-4">
                 {prize.type === "erc20" ? (
                   <div className="flex flex-row gap-1 items-center">
                     <span>{`${formatNumber(
@@ -171,12 +179,16 @@ const Prize = ({
                 </div>
               ) : Object.entries(prizes).length > 0 ? (
                 <div className="flex flex-row items-center gap-2 font-brand xl:text-lg 3xl:text-2xl">
-                  {Object.entries(prizes).map(([symbol, prize]) => {
+                  {Object.entries(prizes).map(([key, prize]) => {
                     const decimals = tokenDecimals[prize.address] || 18;
+                    const token = tokens.find(
+                      (t) => t.address === prize.address
+                    );
+                    const symbol = token?.symbol || key;
                     return (
                       <div
                         className="flex flex-row items-center gap-2"
-                        key={symbol}
+                        key={key}
                       >
                         <span className="whitespace-nowrap">{`${formatNumber(
                           Number(prize.value) / 10 ** decimals

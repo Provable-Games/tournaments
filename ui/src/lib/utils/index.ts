@@ -1,9 +1,8 @@
-import React from "react";
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { BigNumberish, shortString } from "starknet";
 import { Prize } from "@/generated/models.gen";
-import { TOKEN_ADDRESSES, TOKEN_ICONS } from "@/lib/constants";
+import { TOKEN_ADDRESSES } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -265,18 +264,6 @@ export const getPrizesByToken = (prizes: Prize[]) => {
       return acc;
     }, {} as Record<string, typeof prizes>)
   );
-};
-
-export const getTokenNameOrIcon = (
-  namespace: string,
-  token: string,
-  tokens: any[]
-) => {
-  return TOKEN_ICONS[getTokenKeyFromValue(token)!]
-    ? React.createElement(TOKEN_ICONS[getTokenKeyFromValue(token)!])
-    : tokens.find((t) => t.models[namespace].Token?.token === token)?.models[
-        namespace
-      ].Token?.symbol;
 };
 
 export const getOrdinalSuffix = (position: number) => {

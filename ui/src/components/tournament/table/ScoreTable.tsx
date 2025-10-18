@@ -2,6 +2,7 @@ import Pagination from "@/components/table/Pagination";
 import { USER, REFRESH } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
+import { TableProperties } from "lucide-react";
 import { BigNumberish } from "starknet";
 import { useGameTokens } from "metagame-sdk";
 import { useGetUsernames } from "@/hooks/useController";
@@ -18,6 +19,7 @@ import ScoreRow from "@/components/tournament/table/ScoreRow";
 import EntrantRow from "@/components/tournament/table/EntrantRow";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { padAddress } from "@/lib/utils";
+import { ScoreTableDialog } from "@/components/dialogs/ScoreTable";
 
 interface ScoreTableProps {
   tournamentId: BigNumberish;
@@ -38,6 +40,7 @@ const ScoreTable = ({
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [showTableDialog, setShowTableDialog] = useState(false);
   const { tournamentAddress } = useTournamentContracts();
 
   const {
@@ -46,7 +49,6 @@ const ScoreTable = ({
       currentPage,
       hasNextPage,
       hasPreviousPage,
-      goToPage,
       nextPage,
       previousPage,
     },
@@ -62,7 +64,7 @@ const ScoreTable = ({
     sortBy: "score",
     sortOrder: "desc",
     mintedByAddress: padAddress(tournamentAddress),
-    includeMetadata: false,
+    includeMetadata: true,
   });
 
   const ownerAddresses = useMemo(
@@ -96,18 +98,54 @@ const ScoreTable = ({
             previousPage={previousPage}
             hasNextPage={hasNextPage}
             hasPreviousPage={hasPreviousPage}
-            goToPage={goToPage}
           />
         )}
         <div className="flex flex-row items-center gap-2">
+          {/* Desktop refresh button */}
           <Button
             onClick={refetch}
             disabled={loading}
-            size="xs"
+            size="sm"
             variant="outline"
+            className="hidden sm:flex"
           >
-            <REFRESH className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+            <REFRESH className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
+          {showScores && (
+            <>
+              {/* Mobile buttons together */}
+              <div className="flex sm:hidden">
+                <Button
+                  onClick={refetch}
+                  disabled={loading}
+                  size="xs"
+                  variant="outline"
+                >
+                  <REFRESH className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                </Button>
+                {entryCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => setShowTableDialog(true)}
+                  >
+                    <TableProperties className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+              {/* Desktop table button */}
+              {entryCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTableDialog(true)}
+                  className="hidden sm:flex"
+                >
+                  <TableProperties className="w-4 h-4" />
+                </Button>
+              )}
+            </>
+          )}
           <TournamentCardSwitch
             checked={showScores}
             onCheckedChange={setShowScores}
@@ -179,6 +217,16 @@ const ScoreTable = ({
         selectedPlayer={selectedPlayer}
         usernames={usernames}
         ownerAddress={ownerAddresses?.[selectedPlayer?.index ?? 0]}
+        isEnded={isEnded}
+      />
+
+      {/* Table dialog for scores */}
+      <ScoreTableDialog
+        open={showTableDialog}
+        onOpenChange={setShowTableDialog}
+        tournamentId={tournamentId}
+        entryCount={entryCount}
+        isStarted={isStarted}
         isEnded={isEnded}
       />
     </TournamentCard>

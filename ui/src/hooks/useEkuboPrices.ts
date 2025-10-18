@@ -45,7 +45,8 @@ export const useEkuboPrices = ({
   );
 
   const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
-  const tokensKey = JSON.stringify(tokens);
+  // Sort tokens to ensure consistent key regardless of order
+  const tokensKey = JSON.stringify([...tokens].sort());
 
   // Safe check if a token is available (has price, not loading, no error)
   const isTokenAvailable = useCallback(
@@ -103,6 +104,17 @@ export const useEkuboPrices = ({
   );
 
   useEffect(() => {
+    // Skip if no tokens
+    if (!tokens || tokens.length === 0) {
+      setIsLoading(false);
+      setPrices({});
+      setTokenLoadingStates({});
+      setTokenErrorStates({});
+      return;
+    }
+
+    console.log('useEkuboPrices: Fetching prices for tokens:', tokens);
+
     // Reset all states when tokens change
     setIsLoading(true);
 
@@ -134,6 +146,11 @@ export const useEkuboPrices = ({
         }
 
         const pricePromises = tokens.map(async (token) => {
+          // Manual override for USDC - always return price of 1
+          if (token === "USDC" || token === "USDCe") {
+            return { token, price: 1, timedOut: false, error: false };
+          }
+
           // Create a timeout promise
           const timeoutPromise = new Promise<PriceResult>((resolve) => {
             setTimeout(() => {
@@ -158,6 +175,8 @@ export const useEkuboPrices = ({
               }
 
               const priceObject = await result.json();
+
+              console.log(`Fetched price data for ${token}:`, priceObject);
 
               if (!priceObject.data || !priceObject.data.length) {
                 throw new Error("No price data available");
@@ -187,9 +206,11 @@ export const useEkuboPrices = ({
           newErrorStates[token] = error;
         });
 
-        setPrices((prev) => ({ ...prev, ...newPrices }));
-        setTokenLoadingStates((prev) => ({ ...prev, ...newLoadingStates }));
-        setTokenErrorStates((prev) => ({ ...prev, ...newErrorStates }));
+        console.log('useEkuboPrices: Fetched prices:', newPrices);
+
+        setPrices(newPrices); // Replace entirely instead of merging
+        setTokenLoadingStates(newLoadingStates);
+        setTokenErrorStates(newErrorStates);
       } catch (error) {
         console.error("Error fetching prices:", error);
       } finally {
@@ -198,7 +219,7 @@ export const useEkuboPrices = ({
     };
 
     fetchPrices();
-  }, [tokensKey, selectedChainConfig.ekuboPriceAPI, isMainnet, timeoutMs]);
+  }, [tokensKey, selectedChainConfig.ekuboPriceAPI, isMainnet, timeoutMs, selectedChainConfig.chainId]); // Added chainId to dependencies
 
   return {
     prices,
