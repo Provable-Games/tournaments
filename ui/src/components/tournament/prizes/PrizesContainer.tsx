@@ -139,7 +139,7 @@ const PrizesContainer = ({
   return (
     <TournamentCard
       showCard={showPrizes}
-      className={showPrizes ? "!h-full" : "h-[60px] 3xl:h-[80px]"}
+      className={showPrizes ? "!h-auto sm:!h-full" : "h-[60px] 3xl:h-[80px]"}
     >
       <TournamentCardHeader>
         <TournamentCardTitle>
@@ -168,11 +168,21 @@ const PrizesContainer = ({
         <div className="flex flex-row items-center gap-2">
           {prizesExist && (
             <>
+              {/* Mobile table button */}
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setShowTableDialog(true)}
+                className="sm:hidden"
+              >
+                <TableProperties className="w-3 h-3" />
+              </Button>
+              {/* Desktop table button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowTableDialog(true)}
-                className="flex items-center gap-2"
+                className="hidden sm:flex"
               >
                 <TableProperties className="w-4 h-4" />
               </Button>
@@ -193,18 +203,21 @@ const PrizesContainer = ({
           />
         </div>
       </TournamentCardHeader>
-      <TournamentCardContent showContent={showPrizes} className="!h-[100px]">
-        <div className="p-2 sm:p-4">
+      <TournamentCardContent
+        showContent={showPrizes}
+        className="!h-auto sm:!h-[100px]"
+      >
+        <div className="p-1 sm:p-4 h-full">
           {prizesExist && (
-            <div className="flex flex-row gap-3 overflow-x-auto pb-2 w-full">
+            <div className="flex flex-row gap-2 sm:gap-3 overflow-x-auto w-full h-full items-center">
               {pricesLoading || prizesLoading || aggregationsLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-4 p-3 rounded-lg border border-brand/20 w-fit hover:cursor-pointer"
+                    className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 rounded-lg border border-brand/20 w-fit flex-shrink-0"
                   >
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <Skeleton className="h-6 w-full bg-brand/10" />
+                    <Skeleton className="h-6 w-6 sm:h-8 sm:w-8 rounded-full" />
+                    <Skeleton className="h-4 w-16 sm:h-6 sm:w-20 bg-brand/10" />
                   </div>
                 ))
               ) : (

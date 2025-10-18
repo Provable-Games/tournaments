@@ -182,8 +182,10 @@ const Tournament = () => {
     // Function to check overflow
     const checkOverflow = () => {
       if (textRef.current) {
+        // Check both horizontal overflow and if text is clipped vertically
         const isTextOverflowing =
-          textRef.current.scrollWidth > textRef.current.clientWidth;
+          textRef.current.scrollWidth > textRef.current.clientWidth ||
+          textRef.current.scrollHeight > textRef.current.clientHeight;
         setIsOverflowing(isTextOverflowing);
       }
     };
@@ -674,7 +676,7 @@ const Tournament = () => {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-5 overflow-y-auto pb-5 sm:pb-0">
+      <div className="flex flex-col gap-5 overflow-y-auto pb-5 pr-2 sm:pr-0 sm:pb-0">
         <div className="flex flex-col gap-1 sm:gap-2">
           <div className="flex flex-row items-center h-8 sm:h-12 justify-between">
             <div className="flex flex-row gap-5">

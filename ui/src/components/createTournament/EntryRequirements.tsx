@@ -652,7 +652,6 @@ const EntryRequirements = ({ form }: StepProps) => {
                                         }
                                         hasNextPage={currentPage < totalPages}
                                         hasPreviousPage={currentPage > 1}
-                                        goToPage={setCurrentPage}
                                       />
                                     </div>
                                   </DialogContent>
