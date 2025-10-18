@@ -168,7 +168,6 @@ const Tournament = () => {
 
   const allClaimed = claimablePrizes.length === 0;
 
-
   const gameAddress = tournamentModel?.game_config?.address;
   const gameName = gameData.find(
     (game) => game.contract_address === gameAddress
@@ -291,7 +290,7 @@ const Tournament = () => {
   // Filter tokens to only include those used in this tournament
   const tournamentTokens = useMemo(() => {
     if (!tokensData) return [];
-    return (tokensData as Token[]).filter((token) => 
+    return (tokensData as Token[]).filter((token) =>
       uniqueTokenAddresses.includes(token.address)
     );
   }, [tokensData, uniqueTokenAddresses]);
@@ -340,12 +339,7 @@ const Tournament = () => {
     );
 
     return dbPrizesUSD;
-  }, [
-    aggregations?.token_totals,
-    prices,
-    pricesLoading,
-    tokenDecimals,
-  ]);
+  }, [aggregations?.token_totals, prices, pricesLoading, tokenDecimals]);
 
   // Fetch token decimals only for tokens used in this tournament
   useEffect(() => {
