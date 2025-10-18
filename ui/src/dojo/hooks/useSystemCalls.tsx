@@ -1,4 +1,5 @@
 import { useAccount } from "@starknet-react/core";
+import { useProvider } from "@starknet-react/core";
 import { useDojo } from "@/context/dojo";
 import {
   Tournament,
@@ -50,6 +51,7 @@ const prepareForExecution = (tournament: Tournament): ExecutableTournament => {
 export const useSystemCalls = () => {
   const { client } = useDojo();
   const { account, address } = useAccount();
+  const { provider } = useProvider();
   const { tournamentAddress } = useTournamentContracts();
   const { getGameName } = useUIStore();
   const {
@@ -194,17 +196,23 @@ export const useSystemCalls = () => {
           ]),
         }));
 
-        console.log(`Processing score submission batch ${index + 1}/${batches.length} with ${calls.length} scores`);
-        
+        console.log(
+          `Processing score submission batch ${index + 1}/${
+            batches.length
+          } with ${calls.length} scores`
+        );
+
         // Call progress callback
         if (onProgress) {
           onProgress(index + 1, batches.length);
         }
-        
+
         tx = await account?.execute(calls);
-        
+
         if (tx?.transaction_hash) {
-          console.log(`Waiting for transaction ${tx.transaction_hash} to be confirmed...`);
+          console.log(
+            `Waiting for transaction ${tx.transaction_hash} to be confirmed...`
+          );
           // Wait for the transaction to be accepted on L2
           await account?.waitForTransaction(tx.transaction_hash);
           console.log(`Transaction ${tx.transaction_hash} confirmed`);
@@ -792,8 +800,8 @@ export const useSystemCalls = () => {
 
   const getTokenDecimals = async (tokenAddress: string) => {
     try {
-      if (!account) return 18; // Default to 18 if no account
-      const decimalsResult = await account.callContract({
+      if (!provider) return 18;
+      const decimalsResult = await provider.callContract({
         contractAddress: tokenAddress,
         entrypoint: "decimals",
         calldata: [],

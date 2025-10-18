@@ -81,18 +81,6 @@ export const useGetTournamentQuery = (
               padU64(BigInt(tournamentId))
             ),
             MemberClause(
-              getModelsMapping(namespace).Prize,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
-            MemberClause(
-              getModelsMapping(namespace).PrizeClaim,
-              "tournament_id",
-              "Eq",
-              padU64(BigInt(tournamentId))
-            ),
-            MemberClause(
               getModelsMapping(namespace).Leaderboard,
               "tournament_id",
               "Eq",
@@ -103,8 +91,6 @@ export const useGetTournamentQuery = (
         .withEntityModels([
           getModelsMapping(namespace).Tournament,
           getModelsMapping(namespace).EntryCount,
-          getModelsMapping(namespace).Prize,
-          getModelsMapping(namespace).PrizeClaim,
           getModelsMapping(namespace).Leaderboard,
         ])
         .includeHashedKeys()
@@ -127,15 +113,13 @@ export const useSubscribeTournamentQuery = (
     () =>
       new ToriiQueryBuilder()
         .withClause(
-          OrComposeClause([
-            KeysClause(
-              [
-                getModelsMapping(namespace).EntryCount,
-                getModelsMapping(namespace).Registration,
-              ],
-              []
-            ),
-          ]).build()
+          KeysClause(
+            [
+              getModelsMapping(namespace).EntryCount,
+              getModelsMapping(namespace).Registration,
+            ],
+            []
+          ).build()
         )
         .withEntityModels([
           getModelsMapping(namespace).EntryCount,
@@ -147,7 +131,6 @@ export const useSubscribeTournamentQuery = (
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    namespace,
   });
   return { entities, isSubscribed };
 };
@@ -164,7 +147,6 @@ export const useSubscribePrizesQuery = (namespace: string) => {
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    namespace,
   });
   return { entities, isSubscribed };
 };
@@ -172,33 +154,21 @@ export const useSubscribePrizesQuery = (namespace: string) => {
 export const useSubscribeTournamentsQuery = (namespace: string) => {
   const query = useMemo(
     () =>
-      new ToriiQueryBuilder()
-        .withClause(
-          KeysClause(
-            [
-              getModelsMapping(namespace).Tournament,
-              getModelsMapping(namespace).EntryCount,
-              getModelsMapping(namespace).Registration,
-              getModelsMapping(namespace).Prize,
-              getModelsMapping(namespace).PrizeClaim,
-            ],
-            []
-          ).build()
-        )
-        .withEntityModels([
+      KeysClause(
+        [
           getModelsMapping(namespace).Tournament,
           getModelsMapping(namespace).EntryCount,
           getModelsMapping(namespace).Registration,
           getModelsMapping(namespace).Prize,
           getModelsMapping(namespace).PrizeClaim,
-        ])
-        .includeHashedKeys(),
+        ],
+        []
+      ).build(),
     [namespace]
   );
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    namespace,
   });
   return { entities, isSubscribed };
 };
@@ -217,7 +187,6 @@ export const useSubscribeTokensQuery = (namespace: string) => {
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    namespace,
   });
   return { entities, isSubscribed };
 };
@@ -245,7 +214,6 @@ export const useSubscribeMetricsQuery = (namespace: string) => {
 
   const { entities, isSubscribed } = useSdkSubscribeEntities({
     query,
-    namespace,
   });
   return { entities, isSubscribed };
 };

@@ -1,30 +1,118 @@
 import { useEffect, useMemo, useState } from "react";
-import { BigNumberish } from "starknet";
+import {
+  BigNumberish,
+  CairoOption,
+  CairoCustomEnum,
+  CairoOptionVariant,
+} from "starknet";
 import { ParsedEntity } from "@dojoengine/sdk";
 import { useDojo } from "@/context/dojo";
 import { SchemaType } from "@/generated/models.gen";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
+import { addAddressPadding } from "starknet";
+import type * as torii from "@dojoengine/torii-wasm/types";
 
 export type EntityResult<N extends string = string> = {
   entityId: BigNumberish;
 } & Partial<SchemaType[N]>;
 
-export type UseSdkSubEntitiesResult<N extends string = string> = {
-  entities: EntityResult<N>[] | null;
+export type UseSdkSubEntitiesResult = {
+  entities: EntityResult[] | null;
   isSubscribed: boolean;
   error?: Error | null;
 };
 
 export type UseSdkSubEntitiesProps = {
   query: any;
-  namespace: string;
   logging?: boolean;
   enabled?: boolean;
 };
 
+function parseCustomEnum(value: torii.Ty): CairoCustomEnum | string {
+  // enum is a simple enum
+  if ((value.value as torii.EnumValue).value.type === "tuple") {
+    // we keep retrocompatibility
+    return (value.value as torii.EnumValue).option;
+  }
+
+  return new CairoCustomEnum({
+    [(value.value as torii.EnumValue).option]: parseValue(
+      (value.value as torii.EnumValue).value
+    ),
+  });
+}
+
+function parseValue(value: torii.Ty): any {
+  switch (value.type) {
+    case "primitive":
+      return parsePrimitive(value);
+    case "struct":
+      return parseStruct(
+        value.value as Record<string, torii.Ty> | Map<string, torii.Ty>
+      );
+    case "enum":
+      // Handling Options
+      if ("Some" === (value.value as torii.EnumValue).option) {
+        return new CairoOption(
+          CairoOptionVariant.Some,
+          parseValue((value.value as torii.EnumValue).value)
+        );
+      }
+      if ("None" === (value.value as torii.EnumValue).option) {
+        return new CairoOption(CairoOptionVariant.None);
+      }
+
+      // Handling simple enum as default case
+      // Handling CairoCustomEnum for more complex types
+      return parseCustomEnum(value);
+    case "tuple":
+    case "array":
+      return (value.value as torii.Ty[]).map(parseValue);
+    default:
+      return value.value;
+  }
+}
+
+function parsePrimitive(value: torii.Ty): any {
+  switch (value.type_name) {
+    case "u64":
+    case "i64":
+      return Number(value.value as string);
+    case "u128":
+    case "i128":
+      return BigInt(value.value as string);
+    case "u256":
+      return BigInt(value.value as string);
+    case "u8":
+    case "u16":
+    case "u32":
+    case "i8":
+    case "i16":
+    case "i32":
+    case "bool":
+    case "ContractAddress":
+    case "ClassHash":
+    case "felt252":
+    case "EthAddress":
+    default:
+      return value.value;
+  }
+}
+
+function parseStruct(
+  struct: Record<string, torii.Ty> | Map<string, torii.Ty>
+): any {
+  const entries =
+    struct instanceof Map
+      ? Array.from(struct.entries())
+      : Object.entries(struct);
+  return Object.fromEntries(
+    entries.map(([key, value]) => [key, parseValue(value)])
+  );
+}
+
 export const useSdkSubscribeEntities = ({
   query,
-  namespace,
   enabled = true,
 }: UseSdkSubEntitiesProps): UseSdkSubEntitiesResult => {
   const { sdk } = useDojo();
@@ -48,51 +136,61 @@ export const useSdkSubscribeEntities = ({
       }
 
       try {
-        const [_initialEntities, subscription] = await sdk.subscribeEntityQuery(
-          {
-            query: memoizedQuery,
-            callback: (response) => {
-              if (response.error) {
-                console.error(
-                  "useSdkSubscribeEntities() error:",
-                  response.error.message
+        const subscription = await sdk.client.onEntityUpdated(
+          memoizedQuery,
+          (response: any) => {
+            console.log("Subscription response:", response);
+            if (response.error) {
+              console.error(
+                "useSdkSubscribeEntities() error:",
+                response.error.message
+              );
+              setError(new Error(response.error.message));
+            } else if (response.models) {
+              const entityId = addAddressPadding(response.hashed_keys);
+              const entityData = response.models;
+              const parsedEntity: ParsedEntity<SchemaType> = {
+                entityId,
+                models: {} as ParsedEntity<SchemaType>["models"],
+              };
+
+              for (const modelName in response.models) {
+                const [schemaKey, modelKey] = modelName.split("-") as [
+                  keyof SchemaType,
+                  string
+                ];
+
+                if (!schemaKey || !modelKey) {
+                  console.warn(`Invalid modelName format: ${modelName}`);
+                  continue;
+                }
+
+                if (!parsedEntity.models[schemaKey]) {
+                  parsedEntity.models[schemaKey] =
+                    {} as SchemaType[typeof schemaKey];
+                }
+
+                (parsedEntity.models[schemaKey] as any)[modelKey] = parseStruct(
+                  entityData[modelName]
                 );
-                setError(new Error(response.error.message));
-              } else if (
-                response.data &&
-                (response.data[0] as Partial<ParsedEntity<SchemaType>>)
-                  .entityId !== "0x0"
-              ) {
-                console.log(
-                  "useSdkSubscribeEntities() response.data:",
-                  response.data
-                );
-                response.data.forEach((entity) => {
-                  state.updateEntity(
-                    entity as Partial<ParsedEntity<SchemaType>>
-                  );
-                });
-                console.log("entities", state.getEntities());
               }
-            },
+
+              console.log(
+                "useSdkSubscribeEntities() response.data:",
+                response.data
+              );
+              console.log("Parsed entity:", parsedEntity);
+              state.updateEntity(
+                parsedEntity as Partial<ParsedEntity<SchemaType>>
+              );
+              console.log("entities", state.getEntities());
+            }
           }
         );
 
         setIsSubscribed(true);
         setError(null);
         _unsubscribe = () => subscription.cancel();
-        setEntities(
-          _initialEntities.getItems().map(
-            (e: any) =>
-              ({
-                entityId: e.entityId,
-                ...e.models[namespace],
-              } as EntityResult<typeof namespace>)
-          )
-        );
-        _initialEntities.getItems().forEach((entity) => {
-          state.updateEntity(entity as Partial<ParsedEntity<SchemaType>>);
-        });
       } catch (err) {
         console.error("Failed to subscribe to entity query:", err);
         setError(err instanceof Error ? err : new Error(String(err)));
