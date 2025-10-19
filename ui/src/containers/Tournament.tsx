@@ -20,14 +20,12 @@ import {
   Token,
   EntryCount,
   getModelsMapping,
-  PrizeClaim,
   Leaderboard,
 } from "@/generated/models.gen";
 import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useDojo } from "@/context/dojo";
 import {
   extractEntryFeePrizes,
-  getClaimablePrizes,
   processTournamentFromSql,
 } from "@/lib/utils/formatting";
 import useModel from "@/dojo/hooks/useModel";
@@ -42,6 +40,7 @@ import { ClaimPrizesDialog } from "@/components/dialogs/ClaimPrizes";
 import { SubmitScoresDialog } from "@/components/dialogs/SubmitScores";
 import {
   useGetTournamentPrizesAggregations,
+  useGetTournamentPrizeClaimsAggregations,
   useGetTournaments,
   useGetTournamentsCount,
   useGetTokenByAddress,
@@ -139,6 +138,7 @@ const Tournament = () => {
     totalSubmissions ===
     Math.min(Number(entryCountModel?.count), leaderboardSize);
 
+  // Calculate total potential prizes based on entry fees
   const { tournamentCreatorShare, gameCreatorShare, distributionPrizes } =
     extractEntryFeePrizes(
       tournamentModel?.id,
@@ -146,27 +146,10 @@ const Tournament = () => {
       entryCountModel?.count ?? 0
     );
 
-  const allPrizes = [...distributionPrizes];
-
-  const tournamentClaimedPrizes = state.getEntitiesByModel(
-    namespace,
-    "PrizeClaim"
-  );
-
-  const claimedPrizes: PrizeClaim[] = (tournamentClaimedPrizes
-    ?.filter(
-      (detail) =>
-        detail.models?.[namespace]?.PrizeClaim?.tournament_id === Number(id)
-    )
-    .map((detail) => detail.models[namespace].PrizeClaim) ??
-    []) as unknown as PrizeClaim[];
-
-  const { claimablePrizes, claimablePrizeTypes } = getClaimablePrizes(
-    [...allPrizes, ...tournamentCreatorShare, ...gameCreatorShare],
-    claimedPrizes
-  );
-
-  const allClaimed = claimablePrizes.length === 0;
+  const entryFeePrizesCount =
+    distributionPrizes.length +
+    tournamentCreatorShare.length +
+    gameCreatorShare.length;
 
   const gameAddress = tournamentModel?.game_config?.address;
   const gameName = gameData.find(
@@ -233,8 +216,6 @@ const Tournament = () => {
 
   const entryFeeTokenSymbol = (entryFeeTokenData as Token)?.symbol;
 
-  console.log(entryFeeTokenSymbol, entryFeeTokenData);
-
   const tournamentId = tournamentModel?.id;
 
   // Fetch aggregated data
@@ -244,6 +225,27 @@ const Tournament = () => {
       tournamentId: tournamentId ?? 0,
       active: !!tournamentId,
     });
+
+  // Fetch prize claims aggregations to track claimed vs unclaimed prizes
+  const { data: claimsAggregations } = useGetTournamentPrizeClaimsAggregations({
+    namespace,
+    tournamentId: tournamentId ?? 0,
+    active: !!tournamentId,
+  });
+
+  // Calculate total potential prizes including both entry fees and sponsored prizes
+  const totalPotentialPrizes =
+    entryFeePrizesCount + (aggregations?.total_prizes || 0);
+
+  // Determine if all prizes have been claimed using aggregations
+  const allClaimed = claimsAggregations
+    ? claimsAggregations.total_unclaimed === 0 && totalPotentialPrizes > 0
+    : false;
+
+  // Calculate number of claimable prizes for display
+  const claimablePrizesCount = claimsAggregations
+    ? claimsAggregations.total_unclaimed
+    : 0;
 
   // Extract unique token symbols from aggregated data and entry fee prizes
   const erc20TokenSymbols = useMemo(() => {
@@ -420,8 +422,6 @@ const Tournament = () => {
     tokenDecimals,
     getTokenDecimals,
   ]);
-
-  console.log(tokenDecimals);
 
   const entryFeePrice = prices[entryFeeTokenSymbol ?? ""];
   const entryFeeLoading = isTokenLoading(entryFeeTokenSymbol ?? "");
@@ -617,17 +617,17 @@ const Tournament = () => {
             <Button
               className="uppercase"
               onClick={() => setClaimDialogOpen(true)}
-              disabled={allClaimed}
+              disabled={allClaimed || claimablePrizesCount === 0}
             >
               <MONEY />
-              {claimablePrizeTypes.length === 0 ? (
-                <span className="hidden sm:block">No Prizes</span>
-              ) : allClaimed ? (
+              {allClaimed ? (
                 <span className="hidden sm:block">Prizes Claimed</span>
+              ) : claimablePrizesCount === 0 ? (
+                <span className="hidden sm:block">No Prizes</span>
               ) : (
                 <>
                   <span className="hidden sm:block">Send Prizes |</span>
-                  <span className="font-bold">{claimablePrizes.length}</span>
+                  <span className="font-bold">{claimablePrizesCount}</span>
                 </>
               )}
             </Button>
@@ -657,8 +657,6 @@ const Tournament = () => {
             open={claimDialogOpen}
             onOpenChange={setClaimDialogOpen}
             tournamentModel={tournamentModel}
-            claimablePrizes={claimablePrizes}
-            claimablePrizeTypes={claimablePrizeTypes}
             prices={prices}
           />
           <AddPrizesDialog
@@ -830,7 +828,6 @@ const Tournament = () => {
             <ScoreTable
               tournamentId={tournamentModel?.id}
               entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
-              gameAddress={tournamentModel?.game_config?.address}
               isStarted={isStarted}
               isEnded={isEnded}
             />

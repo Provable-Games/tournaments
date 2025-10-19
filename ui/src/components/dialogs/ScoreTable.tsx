@@ -15,13 +15,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Pagination from "@/components/table/Pagination";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BigNumberish, addAddressPadding } from "starknet";
 import { useGameTokens, useGameTokensCount } from "metagame-sdk/sql";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
-import { REFRESH } from "@/components/Icons";
+import { REFRESH, VERIFIED } from "@/components/Icons";
 import { Search } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useGetTournamentRegistrants } from "@/dojo/hooks/useSqlQueries";
+import { useDojo } from "@/context/dojo";
 
 interface ScoreTableDialogProps {
   open: boolean;
@@ -40,6 +42,7 @@ export const ScoreTableDialog = ({
   isStarted,
   isEnded,
 }: ScoreTableDialogProps) => {
+  const { namespace } = useDojo();
   const { tournamentAddress } = useTournamentContracts();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -73,6 +76,29 @@ export const ScoreTableDialog = ({
     playerName: debouncedSearchQuery.trim() || undefined,
   });
 
+  const gameIds = useMemo(
+    () => games?.map((game) => Number(game.token_id)) || [],
+    [games]
+  );
+
+  const { data: registrants } = useGetTournamentRegistrants({
+    namespace,
+    gameIds,
+    active: gameIds.length > 0,
+    offset: 0,
+    limit: 10,
+  });
+
+  // Map registrants to match the order of games
+  const orderedRegistrants = useMemo(() => {
+    if (!registrants || !games) return [];
+    
+    return games.map(game => {
+      const tokenId = Number(game.token_id);
+      return registrants.find(reg => Number(reg.game_token_id) === tokenId) || null;
+    });
+  }, [games, registrants]);
+
   // Get the filtered count based on the same search parameters
   const { count: filteredCount } = useGameTokensCount({
     context: {
@@ -104,9 +130,21 @@ export const ScoreTableDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="h-[600px] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="flex-shrink-0 border-b border-border">
-          <DialogTitle className="p-4">
-            <span>{isStarted ? "Scores" : "Entrants"} Table</span>
+          <DialogTitle className="p-4 pb-2">
+            {isStarted ? "Scores" : "Entrants"} Table
           </DialogTitle>
+          <div className="px-4 pb-2">
+            <span className="text-sm text-muted-foreground">
+              {loading ? (
+                "Loading..."
+              ) : (
+                <>
+                  {totalCount} {totalCount === 1 ? "entry" : "entries"}
+                  {searchQuery && ` matching "${searchQuery}"`}
+                </>
+              )}
+            </span>
+          </div>
           <div className="px-4 pb-4 flex gap-3">
             <div className="flex-1 flex items-center border rounded border-brand-muted bg-background">
               <Search className="w-4 h-4 ml-3 text-muted-foreground" />
@@ -149,7 +187,7 @@ export const ScoreTableDialog = ({
                 <TableHead>Player</TableHead>
                 <TableHead className="text-right">Score</TableHead>
                 {isEnded && (
-                  <TableHead className="text-center">Position</TableHead>
+                  <TableHead className="text-center">Submitted</TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -163,6 +201,8 @@ export const ScoreTableDialog = ({
                     0,
                     6
                   )}...${ownerAddress?.slice(-4)}`;
+                  const registration = orderedRegistrants[index];
+                  const hasSubmitted = registration?.has_submitted === 1;
 
                   return (
                     <TableRow key={index}>
@@ -186,7 +226,15 @@ export const ScoreTableDialog = ({
                       </TableCell>
                       {isEnded && (
                         <TableCell className="text-center">
-                          {(game as any)?.winner_position || "-"}
+                          {hasSubmitted ? (
+                            <div className="inline-flex justify-center w-full">
+                              <span className="w-4 h-4 text-brand">
+                                <VERIFIED />
+                              </span>
+                            </div>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                       )}
                     </TableRow>

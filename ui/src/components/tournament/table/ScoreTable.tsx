@@ -20,11 +20,12 @@ import EntrantRow from "@/components/tournament/table/EntrantRow";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { padAddress } from "@/lib/utils";
 import { ScoreTableDialog } from "@/components/dialogs/ScoreTable";
+import { useGetTournamentRegistrants } from "@/dojo/hooks/useSqlQueries";
+import { useDojo } from "@/context/dojo";
 
 interface ScoreTableProps {
   tournamentId: BigNumberish;
   entryCount: number;
-  gameAddress: BigNumberish;
   isStarted: boolean;
   isEnded: boolean;
 }
@@ -32,10 +33,10 @@ interface ScoreTableProps {
 const ScoreTable = ({
   tournamentId,
   entryCount,
-  gameAddress,
   isStarted,
   isEnded,
 }: ScoreTableProps) => {
+  const { namespace } = useDojo();
   const [showScores, setShowScores] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
@@ -66,6 +67,31 @@ const ScoreTable = ({
     mintedByAddress: padAddress(tournamentAddress),
     includeMetadata: true,
   });
+
+  const gameIds = useMemo(
+    () => games?.map((game) => Number(game.token_id)) || [],
+    [games]
+  );
+
+  const { data: registrants } = useGetTournamentRegistrants({
+    namespace,
+    gameIds,
+    active: gameIds.length > 0,
+    offset: 0,
+    limit: 10,
+  });
+
+  // Map registrants to match the order of games
+  const orderedRegistrants = useMemo(() => {
+    if (!registrants || !games) return [];
+
+    return games.map((game) => {
+      const tokenId = Number(game.token_id);
+      return (
+        registrants.find((reg) => Number(reg.game_token_id) === tokenId) || null
+      );
+    });
+  }, [games, registrants]);
 
   const ownerAddresses = useMemo(
     () => games?.map((game) => game?.owner ?? "0x0"),
@@ -121,7 +147,9 @@ const ScoreTable = ({
                   size="xs"
                   variant="outline"
                 >
-                  <REFRESH className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                  <REFRESH
+                    className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+                  />
                 </Button>
                 {entryCount > 0 && (
                   <Button
@@ -170,38 +198,35 @@ const ScoreTable = ({
               {colIndex === 0 && games.length > 5 && (
                 <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-brand/25 h-full" />
               )}
-              {games
-                ?.slice(colIndex * 5, colIndex * 5 + 5)
-                .map((registration, index) => (
-                  <>
-                    {isStarted ? (
-                      <ScoreRow
-                        key={index}
-                        index={index}
-                        gameAddress={gameAddress}
-                        tokenId={registration?.token_id}
-                        colIndex={colIndex}
-                        currentPage={currentPage}
-                        game={games?.[index + colIndex * 5]}
-                        usernames={usernames}
-                        isEnded={isEnded}
-                        setSelectedPlayer={setSelectedPlayer}
-                        setIsMobileDialogOpen={setIsMobileDialogOpen}
-                      />
-                    ) : (
-                      <EntrantRow
-                        key={index}
-                        game={games?.[index + colIndex * 5]}
-                        index={index}
-                        colIndex={colIndex}
-                        currentPage={currentPage}
-                        setSelectedPlayer={setSelectedPlayer}
-                        setIsMobileDialogOpen={setIsMobileDialogOpen}
-                        usernames={usernames}
-                      />
-                    )}
-                  </>
-                ))}
+              {games?.slice(colIndex * 5, colIndex * 5 + 5).map((_, index) => (
+                <>
+                  {isStarted ? (
+                    <ScoreRow
+                      key={index}
+                      index={index}
+                      colIndex={colIndex}
+                      currentPage={currentPage}
+                      game={games?.[index + colIndex * 5]}
+                      registration={orderedRegistrants?.[index + colIndex * 5]}
+                      usernames={usernames}
+                      isEnded={isEnded}
+                      setSelectedPlayer={setSelectedPlayer}
+                      setIsMobileDialogOpen={setIsMobileDialogOpen}
+                    />
+                  ) : (
+                    <EntrantRow
+                      key={index}
+                      game={games?.[index + colIndex * 5]}
+                      index={index}
+                      colIndex={colIndex}
+                      currentPage={currentPage}
+                      setSelectedPlayer={setSelectedPlayer}
+                      setIsMobileDialogOpen={setIsMobileDialogOpen}
+                      usernames={usernames}
+                    />
+                  )}
+                </>
+              ))}
             </div>
           ))}
         </div>

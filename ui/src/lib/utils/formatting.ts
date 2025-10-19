@@ -331,28 +331,93 @@ export const getClaimablePrizes = (
   const prizesFromSubmissions = prizes.filter(
     (prize) => !creatorPrizeTypes.has(prize.type)
   );
-  const claimedEntryFeePositions = claimedPrizes.map((prize) =>
-    prize.prize_type?.activeVariant() === "EntryFees"
-      ? prize.prize_type.variant.EntryFees?.variant?.Position
-      : null
-  );
-  const claimedSponsoredPrizeKeys = claimedPrizes.map((prize) =>
-    prize.prize_type?.activeVariant() === "Sponsored"
-      ? prize.prize_type.variant.Sponsored
-      : null
-  );
+
+  // Helper function to extract prize type info from both SDK and SQL formats
+  const getPrizeTypeInfo = (claimedPrize: any) => {
+    // Check if it's a CairoCustomEnum (SDK format) with activeVariant method
+    if (typeof claimedPrize.prize_type?.activeVariant === "function") {
+      const variant = claimedPrize.prize_type.activeVariant();
+      if (variant === "EntryFees") {
+        const entryFeesVariant =
+          claimedPrize.prize_type.variant.EntryFees?.activeVariant?.();
+        return {
+          type: "EntryFees",
+          role: entryFeesVariant,
+          position:
+            entryFeesVariant === "Position"
+              ? claimedPrize.prize_type.variant.EntryFees.variant.Position
+              : null,
+        };
+      } else if (variant === "Sponsored") {
+        return {
+          type: "Sponsored",
+          prizeId: claimedPrize.prize_type.variant.Sponsored,
+        };
+      }
+    }
+
+    // SQL format - prize_type is a string like "entry_fees" or "sponsored"
+    if (typeof claimedPrize.prize_type === "string") {
+      if (claimedPrize.prize_type === "entry_fees") {
+        // Check the inner enum field
+        const roleVariant = claimedPrize["prize_type.entry_fees"];
+        if (roleVariant === "game_creator") {
+          return { type: "EntryFees", role: "GameCreator", position: null };
+        } else if (roleVariant === "tournament_creator") {
+          return {
+            type: "EntryFees",
+            role: "TournamentCreator",
+            position: null,
+          };
+        } else if (roleVariant === "position") {
+          // The actual position value is in prize_type.entry_fees.position
+          const position = claimedPrize["prize_type.entry_fees.position"];
+          return {
+            type: "EntryFees",
+            role: "Position",
+            position: Number(position),
+          };
+        }
+      } else if (claimedPrize.prize_type === "sponsored") {
+        // For sponsored, the prize ID is directly in the variant field
+        return {
+          type: "Sponsored",
+          prizeId: Number(claimedPrize["prize_type.sponsored"]),
+        };
+      }
+    }
+
+    return { type: null, role: null, position: null };
+  };
+
+  const claimedEntryFeePositions = claimedPrizes
+    .map((prize) => {
+      const info = getPrizeTypeInfo(prize);
+      return info.type === "EntryFees" && info.role === "Position"
+        ? info.position
+        : null;
+    })
+    .filter((pos) => pos !== null);
+
+  const claimedSponsoredPrizeKeys = claimedPrizes
+    .map((prize) => {
+      const info = getPrizeTypeInfo(prize);
+      return info.type === "Sponsored" ? info.prizeId : null;
+    })
+    .filter((id) => id !== null);
+
   const allPrizes = [...creatorPrizes, ...prizesFromSubmissions];
   const unclaimedPrizes = allPrizes.filter((prize) => {
     if (prize.type === "entry_fee_game_creator") {
-      return !claimedPrizes.some(
-        (claimedPrize) =>
-          claimedPrize.prize_type?.variant.EntryFees === "GameCreator"
-      );
+      return !claimedPrizes.some((claimedPrize) => {
+        const info = getPrizeTypeInfo(claimedPrize);
+        return info.type === "EntryFees" && info.role === "GameCreator";
+      });
     } else if (prize.type === "entry_fee_tournament_creator") {
-      return !claimedPrizes.some(
-        (claimedPrize) =>
-          claimedPrize.prize_type?.variant.EntryFees === "TournamentCreator"
-      );
+      return !claimedPrizes.some((claimedPrize) => {
+        const info = getPrizeTypeInfo(claimedPrize);
+        return info.type === "EntryFees" && info.role === "TournamentCreator";
+      });
     } else if (prize.type === "entry_fee") {
       return !claimedEntryFeePositions.includes(prize.payout_position);
     } else {

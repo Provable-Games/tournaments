@@ -15,7 +15,8 @@ import {
 import { Token } from "@/generated/models.gen";
 import { Button } from "@/components/ui/button";
 import { PrizesTableDialog } from "@/components/dialogs/PrizesTable";
-import { TableProperties } from "lucide-react";
+import { SponsorsDialog } from "@/components/dialogs/Sponsors";
+import { TableProperties, Users } from "lucide-react";
 import { useGetTournamentPrizes } from "@/dojo/hooks/useSqlQueries";
 import { useDojo } from "@/context/dojo";
 import { BigNumberish } from "starknet";
@@ -47,6 +48,7 @@ const PrizesContainer = ({
   const { namespace } = useDojo();
   const [showPrizes, setShowPrizes] = useState(false);
   const [showTableDialog, setShowTableDialog] = useState(false);
+  const [showSponsorsDialog, setShowSponsorsDialog] = useState(false);
 
   // Always fetch top 5 positions for container view
   const { data: prizesData, loading: prizesLoading } = useGetTournamentPrizes({
@@ -168,12 +170,33 @@ const PrizesContainer = ({
         <div className="flex flex-row items-center gap-2">
           {prizesExist && (
             <>
+              {/* Mobile sponsors button */}
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setShowSponsorsDialog(true)}
+                className="sm:hidden"
+                title="View Sponsors"
+              >
+                <Users className="w-3 h-3" />
+              </Button>
+              {/* Desktop sponsors button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSponsorsDialog(true)}
+                className="hidden sm:flex"
+                title="View Sponsors"
+              >
+                <Users className="w-4 h-4" />
+              </Button>
               {/* Mobile table button */}
               <Button
                 variant="outline"
                 size="xs"
                 onClick={() => setShowTableDialog(true)}
                 className="sm:hidden"
+                title="View Full Table"
               >
                 <TableProperties className="w-3 h-3" />
               </Button>
@@ -183,10 +206,10 @@ const PrizesContainer = ({
                 size="sm"
                 onClick={() => setShowTableDialog(true)}
                 className="hidden sm:flex"
+                title="View Full Table"
               >
                 <TableProperties className="w-4 h-4" />
               </Button>
-              {/* Removed pagination for container view */}
             </>
           )}
           <TournamentCardSwitch
@@ -254,6 +277,13 @@ const PrizesContainer = ({
         tokenDecimals={tokenDecimals}
         tournamentId={tournamentId}
         entryFeePrizes={entryFeePrizes}
+      />
+      <SponsorsDialog
+        open={showSponsorsDialog}
+        onOpenChange={setShowSponsorsDialog}
+        prices={prices || {}}
+        tokenDecimals={tokenDecimals}
+        tournamentId={tournamentId}
       />
     </TournamentCard>
   );

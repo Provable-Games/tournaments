@@ -103,7 +103,11 @@ export const useGetTokens = ({
     SELECT *
     FROM '${namespace}-Token'
     WHERE is_registered = 1
-    ${search ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')` : ""}
+    ${
+      search
+        ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')`
+        : ""
+    }
     ${tokenType ? `AND token_type = '${tokenType}'` : ""}
     ORDER BY name ASC
     LIMIT ${limit}
@@ -134,7 +138,11 @@ export const useGetTokensCount = ({
     SELECT COUNT(*) as count
     FROM '${namespace}-Token'
     WHERE is_registered = 1
-    ${search ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')` : ""}
+    ${
+      search
+        ? `AND (LOWER(name) LIKE '%${search.toLowerCase()}%' OR LOWER(symbol) LIKE '%${search.toLowerCase()}%')`
+        : ""
+    }
     ${tokenType ? `AND token_type = '${tokenType}'` : ""}
   `
         : null,
@@ -495,7 +503,7 @@ export const useGetTournaments = ({
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
-  
+
   // Parse the unique tokens from the first result
   const uniqueTokens = data?.[0]?.unique_prize_tokens
     ? data[0].unique_prize_tokens
@@ -655,7 +663,7 @@ export const useGetMyTournaments = ({
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
-  
+
   // Parse the unique tokens from the first result
   const uniqueTokens = data?.[0]?.unique_prize_tokens
     ? data[0].unique_prize_tokens
@@ -794,7 +802,7 @@ export const useGetTournamentRegistrants = ({
         ? `
     SELECT * FROM '${namespace}-Registration'
     WHERE game_token_id IN (${gameIds
-      .map((id) => `"${addAddressPadding(id)}"`)
+      .map((id) => `"${padU64(BigInt(id))}"`)
       .join(",")})
     ORDER BY game_token_id ASC
     LIMIT ${limit}
@@ -908,6 +916,30 @@ export const useGetTournamentPrizes = ({
   `
         : null,
     [namespace, tournamentId, active, startPosition, endPosition]
+  );
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data, loading, error, refetch };
+};
+
+export const useGetAllTournamentPrizes = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    SELECT * FROM '${namespace}-Prize'
+    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+    ORDER BY payout_position ASC
+  `
+        : null,
+    [namespace, tournamentId, active]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data, loading, error, refetch };
@@ -1074,4 +1106,92 @@ export const useGetTournamentPrizePositions = ({
     loading,
     error,
   };
+};
+
+export const useGetTournamentPrizeClaims = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    SELECT *
+    FROM '${namespace}-PrizeClaim'
+    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+  `
+        : null,
+    [namespace, tournamentId, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data, loading, error };
+};
+
+export const useGetTournamentPrizeClaimsAggregations = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId
+        ? `
+    SELECT
+      COUNT(*) as total_claims,
+      SUM(CASE WHEN claimed = 1 THEN 1 ELSE 0 END) as total_claimed,
+      SUM(CASE WHEN claimed = 0 THEN 1 ELSE 0 END) as total_unclaimed,
+      GROUP_CONCAT(
+        CASE
+          WHEN claimed = 1
+          THEN json_object(
+            'prizeType', prize_type,
+            'claimed', claimed
+          )
+        END,
+        '|'
+      ) as claimed_prizes
+    FROM '${namespace}-PrizeClaim'
+    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+  `
+        : null,
+    [namespace, tournamentId, active]
+  );
+
+  const { data, loading, error } = useSqlExecute(query);
+
+  const parsedData = useMemo(() => {
+    if (!data || data.length === 0) return null;
+
+    const row = data[0];
+
+    let claimedPrizes = [];
+    if (row.claimed_prizes) {
+      try {
+        claimedPrizes = row.claimed_prizes
+          .split("|")
+          .filter((p: string) => p)
+          .map((p: string) => JSON.parse(p));
+      } catch (e) {
+        console.error("Error parsing claimed prizes:", e);
+      }
+    }
+
+    return {
+      total_claims: Number(row.total_claims) || 0,
+      total_claimed: Number(row.total_claimed) || 0,
+      total_unclaimed: Number(row.total_unclaimed) || 0,
+      claimed_prizes: claimedPrizes,
+    };
+  }, [data]);
+
+  return { data: parsedData, loading, error };
 };
