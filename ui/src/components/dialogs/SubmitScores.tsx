@@ -13,7 +13,7 @@ import { padAddress, feltToString, getOrdinalSuffix } from "@/lib/utils";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { useGameTokens } from "metagame-sdk";
 import { getSubmittableScores } from "@/lib/utils/formatting";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 
@@ -34,7 +34,10 @@ export function SubmitScoresDialog({
   const { connect } = useConnectToSelectedChain();
   const { submitScores, submitScoresBatched } = useSystemCalls();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const { tournamentAddress } = useTournamentContracts();
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
@@ -52,19 +55,34 @@ export function SubmitScoresDialog({
     includeMetadata: false,
   });
 
-  const submittableScores = getSubmittableScores(games, leaderboard);
+  // Sort games by score (desc) and then by token_id (asc) for equal scores
+  const sortedGames = useMemo(() => {
+    if (!games) return [];
+    return [...games].sort((a, b) => {
+      // First sort by score (descending)
+      const scoreDiff = Number(b.score) - Number(a.score);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      // If scores are equal, sort by token_id (ascending - lower token_id = higher position)
+      return Number(a.token_id) - Number(b.token_id);
+    });
+  }, [games]);
+
+  console.log(sortedGames);
+
+  const submittableScores = getSubmittableScores(sortedGames, leaderboard);
 
   const handleSubmitScores = async () => {
     setIsSubmitting(true);
     setBatchProgress(null);
     try {
       // Use batched version if there are many scores to submit
-      if (submittableScores.length > 30) {
+      if (submittableScores.length > 10) {
         await submitScoresBatched(
           tournamentModel?.id,
           feltToString(tournamentModel?.metadata.name),
           submittableScores,
-          30, // batch size
+          10, // batch size
           (current, total) => setBatchProgress({ current, total })
         );
       } else {
@@ -97,7 +115,8 @@ export function SubmitScoresDialog({
               <div>
                 <p className="font-semibold">Processing Transactions</p>
                 <p className="text-sm text-muted-foreground">
-                  Batch {batchProgress.current} of {batchProgress.total} - Please do not close this window
+                  Batch {batchProgress.current} of {batchProgress.total} -
+                  Please do not close this window
                 </p>
               </div>
             </div>
@@ -108,7 +127,7 @@ export function SubmitScoresDialog({
             Submitting {submittableScores.length} scores
           </span>
           <div className="space-y-2 px-5 py-2 max-h-[300px] overflow-y-auto">
-            {games?.map((game, index) => (
+            {sortedGames?.map((game, index) => (
               <div className="flex flex-row items-center gap-5" key={index}>
                 <span className="font-brand w-10">
                   {index + 1}
@@ -142,7 +161,9 @@ export function SubmitScoresDialog({
                 <div className="flex items-center gap-2">
                   <LoadingSpinner />
                   {batchProgress ? (
-                    <span>Batch {batchProgress.current}/{batchProgress.total}</span>
+                    <span>
+                      Batch {batchProgress.current}/{batchProgress.total}
+                    </span>
                   ) : (
                     <span>Submitting...</span>
                   )}
