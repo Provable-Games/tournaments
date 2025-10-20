@@ -605,15 +605,16 @@ const Tournament = () => {
               </span>
             </Button>
           ) : isEnded && !isSubmitted ? (
-            <Button
-              className="uppercase"
-              onClick={() => setSubmitScoresDialogOpen(true)}
-              disabled={allSubmitted}
-            >
-              <TROPHY />
-              {allSubmitted ? "Submitted" : "Submit Scores"}
-            </Button>
-          ) : isSubmitted ? (
+            <></>
+          ) : // <Button
+          //   className="uppercase"
+          //   onClick={() => setSubmitScoresDialogOpen(true)}
+          //   disabled={allSubmitted}
+          // >
+          //   <TROPHY />
+          //   {allSubmitted ? "Submitted" : "Submit Scores"}
+          // </Button>
+          isSubmitted ? (
             <Button
               className="uppercase"
               onClick={() => setClaimDialogOpen(true)}
