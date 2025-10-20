@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ARROW_LEFT,
-  TROPHY,
+  // TROPHY,
   MONEY,
   GIFT,
   SPACE_INVADER_SOLID,
@@ -132,11 +132,11 @@ const Tournament = () => {
 
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 
-  const totalSubmissions = leaderboardModel?.token_ids.length ?? 0;
+  // const totalSubmissions = leaderboardModel?.token_ids.length ?? 0;
 
-  const allSubmitted =
-    totalSubmissions ===
-    Math.min(Number(entryCountModel?.count), leaderboardSize);
+  // const allSubmitted =
+  //   totalSubmissions ===
+  //   Math.min(Number(entryCountModel?.count), leaderboardSize);
 
   // Calculate total potential prizes based on entry fees
   const { tournamentCreatorShare, gameCreatorShare, distributionPrizes } =
