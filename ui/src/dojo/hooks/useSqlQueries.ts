@@ -1145,22 +1145,65 @@ export const useGetTournamentPrizeClaimsAggregations = ({
     () =>
       active && namespace && tournamentId
         ? `
+    WITH prize_counts AS (
+      SELECT
+        -- Count sponsored prizes
+        (SELECT COUNT(*) FROM '${namespace}-Prize' WHERE tournament_id = '${padU64(BigInt(tournamentId))}') as sponsored_count,
+
+        -- Count entry fee prizes
+        (SELECT
+          CASE
+            WHEN '${namespace}-Tournament'.id = '${padU64(BigInt(tournamentId))}'
+              AND '${namespace}-Tournament'.'entry_fee.Some.amount' IS NOT NULL
+              AND '${namespace}-Tournament'.'entry_fee.Some.amount' != '0'
+            THEN
+              -- Game creator share (0 or 1)
+              CASE
+                WHEN '${namespace}-Tournament'.'entry_fee.Some.game_creator_share.Some' IS NOT NULL
+                  AND '${namespace}-Tournament'.'entry_fee.Some.game_creator_share.Some' != '0'
+                THEN 1 ELSE 0
+              END
+              +
+              -- Tournament creator share (0 or 1)
+              CASE
+                WHEN '${namespace}-Tournament'.'entry_fee.Some.tournament_creator_share.Some' IS NOT NULL
+                  AND '${namespace}-Tournament'.'entry_fee.Some.tournament_creator_share.Some' != '0'
+                THEN 1 ELSE 0
+              END
+              +
+              -- Count non-zero distribution positions
+              (SELECT COUNT(*)
+               FROM json_each('${namespace}-Tournament'.'entry_fee.Some.distribution')
+               WHERE CAST(value AS INTEGER) > 0)
+            ELSE 0
+          END
+         FROM '${namespace}-Tournament'
+         WHERE id = '${padU64(BigInt(tournamentId))}'
+        ) as entry_fee_count,
+
+        -- Count claimed prizes
+        (SELECT COUNT(*)
+         FROM '${namespace}-PrizeClaim'
+         WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+           AND claimed = 1
+        ) as claimed_count,
+
+        -- Get claimed prizes details
+        (SELECT GROUP_CONCAT(
+          json_object('prizeType', prize_type, 'claimed', claimed),
+          '|'
+         )
+         FROM '${namespace}-PrizeClaim'
+         WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+           AND claimed = 1
+        ) as claimed_prizes
+    )
     SELECT
-      COUNT(*) as total_claims,
-      SUM(CASE WHEN claimed = 1 THEN 1 ELSE 0 END) as total_claimed,
-      SUM(CASE WHEN claimed = 0 THEN 1 ELSE 0 END) as total_unclaimed,
-      GROUP_CONCAT(
-        CASE
-          WHEN claimed = 1
-          THEN json_object(
-            'prizeType', prize_type,
-            'claimed', claimed
-          )
-        END,
-        '|'
-      ) as claimed_prizes
-    FROM '${namespace}-PrizeClaim'
-    WHERE tournament_id = '${padU64(BigInt(tournamentId))}'
+      sponsored_count + COALESCE(entry_fee_count, 0) as total_prizes,
+      claimed_count as total_claimed,
+      sponsored_count + COALESCE(entry_fee_count, 0) - claimed_count as total_unclaimed,
+      claimed_prizes
+    FROM prize_counts
   `
         : null,
     [namespace, tournamentId, active]
@@ -1186,7 +1229,7 @@ export const useGetTournamentPrizeClaimsAggregations = ({
     }
 
     return {
-      total_claims: Number(row.total_claims) || 0,
+      total_prizes: Number(row.total_prizes) || 0,
       total_claimed: Number(row.total_claimed) || 0,
       total_unclaimed: Number(row.total_unclaimed) || 0,
       claimed_prizes: claimedPrizes,

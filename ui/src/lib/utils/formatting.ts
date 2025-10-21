@@ -333,7 +333,9 @@ export const getClaimablePrizes = (
   );
 
   // Helper function to extract prize type info from both SDK and SQL formats
-  const getPrizeTypeInfo = (claimedPrize: any) => {
+  const getPrizeTypeInfo = (
+    claimedPrize: any
+  ): { type: string; role?: any; position?: any; prizeId?: any } => {
     // Check if it's a CairoCustomEnum (SDK format) with activeVariant method
     if (typeof claimedPrize.prize_type?.activeVariant === "function") {
       const variant = claimedPrize.prize_type.activeVariant();
@@ -356,38 +358,39 @@ export const getClaimablePrizes = (
       }
     }
 
-    // SQL format - prize_type is a string like "entry_fees" or "sponsored"
+    // SQL format - prize_type is a string like "EntryFees" or "Sponsored"
     if (typeof claimedPrize.prize_type === "string") {
-      if (claimedPrize.prize_type === "entry_fees") {
-        // Check the inner enum field
-        const roleVariant = claimedPrize["prize_type.entry_fees"];
-        if (roleVariant === "game_creator") {
+      const prizeType = claimedPrize.prize_type.toLowerCase();
+      if (prizeType === "entryfees") {
+        // Check the inner enum field - note the fields use different casing
+        const roleVariant = claimedPrize["prize_type.EntryFees"];
+        if (roleVariant === "GameCreator") {
           return { type: "EntryFees", role: "GameCreator", position: null };
-        } else if (roleVariant === "tournament_creator") {
+        } else if (roleVariant === "TournamentCreator") {
           return {
             type: "EntryFees",
             role: "TournamentCreator",
             position: null,
           };
-        } else if (roleVariant === "position") {
-          // The actual position value is in prize_type.entry_fees.position
-          const position = claimedPrize["prize_type.entry_fees.position"];
+        } else if (roleVariant === "Position") {
+          // The actual position value is in prize_type.EntryFees.Position
+          const position = claimedPrize["prize_type.EntryFees.Position"];
           return {
             type: "EntryFees",
             role: "Position",
             position: Number(position),
           };
         }
-      } else if (claimedPrize.prize_type === "sponsored") {
+      } else if (prizeType === "sponsored") {
         // For sponsored, the prize ID is directly in the variant field
         return {
           type: "Sponsored",
-          prizeId: Number(claimedPrize["prize_type.sponsored"]),
+          prizeId: Number(claimedPrize["prize_type.Sponsored"]),
         };
       }
     }
 
-    return { type: null, role: null, position: null };
+    return { type: "null" };
   };
 
   const claimedEntryFeePositions = claimedPrizes
@@ -407,6 +410,7 @@ export const getClaimablePrizes = (
     .filter((id) => id !== null);
 
   const allPrizes = [...creatorPrizes, ...prizesFromSubmissions];
+
   const unclaimedPrizes = allPrizes.filter((prize) => {
     if (prize.type === "entry_fee_game_creator") {
       return !claimedPrizes.some((claimedPrize) => {
@@ -421,7 +425,12 @@ export const getClaimablePrizes = (
     } else if (prize.type === "entry_fee") {
       return !claimedEntryFeePositions.includes(prize.payout_position);
     } else {
-      return !claimedSponsoredPrizeKeys.includes(prize.id);
+      // Normalize prize.id to number for comparison (it might be hex string or number)
+      const prizeIdNum =
+        typeof prize.id === "string"
+          ? parseInt(prize.id, 16)
+          : Number(prize.id);
+      return !claimedSponsoredPrizeKeys.includes(prizeIdNum);
     }
   });
   const unclaimedPrizeTypes = unclaimedPrizes.map((prize) => {

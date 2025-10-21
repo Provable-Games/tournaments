@@ -25,7 +25,10 @@ import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
 import { LoadingSpinner } from "@/components/ui/spinner";
-import { useGetTournamentPrizeClaims, useGetAllTournamentPrizes } from "@/dojo/hooks/useSqlQueries";
+import {
+  useGetTournamentPrizeClaims,
+  useGetAllTournamentPrizes,
+} from "@/dojo/hooks/useSqlQueries";
 import useModel from "@/dojo/hooks/useModel";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { Prize } from "@/generated/models.gen";
@@ -104,15 +107,16 @@ export function ClaimPrizesDialog({
       ...gameCreatorShare,
       ...sponsoredPrizes,
     ];
-  }, [distributionPrizes, tournamentCreatorShare, gameCreatorShare, sponsoredPrizes]);
+  }, [
+    distributionPrizes,
+    tournamentCreatorShare,
+    gameCreatorShare,
+    sponsoredPrizes,
+  ]);
 
   // Calculate which prizes are claimable
   const { claimablePrizes, claimablePrizeTypes } = useMemo(
-    () =>
-      getClaimablePrizes(
-        allPrizes,
-        claimedPrizes
-      ),
+    () => getClaimablePrizes(allPrizes, claimedPrizes),
     [allPrizes, claimedPrizes]
   );
 
@@ -122,12 +126,12 @@ export function ClaimPrizesDialog({
 
     try {
       // Use batched version if there are many prizes to claim
-      if (claimablePrizeTypes.length > 30) {
+      if (claimablePrizeTypes.length > 20) {
         await claimPrizesBatched(
           tournamentModel?.id,
           feltToString(tournamentModel?.metadata.name),
           claimablePrizeTypes,
-          30, // batch size
+          20, // batch size
           (current, total) => setBatchProgress({ current, total })
         );
       } else {
@@ -178,9 +182,15 @@ export function ClaimPrizesDialog({
         <div className="space-y-2 px-5 py-2 max-h-[500px] overflow-y-auto">
           {sortedClaimablePrizes.map((prize: any, index: number) => {
             // Handle both SDK format (variant.erc20) and SQL format (token_type string)
-            const isErc20 = prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
+            const isErc20 =
+              prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
             const prizeAmount = isErc20
-              ? Number(prize.token_type?.variant?.erc20?.amount || prize["token_type.erc20.amount"] || 0) / 10 ** 18
+              ? Number(
+                  prize.token_type?.variant?.erc20?.amount ||
+                    prize["token_type.erc20.amount"] ||
+                    0
+                ) /
+                10 ** 18
               : 0;
             const tokenPrice =
               prices[getTokenSymbol(chainId, prize.token_address) ?? ""] ?? 0;
@@ -192,7 +202,9 @@ export function ClaimPrizesDialog({
             } else if (prize.type === "entry_fee_tournament_creator") {
               prizeLabel = "Tournament Creator Share";
             } else if (prize.payout_position > 0) {
-              prizeLabel = `${prize.payout_position}${getOrdinalSuffix(prize.payout_position)} Place`;
+              prizeLabel = `${prize.payout_position}${getOrdinalSuffix(
+                prize.payout_position
+              )} Place`;
             } else {
               prizeLabel = `Sponsored Prize #${prize.id}`;
             }
