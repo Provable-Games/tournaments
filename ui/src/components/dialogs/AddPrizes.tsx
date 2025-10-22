@@ -302,8 +302,10 @@ export function AddPrizesDialog({
                 erc20: {
                   amount: addAddressPadding(
                     bigintToHex(
-                      prize.amount! *
-                        10 ** (newDecimals[prize.tokenAddress] || 18)
+                      BigInt(Math.floor(
+                        prize.amount! *
+                          10 ** (newDecimals[prize.tokenAddress] || 18)
+                      ))
                     )
                   ),
                 },
