@@ -1209,11 +1209,12 @@ fn extension_gated_tournament() {
     // Start tournament entries
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
+    let qualification_proof = Option::Some(QualificationProof::Extension(array![].span()));
+
     // OWNER already has an ERC721 token (minted in setup), so they should be able to enter
-    // For extension-based entry requirements, we pass None as the qualification proof
     let (token_id, entry_number) = contracts
         .budokan
-        .enter_tournament(tournament.id, 'test_player', OWNER(), Option::None);
+        .enter_tournament(tournament.id, 'test_player', OWNER(), qualification_proof);
 
     // Verify entry was successful
     assert(entry_number == 1, 'Invalid entry number');
@@ -1229,7 +1230,7 @@ fn extension_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Not a valid entry according to extension 647325419780632757812208635579103646774049644075509742189958069830842363472", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Not a valid entry according to extension 789896229082011384040182332636593133632627288620495346284296558290691831782", 'ENTRYPOINT_FAILED'))]
 fn extension_gated_tournament_unauthorized() {
     let contracts = setup();
 
@@ -1264,10 +1265,12 @@ fn extension_gated_tournament_unauthorized() {
     let balance = contracts.erc721.balance_of(unauthorized_player);
     assert(balance == 0, 'Player should have no tokens');
 
+    let qualification_proof = Option::Some(QualificationProof::Extension(array![].span()));
+
     // Try to enter with unauthorized account - should panic
     contracts
         .budokan
-        .enter_tournament(tournament.id, 'unauthorized_player', unauthorized_player, Option::None);
+        .enter_tournament(tournament.id, 'unauthorized_player', unauthorized_player, qualification_proof);
 }
 
 #[test]
@@ -1297,10 +1300,12 @@ fn extension_gated_tournament_with_entry_limit() {
     // Start tournament entries
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
+    let qualification_proof = Option::Some(QualificationProof::Extension(array![].span()));
+
     // OWNER should be able to enter once
     let (_token_id1, entry_number1) = contracts
         .budokan
-        .enter_tournament(tournament.id, 'test_player1', OWNER(), Option::None);
+        .enter_tournament(tournament.id, 'test_player1', OWNER(), qualification_proof);
 
     assert(entry_number1 == 1, 'Invalid entry number');
     let entries = contracts.budokan.tournament_entries(tournament.id);
