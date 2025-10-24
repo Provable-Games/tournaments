@@ -22,7 +22,7 @@ import {
 } from "@/lib/utils/formatting";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
-import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
+import { getTokenLogoUrl, getTokenSymbol, getTokenDecimals } from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import {
@@ -184,13 +184,14 @@ export function ClaimPrizesDialog({
             // Handle both SDK format (variant.erc20) and SQL format (token_type string)
             const isErc20 =
               prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
+            const tokenDecimals = getTokenDecimals(chainId, prize.token_address);
             const prizeAmount = isErc20
               ? Number(
                   prize.token_type?.variant?.erc20?.amount ||
                     prize["token_type.erc20.amount"] ||
                     0
                 ) /
-                10 ** 18
+                10 ** tokenDecimals
               : 0;
             const tokenPrice =
               prices[getTokenSymbol(chainId, prize.token_address) ?? ""] ?? 0;

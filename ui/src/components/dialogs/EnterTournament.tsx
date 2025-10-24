@@ -38,7 +38,7 @@ import {
 import { useGameTokens } from "metagame-sdk";
 import { useDojo } from "@/context/dojo";
 import { processQualificationProof } from "@/lib/utils/formatting";
-import { getTokenLogoUrl } from "@/lib/tokensMeta";
+import { getTokenLogoUrl, getTokenDecimals } from "@/lib/tokensMeta";
 import { LoadingSpinner } from "@/components/ui/spinner";
 
 interface EnterTournamentDialogProps {
@@ -748,7 +748,7 @@ export function EnterTournamentDialog({
                   <div className="flex flex-row items-center gap-2">
                     <div className="flex flex-row items-center gap-2">
                       <span>
-                        {formatNumber(Number(entryAmount) / 10 ** 18)}
+                        {formatNumber(Number(entryAmount) / 10 ** getTokenDecimals(chainId, entryToken ?? ""))}
                       </span>
                       <img
                         src={getTokenLogoUrl(chainId, entryToken ?? "")}
