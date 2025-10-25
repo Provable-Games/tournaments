@@ -608,7 +608,7 @@ export const countTotalNFTs = (groupedPrizes: TokenPrizes) => {
   return Object.entries(groupedPrizes)
     .filter(([_, prize]) => prize.type === "erc721")
     .reduce((total, [_, prize]) => {
-      return total + (prize.value as bigint[]).length;
+      return total + (Array.isArray(prize.value) ? prize.value.length : 1);
     }, 0);
 };
 
