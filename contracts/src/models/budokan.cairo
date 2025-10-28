@@ -51,7 +51,7 @@ pub enum EntryRequirementType {
     token: ContractAddress,
     tournament: TournamentType,
     allowlist: Span<ContractAddress>,
-    extension: ContractAddress,
+    extension: ExtensionConfig,
 }
 
 #[dojo::model]
@@ -64,22 +64,16 @@ pub struct QualificationEntries {
     pub entry_count: u8,
 }
 
-#[dojo::model]
-#[derive(Drop, Serde)]
-pub struct ExtensionEntries {
-    #[key]
-    pub tournament_id: u64,
-    #[key]
-    pub extension_address: ContractAddress,
-    #[key]
-    pub qualification_proof: QualificationProof,
-    pub entry_count: u8,
-}
-
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]
 pub enum TournamentType {
     winners: Span<u64>,
     participants: Span<u64>,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct ExtensionConfig {
+    pub address: ContractAddress,
+    pub config: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]

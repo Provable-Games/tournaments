@@ -305,6 +305,27 @@ const TournamentConfirmation = ({
                           </tbody>
                         </table>
                       </>
+                    ) : formData.gatingOptions.type === "extension" ? (
+                      <>
+                        <span className="text-muted-foreground">
+                          Extension Contract:
+                        </span>
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="font-mono text-xs">
+                            {displayAddress(
+                              formData.gatingOptions.extension ?? ""
+                            )}
+                          </span>
+                          <a
+                            href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.gatingOptions.extension}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-6 text-neutral"
+                          >
+                            <EXTERNAL_LINK />
+                          </a>
+                        </div>
+                      </>
                     ) : (
                       <>
                         <span>Addresses:</span>

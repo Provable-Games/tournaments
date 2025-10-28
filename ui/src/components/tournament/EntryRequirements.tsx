@@ -91,6 +91,11 @@ const EntryRequirements = ({
     [entryRequirement]
   );
 
+  const extensionAddress = useMemo(
+    () => entryRequirement?.entry_requirement_type?.variant?.extension,
+    [entryRequirement]
+  );
+
   const blockExplorerExists =
     selectedChainConfig.blockExplorerUrl !== undefined;
 
@@ -120,6 +125,15 @@ const EntryRequirements = ({
           <span className="hidden sm:block capitalize">
             {tournamentVariant}
           </span>
+        </div>
+      );
+    } else if (activeVariant === "extension") {
+      return (
+        <div className="flex flex-row items-center gap-1 w-full">
+          <span className="w-6">
+            <EXTERNAL_LINK />
+          </span>
+          <span className="hidden sm:block">Extension</span>
         </div>
       );
     } else {
@@ -209,6 +223,38 @@ const EntryRequirements = ({
                 </div>
               );
             })}
+          </div>
+          {!!hasEntryLimit && (
+            <div className="flex flex-row items-center gap-2">
+              <span>Entry Limit:</span>
+              <span>{Number(entryLimit)}</span>
+            </div>
+          )}
+        </>
+      );
+    } else if (activeVariant === "extension") {
+      return (
+        <>
+          <p className="text-muted-foreground">
+            Entry validated by custom contract:
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="w-6">
+              <EXTERNAL_LINK />
+            </span>
+            <span
+              className="text-brand-muted hover:cursor-pointer font-mono text-xs"
+              onClick={() => {
+                if (blockExplorerExists) {
+                  window.open(
+                    `${selectedChainConfig.blockExplorerUrl}contract/${extensionAddress}`,
+                    "_blank"
+                  );
+                }
+              }}
+            >
+              {displayAddress(extensionAddress ?? "0x0")}
+            </span>
           </div>
           {!!hasEntryLimit && (
             <div className="flex flex-row items-center gap-2">

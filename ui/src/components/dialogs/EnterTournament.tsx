@@ -34,6 +34,7 @@ import {
   useGetTournamentRegistrants,
   useGetTournamentLeaderboards,
   useGetTournamentQualificationEntries,
+  useGetTournamentExtensionEntries,
 } from "@/dojo/hooks/useSqlQueries";
 import { useGameTokens } from "metagame-sdk";
 import { useDojo } from "@/context/dojo";
@@ -199,6 +200,17 @@ export function EnterTournamentDialog({
   const allowlistAddresses =
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.allowlist;
+
+  const extensionAddress =
+    tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
+      ?.extension;
+
+  const { data: extensionEntries } = useGetTournamentExtensionEntries({
+    namespace: namespace ?? "",
+    tournamentId: tournamentModel?.id ?? 0n,
+    extensionAddress: extensionAddress ?? "",
+    active: requirementVariant === "extension" && !!extensionAddress,
+  });
 
   const { data: ownedTokens } = useGetAccountTokenIds(
     indexAddress(address ?? ""),
@@ -405,6 +417,13 @@ export function EnterTournamentDialog({
     if (requirementVariant === "allowlist") {
       methods.push({
         type: "allowlist",
+        address: address,
+      });
+    }
+
+    if (requirementVariant === "extension") {
+      methods.push({
+        type: "extension",
         address: address,
       });
     }
@@ -687,6 +706,49 @@ export function EnterTournamentDialog({
       };
     }
 
+    // Handle extension-based entry requirements
+    if (requirementVariant === "extension") {
+      // If no address, can't enter
+      if (!address) {
+        return {
+          meetsEntryRequirements: false,
+          proof: {},
+          entriesLeftByTournament: [],
+        };
+      }
+
+      // Get current entry count for this address from extensionEntries
+      // Note: We're summing all entries for this address, regardless of the specific proof data
+      const currentEntryCount =
+        extensionEntries?.reduce(
+          (sum: number, entry: any) => sum + (entry.entry_count || 0),
+          0
+        ) ?? 0;
+
+      // Calculate remaining entries
+      const remaining = hasEntryLimit
+        ? Number(entryLimit) - currentEntryCount
+        : Infinity;
+
+      // For extensions, we assume they can enter (the extension contract will validate on-chain)
+      // We just check if they have entries left based on the entry limit
+      if (remaining > 0 || !hasEntryLimit) {
+        canEnter = true;
+        entriesLeftByTournament = [
+          {
+            address,
+            entriesLeft: remaining,
+          },
+        ];
+      }
+
+      return {
+        meetsEntryRequirements: canEnter,
+        proof: { tokenId: "" }, // Empty proof for extension (actual validation happens on-chain)
+        entriesLeftByTournament,
+      };
+    }
+
     return {
       meetsEntryRequirements: canEnter,
       proof,
@@ -704,6 +766,8 @@ export function EnterTournamentDialog({
     requirementVariant,
     address,
     allowlistAddresses,
+    extensionEntries,
+    extensionAddress,
     entryCountModel?.count,
   ]);
 
@@ -874,6 +938,8 @@ export function EnterTournamentDialog({
                         : "participated in"
                     }:`}
                   </div>
+                ) : requirementVariant === "extension" ? (
+                  "Entry validated by extension contract"
                 ) : (
                   "Must be part of the allowlist"
                 )}
@@ -1024,6 +1090,56 @@ export function EnterTournamentDialog({
                     );
                   })}
                 </div>
+              ) : requirementVariant === "extension" ? (
+                address ? (
+                  <div className="flex flex-col gap-2 px-4">
+                    <div className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm text-muted-foreground">
+                          Extension Contract:
+                        </span>
+                        <span className="font-mono text-xs">
+                          {displayAddress(extensionAddress ?? "")}
+                        </span>
+                      </div>
+                      {meetsEntryRequirements ? (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <CHECK />
+                          </span>
+                          <span>
+                            {hasEntryLimit
+                              ? `${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft
+                                } ${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft === 1
+                                    ? "entry"
+                                    : "entries"
+                                } left`
+                              : "Can enter"}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <X />
+                          </span>
+                          <span>No entries left</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Note: Final validation will be performed by the extension
+                      contract on-chain
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-neutral px-4">Connect Account</span>
+                )
               ) : address ? (
                 <div className="flex flex-row items-center gap-2 px-4">
                   <span className="w-8">

@@ -29,15 +29,8 @@ import {
   useGetTournaments,
   useGetTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
-import {
-  // calculateTotalValue,
-  // extractEntryFeePrizes,
-  // getErc20TokenSymbols,
-  // groupPrizesByTokens,
-  processTournamentFromSql,
-} from "@/lib/utils/formatting";
+import { processTournamentFromSql } from "@/lib/utils/formatting";
 import { processPrizesFromSql } from "@/lib/utils/formatting";
-// import { getGames } from "@/assets/games";
 import Pagination from "@/components/table/Pagination";
 import {
   Tooltip,
@@ -45,8 +38,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import useUIStore from "@/hooks/useUIStore";
-// import { useEkuboPrices } from "@/hooks/useEkuboPrices";
-// import { tokens } from "@/lib/tokensMeta";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
 import { getChecksumAddress, validateChecksumAddress } from "starknet";
 import { Switch } from "@/components/ui/switch";
@@ -61,6 +52,7 @@ const EntryRequirements = ({ form }: StepProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const { gameData, getGameImage } = useUIStore();
   const [addressError, setAddressError] = useState("");
+  const [extensionError, setExtensionError] = useState("");
 
   const ENTRY_LIMIT_OPTIONS = [
     { value: 1, label: "1" },
@@ -99,7 +91,7 @@ const EntryRequirements = ({ form }: StepProps) => {
   });
 
   const handleGatingTypeChange = (
-    type: "token" | "tournament" | "addresses"
+    type: "token" | "tournament" | "addresses" | "extension"
   ) => {
     form.setValue("gatingOptions.type", type);
 
@@ -107,6 +99,7 @@ const EntryRequirements = ({ form }: StepProps) => {
     form.setValue("gatingOptions.tournament.requirement", "participated");
     form.setValue("gatingOptions.tournament.tournaments", []);
     form.setValue("gatingOptions.addresses", []);
+    form.setValue("gatingOptions.extension", "");
   };
 
   const getTournamentStatus = (isStarted: boolean, isEnded: boolean) => {
@@ -115,10 +108,7 @@ const EntryRequirements = ({ form }: StepProps) => {
     return "Upcoming";
   };
 
-  // const erc20TokenSymbols = getErc20TokenSymbols(groupedPrizes);
-  // const { prices, isLoading: pricesLoading } = useEkuboPrices({
-  //   tokens: [...erc20TokenSymbols, entryFeeTokenSymbol ?? ""],
-  // });
+  console.log(form.getValues());
 
   return (
     <FormField
@@ -147,7 +137,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                         Choose the requirement type for the tournament
                       </FormDescription>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                       <Button
                         type="button"
                         variant={
@@ -181,6 +171,17 @@ const EntryRequirements = ({ form }: StepProps) => {
                       >
                         Whitelist{" "}
                         <span className="hidden sm:inline">Addresses</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          form.watch("gatingOptions.type") === "extension"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handleGatingTypeChange("extension")}
+                      >
+                        Extension
                       </Button>
                     </div>
                   </div>
@@ -880,6 +881,86 @@ const EntryRequirements = ({ form }: StepProps) => {
                                 )}
                               </div>
                             </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {form.watch("gatingOptions.type") === "extension" && (
+                  <>
+                    <div className="w-full h-0.5 bg-brand/25" />
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="gatingOptions.extension"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex flex-row items-center justify-between">
+                              <div className="flex flex-row items-center gap-5">
+                                <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                  Extension Contract
+                                </FormLabel>
+                                <FormDescription className="hidden sm:block">
+                                  Enter the contract address that will validate
+                                  entries
+                                </FormDescription>
+                              </div>
+                              {extensionError && (
+                                <div className="flex flex-row items-center gap-2">
+                                  <span className="text-red-500 text-sm">
+                                    {extensionError}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <FormControl>
+                              <Input
+                                placeholder="0x..."
+                                value={field.value}
+                                onChange={(e) => {
+                                  const rawAddress = e.target.value.trim();
+
+                                  // Clear error when field is empty
+                                  if (!rawAddress) {
+                                    setExtensionError("");
+                                    field.onChange("");
+                                    return;
+                                  }
+
+                                  // Set the raw value immediately for user feedback
+                                  field.onChange(rawAddress);
+                                }}
+                                onBlur={() => {
+                                  const rawAddress = field.value?.trim();
+
+                                  if (!rawAddress) {
+                                    setExtensionError("");
+                                    return;
+                                  }
+
+                                  try {
+                                    // Try to convert to checksum address
+                                    const checksumAddr = getChecksumAddress(rawAddress);
+
+                                    // Validate the checksum address
+                                    if (!validateChecksumAddress(checksumAddr)) {
+                                      setExtensionError("Invalid contract address");
+                                      return;
+                                    }
+
+                                    // Update with checksum address
+                                    field.onChange(checksumAddr);
+                                    setExtensionError("");
+                                  } catch (e) {
+                                    setExtensionError("Invalid contract address format");
+                                  }
+                                }}
+                                className="font-mono"
+                              />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />

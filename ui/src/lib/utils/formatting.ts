@@ -52,6 +52,7 @@ export const processTournamentData = (
           token: formData.gatingOptions.token?.address,
           tournament: undefined,
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "tournament":
@@ -68,6 +69,7 @@ export const processTournamentData = (
                 : undefined,
           }),
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "addresses":
@@ -75,6 +77,15 @@ export const processTournamentData = (
           token: undefined,
           tournament: undefined,
           allowlist: formData.gatingOptions.addresses,
+          extension: undefined,
+        });
+        break;
+      case "extension":
+        entryRequirementType = new CairoCustomEnum({
+          token: undefined,
+          tournament: undefined,
+          allowlist: undefined,
+          extension: formData.gatingOptions.extension,
         });
         break;
     }

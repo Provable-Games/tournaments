@@ -1,18 +1,15 @@
-use starknet::{ContractAddress};
-use budokan_extensions::entry_validator::entry_validator::EntryValidatorComponent;
-use openzeppelin_token::erc721::interface::{IERC721Dispatcher, IERC721DispatcherTrait};
-use openzeppelin_introspection::src5::SRC5Component;
-
+use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait IEntryValidatorMock<TState> {
-    fn get_erc721_address(self: @TState) -> ContractAddress;
+    fn get_tournament_erc721_address(self: @TState, tournament_id: u64) -> ContractAddress;
 }
 
 #[starknet::contract]
 pub mod entry_validator_mock {
+    use core::num::traits::Zero;
     use starknet::ContractAddress;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::storage::{Map, StorageMapReadAccess, StorageMapWriteAccess};
     use budokan_extensions::entry_validator::entry_validator::EntryValidatorComponent;
     use budokan_extensions::entry_validator::entry_validator::EntryValidatorComponent::EntryValidator;
     use openzeppelin_token::erc721::interface::{IERC721Dispatcher, IERC721DispatcherTrait};
@@ -22,7 +19,8 @@ pub mod entry_validator_mock {
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
     #[abi(embed_v0)]
-    impl EntryValidatorImpl = EntryValidatorComponent::EntryValidatorImpl<ContractState>;
+    impl EntryValidatorImpl =
+        EntryValidatorComponent::EntryValidatorImpl<ContractState>;
     impl EntryValidatorInternalImpl = EntryValidatorComponent::InternalImpl<ContractState>;
 
     #[abi(embed_v0)]
@@ -34,7 +32,7 @@ pub mod entry_validator_mock {
         entry_validator: EntryValidatorComponent::Storage,
         #[substorage(v0)]
         src5: SRC5Component::Storage,
-        erc721_address: ContractAddress
+        tournament_erc721_address: Map<u64, ContractAddress>,
     }
 
     #[event]
@@ -47,19 +45,31 @@ pub mod entry_validator_mock {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, erc721_address: ContractAddress) {
+    fn constructor(ref self: ContractState) {
         self.entry_validator.initializer();
-        self.erc721_address.write(erc721_address);
     }
 
     // Implement the EntryValidator trait for the contract
     impl EntryValidatorImplInternal of EntryValidator<ContractState> {
+        fn add_config(ref self: ContractState, tournament_id: u64, config: Span<felt252>) {
+            // Extract ERC721 address from config (first element)
+            let erc721_address: ContractAddress = (*config.at(0)).try_into().unwrap();
+            self.tournament_erc721_address.write(tournament_id, erc721_address);
+        }
+
         fn validate_entry(
             self: @ContractState,
+            tournament_id: u64,
             player_address: ContractAddress,
             qualification: Span<felt252>,
         ) -> bool {
-            let erc721_address = self.erc721_address.read();
+            let erc721_address = self.tournament_erc721_address.read(tournament_id);
+
+            // Check if ERC721 address is set for this tournament
+            if erc721_address.is_zero() {
+                return false;
+            }
+
             let erc721 = IERC721Dispatcher { contract_address: erc721_address };
 
             // Check if the player owns at least one token
@@ -72,8 +82,10 @@ pub mod entry_validator_mock {
     use super::IEntryValidatorMock;
     #[abi(embed_v0)]
     impl EntryValidatorMockImpl of IEntryValidatorMock<ContractState> {
-        fn get_erc721_address(self: @ContractState) -> ContractAddress {
-            self.erc721_address.read()
+        fn get_tournament_erc721_address(
+            self: @ContractState, tournament_id: u64,
+        ) -> ContractAddress {
+            self.tournament_erc721_address.read(tournament_id)
         }
     }
 }

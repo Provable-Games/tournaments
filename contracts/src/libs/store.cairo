@@ -4,7 +4,7 @@ use dojo::model::{ModelStorage};
 use budokan::models::budokan::{
     Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentTokenMetrics,
     PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata, GameConfig, EntryFee,
-    EntryRequirement, QualificationEntries, ExtensionEntries, QualificationProof,
+    EntryRequirement, QualificationEntries, QualificationProof,
 };
 use budokan::models::schedule::Schedule;
 use budokan::constants::{VERSION};
@@ -90,16 +90,6 @@ pub impl StoreImpl of StoreTrait {
         self: Store, tournament_id: u64, qualification_proof: QualificationProof,
     ) -> QualificationEntries {
         (self.world.read_model((tournament_id, qualification_proof)))
-    }
-
-    #[inline(always)]
-    fn get_extension_entries(
-        self: Store,
-        tournament_id: u64,
-        extension_address: ContractAddress,
-        qualification_proof: QualificationProof,
-    ) -> ExtensionEntries {
-        (self.world.read_model((tournament_id, extension_address, qualification_proof)))
     }
 
     //
@@ -218,11 +208,6 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn set_qualification_entries(ref self: Store, model: @QualificationEntries) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_extension_entries(ref self: Store, model: @ExtensionEntries) {
         self.world.write_model(model);
     }
 }

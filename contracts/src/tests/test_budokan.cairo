@@ -17,10 +17,9 @@ use budokan::libs::store::{Store as BudokanStore, StoreTrait as BudokanStoreTrai
 use budokan::models::{
     budokan::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token, m_PrizeMetrics,
-        m_PlatformMetrics, m_TournamentTokenMetrics, m_PrizeClaim, m_QualificationEntries,
-        m_ExtensionEntries, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement,
+        m_PlatformMetrics, m_TournamentTokenMetrics, m_PrizeClaim, m_QualificationEntries, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement,
         EntryRequirementType, TournamentType, Prize, PrizeType, Role, QualificationProof,
-        TournamentQualification, NFTQualification, TokenData, TokenTypeData,
+        TournamentQualification, NFTQualification, TokenData, TokenTypeData, ExtensionConfig,
     },
 };
 use budokan::models::schedule::{Schedule, Period, Phase};
@@ -138,7 +137,6 @@ fn setup_uninitialized(
             TestResource::Model(m_TournamentTokenMetrics::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_PrizeClaim::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_QualificationEntries::TEST_CLASS_HASH.try_into().unwrap()),
-            TestResource::Model(m_ExtensionEntries::TEST_CLASS_HASH.try_into().unwrap()),
             // contracts
             TestResource::Contract(Budokan::TEST_CLASS_HASH),
         ]
@@ -157,7 +155,7 @@ fn setup_uninitialized(
     );
     let entry_validator_address = deploy_contract(
         entry_validator_mock::TEST_CLASS_HASH.try_into().unwrap(),
-        array![erc721_mock_address.into()].span(),
+        array![].span(),
     );
 
     // Create token data array for new dojo_init signature
@@ -1186,9 +1184,11 @@ fn extension_gated_tournament() {
     utils::impersonate(OWNER());
 
     // Create tournament gated by entry validator extension
-    let entry_requirement_type = EntryRequirementType::extension(
-        contracts.entry_validator.contract_address,
-    );
+    let extension_config = ExtensionConfig {
+        address: contracts.entry_validator.contract_address,
+        config: array![contracts.erc721.contract_address.into()].span(),
+    };
+    let entry_requirement_type = EntryRequirementType::extension(extension_config);
     let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
@@ -1230,16 +1230,18 @@ fn extension_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Not a valid entry according to extension 789896229082011384040182332636593133632627288620495346284296558290691831782", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Not a valid entry according to extension 366278055289055828197057634942678406229515152225639653422544751309849390186", 'ENTRYPOINT_FAILED'))]
 fn extension_gated_tournament_unauthorized() {
     let contracts = setup();
 
     utils::impersonate(OWNER());
 
     // Create tournament gated by entry validator extension
-    let entry_requirement_type = EntryRequirementType::extension(
-        contracts.entry_validator.contract_address,
-    );
+    let extension_config = ExtensionConfig {
+        address: contracts.entry_validator.contract_address,
+        config: array![contracts.erc721.contract_address.into()].span(),
+    };
+    let entry_requirement_type = EntryRequirementType::extension(extension_config);
     let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
@@ -1279,10 +1281,18 @@ fn extension_gated_tournament_with_entry_limit() {
 
     utils::impersonate(OWNER());
 
+    // Create a second player wallet
+    let player2 = starknet::contract_address_const::<0x456>();
+
+    // Mint ERC721 token to second player so they can pass validation
+    contracts.erc721.mint(player2, 2);
+
     // Create tournament gated by entry validator extension with entry limit of 1
-    let entry_requirement_type = EntryRequirementType::extension(
-        contracts.entry_validator.contract_address,
-    );
+    let extension_config = ExtensionConfig {
+        address: contracts.entry_validator.contract_address,
+        config: array![contracts.erc721.contract_address.into()].span(),
+    };
+    let entry_requirement_type = EntryRequirementType::extension(extension_config);
     let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
     let entry_requirement = Option::Some(entry_requirement);
 
@@ -1300,16 +1310,116 @@ fn extension_gated_tournament_with_entry_limit() {
     // Start tournament entries
     testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
 
-    let qualification_proof = Option::Some(QualificationProof::Extension(array![].span()));
+    // First wallet (OWNER) enters with their address in qualification proof
+    let qualification_proof1 = Option::Some(
+        QualificationProof::Extension(array![OWNER().into()].span()),
+    );
 
-    // OWNER should be able to enter once
+    let (_token_id1, entry_number1) = contracts
+        .budokan
+        .enter_tournament(tournament.id, 'test_player1', OWNER(), qualification_proof1);
+
+    assert(entry_number1 == 1, 'Invalid entry number');
+
+    // Second wallet enters with their address in qualification proof
+    utils::impersonate(player2);
+    let qualification_proof2 = Option::Some(
+        QualificationProof::Extension(array![player2.into()].span()),
+    );
+
+    let (_token_id2, entry_number2) = contracts
+        .budokan
+        .enter_tournament(tournament.id, 'test_player2', player2, qualification_proof2);
+
+    assert(entry_number2 == 2, 'Invalid entry number player2');
+
+    // Verify both entries succeeded
+    let entries = contracts.budokan.tournament_entries(tournament.id);
+    assert(entries == 2, 'Invalid entry count');
+}
+
+#[test]
+#[should_panic(
+    expected: (
+        "Tournament: Maximum qualified entries reached for tournament 1", 'ENTRYPOINT_FAILED',
+    ),
+)]
+fn extension_gated_tournament_entry_limit_enforced() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create tournament gated by entry validator extension with entry limit of 1
+    let extension_config = ExtensionConfig {
+        address: contracts.entry_validator.contract_address,
+        config: array![contracts.erc721.contract_address.into()].span(),
+    };
+    let entry_requirement_type = EntryRequirementType::extension(extension_config);
+    let entry_requirement = EntryRequirement { entry_limit: 1, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
+
+    let tournament = contracts
+        .budokan
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(contracts.minigame.contract_address),
+            Option::None,
+            entry_requirement,
+        );
+
+    // Start tournament entries
+    testing::set_block_timestamp(TEST_REGISTRATION_START_TIME().into());
+
+    // First entry with OWNER address in qualification proof - should succeed
+    let qualification_proof = Option::Some(
+        QualificationProof::Extension(array![OWNER().into()].span()),
+    );
+
     let (_token_id1, entry_number1) = contracts
         .budokan
         .enter_tournament(tournament.id, 'test_player1', OWNER(), qualification_proof);
 
     assert(entry_number1 == 1, 'Invalid entry number');
-    let entries = contracts.budokan.tournament_entries(tournament.id);
-    assert(entries == 1, 'Invalid entry count');
+
+    // Try to enter again with the same address - should panic because entry limit is 1
+    let qualification_proof2 = Option::Some(
+        QualificationProof::Extension(array![OWNER().into()].span()),
+    );
+
+    contracts
+        .budokan
+        .enter_tournament(tournament.id, 'test_player2', OWNER(), qualification_proof2);
+}
+
+#[test]
+#[should_panic(expected: ('ENTRYPOINT_NOT_FOUND', 'ENTRYPOINT_FAILED', 'ENTRYPOINT_FAILED'))]
+fn extension_gated_tournament_invalid_interface() {
+    let contracts = setup();
+
+    utils::impersonate(OWNER());
+
+    // Create tournament gated by a contract that doesn't implement IEntryValidator
+    // Using the ERC20 mock contract which doesn't have the validate_entry function
+    let extension_config = ExtensionConfig {
+        address: contracts.erc20.contract_address,
+        config: array![contracts.erc721.contract_address.into()].span(),
+    };
+    let entry_requirement_type = EntryRequirementType::extension(extension_config);
+    let entry_requirement = EntryRequirement { entry_limit: 0, entry_requirement_type };
+    let entry_requirement = Option::Some(entry_requirement);
+
+    let tournament = contracts
+        .budokan
+        .create_tournament(
+            OWNER(),
+            test_metadata(),
+            test_schedule(),
+            test_game_config(contracts.minigame.contract_address),
+            Option::None,
+            entry_requirement,
+        );
 }
 
 //

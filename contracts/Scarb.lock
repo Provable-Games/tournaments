@@ -67,13 +67,9 @@ dependencies = [
 [[package]]
 name = "budokan_extensions"
 version = "0.1.0"
-source = "git+https://github.com/Provable-Games/budokan_extensions?tag=v0.0.3#8d13508851a3ceee7151aa07f004caaf39ea04a3"
+source = "git+https://github.com/Provable-Games/budokan_extensions?tag=v2.10.1#cc7c94cf14ac8c3954743d454767632aee1b91e3"
 dependencies = [
- "openzeppelin_access",
- "openzeppelin_governance",
  "openzeppelin_introspection",
- "openzeppelin_token",
- "openzeppelin_utils",
 ]
 
 [[package]]
@@ -181,19 +177,6 @@ source = "registry+https://scarbs.xyz/"
 checksum = "sha256:7e943a2de32ddca4d48e467e52790e380ab1f49c4daddbbbc4634dd930d0243f"
 dependencies = [
  "openzeppelin_introspection",
- "openzeppelin_utils",
-]
-
-[[package]]
-name = "openzeppelin_governance"
-version = "1.0.0"
-source = "registry+https://scarbs.xyz/"
-checksum = "sha256:c05add2974b3193c3a5c022b9586a84cf98c5970cdb884dcf201c77dbe359f55"
-dependencies = [
- "openzeppelin_access",
- "openzeppelin_account",
- "openzeppelin_introspection",
- "openzeppelin_token",
  "openzeppelin_utils",
 ]
 

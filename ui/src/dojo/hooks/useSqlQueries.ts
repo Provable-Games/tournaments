@@ -891,6 +891,32 @@ export const useGetTournamentQualificationEntries = ({
   return { data, loading, error };
 };
 
+export const useGetTournamentExtensionEntries = ({
+  namespace,
+  tournamentId,
+  extensionAddress,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  extensionAddress: string;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      active && namespace && tournamentId && extensionAddress
+        ? `
+    SELECT * FROM '${namespace}-ExtensionEntries' ee
+    WHERE ee.tournament_id = '${padU64(BigInt(tournamentId))}'
+    AND ee.extension_address = '${addAddressPadding(extensionAddress)}'
+  `
+        : null,
+    [namespace, tournamentId, extensionAddress, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data, loading, error };
+};
+
 export const useGetTournamentPrizes = ({
   namespace,
   tournamentId,

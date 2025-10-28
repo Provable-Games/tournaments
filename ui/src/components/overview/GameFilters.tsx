@@ -7,7 +7,7 @@ const GameFilters = () => {
     useUIStore();
 
   return (
-    <div className="hidden sm:flex flex-col gap-4 w-1/5">
+    <div className="hidden sm:flex flex-col gap-4 w-1/5 overflow-y-auto max-h-screen pr-2">
       {!gameDataLoading ? (
         gameData?.map((game) => (
           <GameButton
