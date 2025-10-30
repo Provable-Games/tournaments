@@ -109,13 +109,19 @@ const Prize = ({
                     )}
                   </div>
                 ) : (
-                  `${(prize.value as bigint[]).length} NFT${
-                    (prize.value as bigint[]).length === 1 ? "" : "s"
-                  }`
+                  <div className="flex flex-col gap-1">
+                    {Array.isArray(prize.value) ? (
+                      prize.value.map((tokenId, idx) => (
+                        <span key={idx}>NFT #{tokenId.toString()}</span>
+                      ))
+                    ) : (
+                      <span>NFT #{prize.value.toString()}</span>
+                    )}
+                  </div>
                 )}
                 {prize.type === "erc20" && hasPrice ? (
                   <span className="text-neutral">~${USDValue.toFixed(2)}</span>
-                ) : (
+                ) : prize.type === "erc20" ? (
                   <Tooltip delayDuration={50}>
                     <TooltipTrigger asChild>
                       <span className="w-6 h-6 text-neutral cursor-pointer">
@@ -128,7 +134,7 @@ const Prize = ({
                       </span>
                     </TooltipContent>
                   </Tooltip>
-                )}
+                ) : null}
               </div>
             );
           })}
@@ -179,29 +185,53 @@ const Prize = ({
                 </div>
               ) : Object.entries(prizes).length > 0 ? (
                 <div className="flex flex-row items-center gap-2 font-brand xl:text-lg 3xl:text-2xl">
-                  {Object.entries(prizes).map(([key, prize]) => {
-                    const decimals = tokenDecimals[prize.address] || 18;
-                    const token = tokens.find(
-                      (t) => t.address === prize.address
-                    );
-                    const symbol = token?.symbol || key;
-                    return (
-                      <div
-                        className="flex flex-row items-center gap-2"
-                        key={key}
-                      >
-                        <span className="whitespace-nowrap">{`${formatNumber(
-                          Number(prize.value) / 10 ** decimals
-                        )}`}</span>
-                        <div className="w-6 h-6">
-                          <img
-                            src={getTokenLogoUrl(chainId, prize.address)}
-                            alt={`${symbol} token`}
-                          />
+                  {Object.entries(prizes)
+                    .filter(([_, prize]) => {
+                      // Prioritize ERC20 - if any ERC20 exists, only show ERC20s
+                      const hasERC20 = Object.values(prizes).some(
+                        (p) => p.type === "erc20"
+                      );
+                      return hasERC20 ? prize.type === "erc20" : true;
+                    })
+                    .map(([key, prize]) => {
+                      const decimals = tokenDecimals[prize.address] || 18;
+                      const token = tokens.find(
+                        (t) => t.address === prize.address
+                      );
+                      const symbol = token?.symbol || key;
+                      return (
+                        <div
+                          className="flex flex-row items-center gap-2"
+                          key={key}
+                        >
+                          {prize.type === "erc20" ? (
+                            <>
+                              <span className="whitespace-nowrap">{`${formatNumber(
+                                Number(prize.value) / 10 ** decimals
+                              )}`}</span>
+                              <div className="w-6 h-6">
+                                <img
+                                  src={getTokenLogoUrl(chainId, prize.address)}
+                                  alt={`${symbol} token`}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <span className="whitespace-nowrap">
+                              {Array.isArray(prize.value) ? (
+                                <>
+                                  NFT #{prize.value[0]?.toString()}
+                                  {prize.value.length > 1 &&
+                                    ` +${prize.value.length - 1}`}
+                                </>
+                              ) : (
+                                `NFT #${prize.value.toString()}`
+                              )}
+                            </span>
+                          )}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : (
                 <span>No Prizes</span>
@@ -246,6 +276,56 @@ const Prize = ({
                 {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
               </span>
             )}
+          </div>
+        ) : Object.entries(prizes).length > 0 ? (
+          <div className="flex flex-row items-center gap-2 font-brand">
+            {Object.entries(prizes)
+              .filter(([_, prize]) => {
+                // Prioritize ERC20 - if any ERC20 exists, only show ERC20s
+                const hasERC20 = Object.values(prizes).some(
+                  (p) => p.type === "erc20"
+                );
+                return hasERC20 ? prize.type === "erc20" : true;
+              })
+              .map(([key, prize]) => {
+                const decimals = tokenDecimals[prize.address] || 18;
+                const token = tokens.find(
+                  (t) => t.address === prize.address
+                );
+                const symbol = token?.symbol || key;
+                return (
+                  <div
+                    className="flex flex-row items-center gap-2"
+                    key={key}
+                  >
+                    {prize.type === "erc20" ? (
+                      <>
+                        <span className="whitespace-nowrap">{`${formatNumber(
+                          Number(prize.value) / 10 ** decimals
+                        )}`}</span>
+                        <div className="w-6 h-6">
+                          <img
+                            src={getTokenLogoUrl(chainId, prize.address)}
+                            alt={`${symbol} token`}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <span className="whitespace-nowrap">
+                        {Array.isArray(prize.value) ? (
+                          <>
+                            NFT #{prize.value[0]?.toString()}
+                            {prize.value.length > 1 &&
+                              ` +${prize.value.length - 1}`}
+                          </>
+                        ) : (
+                          `NFT #${prize.value.toString()}`
+                        )}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         ) : (
           <span>No Prizes</span>

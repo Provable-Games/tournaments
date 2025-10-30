@@ -186,8 +186,8 @@ export const PrizesTableDialog = ({
                                       <span className="text-xs text-muted-foreground">{token?.symbol || symbol}</span>
                                     </>
                                   ) : (
-                                    <span>{`${(prize.value as bigint[]).length} NFT${
-                                      (prize.value as bigint[]).length === 1 ? "" : "s"
+                                    <span>{`${Array.isArray(prize.value) ? prize.value.length : 1} NFT${
+                                      (Array.isArray(prize.value) ? prize.value.length : 1) === 1 ? "" : "s"
                                     }`}</span>
                                   )}
                                 </div>
@@ -280,9 +280,9 @@ export const PrizesTableDialog = ({
                                     </>
                                   ) : (
                                     <span>{`${
-                                      (prize.value as bigint[]).length
+                                      Array.isArray(prize.value) ? prize.value.length : 1
                                     } NFT${
-                                      (prize.value as bigint[]).length === 1
+                                      (Array.isArray(prize.value) ? prize.value.length : 1) === 1
                                         ? ""
                                         : "s"
                                     }`}</span>

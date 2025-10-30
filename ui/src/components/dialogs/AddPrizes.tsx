@@ -51,7 +51,7 @@ export function AddPrizesDialog({
   tournamentName: string;
   leaderboardSize: number;
 }) {
-  const { address } = useAccount();
+  const { address, account } = useAccount();
   const { namespace, selectedChainConfig } = useDojo();
   const { connect } = useConnectToSelectedChain();
   const {
@@ -302,10 +302,12 @@ export function AddPrizesDialog({
                 erc20: {
                   amount: addAddressPadding(
                     bigintToHex(
-                      BigInt(Math.floor(
-                        prize.amount! *
-                          10 ** (newDecimals[prize.tokenAddress] || 18)
-                      ))
+                      BigInt(
+                        Math.floor(
+                          prize.amount! *
+                            10 ** (newDecimals[prize.tokenAddress] || 18)
+                        )
+                      )
                     )
                   ),
                 },
@@ -396,8 +398,9 @@ export function AddPrizesDialog({
   }, 0);
 
   const uniqueTokenSymbols = useMemo(() => {
-    // First map to get symbols, then filter out undefined values, then create a Set
+    // Filter to only include ERC20 tokens, then map to get symbols
     const symbols = currentPrizes
+      .filter((prize) => prize.tokenType === "ERC20")
       .map((prize) => getTokenSymbol(chainId, prize.tokenAddress))
       .filter(
         (symbol): symbol is string =>
@@ -411,21 +414,25 @@ export function AddPrizesDialog({
   const { prices, isLoading: pricesLoading } = useEkuboPrices({
     tokens: [
       ...uniqueTokenSymbols,
-      ...(newPrize.tokenAddress
+      // Only include new prize if it's ERC20
+      ...(newPrize.tokenAddress && newPrize.tokenType === "ERC20"
         ? [getTokenSymbol(chainId, newPrize.tokenAddress) ?? ""]
         : []),
     ],
   });
 
   useEffect(() => {
-    setNewPrize((prev) => ({
-      ...prev,
-      amount:
-        (prev.value ?? 0) /
-        (prices?.[getTokenSymbol(chainId, prev.tokenAddress) ?? ""] ?? 1),
-      hasPrice: !!prices?.[getTokenSymbol(chainId, prev.tokenAddress) ?? ""],
-    }));
-  }, [prices, newPrize.value]);
+    // Only calculate amount from price for ERC20 tokens
+    if (newPrize.tokenType === "ERC20") {
+      setNewPrize((prev) => ({
+        ...prev,
+        amount:
+          (prev.value ?? 0) /
+          (prices?.[getTokenSymbol(chainId, prev.tokenAddress) ?? ""] ?? 1),
+        hasPrice: !!prices?.[getTokenSymbol(chainId, prev.tokenAddress) ?? ""],
+      }));
+    }
+  }, [prices, newPrize.value, newPrize.tokenType]);
 
   const checkAllBalances = useCallback(async () => {
     if (!address) return;
@@ -433,15 +440,19 @@ export function AddPrizesDialog({
     setIsLoadingBalances(true);
 
     try {
-      // Get unique token addresses
-      const uniqueTokens = Array.from(
-        new Set(currentPrizes.map((prize) => prize.tokenAddress))
+      // Get unique ERC20 token addresses only
+      const uniqueERC20Tokens = Array.from(
+        new Set(
+          currentPrizes
+            .filter((prize) => prize.tokenType === "ERC20")
+            .map((prize) => prize.tokenAddress)
+        )
       );
 
-      // Fetch balances for each token
+      // Fetch balances for each ERC20 token
       const balances: Record<string, bigint> = {};
 
-      for (const tokenAddress of uniqueTokens) {
+      for (const tokenAddress of uniqueERC20Tokens) {
         const balance = await getBalanceGeneral(tokenAddress);
         balances[tokenAddress] = balance;
       }
@@ -479,10 +490,34 @@ export function AddPrizesDialog({
             break;
           }
         } else if (prize.tokenType === "ERC721") {
-          // For ERC721, we would need to check ownership of each token ID
-          // This would require additional API calls to check NFT ownership
-          // For simplicity, we'll assume the check is done elsewhere or skip it
-          break;
+          // For ERC721, check ownership of each token ID
+          const tokenIds = prize.tokenIds || [];
+          for (const tokenId of tokenIds) {
+            try {
+              // owner_of expects token_id as u256 (low, high)
+              const ownerResult = await account?.callContract({
+                contractAddress: prize.tokenAddress,
+                entrypoint: "owner_of",
+                calldata: [tokenId.toString(), "0"], // u256: low, high
+              });
+
+              // owner_of returns the owner address
+              const owner = ownerResult?.[0];
+
+              // Compare owner address with user's address
+              if (BigInt(owner || "0") !== BigInt(address || "0")) {
+                insufficient = true;
+                console.error(`User does not own token ID ${tokenId} of ${prize.tokenAddress}`);
+                break;
+              }
+            } catch (error) {
+              console.error(`Error checking ownership of token ID ${tokenId}:`, error);
+              insufficient = true;
+              break;
+            }
+          }
+
+          if (insufficient) break;
         }
       }
 
@@ -493,7 +528,7 @@ export function AddPrizesDialog({
     } finally {
       setIsLoadingBalances(false);
     }
-  }, [address, currentPrizes, aggregatedPrizesArray]);
+  }, [address, account, currentPrizes, aggregatedPrizesArray, tokenDecimals, getTokenDecimals]);
 
   useEffect(() => {
     if (onConfirmation && address) {
@@ -690,7 +725,7 @@ export function AddPrizesDialog({
                   <span className="min-w-[100px] font-brand">
                     {isERC20 ? "Amount ($)" : "Token ID"}
                   </span>
-                  {!pricesLoading ? (
+                  {isERC20 && !pricesLoading ? (
                     <div className="flex flex-row items-center gap-2">
                       <p>~{formatNumber(newPrize.amount ?? 0)}</p>
                       <img
@@ -698,9 +733,9 @@ export function AddPrizesDialog({
                         className="w-6 h-6 rounded-full"
                       />
                     </div>
-                  ) : (
+                  ) : isERC20 && pricesLoading ? (
                     <p>Loading...</p>
-                  )}
+                  ) : null}
                 </div>
                 {isERC20 ? (
                   <AmountInput

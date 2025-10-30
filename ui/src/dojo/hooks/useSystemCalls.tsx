@@ -239,8 +239,14 @@ export const useSystemCalls = () => {
   ) => {
     try {
       let calls = [];
-      const summedCalls = Object.values(
-        prizes.reduce((acc: { [key: string]: any }, prize) => {
+
+      // Separate ERC20 and ERC721 prizes
+      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+
+      // Handle ERC20 approvals - sum amounts for same token
+      const erc20ApprovalCalls = Object.values(
+        erc20Prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
           if (!acc[tokenAddress]) {
             acc[tokenAddress] = {
@@ -272,7 +278,21 @@ export const useSystemCalls = () => {
         entrypoint,
         calldata,
       }));
-      calls.push(...summedCalls);
+
+      // Handle ERC721 approvals - individual approve for each token ID
+      const erc721ApprovalCalls = erc721Prizes.map((prize) => ({
+        contractAddress: prize.token_address,
+        entrypoint: "approve",
+        calldata: CallData.compile([
+          tournamentAddress,
+          { low: prize.token_type.variant.erc721?.id || "1", high: "0" }, // Token ID as u256
+        ]),
+      }));
+
+      // Add all approval calls
+      calls.push(...erc20ApprovalCalls, ...erc721ApprovalCalls);
+
+      // Add prize calls
       for (const prize of prizes) {
         const addPrizesCall = {
           contractAddress: tournamentAddress,
@@ -286,6 +306,8 @@ export const useSystemCalls = () => {
         };
         calls.push(addPrizesCall);
       }
+
+      console.log(calls);
 
       const tx = await account?.execute(calls);
 
@@ -313,9 +335,13 @@ export const useSystemCalls = () => {
     onProgress?: (current: number, total: number) => void
   ) => {
     try {
-      // Calculate all approvals needed
-      const approvalCalls = Object.values(
-        prizes.reduce((acc: { [key: string]: any }, prize) => {
+      // Separate ERC20 and ERC721 prizes
+      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+
+      // Calculate ERC20 approvals - sum amounts for same token
+      const erc20ApprovalCalls = Object.values(
+        erc20Prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
           if (!acc[tokenAddress]) {
             acc[tokenAddress] = {
@@ -347,6 +373,19 @@ export const useSystemCalls = () => {
         entrypoint,
         calldata,
       }));
+
+      // Calculate ERC721 approvals - individual approve for each token ID
+      const erc721ApprovalCalls = erc721Prizes.map((prize) => ({
+        contractAddress: prize.token_address,
+        entrypoint: "approve",
+        calldata: CallData.compile([
+          tournamentAddress,
+          { low: prize.token_type.variant.erc721?.id || "1", high: "0" }, // Token ID as u256
+        ]),
+      }));
+
+      // Combine all approval calls
+      const approvalCalls = [...erc20ApprovalCalls, ...erc721ApprovalCalls];
 
       // Split prizes into batches
       const batches = [];
@@ -443,8 +482,14 @@ export const useSystemCalls = () => {
         ]),
       };
       calls.push(createCall);
-      const summedCalls = Object.values(
-        prizes.reduce((acc: { [key: string]: any }, prize) => {
+
+      // Separate ERC20 and ERC721 prizes
+      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+
+      // Handle ERC20 approvals
+      const erc20ApprovalCalls = Object.values(
+        erc20Prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
           if (!acc[tokenAddress]) {
             acc[tokenAddress] = {
@@ -476,7 +521,18 @@ export const useSystemCalls = () => {
         entrypoint,
         calldata,
       }));
-      calls.push(...summedCalls);
+
+      // Handle ERC721 approvals
+      const erc721ApprovalCalls = erc721Prizes.map((prize) => ({
+        contractAddress: prize.token_address,
+        entrypoint: "approve",
+        calldata: CallData.compile([
+          tournamentAddress,
+          { low: prize.token_type.variant.erc721?.id || "1", high: "0" },
+        ]),
+      }));
+
+      calls.push(...erc20ApprovalCalls, ...erc721ApprovalCalls);
       for (const prize of prizes) {
         const addPrizesCall = {
           contractAddress: tournamentAddress,
@@ -538,9 +594,13 @@ export const useSystemCalls = () => {
         ]),
       };
 
-      // Calculate all approvals
-      const approvalCalls = Object.values(
-        prizes.reduce((acc: { [key: string]: any }, prize) => {
+      // Separate ERC20 and ERC721 prizes
+      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+
+      // Calculate ERC20 approvals
+      const erc20ApprovalCalls = Object.values(
+        erc20Prizes.reduce((acc: { [key: string]: any }, prize) => {
           const tokenAddress = prize.token_address;
           if (!acc[tokenAddress]) {
             acc[tokenAddress] = {
@@ -572,6 +632,19 @@ export const useSystemCalls = () => {
         entrypoint,
         calldata,
       }));
+
+      // Calculate ERC721 approvals
+      const erc721ApprovalCalls = erc721Prizes.map((prize) => ({
+        contractAddress: prize.token_address,
+        entrypoint: "approve",
+        calldata: CallData.compile([
+          tournamentAddress,
+          { low: prize.token_type.variant.erc721?.id || "1", high: "0" },
+        ]),
+      }));
+
+      // Combine all approval calls
+      const approvalCalls = [...erc20ApprovalCalls, ...erc721ApprovalCalls];
 
       // Split prizes into batches
       const batches = [];
