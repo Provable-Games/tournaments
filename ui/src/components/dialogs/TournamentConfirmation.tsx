@@ -313,11 +313,11 @@ const TournamentConfirmation = ({
                         <div className="flex flex-row items-center gap-2">
                           <span className="font-mono text-xs">
                             {displayAddress(
-                              formData.gatingOptions.extension ?? ""
+                              formData.gatingOptions.extension?.address ?? ""
                             )}
                           </span>
                           <a
-                            href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.gatingOptions.extension}`}
+                            href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.gatingOptions.extension?.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-6 text-neutral"
@@ -325,6 +325,16 @@ const TournamentConfirmation = ({
                             <EXTERNAL_LINK />
                           </a>
                         </div>
+                        {formData.gatingOptions.extension?.config && (
+                          <>
+                            <span className="text-muted-foreground">
+                              Extension Config:
+                            </span>
+                            <span className="font-mono text-xs break-all">
+                              {formData.gatingOptions.extension.config}
+                            </span>
+                          </>
+                        )}
                       </>
                     ) : (
                       <>

@@ -34,7 +34,6 @@ import {
   useGetTournamentRegistrants,
   useGetTournamentLeaderboards,
   useGetTournamentQualificationEntries,
-  useGetTournamentExtensionEntries,
 } from "@/dojo/hooks/useSqlQueries";
 import { useGameTokens } from "metagame-sdk";
 import { useDojo } from "@/context/dojo";
@@ -107,6 +106,8 @@ export function EnterTournamentDialog({
         proof,
         address
       );
+
+      console.log(qualificationProof);
 
       await approveAndEnterTournament(
         tournamentModel?.entry_fee,
@@ -201,16 +202,9 @@ export function EnterTournamentDialog({
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.allowlist;
 
-  const extensionAddress =
+  const extensionConfig =
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.extension;
-
-  const { data: extensionEntries } = useGetTournamentExtensionEntries({
-    namespace: namespace ?? "",
-    tournamentId: tournamentModel?.id ?? 0n,
-    extensionAddress: extensionAddress ?? "",
-    active: requirementVariant === "extension" && !!extensionAddress,
-  });
 
   const { data: ownedTokens } = useGetAccountTokenIds(
     indexAddress(address ?? ""),
@@ -717,21 +711,16 @@ export function EnterTournamentDialog({
         };
       }
 
-      // Get current entry count for this address from extensionEntries
-      // Note: We're summing all entries for this address, regardless of the specific proof data
-      const currentEntryCount =
-        extensionEntries?.reduce(
-          (sum: number, entry: any) => sum + (entry.entry_count || 0),
-          0
-        ) ?? 0;
+      // Get current entry count for this player from entryCountModel
+      const currentEntryCount = entryCountModel?.count ?? 0;
 
       // Calculate remaining entries
       const remaining = hasEntryLimit
-        ? Number(entryLimit) - currentEntryCount
+        ? Number(entryLimit) - Number(currentEntryCount)
         : Infinity;
 
-      // For extensions, we assume they can enter (the extension contract will validate on-chain)
-      // We just check if they have entries left based on the entry limit
+      // For extensions, we assume they can enter if they have entries left
+      // The extension contract will validate the actual entry requirements on-chain
       if (remaining > 0 || !hasEntryLimit) {
         canEnter = true;
         entriesLeftByTournament = [
@@ -766,8 +755,6 @@ export function EnterTournamentDialog({
     requirementVariant,
     address,
     allowlistAddresses,
-    extensionEntries,
-    extensionAddress,
     entryCountModel?.count,
   ]);
 
@@ -812,7 +799,10 @@ export function EnterTournamentDialog({
                   <div className="flex flex-row items-center gap-2">
                     <div className="flex flex-row items-center gap-2">
                       <span>
-                        {formatNumber(Number(entryAmount) / 10 ** getTokenDecimals(chainId, entryToken ?? ""))}
+                        {formatNumber(
+                          Number(entryAmount) /
+                            10 ** getTokenDecimals(chainId, entryToken ?? "")
+                        )}
                       </span>
                       <img
                         src={getTokenLogoUrl(chainId, entryToken ?? "")}
@@ -1095,11 +1085,8 @@ export function EnterTournamentDialog({
                   <div className="flex flex-col gap-2 px-4">
                     <div className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2">
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm text-muted-foreground">
-                          Extension Contract:
-                        </span>
                         <span className="font-mono text-xs">
-                          {displayAddress(extensionAddress ?? "")}
+                          {displayAddress(extensionConfig?.address ?? "")}
                         </span>
                       </div>
                       {meetsEntryRequirements ? (

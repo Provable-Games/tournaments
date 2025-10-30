@@ -72,7 +72,12 @@ const formSchema = z.object({
         })
         .optional(),
       addresses: z.array(z.string()).default([]),
-      extension: z.string().optional(),
+      extension: z
+        .object({
+          address: z.string().optional(),
+          config: z.string().optional(),
+        })
+        .optional(),
     })
     .optional(),
   entryFees: z
@@ -155,6 +160,10 @@ const CreateTournament = () => {
         tournament: {
           tournaments: [],
           requirement: "participated",
+        },
+        extension: {
+          address: "",
+          config: "",
         },
       },
       entryFees: {
@@ -347,7 +356,7 @@ const CreateTournament = () => {
                       getValue("gatingOptions.addresses").length > 0
                     );
                   case "extension":
-                    return !!getValue("gatingOptions.extension");
+                    return !!getValue("gatingOptions.extension.address");
                   default:
                     return false;
                 }

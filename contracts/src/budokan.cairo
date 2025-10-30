@@ -329,14 +329,20 @@ pub mod Budokan {
 
             tournament.schedule.assert_registration_open(get_block_timestamp());
 
+            let caller_address = get_caller_address();
+
             // Determine the actual recipient based on entry requirements and qualification
             let mint_to_address = if let Option::Some(entry_requirement) = tournament
                 .entry_requirement {
                 let recipient = self
                     ._process_entry_requirement(
-                        ref store, tournament_id, entry_requirement, player_address, qualification,
+                        ref store, tournament_id, entry_requirement, qualification,
                     );
-                recipient
+                if recipient == caller_address {
+                    player_address
+                } else {
+                    recipient
+                }
             } else {
                 player_address
             };
@@ -850,7 +856,7 @@ pub mod Budokan {
                     );
                     let entry_validator_dispatcher = IEntryValidatorDispatcher { contract_address: extension_address };
                     let tournament_id = store.get_tournament_count();
-                    entry_validator_dispatcher.add_config(tournament_id + 1, extension_config.config);
+                    entry_validator_dispatcher.add_config(tournament_id + 1, entry_requirement.entry_limit, extension_config.config);
                 },
             }
         }
@@ -1489,7 +1495,6 @@ pub mod Budokan {
             ref store: Store,
             tournament_id: u64,
             entry_requirement: EntryRequirement,
-            player_address: ContractAddress,
             qualifier: Option<QualificationProof>,
         ) -> ContractAddress {
             let qualifier = match qualifier {
@@ -1504,17 +1509,13 @@ pub mod Budokan {
 
             let recipient = self
                 ._validate_entry_requirement(
-                    store, tournament_id, entry_requirement, player_address, qualifier,
+                    store, tournament_id, entry_requirement, qualifier,
                 );
 
-            // if entry limit was specified
-            if entry_requirement.entry_limit != 0 {
-                // check and update limit requirements
-                self
-                    ._update_qualification_entries(
-                        ref store, tournament_id, player_address, qualifier, entry_requirement.entry_limit,
-                    );
-            }
+            self
+                ._update_qualification_entries(
+                    ref store, tournament_id, qualifier, entry_requirement,
+                );
 
             recipient
         }
@@ -1523,21 +1524,56 @@ pub mod Budokan {
             self: @ContractState,
             ref store: Store,
             tournament_id: u64,
-            player_address: ContractAddress,
             qualifier: QualificationProof,
-            entry_limit: u8,
+            entry_requirement: EntryRequirement,
         ) {
-            let mut qualification_entries = store
-                .get_qualification_entries(tournament_id, qualifier);
+            match entry_requirement.entry_requirement_type {
+                EntryRequirementType::extension(extension_config) => {
+                    let extension_address = extension_config.address;
+                    let entry_validator_dispatcher = IEntryValidatorDispatcher {
+                        contract_address: extension_address,
+                    };
+                    let display_extension_address: felt252 = extension_address.into();
+                    let caller_address = get_caller_address();
 
-            self
-                ._assert_under_entry_limit(
-                    tournament_id, qualification_entries.entry_count, entry_limit,
-                );
+                    let qualification = match qualifier {
+                        QualificationProof::Extension(qual) => qual,
+                        _ => panic!("Tournament: Provided qualification proof is not of type 'Extension'"),
+                    };
 
-            qualification_entries.entry_count += 1;
+                    let entries_left = entry_validator_dispatcher
+                        .entries_left(tournament_id, caller_address, qualification);
 
-            store.set_qualification_entries(@qualification_entries);
+                    match entries_left {
+                        Option::Some(entries_left) => {
+                            assert!(
+                                entries_left > 0,
+                                "Tournament: No entries left according to extension {}",
+                                display_extension_address,
+                            );
+                        },
+                        Option::None => {},
+                    }
+
+                    entry_validator_dispatcher.add_entry(tournament_id, caller_address, qualification);
+                },
+                _ => {
+                    let entry_limit = entry_requirement.entry_limit;
+                    if entry_limit != 0 {
+                        let mut qualification_entries = store
+                            .get_qualification_entries(tournament_id, qualifier);
+
+                        self
+                            ._assert_under_entry_limit(
+                                tournament_id, qualification_entries.entry_count, entry_limit,
+                            );
+
+                        qualification_entries.entry_count += 1;
+
+                        store.set_qualification_entries(@qualification_entries);
+                    }
+                },
+            }
         }
 
         fn _validate_entry_requirement(
@@ -1545,18 +1581,17 @@ pub mod Budokan {
             store: Store,
             tournament_id: u64,
             entry_requirement: EntryRequirement,
-            player_address: ContractAddress,
             qualifier: QualificationProof,
         ) -> ContractAddress {
             match entry_requirement.entry_requirement_type {
                 EntryRequirementType::tournament(tournament_type) => {
                     self
                         ._validate_tournament_qualification(
-                            store, tournament_id, tournament_type, qualifier, player_address,
+                            store, tournament_id, tournament_type, qualifier,
                         )
                 },
                 EntryRequirementType::token(token_address) => {
-                    self._validate_nft_qualification(token_address, player_address, qualifier)
+                    self._validate_nft_qualification(token_address, qualifier)
                 },
                 EntryRequirementType::allowlist(addresses) => {
                     self._validate_allowlist_qualification(addresses, qualifier)
@@ -1564,7 +1599,7 @@ pub mod Budokan {
                 EntryRequirementType::extension(extension_config) => {
                     self
                         ._validate_extension_qualification(
-                            extension_config.address, tournament_id, player_address, qualifier,
+                            extension_config.address, tournament_id, qualifier,
                         )
                 },
             }
@@ -1576,7 +1611,6 @@ pub mod Budokan {
             tournament_id: u64,
             tournament_type: TournamentType,
             qualifier: QualificationProof,
-            player_address: ContractAddress,
         ) -> ContractAddress {
             let qualifying_proof_tournament = match qualifier {
                 QualificationProof::Tournament(qual) => qual,
@@ -1619,7 +1653,6 @@ pub mod Budokan {
         fn _validate_nft_qualification(
             self: @ContractState,
             token_address: ContractAddress,
-            player_address: ContractAddress,
             qualifier: QualificationProof,
         ) -> ContractAddress {
             let qualification = match qualifier {
@@ -1675,7 +1708,6 @@ pub mod Budokan {
             self: @ContractState,
             extension_address: ContractAddress,
             tournament_id: u64,
-            player_address: ContractAddress,
             qualifier: QualificationProof,
         ) -> ContractAddress {
             let qualification = match qualifier {
@@ -1686,13 +1718,14 @@ pub mod Budokan {
             let entry_validator_dispatcher = IEntryValidatorDispatcher {
                 contract_address: extension_address,
             };
+            let caller_address = get_caller_address();
             let display_extension_address: felt252 = extension_address.into();
             assert!(
-                entry_validator_dispatcher.valid_entry(tournament_id, player_address, qualification),
-                "Tournament: Not a valid entry according to extension {}",
+                entry_validator_dispatcher.valid_entry(tournament_id, caller_address, qualification),
+                "Tournament: Invalid entry according to extension {}",
                 display_extension_address,
             );
-            player_address
+            caller_address
         }
 
         fn _contains_address(

@@ -894,7 +894,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                     <div className="space-y-4">
                       <FormField
                         control={form.control}
-                        name="gatingOptions.extension"
+                        name="gatingOptions.extension.address"
                         render={({ field }) => (
                           <FormItem>
                             <div className="flex flex-row items-center justify-between">
@@ -958,6 +958,31 @@ const EntryRequirements = ({ form }: StepProps) => {
                                   }
                                 }}
                                 className="font-mono"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="gatingOptions.extension.config"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex flex-row items-center gap-5">
+                              <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                Extension Config
+                              </FormLabel>
+                              <FormDescription className="hidden sm:block">
+                                Optional configuration values (comma-separated felt252 values)
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter configuration values separated by commas (optional)"
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                className="font-mono h-20"
                               />
                             </FormControl>
                             <FormMessage />

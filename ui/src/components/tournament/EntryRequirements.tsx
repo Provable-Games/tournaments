@@ -91,7 +91,7 @@ const EntryRequirements = ({
     [entryRequirement]
   );
 
-  const extensionAddress = useMemo(
+  const extensionConfig = useMemo(
     () => entryRequirement?.entry_requirement_type?.variant?.extension,
     [entryRequirement]
   );
@@ -247,15 +247,23 @@ const EntryRequirements = ({
               onClick={() => {
                 if (blockExplorerExists) {
                   window.open(
-                    `${selectedChainConfig.blockExplorerUrl}contract/${extensionAddress}`,
+                    `${selectedChainConfig.blockExplorerUrl}contract/${extensionConfig?.address}`,
                     "_blank"
                   );
                 }
               }}
             >
-              {displayAddress(extensionAddress ?? "0x0")}
+              {displayAddress(extensionConfig?.address ?? "0x0")}
             </span>
           </div>
+          {extensionConfig?.config && extensionConfig.config.length > 0 && (
+            <div className="flex flex-row items-center gap-2">
+              <span>Config:</span>
+              <span className="font-mono text-xs">
+                {extensionConfig.config.join(", ")}
+              </span>
+            </div>
+          )}
           {!!hasEntryLimit && (
             <div className="flex flex-row items-center gap-2">
               <span>Entry Limit:</span>

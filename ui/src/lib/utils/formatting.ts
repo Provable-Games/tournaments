@@ -81,11 +81,20 @@ export const processTournamentData = (
         });
         break;
       case "extension":
+        const configString = formData.gatingOptions.extension?.config || "";
+        const configArray = configString
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v !== "");
+
         entryRequirementType = new CairoCustomEnum({
           token: undefined,
           tournament: undefined,
           allowlist: undefined,
-          extension: formData.gatingOptions.extension,
+          extension: {
+            address: formData.gatingOptions.extension?.address,
+            config: configArray,
+          },
         });
         break;
     }
@@ -793,6 +802,7 @@ export const processQualificationProof = (
       },
       NFT: undefined,
       Address: undefined,
+      Extension: undefined,
     }) as QualificationProofEnum;
     return new CairoOption(CairoOptionVariant.Some, qualificationProof);
   }
@@ -809,6 +819,7 @@ export const processQualificationProof = (
           },
         },
         Address: undefined,
+        Extension: undefined,
       })
     );
   }
@@ -820,6 +831,19 @@ export const processQualificationProof = (
         Tournament: undefined,
         NFT: undefined,
         Address: address,
+        Extension: undefined,
+      })
+    );
+  }
+
+  if (requirementVariant === "extension") {
+    return new CairoOption(
+      CairoOptionVariant.Some,
+      new CairoCustomEnum({
+        Tournament: undefined,
+        NFT: undefined,
+        Address: undefined,
+        Extension: [address],
       })
     );
   }

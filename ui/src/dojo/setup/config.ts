@@ -18,7 +18,7 @@ export const namespace: Record<ChainId, string> = {
   [ChainId.KATANA_LOCAL]: "budokan_v_1_0_5",
   [ChainId.WP_PG_SLOT_2]: "budokan_1_0_8",
   [ChainId.SN_MAIN]: "budokan_1_0_8",
-  [ChainId.SN_SEPOLIA]: "budokan_1_0_8",
+  [ChainId.SN_SEPOLIA]: "budokan_1_0_9",
 };
 
 export const isChainIdSupported = (chainId: ChainId): boolean => {

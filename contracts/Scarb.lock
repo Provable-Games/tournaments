@@ -67,7 +67,7 @@ dependencies = [
 [[package]]
 name = "budokan_extensions"
 version = "0.1.0"
-source = "git+https://github.com/Provable-Games/budokan_extensions?tag=v2.10.1#cc7c94cf14ac8c3954743d454767632aee1b91e3"
+source = "git+https://github.com/Provable-Games/budokan_extensions?tag=v2.10.1#738ba0d1bd99a85b3e8ead70a4caa8387e2e9935"
 dependencies = [
  "openzeppelin_introspection",
 ]
