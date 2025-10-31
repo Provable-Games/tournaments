@@ -153,10 +153,6 @@ fn setup_uninitialized(
     let erc721_old_mock_address = deploy_contract(
         erc721_old_mock::TEST_CLASS_HASH.try_into().unwrap(), array![].span(),
     );
-    let entry_validator_address = deploy_contract(
-        entry_validator_mock::TEST_CLASS_HASH.try_into().unwrap(),
-        array![].span(),
-    );
 
     // Create token data array for new dojo_init signature
     let mut token_data_array = array![];
@@ -186,6 +182,16 @@ fn setup_uninitialized(
     let mut world: WorldStorage = spawn_test_world([ndef].span());
 
     world.sync_perms_and_inits(contract_defs.span());
+
+    let budokan_address = match world.dns(@"Budokan") {
+        Option::Some((address, _)) => address,
+        Option::None => panic!("Budokan contract not found in world DNS"),
+    };
+
+    let entry_validator_address = deploy_contract(
+        entry_validator_mock::TEST_CLASS_HASH.try_into().unwrap(),
+        array![budokan_address.into()].span(),
+    );
 
     (
         world,
@@ -1429,7 +1435,7 @@ fn extension_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Invalid entry according to extension 3243892164240773983371536319759829868894678980788413761500033062811923288009", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604", 'ENTRYPOINT_FAILED'))]
 fn extension_gated_tournament_unauthorized() {
     let contracts = setup();
 
@@ -1540,7 +1546,7 @@ fn extension_gated_tournament_with_entry_limit() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: No entries left according to extension 3243892164240773983371536319759829868894678980788413761500033062811923288009", 'ENTRYPOINT_FAILED',
+        "Tournament: No entries left according to extension 3198880150313214248254433740675338226373736608746889057700323064944915799923", 'ENTRYPOINT_FAILED',
     ),
 )]
 fn extension_gated_tournament_entry_limit_enforced() {
@@ -1668,7 +1674,7 @@ fn extension_gated_caller_qualifies_different_player() {
 
 // When caller does NOT qualify via extension, entry should fail or go to qualified address
 #[test]
-#[should_panic(expected: ("Tournament: Invalid entry according to extension 3243892164240773983371536319759829868894678980788413761500033062811923288009", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604", 'ENTRYPOINT_FAILED'))]
 fn extension_gated_caller_does_not_qualify() {
     let contracts = setup();
 

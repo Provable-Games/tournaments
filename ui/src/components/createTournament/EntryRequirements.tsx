@@ -99,7 +99,7 @@ const EntryRequirements = ({ form }: StepProps) => {
     form.setValue("gatingOptions.tournament.requirement", "participated");
     form.setValue("gatingOptions.tournament.tournaments", []);
     form.setValue("gatingOptions.addresses", []);
-    form.setValue("gatingOptions.extension", "");
+    form.setValue("gatingOptions.extension", undefined);
   };
 
   const getTournamentStatus = (isStarted: boolean, isEnded: boolean) => {

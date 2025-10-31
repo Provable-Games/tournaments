@@ -169,7 +169,7 @@ const EntryRequirements = ({
                   onClick={() => {
                     if (blockExplorerExists) {
                       window.open(
-                        `${selectedChainConfig.blockExplorerUrl}nft-contract/${token?.address}`,
+                        `${selectedChainConfig.blockExplorerUrl}/nft-contract/${token?.address}`,
                         "_blank"
                       );
                     }
@@ -247,7 +247,7 @@ const EntryRequirements = ({
               onClick={() => {
                 if (blockExplorerExists) {
                   window.open(
-                    `${selectedChainConfig.blockExplorerUrl}contract/${extensionConfig?.address}`,
+                    `${selectedChainConfig.blockExplorerUrl}/contract/${extensionConfig?.address}`,
                     "_blank"
                   );
                 }

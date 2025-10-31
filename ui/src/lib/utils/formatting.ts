@@ -21,6 +21,7 @@ import { PositionPrizes, TokenPrizes } from "@/lib/types";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { mainnetTokens } from "@/lib/mainnetTokens";
 import { sepoliaTokens } from "@/lib/sepoliaTokens";
+import { getExtensionProof } from "@/lib/extensionConfig";
 
 export const processTournamentData = (
   formData: TournamentFormData,
@@ -791,7 +792,9 @@ export const processPrizesFromSql = (
 export const processQualificationProof = (
   requirementVariant: string,
   proof: any,
-  address: string
+  address: string,
+  extensionAddress?: string,
+  extensionContext?: any
 ): CairoOption<QualificationProofEnum> => {
   if (requirementVariant === "tournament") {
     const qualificationProof = new CairoCustomEnum({
@@ -837,13 +840,18 @@ export const processQualificationProof = (
   }
 
   if (requirementVariant === "extension") {
+    // Get proof data from extension config
+    const extensionProofData = extensionAddress
+      ? getExtensionProof(extensionAddress, address, extensionContext)
+      : [address]; // Fallback to address if no extension address provided
+
     return new CairoOption(
       CairoOptionVariant.Some,
       new CairoCustomEnum({
         Tournament: undefined,
         NFT: undefined,
         Address: undefined,
-        Extension: [address],
+        Extension: extensionProofData,
       })
     );
   }

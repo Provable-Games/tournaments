@@ -40,6 +40,7 @@ import { useDojo } from "@/context/dojo";
 import { processQualificationProof } from "@/lib/utils/formatting";
 import { getTokenLogoUrl, getTokenDecimals } from "@/lib/tokensMeta";
 import { LoadingSpinner } from "@/components/ui/spinner";
+import { getExtensionProof } from "@/lib/extensionConfig";
 
 interface EnterTournamentDialogProps {
   open: boolean;
@@ -89,10 +90,20 @@ export function EnterTournamentDialog({
   const { connectController } = useConnectController();
   const { disconnect } = useDisconnect();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndEnterTournament, getBalanceGeneral } = useSystemCalls();
+  const {
+    approveAndEnterTournament,
+    getBalanceGeneral,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
   const [balance, setBalance] = useState<BigNumberish>(0);
   const [isEntering, setIsEntering] = useState(false);
+  const [extensionValidEntry, setExtensionValidEntry] =
+    useState<boolean>(false);
+  const [extensionEntriesLeft, setExtensionEntriesLeft] = useState<
+    number | null
+  >(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -104,10 +115,10 @@ export function EnterTournamentDialog({
       const qualificationProof = processQualificationProof(
         requirementVariant ?? "",
         proof,
-        address
+        address,
+        extensionConfig?.address,
+        {} // Additional context if needed
       );
-
-      console.log(qualificationProof);
 
       await approveAndEnterTournament(
         tournamentModel?.entry_fee,
@@ -205,6 +216,59 @@ export function EnterTournamentDialog({
   const extensionConfig =
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.extension;
+
+  useEffect(() => {
+    const checkExtensionEntry = async () => {
+      if (
+        requirementVariant === "extension" &&
+        address &&
+        extensionConfig &&
+        open
+      ) {
+        try {
+          const extensionAddress = extensionConfig.address;
+          // Get proof data from extension config
+          const qualification = getExtensionProof(
+            extensionAddress,
+            address,
+            {} // Additional context if needed
+          );
+
+          const [validEntry, entriesLeft] = await Promise.all([
+            checkExtensionValidEntry(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+            getExtensionEntriesLeft(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+          ]);
+
+          setExtensionValidEntry(validEntry);
+          setExtensionEntriesLeft(entriesLeft);
+        } catch (error) {
+          console.error("Error checking extension entry:", error);
+          setExtensionValidEntry(false);
+          setExtensionEntriesLeft(null);
+        }
+      }
+    };
+
+    checkExtensionEntry();
+  }, [
+    requirementVariant,
+    address,
+    extensionConfig,
+    open,
+    tournamentModel?.id,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  ]);
 
   const { data: ownedTokens } = useGetAccountTokenIds(
     indexAddress(address ?? ""),
@@ -711,17 +775,12 @@ export function EnterTournamentDialog({
         };
       }
 
-      // Get current entry count for this player from entryCountModel
-      const currentEntryCount = entryCountModel?.count ?? 0;
+      // Use extension contract validation results
+      const remaining =
+        extensionEntriesLeft !== null ? extensionEntriesLeft : Infinity;
 
-      // Calculate remaining entries
-      const remaining = hasEntryLimit
-        ? Number(entryLimit) - Number(currentEntryCount)
-        : Infinity;
-
-      // For extensions, we assume they can enter if they have entries left
-      // The extension contract will validate the actual entry requirements on-chain
-      if (remaining > 0 || !hasEntryLimit) {
+      // Check if extension validation passed and has entries left
+      if (extensionValidEntry && remaining > 0) {
         canEnter = true;
         entriesLeftByTournament = [
           {
@@ -756,6 +815,8 @@ export function EnterTournamentDialog({
     address,
     allowlistAddresses,
     entryCountModel?.count,
+    extensionValidEntry,
+    extensionEntriesLeft,
   ]);
 
   // display the entry fee distribution
