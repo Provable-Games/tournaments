@@ -1718,7 +1718,7 @@ pub mod Budokan {
         ) -> ContractAddress {
             let qualification = match qualifier {
                 QualificationProof::Extension(qual) => qual,
-                _ => panic!("Tournament: Provided qualification proof is not of type 'Address'"),
+                _ => panic!("Tournament: Provided qualification proof is not of type 'Extension'"),
             };
 
             let entry_validator_dispatcher = IEntryValidatorDispatcher {
