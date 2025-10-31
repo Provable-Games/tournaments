@@ -210,7 +210,7 @@ pub enum QualificationProof {
     // For qualifying via NFT ownership
     NFT: NFTQualification,
     Address: ContractAddress,
-    Extension: Span<felt252>
+    Extension: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

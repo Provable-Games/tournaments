@@ -17,9 +17,10 @@ use budokan::libs::store::{Store as BudokanStore, StoreTrait as BudokanStoreTrai
 use budokan::models::{
     budokan::{
         m_Tournament, m_Registration, m_EntryCount, m_Leaderboard, m_Prize, m_Token, m_PrizeMetrics,
-        m_PlatformMetrics, m_TournamentTokenMetrics, m_PrizeClaim, m_QualificationEntries, ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement,
-        EntryRequirementType, TournamentType, Prize, PrizeType, Role, QualificationProof,
-        TournamentQualification, NFTQualification, TokenData, TokenTypeData, ExtensionConfig,
+        m_PlatformMetrics, m_TournamentTokenMetrics, m_PrizeClaim, m_QualificationEntries,
+        ERC20Data, ERC721Data, EntryFee, TokenType, EntryRequirement, EntryRequirementType,
+        TournamentType, Prize, PrizeType, Role, QualificationProof, TournamentQualification,
+        NFTQualification, TokenData, TokenTypeData, ExtensionConfig,
     },
 };
 use budokan::models::schedule::{Schedule, Period, Phase};
@@ -1014,15 +1015,21 @@ fn tournament_gated_caller_owns_qualifying_token_different_player() {
         ),
     );
 
-    // Since caller (OWNER) owns the qualifying token, token should go to player_address (different_player)
+    // Since caller (OWNER) owns the qualifying token, token should go to player_address
+    // (different_player)
     let (second_entry_token_id, _) = contracts
         .budokan
         .enter_tournament(second_tournament.id, 'test_player2', different_player, qualifying_token);
 
     // Verify the game token was minted to player_address (different_player), not the caller (OWNER)
-    let denshokan_erc721 = IERC721Dispatcher { contract_address: contracts.denshokan.contract_address };
+    let denshokan_erc721 = IERC721Dispatcher {
+        contract_address: contracts.denshokan.contract_address,
+    };
     let token_owner = denshokan_erc721.owner_of(second_entry_token_id.into());
-    assert!(token_owner == different_player, "Token should be owned by player_address (different_player), not caller (OWNER)");
+    assert!(
+        token_owner == different_player,
+        "Token should be owned by player_address (different_player), not caller (OWNER)",
+    );
 }
 
 // When caller does NOT own the qualifying tournament token, token goes to the token owner
@@ -1098,10 +1105,16 @@ fn tournament_gated_caller_does_not_own_qualifying_token() {
         .budokan
         .enter_tournament(second_tournament.id, 'test_player2', different_player, qualifying_token);
 
-    // Verify the game token was minted to the qualified token owner (qualified_player), not player_address
-    let denshokan_erc721 = IERC721Dispatcher { contract_address: contracts.denshokan.contract_address };
+    // Verify the game token was minted to the qualified token owner (qualified_player), not
+    // player_address
+    let denshokan_erc721 = IERC721Dispatcher {
+        contract_address: contracts.denshokan.contract_address,
+    };
     let token_owner = denshokan_erc721.owner_of(second_entry_token_id.into());
-    assert!(token_owner == qualified_player, "Token should be owned by qualified token owner (qualified_player), not player_address or caller");
+    assert!(
+        token_owner == qualified_player,
+        "Token should be owned by qualified token owner (qualified_player), not player_address or caller",
+    );
 }
 
 #[test]
@@ -1304,10 +1317,16 @@ fn allowlist_gated_caller_different_from_qualification_address() {
         .budokan
         .enter_tournament(tournament.id, 'test_player1', OWNER(), player_qualification);
 
-    // Verify the game token was minted to the qualified address (allowed_player), not the caller (OWNER)
-    let denshokan_erc721 = IERC721Dispatcher { contract_address: contracts.denshokan.contract_address };
+    // Verify the game token was minted to the qualified address (allowed_player), not the caller
+    // (OWNER)
+    let denshokan_erc721 = IERC721Dispatcher {
+        contract_address: contracts.denshokan.contract_address,
+    };
     let token_owner = denshokan_erc721.owner_of(game_token_id.into());
-    assert!(token_owner == allowed_player, "Token should be owned by qualified address (allowed_player), not caller");
+    assert!(
+        token_owner == allowed_player,
+        "Token should be owned by qualified address (allowed_player), not caller",
+    );
 }
 
 // When caller IS the qualified address, they can specify where the token goes
@@ -1350,9 +1369,14 @@ fn allowlist_gated_caller_is_qualified_address_different_player() {
         .enter_tournament(tournament.id, 'test_player1', OWNER(), player_qualification);
 
     // Verify the game token was minted to player_address (OWNER), not the caller (allowed_player)
-    let denshokan_erc721 = IERC721Dispatcher { contract_address: contracts.denshokan.contract_address };
+    let denshokan_erc721 = IERC721Dispatcher {
+        contract_address: contracts.denshokan.contract_address,
+    };
     let token_owner = denshokan_erc721.owner_of(game_token_id.into());
-    assert!(token_owner == OWNER(), "Token should be owned by player_address (OWNER), not caller (allowed_player)");
+    assert!(
+        token_owner == OWNER(),
+        "Token should be owned by player_address (OWNER), not caller (allowed_player)",
+    );
 }
 
 #[test]
@@ -1435,7 +1459,12 @@ fn extension_gated_tournament() {
 }
 
 #[test]
-#[should_panic(expected: ("Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604", 'ENTRYPOINT_FAILED'))]
+#[should_panic(
+    expected: (
+        "Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604",
+        'ENTRYPOINT_FAILED',
+    ),
+)]
 fn extension_gated_tournament_unauthorized() {
     let contracts = setup();
 
@@ -1477,7 +1506,9 @@ fn extension_gated_tournament_unauthorized() {
     // Try to enter with unauthorized account - should panic
     contracts
         .budokan
-        .enter_tournament(tournament.id, 'unauthorized_player', unauthorized_player, qualification_proof);
+        .enter_tournament(
+            tournament.id, 'unauthorized_player', unauthorized_player, qualification_proof,
+        );
 }
 
 #[test]
@@ -1546,7 +1577,8 @@ fn extension_gated_tournament_with_entry_limit() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: No entries left according to extension 3198880150313214248254433740675338226373736608746889057700323064944915799923", 'ENTRYPOINT_FAILED',
+        "Tournament: No entries left according to extension 3198880150313214248254433740675338226373736608746889057700323064944915799923",
+        'ENTRYPOINT_FAILED',
     ),
 )]
 fn extension_gated_tournament_entry_limit_enforced() {
@@ -1667,14 +1699,24 @@ fn extension_gated_caller_qualifies_different_player() {
         .enter_tournament(tournament.id, 'test_player', different_player, qualification_proof);
 
     // Since caller (OWNER) qualifies, token should go to player_address (different_player)
-    let denshokan_erc721 = IERC721Dispatcher { contract_address: contracts.denshokan.contract_address };
+    let denshokan_erc721 = IERC721Dispatcher {
+        contract_address: contracts.denshokan.contract_address,
+    };
     let token_owner = denshokan_erc721.owner_of(token_id.into());
-    assert!(token_owner == different_player, "Token should be owned by player_address (different_player), not caller (OWNER)");
+    assert!(
+        token_owner == different_player,
+        "Token should be owned by player_address (different_player), not caller (OWNER)",
+    );
 }
 
 // When caller does NOT qualify via extension, entry should fail or go to qualified address
 #[test]
-#[should_panic(expected: ("Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604", 'ENTRYPOINT_FAILED'))]
+#[should_panic(
+    expected: (
+        "Tournament: Invalid entry according to extension 2355435496097511124504253313630214431942778808547458229421547602196818800604",
+        'ENTRYPOINT_FAILED',
+    ),
+)]
 fn extension_gated_caller_does_not_qualify() {
     let contracts = setup();
 
@@ -1716,7 +1758,9 @@ fn extension_gated_caller_does_not_qualify() {
     // Try to enter with unauthorized account - should panic
     contracts
         .budokan
-        .enter_tournament(tournament.id, 'unauthorized_player', unauthorized_player, qualification_proof);
+        .enter_tournament(
+            tournament.id, 'unauthorized_player', unauthorized_player, qualification_proof,
+        );
 }
 
 //

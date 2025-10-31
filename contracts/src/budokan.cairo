@@ -854,9 +854,16 @@ pub mod Budokan {
                         "Tournament: Qualification extension address {} doesn't support IEntryValidator interface",
                         display_extension_address,
                     );
-                    let entry_validator_dispatcher = IEntryValidatorDispatcher { contract_address: extension_address };
+                    let entry_validator_dispatcher = IEntryValidatorDispatcher {
+                        contract_address: extension_address,
+                    };
                     let tournament_id = store.get_tournament_count();
-                    entry_validator_dispatcher.add_config(tournament_id + 1, entry_requirement.entry_limit, extension_config.config);
+                    entry_validator_dispatcher
+                        .add_config(
+                            tournament_id + 1,
+                            entry_requirement.entry_limit,
+                            extension_config.config,
+                        );
                 },
             }
         }
@@ -1508,9 +1515,7 @@ pub mod Budokan {
             };
 
             let recipient = self
-                ._validate_entry_requirement(
-                    store, tournament_id, entry_requirement, qualifier,
-                );
+                ._validate_entry_requirement(store, tournament_id, entry_requirement, qualifier);
 
             self
                 ._update_qualification_entries(
@@ -1538,7 +1543,9 @@ pub mod Budokan {
 
                     let qualification = match qualifier {
                         QualificationProof::Extension(qual) => qual,
-                        _ => panic!("Tournament: Provided qualification proof is not of type 'Extension'"),
+                        _ => panic!(
+                            "Tournament: Provided qualification proof is not of type 'Extension'",
+                        ),
                     };
 
                     let entries_left = entry_validator_dispatcher
@@ -1555,7 +1562,8 @@ pub mod Budokan {
                         Option::None => {},
                     }
 
-                    entry_validator_dispatcher.add_entry(tournament_id, caller_address, qualification);
+                    entry_validator_dispatcher
+                        .add_entry(tournament_id, caller_address, qualification);
                 },
                 _ => {
                     let entry_limit = entry_requirement.entry_limit;
@@ -1651,9 +1659,7 @@ pub mod Budokan {
         }
 
         fn _validate_nft_qualification(
-            self: @ContractState,
-            token_address: ContractAddress,
-            qualifier: QualificationProof,
+            self: @ContractState, token_address: ContractAddress, qualifier: QualificationProof,
         ) -> ContractAddress {
             let qualification = match qualifier {
                 QualificationProof::NFT(qual) => qual,
@@ -1721,7 +1727,8 @@ pub mod Budokan {
             let caller_address = get_caller_address();
             let display_extension_address: felt252 = extension_address.into();
             assert!(
-                entry_validator_dispatcher.valid_entry(tournament_id, caller_address, qualification),
+                entry_validator_dispatcher
+                    .valid_entry(tournament_id, caller_address, qualification),
                 "Tournament: Invalid entry according to extension {}",
                 display_extension_address,
             );
