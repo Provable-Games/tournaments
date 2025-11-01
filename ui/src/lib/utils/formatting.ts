@@ -21,6 +21,7 @@ import { PositionPrizes, TokenPrizes } from "@/lib/types";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { mainnetTokens } from "@/lib/mainnetTokens";
 import { sepoliaTokens } from "@/lib/sepoliaTokens";
+import { getExtensionProof } from "@/lib/extensionConfig";
 
 export const processTournamentData = (
   formData: TournamentFormData,
@@ -52,6 +53,7 @@ export const processTournamentData = (
           token: formData.gatingOptions.token?.address,
           tournament: undefined,
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "tournament":
@@ -68,6 +70,7 @@ export const processTournamentData = (
                 : undefined,
           }),
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "addresses":
@@ -75,6 +78,24 @@ export const processTournamentData = (
           token: undefined,
           tournament: undefined,
           allowlist: formData.gatingOptions.addresses,
+          extension: undefined,
+        });
+        break;
+      case "extension":
+        const configString = formData.gatingOptions.extension?.config || "";
+        const configArray = configString
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v !== "");
+
+        entryRequirementType = new CairoCustomEnum({
+          token: undefined,
+          tournament: undefined,
+          allowlist: undefined,
+          extension: {
+            address: formData.gatingOptions.extension?.address,
+            config: configArray,
+          },
         });
         break;
     }
@@ -771,7 +792,9 @@ export const processPrizesFromSql = (
 export const processQualificationProof = (
   requirementVariant: string,
   proof: any,
-  address: string
+  address: string,
+  extensionAddress?: string,
+  extensionContext?: any
 ): CairoOption<QualificationProofEnum> => {
   if (requirementVariant === "tournament") {
     const qualificationProof = new CairoCustomEnum({
@@ -782,6 +805,7 @@ export const processQualificationProof = (
       },
       NFT: undefined,
       Address: undefined,
+      Extension: undefined,
     }) as QualificationProofEnum;
     return new CairoOption(CairoOptionVariant.Some, qualificationProof);
   }
@@ -798,6 +822,7 @@ export const processQualificationProof = (
           },
         },
         Address: undefined,
+        Extension: undefined,
       })
     );
   }
@@ -809,6 +834,24 @@ export const processQualificationProof = (
         Tournament: undefined,
         NFT: undefined,
         Address: address,
+        Extension: undefined,
+      })
+    );
+  }
+
+  if (requirementVariant === "extension") {
+    // Get proof data from extension config
+    const extensionProofData = extensionAddress
+      ? getExtensionProof(extensionAddress, address, extensionContext)
+      : [address]; // Fallback to address if no extension address provided
+
+    return new CairoOption(
+      CairoOptionVariant.Some,
+      new CairoCustomEnum({
+        Tournament: undefined,
+        NFT: undefined,
+        Address: undefined,
+        Extension: extensionProofData,
       })
     );
   }

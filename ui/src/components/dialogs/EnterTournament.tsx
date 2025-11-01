@@ -40,6 +40,7 @@ import { useDojo } from "@/context/dojo";
 import { processQualificationProof } from "@/lib/utils/formatting";
 import { getTokenLogoUrl, getTokenDecimals } from "@/lib/tokensMeta";
 import { LoadingSpinner } from "@/components/ui/spinner";
+import { getExtensionProof } from "@/lib/extensionConfig";
 
 interface EnterTournamentDialogProps {
   open: boolean;
@@ -89,10 +90,20 @@ export function EnterTournamentDialog({
   const { connectController } = useConnectController();
   const { disconnect } = useDisconnect();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndEnterTournament, getBalanceGeneral } = useSystemCalls();
+  const {
+    approveAndEnterTournament,
+    getBalanceGeneral,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
   const [balance, setBalance] = useState<BigNumberish>(0);
   const [isEntering, setIsEntering] = useState(false);
+  const [extensionValidEntry, setExtensionValidEntry] =
+    useState<boolean>(false);
+  const [extensionEntriesLeft, setExtensionEntriesLeft] = useState<
+    number | null
+  >(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -104,7 +115,9 @@ export function EnterTournamentDialog({
       const qualificationProof = processQualificationProof(
         requirementVariant ?? "",
         proof,
-        address
+        address,
+        extensionConfig?.address,
+        {} // Additional context if needed
       );
 
       await approveAndEnterTournament(
@@ -199,6 +212,63 @@ export function EnterTournamentDialog({
   const allowlistAddresses =
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.allowlist;
+
+  const extensionConfig =
+    tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
+      ?.extension;
+
+  useEffect(() => {
+    const checkExtensionEntry = async () => {
+      if (
+        requirementVariant === "extension" &&
+        address &&
+        extensionConfig &&
+        open
+      ) {
+        try {
+          const extensionAddress = extensionConfig.address;
+          // Get proof data from extension config
+          const qualification = getExtensionProof(
+            extensionAddress,
+            address,
+            {} // Additional context if needed
+          );
+
+          const [validEntry, entriesLeft] = await Promise.all([
+            checkExtensionValidEntry(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+            getExtensionEntriesLeft(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+          ]);
+
+          setExtensionValidEntry(validEntry);
+          setExtensionEntriesLeft(entriesLeft);
+        } catch (error) {
+          console.error("Error checking extension entry:", error);
+          setExtensionValidEntry(false);
+          setExtensionEntriesLeft(null);
+        }
+      }
+    };
+
+    checkExtensionEntry();
+  }, [
+    requirementVariant,
+    address,
+    extensionConfig,
+    open,
+    tournamentModel?.id,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  ]);
 
   const { data: ownedTokens } = useGetAccountTokenIds(
     indexAddress(address ?? ""),
@@ -405,6 +475,13 @@ export function EnterTournamentDialog({
     if (requirementVariant === "allowlist") {
       methods.push({
         type: "allowlist",
+        address: address,
+      });
+    }
+
+    if (requirementVariant === "extension") {
+      methods.push({
+        type: "extension",
         address: address,
       });
     }
@@ -687,6 +764,39 @@ export function EnterTournamentDialog({
       };
     }
 
+    // Handle extension-based entry requirements
+    if (requirementVariant === "extension") {
+      // If no address, can't enter
+      if (!address) {
+        return {
+          meetsEntryRequirements: false,
+          proof: {},
+          entriesLeftByTournament: [],
+        };
+      }
+
+      // Use extension contract validation results
+      const remaining =
+        extensionEntriesLeft !== null ? extensionEntriesLeft : Infinity;
+
+      // Check if extension validation passed and has entries left
+      if (extensionValidEntry && remaining > 0) {
+        canEnter = true;
+        entriesLeftByTournament = [
+          {
+            address,
+            entriesLeft: remaining,
+          },
+        ];
+      }
+
+      return {
+        meetsEntryRequirements: canEnter,
+        proof: { tokenId: "" }, // Empty proof for extension (actual validation happens on-chain)
+        entriesLeftByTournament,
+      };
+    }
+
     return {
       meetsEntryRequirements: canEnter,
       proof,
@@ -705,6 +815,8 @@ export function EnterTournamentDialog({
     address,
     allowlistAddresses,
     entryCountModel?.count,
+    extensionValidEntry,
+    extensionEntriesLeft,
   ]);
 
   // display the entry fee distribution
@@ -748,7 +860,10 @@ export function EnterTournamentDialog({
                   <div className="flex flex-row items-center gap-2">
                     <div className="flex flex-row items-center gap-2">
                       <span>
-                        {formatNumber(Number(entryAmount) / 10 ** getTokenDecimals(chainId, entryToken ?? ""))}
+                        {formatNumber(
+                          Number(entryAmount) /
+                            10 ** getTokenDecimals(chainId, entryToken ?? "")
+                        )}
                       </span>
                       <img
                         src={getTokenLogoUrl(chainId, entryToken ?? "")}
@@ -874,6 +989,8 @@ export function EnterTournamentDialog({
                         : "participated in"
                     }:`}
                   </div>
+                ) : requirementVariant === "extension" ? (
+                  "Entry validated by extension contract"
                 ) : (
                   "Must be part of the allowlist"
                 )}
@@ -1024,6 +1141,53 @@ export function EnterTournamentDialog({
                     );
                   })}
                 </div>
+              ) : requirementVariant === "extension" ? (
+                address ? (
+                  <div className="flex flex-col gap-2 px-4">
+                    <div className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-xs">
+                          {displayAddress(extensionConfig?.address ?? "")}
+                        </span>
+                      </div>
+                      {meetsEntryRequirements ? (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <CHECK />
+                          </span>
+                          <span>
+                            {hasEntryLimit
+                              ? `${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft
+                                } ${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft === 1
+                                    ? "entry"
+                                    : "entries"
+                                } left`
+                              : "Can enter"}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <X />
+                          </span>
+                          <span>No entries left</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Note: Final validation will be performed by the extension
+                      contract on-chain
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-neutral px-4">Connect Account</span>
+                )
               ) : address ? (
                 <div className="flex flex-row items-center gap-2 px-4">
                   <span className="w-8">

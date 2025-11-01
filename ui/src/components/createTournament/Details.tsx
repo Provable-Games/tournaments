@@ -28,11 +28,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const Details = ({ form }: StepProps) => {
   const { gameData } = useUIStore();
   const PREDEFINED_SIZES = [1, 3, 10, 20] as const;
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
+  const [isMarkdownPreviewOpen, setIsMarkdownPreviewOpen] = useState(false);
 
   useEffect(() => {
     const subscription = form.watch((_value, { name }) => {
@@ -142,16 +145,31 @@ const Details = ({ form }: StepProps) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                    Description
-                  </FormLabel>
+                  <div className="flex flex-row items-center justify-between">
+                    <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                      Description
+                    </FormLabel>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsMarkdownPreviewOpen(true)}
+                      className="text-xs"
+                      disabled={!field.value || field.value.trim() === ""}
+                    >
+                      Preview
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea
                       className="min-h-[50px] text-sm sm:text-base"
-                      placeholder="Tournament description"
+                      placeholder="Tournament description (Markdown supported)"
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription className="text-xs">
+                    Markdown formatting is supported
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -256,6 +274,24 @@ const Details = ({ form }: StepProps) => {
               entry fees and prizes as well as who can qualify for further
               tournaments.
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isMarkdownPreviewOpen}
+        onOpenChange={setIsMarkdownPreviewOpen}
+      >
+        <DialogContent className="bg-black border border-brand p-6 rounded-lg max-w-[90vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] max-h-[90vh] overflow-y-auto">
+          <div className="flex flex-col gap-4">
+            <h3 className="font-brand text-xl text-brand">
+              Description Preview
+            </h3>
+            <div className="w-full h-0.5 bg-brand/25" />
+            <div className="markdown-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {form.watch("description") || ""}
+              </ReactMarkdown>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

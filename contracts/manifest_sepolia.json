@@ -1329,7 +1329,7 @@
   "contracts": [
     {
       "address": "0x164963e916c2908dee7fd1de36522073d0a869d824e1c4316e493e65b145902",
-      "class_hash": "0x5fbd8c1b18519fe25859db939e3fc8656fba575f7d60b48db495b091562c134",
+      "class_hash": "0x9dc01d9720f0dd4f556159ee43b4beb2b32d8d005b836c663404732ee3605f",
       "abi": [
         {
           "type": "impl",
@@ -1745,6 +1745,30 @@
           ]
         },
         {
+          "type": "struct",
+          "name": "core::array::Span::<core::felt252>",
+          "members": [
+            {
+              "name": "snapshot",
+              "type": "@core::array::Array::<core::felt252>"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "budokan::models::budokan::ExtensionConfig",
+          "members": [
+            {
+              "name": "address",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "config",
+              "type": "core::array::Span::<core::felt252>"
+            }
+          ]
+        },
+        {
           "type": "enum",
           "name": "budokan::models::budokan::EntryRequirementType",
           "variants": [
@@ -1759,6 +1783,10 @@
             {
               "name": "allowlist",
               "type": "core::array::Span::<core::starknet::contract_address::ContractAddress>"
+            },
+            {
+              "name": "extension",
+              "type": "budokan::models::budokan::ExtensionConfig"
             }
           ]
         },
@@ -2009,6 +2037,10 @@
             {
               "name": "Address",
               "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "Extension",
+              "type": "core::array::Span::<core::felt252>"
             }
           ]
         },
@@ -2614,7 +2646,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x441daeaee68c2f7a98a1549c09332f23f33b60feb68fb0c4b3acba098b968aa",
+      "class_hash": "0x14c12c79beeb2a181d13b0ddfdfb9f0100f8294393fd712a3357297a194f602",
       "tag": "budokan_1_0_9-QualificationEntries",
       "selector": "0x535aba24502c1e015ba0c62e15c0f528343d09e8fcbb37e8b6555be07351846"
     },
@@ -2632,7 +2664,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x1640dcae030c33bcc936adc57aff14c5a07412ef2aa98be7cc52ac24c6cdab",
+      "class_hash": "0x1687216451733eaec23314c8091ee670e9ce288f117c11af864a0a5fb6ac4ba",
       "tag": "budokan_1_0_9-Tournament",
       "selector": "0x3019783f67fa3976cb8b74fcda5a1b101f3acde22989d04ad582a1d781b3612"
     },

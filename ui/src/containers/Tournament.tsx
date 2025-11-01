@@ -58,11 +58,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoadingPage from "@/containers/LoadingPage";
 import { Badge } from "@/components/ui/badge";
 import { SettingsDialog } from "@/components/dialogs/Settings";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useSettings } from "metagame-sdk/sql";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { namespace } = useDojo();
   const { getTokenDecimals } = useSystemCalls();
@@ -730,68 +734,79 @@ const Tournament = () => {
               )}
             </div>
           </div>
-          <div
-            className={`flex ${
-              isExpanded ? "flex-col" : "flex-row items-center"
-            }`}
-          >
-            <div
-              className={`
-          relative overflow-hidden transition-[height] duration-300
-          ${isExpanded ? "h-auto w-full" : "h-6 w-3/4"}
-        `}
-            >
-              <p
-                ref={textRef}
-                className={`${
-                  isExpanded
-                    ? "whitespace-pre-wrap text-xs sm:text-base"
-                    : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
-                }`}
-              >
-                {tournamentModel?.metadata?.description &&
-                  tournamentModel?.metadata?.description
-                    ?.replace("Opus.Cash", "https://opus.money")
-                    .split(/(https?:\/\/[^\s]+?)([.,;:!?])?(?=\s|$)/g)
-                    .map((part: string, i: number, arr: string[]) => {
-                      if (part && part.match(/^https?:\/\//)) {
-                        // This is a URL
-                        return (
-                          <a
-                            key={i}
-                            href={part}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-brand-muted hover:underline"
-                          >
-                            {part}
-                          </a>
-                        );
-                      } else if (
-                        i > 0 &&
-                        arr[i - 1] &&
-                        typeof arr[i - 1] === "string" &&
-                        arr[i - 1].match(/^https?:\/\//) &&
-                        part &&
-                        /^[.,;:!?]$/.test(part)
-                      ) {
-                        // This is punctuation that followed a URL
-                        return part;
-                      } else {
-                        // This is regular text
-                        return part;
-                      }
-                    })}
-              </p>
+          <div className="flex flex-row items-center justify-between gap-4">
+            <div className="relative overflow-hidden h-6 flex-1 min-w-0">
+              {tournamentModel?.metadata?.description?.startsWith("#") ? (
+                <p className="overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg">
+                  {tournamentModel?.metadata?.description
+                    ?.split("\n")[0]
+                    ?.replace(/^#+ /, "") || ""}
+                </p>
+              ) : (
+                <p
+                  ref={textRef}
+                  className={`${
+                    isExpanded
+                      ? "whitespace-pre-wrap text-xs sm:text-base"
+                      : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
+                  }`}
+                >
+                  {tournamentModel?.metadata?.description &&
+                    tournamentModel?.metadata?.description
+                      ?.replace("Opus.Cash", "https://opus.money")
+                      .split(/(https?:\/\/[^\s]+?)([.,;:!?])?(?=\s|$)/g)
+                      .map((part: string, i: number, arr: string[]) => {
+                        if (part && part.match(/^https?:\/\//)) {
+                          // This is a URL
+                          return (
+                            <a
+                              key={i}
+                              href={part}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand-muted hover:underline"
+                            >
+                              {part}
+                            </a>
+                          );
+                        } else if (
+                          i > 0 &&
+                          arr[i - 1] &&
+                          typeof arr[i - 1] === "string" &&
+                          arr[i - 1].match(/^https?:\/\//) &&
+                          part &&
+                          /^[.,;:!?]$/.test(part)
+                        ) {
+                          // This is punctuation that followed a URL
+                          return part;
+                        } else {
+                          // This is regular text
+                          return part;
+                        }
+                      })}
+                </p>
+              )}
             </div>
-            {isOverflowing && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="self-start text-brand hover:text-brand-muted font-bold text-sm sm:text-base"
-              >
-                {isExpanded ? "See Less" : "See More"}
-              </button>
-            )}
+            <div className="flex gap-2 flex-shrink-0">
+              {tournamentModel?.metadata?.description?.startsWith("#") && (
+                <Button
+                  onClick={() => setIsDescriptionDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  View Full Description
+                </Button>
+              )}
+              {isOverflowing &&
+                !tournamentModel?.metadata?.description?.startsWith("#") && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-brand hover:text-brand-muted font-bold text-sm sm:text-base"
+                  >
+                    {isExpanded ? "See Less" : "See More"}
+                  </button>
+                )}
+            </div>
           </div>
         </div>
         <div className="flex flex-col gap-5 sm:gap-10">
@@ -842,6 +857,22 @@ const Tournament = () => {
           </div>
         </div>
       </div>
+      <Dialog
+        open={isDescriptionDialogOpen}
+        onOpenChange={setIsDescriptionDialogOpen}
+      >
+        <DialogContent className="bg-black border border-brand p-6 rounded-lg max-w-[90vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] max-h-[90vh] overflow-y-auto">
+          <div className="flex flex-col gap-4">
+            <h3 className="font-brand text-xl text-brand">Description</h3>
+            <div className="w-full h-0.5 bg-brand/25" />
+            <div className="markdown-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {tournamentModel?.metadata?.description || ""}
+              </ReactMarkdown>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

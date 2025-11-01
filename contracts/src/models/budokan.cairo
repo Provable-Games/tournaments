@@ -51,6 +51,7 @@ pub enum EntryRequirementType {
     token: ContractAddress,
     tournament: TournamentType,
     allowlist: Span<ContractAddress>,
+    extension: ExtensionConfig,
 }
 
 #[dojo::model]
@@ -67,6 +68,12 @@ pub struct QualificationEntries {
 pub enum TournamentType {
     winners: Span<u64>,
     participants: Span<u64>,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq, Introspect)]
+pub struct ExtensionConfig {
+    pub address: ContractAddress,
+    pub config: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]
@@ -203,6 +210,7 @@ pub enum QualificationProof {
     // For qualifying via NFT ownership
     NFT: NFTQualification,
     Address: ContractAddress,
+    Extension: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq, Introspect)]

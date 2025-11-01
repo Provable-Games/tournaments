@@ -21,32 +21,14 @@ import {
   Uint256,
   AccountInterface,
   CairoCustomEnum,
+  Contract,
 } from "starknet";
 import { feltToString } from "@/lib/utils";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import useUIStore from "@/hooks/useUIStore";
 import { useToastMessages } from "@/components/toast";
 import { useEntityUpdates } from "@/dojo/hooks/useEntityUpdates";
-
-// Type for the transformed tournament
-type ExecutableTournament = Omit<Tournament, "metadata"> & {
-  metadata: Omit<Tournament["metadata"], "description"> & {
-    description: ByteArray;
-  };
-};
-
-// Helper function to transform Tournament to ExecutableTournament
-const prepareForExecution = (tournament: Tournament): ExecutableTournament => {
-  return {
-    ...tournament,
-    metadata: {
-      ...tournament.metadata,
-      description: byteArray.byteArrayFromString(
-        tournament.metadata.description
-      ),
-    },
-  };
-};
+import BUDOKAN_ABI from "@/lib/abis/budokan";
 
 export const useSystemCalls = () => {
   const { client } = useDojo();
@@ -68,6 +50,18 @@ export const useSystemCalls = () => {
     showTournamentCreation,
   } = useToastMessages();
 
+  const initializeBudokanContract = () => {
+    if (!account && !provider) {
+      throw new Error("No account or provider available");
+    }
+
+    return new Contract({
+      abi: BUDOKAN_ABI,
+      address: tournamentAddress,
+      providerOrAccount: account || provider,
+    });
+  };
+
   // Tournament
 
   const approveAndEnterTournament = async (
@@ -86,7 +80,17 @@ export const useSystemCalls = () => {
     const startsIn =
       Number(tournamentModel.schedule.game.start) - Date.now() / 1000;
     const game = getGameName(tournamentModel.game_config.address);
+    console.log("Entry Qualification:", qualification);
+
+    const budokanContract = initializeBudokanContract();
+
     try {
+      const call = budokanContract.populate("enter_tournament", [
+        tournamentId,
+        player_name,
+        player_address,
+        qualification,
+      ]);
       let calls = [];
       if (entryFeeToken.isSome()) {
         calls.push({
@@ -102,12 +106,7 @@ export const useSystemCalls = () => {
       calls.push({
         contractAddress: tournamentAddress,
         entrypoint: "enter_tournament",
-        calldata: CallData.compile([
-          tournamentId,
-          player_name,
-          player_address,
-          qualification,
-        ]),
+        calldata: call.calldata,
       });
 
       const tx = await account?.execute(calls);
@@ -241,8 +240,8 @@ export const useSystemCalls = () => {
       let calls = [];
 
       // Separate ERC20 and ERC721 prizes
-      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
-      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+      const erc20Prizes = prizes.filter((p) => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter((p) => p.token_type.variant.erc721);
 
       // Handle ERC20 approvals - sum amounts for same token
       const erc20ApprovalCalls = Object.values(
@@ -336,8 +335,8 @@ export const useSystemCalls = () => {
   ) => {
     try {
       // Separate ERC20 and ERC721 prizes
-      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
-      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+      const erc20Prizes = prizes.filter((p) => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter((p) => p.token_type.variant.erc721);
 
       // Calculate ERC20 approvals - sum amounts for same token
       const erc20ApprovalCalls = Object.values(
@@ -465,27 +464,29 @@ export const useSystemCalls = () => {
     entryFeeUsdCost: number,
     duration: number
   ) => {
-    const executableTournament = prepareForExecution(tournament);
+    const budokanContract = initializeBudokanContract();
     const game = getGameName(tournament.game_config.address);
     try {
+      const call = budokanContract.populate("create_tournament", [
+        address!,
+        tournament.metadata,
+        tournament.schedule,
+        tournament.game_config,
+        tournament.entry_fee,
+        tournament.entry_requirement,
+      ]);
+
       let calls = [];
       const createCall = {
         contractAddress: tournamentAddress,
         entrypoint: "create_tournament",
-        calldata: CallData.compile([
-          address!,
-          executableTournament.metadata,
-          executableTournament.schedule,
-          executableTournament.game_config,
-          executableTournament.entry_fee,
-          executableTournament.entry_requirement,
-        ]),
+        calldata: call.calldata,
       };
       calls.push(createCall);
 
       // Separate ERC20 and ERC721 prizes
-      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
-      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+      const erc20Prizes = prizes.filter((p) => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter((p) => p.token_type.variant.erc721);
 
       // Handle ERC20 approvals
       const erc20ApprovalCalls = Object.values(
@@ -577,26 +578,35 @@ export const useSystemCalls = () => {
     duration: number,
     batchSize: number = 50
   ) => {
-    const executableTournament = prepareForExecution(tournament);
     const game = getGameName(tournament.game_config.address);
     try {
+      // Manually convert description to ByteArray to avoid stack overflow
+      const descriptionByteArray = byteArray.byteArrayFromString(
+        tournament.metadata.description
+      );
+
+      const metadataWithByteArray = {
+        name: tournament.metadata.name,
+        description: descriptionByteArray,
+      };
+
       // Create tournament call
       const createCall = {
         contractAddress: tournamentAddress,
         entrypoint: "create_tournament",
         calldata: CallData.compile([
           address!,
-          executableTournament.metadata,
-          executableTournament.schedule,
-          executableTournament.game_config,
-          executableTournament.entry_fee,
-          executableTournament.entry_requirement,
+          metadataWithByteArray,
+          tournament.schedule,
+          tournament.game_config,
+          tournament.entry_fee,
+          tournament.entry_requirement,
         ]),
       };
 
       // Separate ERC20 and ERC721 prizes
-      const erc20Prizes = prizes.filter(p => p.token_type.variant.erc20);
-      const erc721Prizes = prizes.filter(p => p.token_type.variant.erc721);
+      const erc20Prizes = prizes.filter((p) => p.token_type.variant.erc20);
+      const erc721Prizes = prizes.filter((p) => p.token_type.variant.erc721);
 
       // Calculate ERC20 approvals
       const erc20ApprovalCalls = Object.values(
@@ -985,6 +995,67 @@ export const useSystemCalls = () => {
     }
   };
 
+  const checkExtensionValidEntry = async (
+    extensionAddress: string,
+    tournamentId: BigNumberish,
+    playerAddress: string,
+    qualification: string[]
+  ): Promise<boolean> => {
+    try {
+      if (!provider) return false;
+
+      const result = await provider.callContract({
+        contractAddress: extensionAddress,
+        entrypoint: "valid_entry",
+        calldata: CallData.compile([
+          tournamentId,
+          playerAddress,
+          qualification,
+        ]),
+      });
+
+      return result[0] === "0x1" || BigInt(result[0]) === 1n;
+    } catch (error) {
+      console.error("Error checking extension valid_entry:", error);
+      return false;
+    }
+  };
+
+  const getExtensionEntriesLeft = async (
+    extensionAddress: string,
+    tournamentId: BigNumberish,
+    playerAddress: string,
+    qualification: string[]
+  ): Promise<number | null> => {
+    try {
+      if (!provider) return null;
+
+      const result = await provider.callContract({
+        contractAddress: extensionAddress,
+        entrypoint: "entries_left",
+        calldata: CallData.compile([
+          tournamentId,
+          playerAddress,
+          qualification,
+        ]),
+      });
+
+      // Result is Option<u8>
+      // If Option::Some, result[0] is 0 and result[1] is the value
+      // If Option::None, result[0] is 1
+      if (result[0] === "0x1" || BigInt(result[0]) === 1n) {
+        // Option::None - no limit
+        return null;
+      } else {
+        // Option::Some - return the value
+        return Number(result[1]);
+      }
+    } catch (error) {
+      console.error("Error getting extension entries_left:", error);
+      return null;
+    }
+  };
+
   return {
     approveAndEnterTournament,
     submitScores,
@@ -1004,5 +1075,7 @@ export const useSystemCalls = () => {
     getTokenDecimals,
     getTokenInfo,
     registerToken,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
   };
 };
