@@ -1461,7 +1461,7 @@ fn extension_gated_tournament() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Invalid entry according to extension 441332700614264739680284974351457213359172247050158481718831993370540762408",
+        "Tournament: Invalid entry according to extension 2055375815690619371056445878886539604186032192707166302987306522703630461105",
         'ENTRYPOINT_FAILED',
     ),
 )]
@@ -1577,7 +1577,7 @@ fn extension_gated_tournament_with_entry_limit() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: No entries left according to extension 78394109432941055273434861217376654963227484101660082941555290803427421110",
+        "Tournament: No entries left according to extension 2059141878684971863306220989281496248982805738049797204539309488925566221415",
         'ENTRYPOINT_FAILED',
     ),
 )]
@@ -1713,7 +1713,7 @@ fn extension_gated_caller_qualifies_different_player() {
 #[test]
 #[should_panic(
     expected: (
-        "Tournament: Invalid entry according to extension 441332700614264739680284974351457213359172247050158481718831993370540762408",
+        "Tournament: Invalid entry according to extension 2055375815690619371056445878886539604186032192707166302987306522703630461105",
         'ENTRYPOINT_FAILED',
     ),
 )]

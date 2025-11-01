@@ -7,6 +7,8 @@ seed = "DNC"
 [env]
 rpc_url = "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_8"
 world_address = "0x02ef591697f0fd9adc0ba9dbe0ca04dabad80cf95f08ba02e435d9cb6698a28a"
+world_block = 2125240
+max_block_range = 10000
 
 [namespace]
 default = "budokan_1_0_8"
