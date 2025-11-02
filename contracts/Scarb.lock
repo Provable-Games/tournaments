@@ -52,6 +52,7 @@ dependencies = [
 name = "budokan"
 version = "0.0.1"
 dependencies = [
+ "budokan_extensions",
  "dojo",
  "dojo_cairo_test",
  "game_components_metagame",
@@ -61,6 +62,14 @@ dependencies = [
  "game_components_utils",
  "openzeppelin_introspection",
  "openzeppelin_token",
+]
+
+[[package]]
+name = "budokan_extensions"
+version = "0.1.0"
+source = "git+https://github.com/Provable-Games/budokan_extensions?tag=v2.10.1#db4720b00cd6f6dd4396203c563894d83f436b66"
+dependencies = [
+ "openzeppelin_introspection",
 ]
 
 [[package]]

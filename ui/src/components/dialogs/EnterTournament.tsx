@@ -8,7 +8,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
-import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
+import { useAccount, useConnect } from "@starknet-react/core";
 import { Tournament, Token, EntryCount } from "@/generated/models.gen";
 import {
   feltToString,
@@ -23,11 +23,8 @@ import { addAddressPadding, BigNumberish } from "starknet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
-import {
-  isControllerAccount,
-  useGetUsernames,
-  useConnectController,
-} from "@/hooks/useController";
+import { useGetUsernames, isControllerAccount } from "@/hooks/useController";
+import { lookupUsernames } from "@cartridge/controller";
 import { CHECK, X, COIN, USER } from "@/components/Icons";
 import {
   useGetAccountTokenIds,
@@ -40,6 +37,7 @@ import { useDojo } from "@/context/dojo";
 import { processQualificationProof } from "@/lib/utils/formatting";
 import { getTokenLogoUrl, getTokenDecimals } from "@/lib/tokensMeta";
 import { LoadingSpinner } from "@/components/ui/spinner";
+import { getExtensionProof } from "@/lib/extensionConfig";
 
 interface EnterTournamentDialogProps {
   open: boolean;
@@ -85,26 +83,58 @@ export function EnterTournamentDialog({
 }: EnterTournamentDialogProps) {
   const { namespace, selectedChainConfig } = useDojo();
   const { address } = useAccount();
-  const { connector } = useConnect();
-  const { connectController } = useConnectController();
-  const { disconnect } = useDisconnect();
   const { connect } = useConnectToSelectedChain();
-  const { approveAndEnterTournament, getBalanceGeneral } = useSystemCalls();
+  const { connector } = useConnect();
+  const {
+    approveAndEnterTournament,
+    getBalanceGeneral,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
+  const [controllerUsername, setControllerUsername] = useState("");
+  const [playerAddress, setPlayerAddress] = useState<string | undefined>(
+    undefined
+  );
+  const [isLookingUpUsername, setIsLookingUpUsername] = useState(false);
   const [balance, setBalance] = useState<BigNumberish>(0);
   const [isEntering, setIsEntering] = useState(false);
+  const [extensionValidEntry, setExtensionValidEntry] =
+    useState<boolean>(false);
+  const [extensionEntriesLeft, setExtensionEntriesLeft] = useState<
+    number | null
+  >(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
+  const isController = connector ? isControllerAccount(connector) : false;
 
   const handleEnterTournament = async () => {
     setIsEntering(true);
     try {
-      if (!playerName.trim() || !address) return;
+      if (!address) return;
+
+      let targetAddress: string;
+      let finalPlayerName: string;
+
+      if (isController) {
+        // Controller wallet: use connected address and player name
+        if (!playerName.trim()) return;
+        targetAddress = address;
+        finalPlayerName = playerName.trim();
+      } else {
+        // Non-controller wallet: must have controller username and looked-up address
+        if (!controllerUsername.trim() || !playerAddress) return;
+        targetAddress = playerAddress;
+        // Use player name if provided, otherwise use controller username
+        finalPlayerName = playerName.trim() || controllerUsername.trim();
+      }
 
       const qualificationProof = processQualificationProof(
         requirementVariant ?? "",
         proof,
-        address
+        address,
+        extensionConfig?.address,
+        {} // Additional context if needed
       );
 
       await approveAndEnterTournament(
@@ -113,8 +143,8 @@ export function EnterTournamentDialog({
         feltToString(tournamentModel?.metadata.name),
         tournamentModel,
         // (Number(entryCountModel?.count) ?? 0) + 1,
-        stringToFelt(playerName.trim()),
-        addAddressPadding(address!),
+        stringToFelt(finalPlayerName),
+        addAddressPadding(targetAddress),
         qualificationProof,
         // gameCount
         duration,
@@ -124,17 +154,14 @@ export function EnterTournamentDialog({
       );
 
       setPlayerName("");
+      setControllerUsername("");
+      setPlayerAddress(undefined);
       onOpenChange(false);
       setIsEntering(false);
     } catch (error) {
       console.error("Failed to enter tournament:", error);
       setIsEntering(false);
     }
-  };
-
-  const handleControllerLogin = async () => {
-    disconnect();
-    connectController();
   };
 
   const ownerAddresses = useMemo(() => {
@@ -148,10 +175,50 @@ export function EnterTournamentDialog({
   useEffect(() => {
     if (!open) {
       setPlayerName("");
-    } else if (accountUsername) {
+      setControllerUsername("");
+      setPlayerAddress(undefined);
+    } else if (isController && accountUsername && address) {
+      // Controller wallet connected - auto-fill player name and set address
       setPlayerName(accountUsername);
+      setPlayerAddress(address);
     }
-  }, [open, accountUsername]);
+  }, [open, accountUsername, address, isController]);
+
+  // Look up controller address from controller username (only for non-controller wallets)
+  useEffect(() => {
+    // Skip lookup if controller is connected
+    if (isController) {
+      return;
+    }
+
+    // Reset address if username is empty
+    if (!controllerUsername.trim()) {
+      setPlayerAddress(undefined);
+      setIsLookingUpUsername(false);
+      return;
+    }
+
+    // Debounce the lookup
+    setIsLookingUpUsername(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        console.log("Looking up username:", controllerUsername.trim());
+        const usernameMap = await lookupUsernames([controllerUsername.trim()]);
+        const foundAddress = usernameMap.get(controllerUsername.trim());
+        console.log("Lookup result:", foundAddress);
+        setPlayerAddress(foundAddress);
+        setIsLookingUpUsername(false);
+      } catch (error) {
+        console.error("Error looking up username:", error);
+        setPlayerAddress(undefined);
+        setIsLookingUpUsername(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [controllerUsername, isController]);
 
   const entryToken = tournamentModel?.entry_fee?.Some?.token_address;
   const entryAmount = tournamentModel?.entry_fee?.Some?.amount;
@@ -199,6 +266,63 @@ export function EnterTournamentDialog({
   const allowlistAddresses =
     tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
       ?.allowlist;
+
+  const extensionConfig =
+    tournamentModel?.entry_requirement.Some?.entry_requirement_type?.variant
+      ?.extension;
+
+  useEffect(() => {
+    const checkExtensionEntry = async () => {
+      if (
+        requirementVariant === "extension" &&
+        address &&
+        extensionConfig &&
+        open
+      ) {
+        try {
+          const extensionAddress = extensionConfig.address;
+          // Get proof data from extension config
+          const qualification = getExtensionProof(
+            extensionAddress,
+            address,
+            {} // Additional context if needed
+          );
+
+          const [validEntry, entriesLeft] = await Promise.all([
+            checkExtensionValidEntry(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+            getExtensionEntriesLeft(
+              extensionAddress,
+              tournamentModel?.id,
+              address,
+              qualification
+            ),
+          ]);
+
+          setExtensionValidEntry(validEntry);
+          setExtensionEntriesLeft(entriesLeft);
+        } catch (error) {
+          console.error("Error checking extension entry:", error);
+          setExtensionValidEntry(false);
+          setExtensionEntriesLeft(null);
+        }
+      }
+    };
+
+    checkExtensionEntry();
+  }, [
+    requirementVariant,
+    address,
+    extensionConfig,
+    open,
+    tournamentModel?.id,
+    checkExtensionValidEntry,
+    getExtensionEntriesLeft,
+  ]);
 
   const { data: ownedTokens } = useGetAccountTokenIds(
     indexAddress(address ?? ""),
@@ -405,6 +529,13 @@ export function EnterTournamentDialog({
     if (requirementVariant === "allowlist") {
       methods.push({
         type: "allowlist",
+        address: address,
+      });
+    }
+
+    if (requirementVariant === "extension") {
+      methods.push({
+        type: "extension",
         address: address,
       });
     }
@@ -687,6 +818,39 @@ export function EnterTournamentDialog({
       };
     }
 
+    // Handle extension-based entry requirements
+    if (requirementVariant === "extension") {
+      // If no address, can't enter
+      if (!address) {
+        return {
+          meetsEntryRequirements: false,
+          proof: {},
+          entriesLeftByTournament: [],
+        };
+      }
+
+      // Use extension contract validation results
+      const remaining =
+        extensionEntriesLeft !== null ? extensionEntriesLeft : Infinity;
+
+      // Check if extension validation passed and has entries left
+      if (extensionValidEntry && remaining > 0) {
+        canEnter = true;
+        entriesLeftByTournament = [
+          {
+            address,
+            entriesLeft: remaining,
+          },
+        ];
+      }
+
+      return {
+        meetsEntryRequirements: canEnter,
+        proof: { tokenId: "" }, // Empty proof for extension (actual validation happens on-chain)
+        entriesLeftByTournament,
+      };
+    }
+
     return {
       meetsEntryRequirements: canEnter,
       proof,
@@ -705,6 +869,8 @@ export function EnterTournamentDialog({
     address,
     allowlistAddresses,
     entryCountModel?.count,
+    extensionValidEntry,
+    extensionEntriesLeft,
   ]);
 
   // display the entry fee distribution
@@ -731,8 +897,6 @@ export function EnterTournamentDialog({
   //     (prizePoolShare / 100)) /
   //   10 ** 18;
 
-  const isController = isControllerAccount(connector!);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -748,7 +912,10 @@ export function EnterTournamentDialog({
                   <div className="flex flex-row items-center gap-2">
                     <div className="flex flex-row items-center gap-2">
                       <span>
-                        {formatNumber(Number(entryAmount) / 10 ** getTokenDecimals(chainId, entryToken ?? ""))}
+                        {formatNumber(
+                          Number(entryAmount) /
+                            10 ** getTokenDecimals(chainId, entryToken ?? "")
+                        )}
                       </span>
                       <img
                         src={getTokenLogoUrl(chainId, entryToken ?? "")}
@@ -874,6 +1041,8 @@ export function EnterTournamentDialog({
                         : "participated in"
                     }:`}
                   </div>
+                ) : requirementVariant === "extension" ? (
+                  "Entry validated by extension contract"
                 ) : (
                   "Must be part of the allowlist"
                 )}
@@ -1024,6 +1193,53 @@ export function EnterTournamentDialog({
                     );
                   })}
                 </div>
+              ) : requirementVariant === "extension" ? (
+                address ? (
+                  <div className="flex flex-col gap-2 px-4">
+                    <div className="flex flex-row items-center justify-between border border-brand-muted rounded-md p-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-xs">
+                          {displayAddress(extensionConfig?.address ?? "")}
+                        </span>
+                      </div>
+                      {meetsEntryRequirements ? (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <CHECK />
+                          </span>
+                          <span>
+                            {hasEntryLimit
+                              ? `${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft
+                                } ${
+                                  entriesLeftByTournament.find(
+                                    (entry) => entry.address === address
+                                  )?.entriesLeft === 1
+                                    ? "entry"
+                                    : "entries"
+                                } left`
+                              : "Can enter"}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-row items-center gap-2">
+                          <span className="w-5">
+                            <X />
+                          </span>
+                          <span>No entries left</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Note: Final validation will be performed by the extension
+                      contract on-chain
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-neutral px-4">Connect Account</span>
+                )
               ) : address ? (
                 <div className="flex flex-row items-center gap-2 px-4">
                   <span className="w-8">
@@ -1057,57 +1273,123 @@ export function EnterTournamentDialog({
               )}
             </div>
           )}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="playerName" className="text-lg font-brand">
-              Player Name
-            </Label>
-            <div className="flex flex-col gap-4">
-              {accountUsername && (
-                <div className="flex flex-row justify-center gap-2">
-                  <span className="text-brand-muted">Default:</span>
-                  <span className="text-brand">{accountUsername}</span>
-                </div>
-              )}
-              <Input
-                id="playerName"
-                placeholder="Enter your player name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full"
-              />
+          {isController ? (
+            // Controller wallet - single player name field
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="playerName" className="text-lg font-brand">
+                Player Name
+              </Label>
+              <div className="flex flex-col gap-4">
+                {accountUsername && (
+                  <div className="flex flex-row justify-center gap-2">
+                    <span className="text-brand-muted">Default:</span>
+                    <span className="text-brand">{accountUsername}</span>
+                  </div>
+                )}
+                <Input
+                  id="playerName"
+                  placeholder="Enter your player name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
-          </div>
-          <div className="text-warning">
-            This game requires you to play with a controller wallet.
-          </div>
+          ) : (
+            // Non-controller wallet - controller username (required) + player name (optional)
+            <>
+              <div className="flex flex-col gap-2">
+                <Label
+                  htmlFor="controllerUsername"
+                  className="text-lg font-brand"
+                >
+                  Controller Username
+                </Label>
+                <div className="flex flex-col gap-4">
+                  <Input
+                    id="controllerUsername"
+                    placeholder="Enter controller username"
+                    value={controllerUsername}
+                    onChange={(e) => setControllerUsername(e.target.value)}
+                    className="w-full"
+                  />
+                  {controllerUsername.trim() && (
+                    <div className="flex flex-row items-center gap-2 justify-center">
+                      {isLookingUpUsername ? (
+                        <>
+                          <LoadingSpinner />
+                          <span className="text-brand-muted text-sm">
+                            Looking up controller...
+                          </span>
+                        </>
+                      ) : playerAddress ? (
+                        <>
+                          <span className="w-5 text-success">
+                            <CHECK />
+                          </span>
+                          <span className="text-success text-sm">
+                            Controller found: {displayAddress(playerAddress)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-5 text-warning">
+                            <X />
+                          </span>
+                          <span className="text-warning text-sm">
+                            Controller username not found
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="text-warning text-sm">
+                  Note: The game will be assigned to this controller username.
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="playerName" className="text-lg font-brand">
+                  Player Name (Optional)
+                </Label>
+                <Input
+                  id="playerName"
+                  placeholder="Enter display name (defaults to controller username)"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           {address ? (
-            isController ? (
-              <Button
-                disabled={
-                  !hasBalance ||
-                  !meetsEntryRequirements ||
-                  playerName.length === 0 ||
-                  isEntering
-                }
-                onClick={handleEnterTournament}
-              >
-                {isEntering ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingSpinner />
-                    <span>Entering...</span>
-                  </div>
-                ) : (
-                  "Enter Tournament"
-                )}
-              </Button>
-            ) : (
-              <Button onClick={handleControllerLogin}>Controller Login</Button>
-            )
+            <Button
+              disabled={
+                !hasBalance ||
+                !meetsEntryRequirements ||
+                (isController && playerName.length === 0) ||
+                (!isController &&
+                  (controllerUsername.length === 0 ||
+                    !playerAddress ||
+                    isLookingUpUsername)) ||
+                isEntering
+              }
+              onClick={handleEnterTournament}
+            >
+              {isEntering ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  <span>Entering...</span>
+                </div>
+              ) : (
+                "Enter Tournament"
+              )}
+            </Button>
           ) : (
             <Button onClick={() => connect()}>Connect Wallet</Button>
           )}

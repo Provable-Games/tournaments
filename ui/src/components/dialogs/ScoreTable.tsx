@@ -92,10 +92,12 @@ export const ScoreTableDialog = ({
   // Map registrants to match the order of games
   const orderedRegistrants = useMemo(() => {
     if (!registrants || !games) return [];
-    
-    return games.map(game => {
+
+    return games.map((game) => {
       const tokenId = Number(game.token_id);
-      return registrants.find(reg => Number(reg.game_token_id) === tokenId) || null;
+      return (
+        registrants.find((reg) => Number(reg.game_token_id) === tokenId) || null
+      );
     });
   }, [games, registrants]);
 

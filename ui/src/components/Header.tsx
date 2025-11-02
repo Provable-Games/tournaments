@@ -1,4 +1,4 @@
-import { useAccount, useDisconnect } from "@starknet-react/core";
+import { useAccount, useDisconnect, useConnect } from "@starknet-react/core";
 import { Button } from "@/components/ui/button";
 import {
   CONTROLLER,
@@ -15,8 +15,10 @@ import { displayAddress } from "@/lib/utils";
 import {
   useControllerUsername,
   useControllerProfile,
+  isControllerAccount,
 } from "@/hooks/useController";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getConnectorIcon } from "@/lib/connectors";
 import { useDojo } from "@/context/dojo";
 import { ChainId, NetworkId } from "@/dojo/setup/networks";
 import { useSwitchNetwork } from "@/dojo/hooks/useChain";
@@ -42,6 +44,7 @@ import logoImage from "@/assets/images/logo.svg";
 
 const Header = () => {
   const { account } = useAccount();
+  const { connector } = useConnect();
   const { gameFilters, setGameFilters, gameData } = useUIStore();
   const { disconnect } = useDisconnect();
   const { openProfile } = useControllerProfile();
@@ -54,6 +57,8 @@ const Header = () => {
   const isSepolia = selectedChainConfig.chainId === ChainId.SN_SEPOLIA;
   const isHomeScreen = location.pathname === "/";
   const isLocal = selectedChainConfig.chainId === ChainId.KATANA_LOCAL;
+  const isController = connector ? isControllerAccount(connector) : false;
+  const walletIcon = connector && !isController ? getConnectorIcon(connector) : null;
 
   // State to control the visibility of the warning banner
   const [showWarning, setShowWarning] = useState(true);
@@ -292,7 +297,17 @@ const Header = () => {
                   }
                 }}
               >
-                <CONTROLLER />
+                {account && (
+                  walletIcon ? (
+                    <img
+                      src={walletIcon}
+                      alt="wallet"
+                      className="w-4 h-4"
+                    />
+                  ) : (
+                    <CONTROLLER />
+                  )
+                )}
                 <span>
                   {account ? (
                     username ? (

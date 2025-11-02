@@ -68,8 +68,6 @@ export function SubmitScoresDialog({
     });
   }, [games]);
 
-  console.log(sortedGames);
-
   const submittableScores = getSubmittableScores(sortedGames, leaderboard);
 
   const handleSubmitScores = async () => {
