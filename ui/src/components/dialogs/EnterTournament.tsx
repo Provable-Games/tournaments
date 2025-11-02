@@ -24,10 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import {
-  isControllerAccount,
   useGetUsernames,
-  useConnectController,
+  isControllerAccount,
 } from "@/hooks/useController";
+import { lookupUsernames } from "@cartridge/controller";
 import { CHECK, X, COIN, USER } from "@/components/Icons";
 import {
   useGetAccountTokenIds,
@@ -86,10 +86,8 @@ export function EnterTournamentDialog({
 }: EnterTournamentDialogProps) {
   const { namespace, selectedChainConfig } = useDojo();
   const { address } = useAccount();
-  const { connector } = useConnect();
-  const { connectController } = useConnectController();
-  const { disconnect } = useDisconnect();
   const { connect } = useConnectToSelectedChain();
+  const { connector } = useConnect();
   const {
     approveAndEnterTournament,
     getBalanceGeneral,
@@ -97,6 +95,9 @@ export function EnterTournamentDialog({
     getExtensionEntriesLeft,
   } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
+  const [controllerUsername, setControllerUsername] = useState("");
+  const [playerAddress, setPlayerAddress] = useState<string | undefined>(undefined);
+  const [isLookingUpUsername, setIsLookingUpUsername] = useState(false);
   const [balance, setBalance] = useState<BigNumberish>(0);
   const [isEntering, setIsEntering] = useState(false);
   const [extensionValidEntry, setExtensionValidEntry] =
@@ -106,11 +107,28 @@ export function EnterTournamentDialog({
   >(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
+  const isController = connector ? isControllerAccount(connector) : false;
 
   const handleEnterTournament = async () => {
     setIsEntering(true);
     try {
-      if (!playerName.trim() || !address) return;
+      if (!address) return;
+
+      let targetAddress: string;
+      let finalPlayerName: string;
+
+      if (isController) {
+        // Controller wallet: use connected address and player name
+        if (!playerName.trim()) return;
+        targetAddress = address;
+        finalPlayerName = playerName.trim();
+      } else {
+        // Non-controller wallet: must have controller username and looked-up address
+        if (!controllerUsername.trim() || !playerAddress) return;
+        targetAddress = playerAddress;
+        // Use player name if provided, otherwise use controller username
+        finalPlayerName = playerName.trim() || controllerUsername.trim();
+      }
 
       const qualificationProof = processQualificationProof(
         requirementVariant ?? "",
@@ -126,8 +144,8 @@ export function EnterTournamentDialog({
         feltToString(tournamentModel?.metadata.name),
         tournamentModel,
         // (Number(entryCountModel?.count) ?? 0) + 1,
-        stringToFelt(playerName.trim()),
-        addAddressPadding(address!),
+        stringToFelt(finalPlayerName),
+        addAddressPadding(targetAddress),
         qualificationProof,
         // gameCount
         duration,
@@ -137,17 +155,14 @@ export function EnterTournamentDialog({
       );
 
       setPlayerName("");
+      setControllerUsername("");
+      setPlayerAddress(undefined);
       onOpenChange(false);
       setIsEntering(false);
     } catch (error) {
       console.error("Failed to enter tournament:", error);
       setIsEntering(false);
     }
-  };
-
-  const handleControllerLogin = async () => {
-    disconnect();
-    connectController();
   };
 
   const ownerAddresses = useMemo(() => {
@@ -161,10 +176,50 @@ export function EnterTournamentDialog({
   useEffect(() => {
     if (!open) {
       setPlayerName("");
-    } else if (accountUsername) {
+      setControllerUsername("");
+      setPlayerAddress(undefined);
+    } else if (isController && accountUsername && address) {
+      // Controller wallet connected - auto-fill player name and set address
       setPlayerName(accountUsername);
+      setPlayerAddress(address);
     }
-  }, [open, accountUsername]);
+  }, [open, accountUsername, address, isController]);
+
+  // Look up controller address from controller username (only for non-controller wallets)
+  useEffect(() => {
+    // Skip lookup if controller is connected
+    if (isController) {
+      return;
+    }
+
+    // Reset address if username is empty
+    if (!controllerUsername.trim()) {
+      setPlayerAddress(undefined);
+      setIsLookingUpUsername(false);
+      return;
+    }
+
+    // Debounce the lookup
+    setIsLookingUpUsername(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        console.log("Looking up username:", controllerUsername.trim());
+        const usernameMap = await lookupUsernames([controllerUsername.trim()]);
+        const foundAddress = usernameMap.get(controllerUsername.trim());
+        console.log("Lookup result:", foundAddress);
+        setPlayerAddress(foundAddress);
+        setIsLookingUpUsername(false);
+      } catch (error) {
+        console.error("Error looking up username:", error);
+        setPlayerAddress(undefined);
+        setIsLookingUpUsername(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [controllerUsername, isController]);
 
   const entryToken = tournamentModel?.entry_fee?.Some?.token_address;
   const entryAmount = tournamentModel?.entry_fee?.Some?.amount;
@@ -843,8 +898,6 @@ export function EnterTournamentDialog({
   //     (prizePoolShare / 100)) /
   //   10 ** 18;
 
-  const isController = isControllerAccount(connector!);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -1221,57 +1274,117 @@ export function EnterTournamentDialog({
               )}
             </div>
           )}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="playerName" className="text-lg font-brand">
-              Player Name
-            </Label>
-            <div className="flex flex-col gap-4">
-              {accountUsername && (
-                <div className="flex flex-row justify-center gap-2">
-                  <span className="text-brand-muted">Default:</span>
-                  <span className="text-brand">{accountUsername}</span>
-                </div>
-              )}
-              <Input
-                id="playerName"
-                placeholder="Enter your player name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full"
-              />
+          {isController ? (
+            // Controller wallet - single player name field
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="playerName" className="text-lg font-brand">
+                Player Name
+              </Label>
+              <div className="flex flex-col gap-4">
+                {accountUsername && (
+                  <div className="flex flex-row justify-center gap-2">
+                    <span className="text-brand-muted">Default:</span>
+                    <span className="text-brand">{accountUsername}</span>
+                  </div>
+                )}
+                <Input
+                  id="playerName"
+                  placeholder="Enter your player name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
-          </div>
-          <div className="text-warning">
-            This game requires you to play with a controller wallet.
-          </div>
+          ) : (
+            // Non-controller wallet - controller username (required) + player name (optional)
+            <>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="controllerUsername" className="text-lg font-brand">
+                  Controller Username
+                </Label>
+                <div className="flex flex-col gap-4">
+                  <Input
+                    id="controllerUsername"
+                    placeholder="Enter controller username"
+                    value={controllerUsername}
+                    onChange={(e) => setControllerUsername(e.target.value)}
+                    className="w-full"
+                  />
+                  {controllerUsername.trim() && (
+                    <div className="flex flex-row items-center gap-2 justify-center">
+                      {isLookingUpUsername ? (
+                        <>
+                          <LoadingSpinner />
+                          <span className="text-brand-muted text-sm">
+                            Looking up controller...
+                          </span>
+                        </>
+                      ) : playerAddress ? (
+                        <>
+                          <span className="w-5 text-success">
+                            <CHECK />
+                          </span>
+                          <span className="text-success text-sm">
+                            Controller found: {displayAddress(playerAddress)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-5 text-warning">
+                            <X />
+                          </span>
+                          <span className="text-warning text-sm">
+                            Controller username not found
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="text-warning text-sm">
+                  Note: The game will be assigned to this controller username.
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="playerName" className="text-lg font-brand">
+                  Player Name (Optional)
+                </Label>
+                <Input
+                  id="playerName"
+                  placeholder="Enter display name (defaults to controller username)"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           {address ? (
-            isController ? (
-              <Button
-                disabled={
-                  !hasBalance ||
-                  !meetsEntryRequirements ||
-                  playerName.length === 0 ||
-                  isEntering
-                }
-                onClick={handleEnterTournament}
-              >
-                {isEntering ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingSpinner />
-                    <span>Entering...</span>
-                  </div>
-                ) : (
-                  "Enter Tournament"
-                )}
-              </Button>
-            ) : (
-              <Button onClick={handleControllerLogin}>Controller Login</Button>
-            )
+            <Button
+              disabled={
+                !hasBalance ||
+                !meetsEntryRequirements ||
+                (isController && playerName.length === 0) ||
+                (!isController && (controllerUsername.length === 0 || !playerAddress || isLookingUpUsername)) ||
+                isEntering
+              }
+              onClick={handleEnterTournament}
+            >
+              {isEntering ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  <span>Entering...</span>
+                </div>
+              ) : (
+                "Enter Tournament"
+              )}
+            </Button>
           ) : (
             <Button onClick={() => connect()}>Connect Wallet</Button>
           )}
