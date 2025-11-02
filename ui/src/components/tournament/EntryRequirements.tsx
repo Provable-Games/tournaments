@@ -385,7 +385,7 @@ const EntryRequirements = ({
                     </span>
                     {blockExplorerExists && (
                       <a
-                        href={`${selectedChainConfig.blockExplorerUrl}/${address}`}
+                        href={`${selectedChainConfig.blockExplorerUrl}/contract/${address}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-6"
