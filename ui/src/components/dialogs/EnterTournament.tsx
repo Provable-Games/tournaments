@@ -8,7 +8,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
-import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
+import { useAccount, useConnect } from "@starknet-react/core";
 import { Tournament, Token, EntryCount } from "@/generated/models.gen";
 import {
   feltToString,
@@ -23,10 +23,7 @@ import { addAddressPadding, BigNumberish } from "starknet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
-import {
-  useGetUsernames,
-  isControllerAccount,
-} from "@/hooks/useController";
+import { useGetUsernames, isControllerAccount } from "@/hooks/useController";
 import { lookupUsernames } from "@cartridge/controller";
 import { CHECK, X, COIN, USER } from "@/components/Icons";
 import {
@@ -96,7 +93,9 @@ export function EnterTournamentDialog({
   } = useSystemCalls();
   const [playerName, setPlayerName] = useState("");
   const [controllerUsername, setControllerUsername] = useState("");
-  const [playerAddress, setPlayerAddress] = useState<string | undefined>(undefined);
+  const [playerAddress, setPlayerAddress] = useState<string | undefined>(
+    undefined
+  );
   const [isLookingUpUsername, setIsLookingUpUsername] = useState(false);
   const [balance, setBalance] = useState<BigNumberish>(0);
   const [isEntering, setIsEntering] = useState(false);
@@ -1300,7 +1299,10 @@ export function EnterTournamentDialog({
             // Non-controller wallet - controller username (required) + player name (optional)
             <>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="controllerUsername" className="text-lg font-brand">
+                <Label
+                  htmlFor="controllerUsername"
+                  className="text-lg font-brand"
+                >
                   Controller Username
                 </Label>
                 <div className="flex flex-col gap-4">
@@ -1371,7 +1373,10 @@ export function EnterTournamentDialog({
                 !hasBalance ||
                 !meetsEntryRequirements ||
                 (isController && playerName.length === 0) ||
-                (!isController && (controllerUsername.length === 0 || !playerAddress || isLookingUpUsername)) ||
+                (!isController &&
+                  (controllerUsername.length === 0 ||
+                    !playerAddress ||
+                    isLookingUpUsername)) ||
                 isEntering
               }
               onClick={handleEnterTournament}
