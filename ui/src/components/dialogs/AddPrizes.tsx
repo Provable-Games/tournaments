@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import TokenDialog from "@/components/dialogs/Token";
 import AmountInput from "@/components/createTournament/inputs/Amount";
@@ -88,6 +89,7 @@ export function AddPrizesDialog({
     {}
   );
   const [percentageArrayInput, setPercentageArrayInput] = useState<string>("");
+  const [tokenIdsInput, setTokenIdsInput] = useState<string>("");
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
@@ -176,6 +178,97 @@ export function AddPrizesDialog({
       setPercentageArrayInput("");
     } catch (error) {
       alert("Invalid format. Please use format like [50,30,20] or 50,30,20");
+    }
+  };
+
+  const handleTokenIdsArrayPaste = () => {
+    try {
+      const trimmedInput = tokenIdsInput.trim();
+      let newNFTPrizes: Array<{
+        tokenType: "ERC721";
+        tokenAddress: string;
+        tokenId: number;
+        position: number;
+      }> = [];
+
+      // Try to detect format
+      if (trimmedInput.startsWith("[") && trimmedInput.endsWith("]")) {
+        // JSON array format - array of objects only
+        const parsed = JSON.parse(trimmedInput);
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (typeof parsed[0] === "object" && parsed[0].tokenId !== undefined) {
+            // Array of objects: [{ tokenId: 1, position: 1 }, ...]
+            newNFTPrizes = parsed.map((item) => {
+              if (typeof item.tokenId !== "number" || typeof item.position !== "number") {
+                throw new Error("Invalid object format - each object must have tokenId and position as numbers");
+              }
+              if (item.position < 1 || item.position > leaderboardSize) {
+                throw new Error(`Position ${item.position} is out of range (1-${leaderboardSize})`);
+              }
+              return {
+                tokenType: "ERC721" as const,
+                tokenAddress: newPrize.tokenAddress,
+                tokenId: item.tokenId,
+                position: item.position,
+              };
+            });
+          } else {
+            throw new Error("JSON array must contain objects with tokenId and position fields");
+          }
+        }
+      } else if (trimmedInput.includes(":")) {
+        // Key-value format: tokenId:position (one per line or comma separated)
+        // Example: "1:1, 2:2, 3:3" or "1:1\n2:2\n3:3"
+        const lines = trimmedInput.split(/[\n,]+/);
+
+        newNFTPrizes = lines
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .map((line) => {
+            const [tokenIdStr, positionStr] = line.split(":").map((s) => s.trim());
+            const tokenId = parseInt(tokenIdStr);
+            const position = parseInt(positionStr);
+
+            if (isNaN(tokenId) || isNaN(position)) {
+              throw new Error(`Invalid format in line: ${line}`);
+            }
+
+            if (position < 1 || position > leaderboardSize) {
+              throw new Error(`Position ${position} is out of range (1-${leaderboardSize})`);
+            }
+
+            return {
+              tokenType: "ERC721" as const,
+              tokenAddress: newPrize.tokenAddress,
+              tokenId,
+              position,
+            };
+          });
+      } else {
+        throw new Error("Position information is required. Please use tokenId:position format or JSON object array format");
+      }
+
+      // Validate we have prizes to add
+      if (newNFTPrizes.length === 0) {
+        alert("No valid NFT prizes to add");
+        return;
+      }
+
+      // Add all NFT prizes
+      setCurrentPrizes([...currentPrizes, ...newNFTPrizes]);
+
+      // Clear the input
+      setTokenIdsInput("");
+    } catch (error) {
+      alert(
+        `Invalid format. Supported formats:\n\n` +
+        `1. Token:Position pairs (one per line or comma-separated):\n` +
+        `   1:1, 2:2, 3:3\n\n` +
+        `2. JSON array of objects:\n` +
+        `   [{ "tokenId": 1, "position": 1 }, { "tokenId": 2, "position": 2 }]\n\n` +
+        `Error: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 
@@ -748,33 +841,35 @@ export function AddPrizesDialog({
                     }
                   />
                 ) : (
-                  <div className="flex items-center gap-4">
-                    <Input
-                      type="number"
-                      placeholder="Token ID"
-                      value={newPrize.tokenId || ""}
-                      onChange={(e) =>
-                        setNewPrize((prev) => ({
-                          ...prev,
-                          tokenId: Number(e.target.value),
-                        }))
-                      }
-                      className="w-[150px]"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Position"
-                      min={1}
-                      max={leaderboardSize}
-                      value={newPrize.position || ""}
-                      onChange={(e) =>
-                        setNewPrize((prev) => ({
-                          ...prev,
-                          position: Number(e.target.value),
-                        }))
-                      }
-                      className="w-[100px]"
-                    />
+                  <div className="flex flex-col gap-2 w-full">
+                    <div className="flex items-center gap-4">
+                      <Input
+                        type="number"
+                        placeholder="Token ID"
+                        value={newPrize.tokenId || ""}
+                        onChange={(e) =>
+                          setNewPrize((prev) => ({
+                            ...prev,
+                            tokenId: Number(e.target.value),
+                          }))
+                        }
+                        className="w-[150px]"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Position"
+                        min={1}
+                        max={leaderboardSize}
+                        value={newPrize.position || ""}
+                        onChange={(e) =>
+                          setNewPrize((prev) => ({
+                            ...prev,
+                            position: Number(e.target.value),
+                          }))
+                        }
+                        className="w-[100px]"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -783,6 +878,54 @@ export function AddPrizesDialog({
 
           {newPrize.tokenAddress && (
             <>
+              {/* Bulk Token IDs Input (for ERC721 only) */}
+              {!isERC20 && (
+                <div className="space-y-2 border border-brand-muted p-4 rounded-lg">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-semibold">
+                      Bulk Add NFTs
+                    </span>
+                    <span className="text-sm text-neutral">
+                      Add multiple token IDs with position mapping
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-sm">Token IDs with Positions</Label>
+                      <textarea
+                        placeholder={`Supported formats:
+
+1. Token:Position pairs (one per line or comma-separated):
+   1:1
+   2:2
+   3:2
+
+2. JSON array of objects:
+   [{ "tokenId": 1, "position": 1 }, { "tokenId": 2, "position": 2 }]
+
+Examples:
+- Award 3 NFTs to first place: 1:1, 2:1, 3:1
+- Distribute across positions: 1:1, 2:2, 3:2, 4:3`}
+                        value={tokenIdsInput}
+                        onChange={(e) => setTokenIdsInput(e.target.value)}
+                        className="flex min-h-[120px] w-full rounded-md border border-brand-muted bg-black px-3 py-2 text-sm text-brand placeholder:text-neutral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y font-mono"
+                        rows={6}
+                      />
+                    </div>
+                    <div className="flex justify-end items-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleTokenIdsArrayPaste}
+                        disabled={!tokenIdsInput.trim()}
+                      >
+                        Add All NFTs
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Distribution Settings (for ERC20 only) */}
               {isERC20 && (
                 <>
