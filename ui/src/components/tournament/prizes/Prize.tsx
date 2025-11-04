@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
+import { formatNumber, getOrdinalSuffix, indexAddress } from "@/lib/utils";
 import { calculatePrizeValue, countTotalNFTs } from "@/lib/utils/formatting";
 import {
   HoverCard,
@@ -26,6 +26,7 @@ interface PrizeProps {
   prices: TokenPrices;
   tokens: Token[];
   tokenDecimals: Record<string, number>;
+  nftSymbols?: Record<string, string>;
 }
 
 const Prize = ({
@@ -34,10 +35,24 @@ const Prize = ({
   prices,
   tokens,
   tokenDecimals,
+  nftSymbols = {},
 }: PrizeProps) => {
   const { selectedChainConfig } = useDojo();
   const totalPrizeNFTs = countTotalNFTs(prizes);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
+
+  // Get NFT symbol for the summary display
+  const getNftSymbol = () => {
+    const nftPrizes = Object.entries(prizes).filter(([_, prize]) => prize.type === "erc721");
+    if (nftPrizes.length === 0) return "NFT";
+
+    // Get the first NFT's address
+    const firstNftAddress = nftPrizes[0][1].address;
+    const nftToken = tokens.find(
+      (t) => indexAddress(t.address) === indexAddress(firstNftAddress)
+    );
+    return nftToken?.symbol || nftSymbols[firstNftAddress] || "NFT";
+  };
 
   // Calculate total USD value with proper token symbol lookup
   const totalPrizesValueUSD = Object.entries(prizes)
@@ -56,15 +71,15 @@ const Prize = ({
 
   // Function to render prize details content
   const renderPrizeDetails = () => (
-    <div className="flex flex-col gap-2">
-      <div className="pt-4 px-4">
+    <div className="flex flex-col gap-2 max-h-[400px]">
+      <div className="pt-4 px-4 flex-shrink-0">
         <h4 className="font-brand">
           {position}
           <sup>{getOrdinalSuffix(position)}</sup> Prize
         </h4>
       </div>
-      <div className="w-full bg-brand/50 h-0.5" />
-      <div className="flex flex-col gap-2">
+      <div className="w-full bg-brand/50 h-0.5 flex-shrink-0" />
+      <div className="flex flex-col gap-2 overflow-y-auto px-4 py-2">
         {Object.entries(prizes)
           .map(([key, prize]) => {
             const token = tokens.find((t) => t.address === prize.address);
@@ -91,7 +106,7 @@ const Prize = ({
             );
             const decimals = tokenDecimals[prize.address] || 18;
             return (
-              <div key={key} className="flex justify-between items-center px-4">
+              <div key={key} className="flex justify-between items-center">
                 {prize.type === "erc20" ? (
                   <div className="flex flex-row gap-1 items-center">
                     <span>{`${formatNumber(
@@ -110,13 +125,37 @@ const Prize = ({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1">
-                    {Array.isArray(prize.value) ? (
-                      prize.value.map((tokenId, idx) => (
-                        <span key={idx}>NFT #{tokenId.toString()}</span>
-                      ))
-                    ) : (
-                      <span>NFT #{prize.value.toString()}</span>
-                    )}
+                    {(() => {
+                      const nftToken = tokens.find(
+                        (t) => indexAddress(t.address) === indexAddress(prize.address)
+                      );
+                      const nftSymbol = nftToken?.symbol || nftSymbols[prize.address] || "NFT";
+
+                      if (Array.isArray(prize.value)) {
+                        const count = prize.value.length;
+                        if (count > 5) {
+                          // Show summary for more than 5 NFTs
+                          return (
+                            <span>
+                              {count} {nftSymbol}{count > 1 ? "s" : ""}
+                            </span>
+                          );
+                        } else {
+                          // Show individual IDs for 5 or fewer
+                          return prize.value.map((tokenId, idx) => (
+                            <span key={idx}>
+                              {nftSymbol} #{tokenId.toString()}
+                            </span>
+                          ));
+                        }
+                      } else {
+                        return (
+                          <span>
+                            {nftSymbol} #{prize.value.toString()}
+                          </span>
+                        );
+                      }
+                    })()}
                   </div>
                 )}
                 {prize.type === "erc20" && hasPrice ? (
@@ -140,7 +179,7 @@ const Prize = ({
           })}
       </div>
       {totalPrizesValueUSD > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 flex-shrink-0">
           <div className="w-full bg-brand/50 h-0.5" />
           <div className="flex justify-between items-center px-4 pb-2">
             <span className="font-brand">Total</span>
@@ -179,7 +218,7 @@ const Prize = ({
                   )}
                   {totalPrizeNFTs > 0 && (
                     <span>
-                      {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
+                      {totalPrizeNFTs} {getNftSymbol()}{totalPrizeNFTs === 1 ? "" : "s"}
                     </span>
                   )}
                 </div>
@@ -218,15 +257,21 @@ const Prize = ({
                             </>
                           ) : (
                             <span className="whitespace-nowrap">
-                              {Array.isArray(prize.value) ? (
-                                <>
-                                  NFT #{prize.value[0]?.toString()}
-                                  {prize.value.length > 1 &&
-                                    ` +${prize.value.length - 1}`}
-                                </>
-                              ) : (
-                                `NFT #${prize.value.toString()}`
-                              )}
+                              {(() => {
+                                const nftToken = tokens.find(
+                                  (t) => indexAddress(t.address) === indexAddress(prize.address)
+                                );
+                                const nftSymbol = nftToken?.symbol || nftSymbols[prize.address] || "NFT";
+                                return Array.isArray(prize.value) ? (
+                                  <>
+                                    {nftSymbol} #{prize.value[0]?.toString()}
+                                    {prize.value.length > 1 &&
+                                      ` +${prize.value.length - 1}`}
+                                  </>
+                                ) : (
+                                  `${nftSymbol} #${prize.value.toString()}`
+                                );
+                              })()}
                             </span>
                           )}
                         </div>
@@ -273,7 +318,7 @@ const Prize = ({
             )}
             {totalPrizeNFTs > 0 && (
               <span>
-                {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
+                {totalPrizeNFTs} {getNftSymbol()}{totalPrizeNFTs === 1 ? "" : "s"}
               </span>
             )}
           </div>
@@ -312,15 +357,21 @@ const Prize = ({
                       </>
                     ) : (
                       <span className="whitespace-nowrap">
-                        {Array.isArray(prize.value) ? (
-                          <>
-                            NFT #{prize.value[0]?.toString()}
-                            {prize.value.length > 1 &&
-                              ` +${prize.value.length - 1}`}
-                          </>
-                        ) : (
-                          `NFT #${prize.value.toString()}`
-                        )}
+                        {(() => {
+                          const nftToken = tokens.find(
+                            (t) => indexAddress(t.address) === indexAddress(prize.address)
+                          );
+                          const nftSymbol = nftToken?.symbol || nftSymbols[prize.address] || "NFT";
+                          return Array.isArray(prize.value) ? (
+                            <>
+                              {nftSymbol} #{prize.value[0]?.toString()}
+                              {prize.value.length > 1 &&
+                                ` +${prize.value.length - 1}`}
+                            </>
+                          ) : (
+                            `${nftSymbol} #${prize.value.toString()}`
+                          );
+                        })()}
                       </span>
                     )}
                   </div>

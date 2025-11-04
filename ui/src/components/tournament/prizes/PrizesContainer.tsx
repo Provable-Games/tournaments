@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { PositionPrizes } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { indexAddress } from "@/lib/utils";
 import {
   TournamentCard,
   TournamentCardContent,
@@ -85,23 +86,51 @@ const PrizesContainer = ({
       const tokenType = isErc20 ? "erc20" : isErc721 ? "erc721" : "erc20";
       const tokenKey = `${prize.token_address}_${tokenType}`;
 
-      acc[position][tokenKey] = {
-        type: tokenType as "erc20" | "erc721",
-        payout_position: position,
-        address: prize.token_address,
-        value:
-          tokenType === "erc20"
-            ? BigInt(
-                prize.token_type?.variant?.erc20?.amount ||
-                  prize["token_type.erc20.amount"] ||
-                  0
-              )
-            : BigInt(
-                prize.token_type?.variant?.erc721?.token_id ||
-                  prize["token_type.erc721.id"] ||
-                  0
-              ),
-      };
+      if (tokenType === "erc20") {
+        // For ERC20, sum the amounts
+        const amount = BigInt(
+          prize.token_type?.variant?.erc20?.amount ||
+            prize["token_type.erc20.amount"] ||
+            0
+        );
+
+        if (acc[position][tokenKey]) {
+          acc[position][tokenKey].value =
+            (acc[position][tokenKey].value as bigint) + amount;
+        } else {
+          acc[position][tokenKey] = {
+            type: "erc20",
+            payout_position: position,
+            address: prize.token_address,
+            value: amount,
+          };
+        }
+      } else {
+        // For ERC721, collect token IDs into an array
+        const tokenId = BigInt(
+          prize.token_type?.variant?.erc721?.token_id ||
+            prize["token_type.erc721.id"] ||
+            0
+        );
+
+        if (acc[position][tokenKey]) {
+          // Add to existing array
+          const currentValue = acc[position][tokenKey].value;
+          if (Array.isArray(currentValue)) {
+            acc[position][tokenKey].value = [...currentValue, tokenId];
+          } else {
+            acc[position][tokenKey].value = [currentValue as bigint, tokenId];
+          }
+        } else {
+          // Create new entry with single token ID
+          acc[position][tokenKey] = {
+            type: "erc721",
+            payout_position: position,
+            address: prize.token_address,
+            value: tokenId,
+          };
+        }
+      }
 
       return acc;
     }, {});
@@ -134,6 +163,22 @@ const PrizesContainer = ({
   ).length;
   const totalPrizeNFTs = dbNFTs + entryFeeNFTs;
 
+  // Get NFT symbol for total display - use the first NFT collection found
+  const nftSymbol = useMemo(() => {
+    // Look through groupedPrizes to find the first NFT
+    const firstNftPrize = Object.values(groupedPrizes)
+      .flatMap((prizes) => Object.values(prizes))
+      .find((prize) => prize.type === "erc721");
+
+    if (firstNftPrize) {
+      const nftToken = tokens.find(
+        (t) => indexAddress(t.address) === indexAddress(firstNftPrize.address)
+      );
+      return nftToken?.symbol || "NFT";
+    }
+    return "NFT";
+  }, [groupedPrizes, tokens]);
+
   useEffect(() => {
     setShowPrizes(prizesExist);
   }, [prizesExist]);
@@ -160,7 +205,7 @@ const PrizesContainer = ({
                 )}
                 {totalPrizeNFTs > 0 && (
                   <span className="font-brand text-xl text-brand-muted">
-                    {totalPrizeNFTs} NFT{totalPrizeNFTs === 1 ? "" : "s"}
+                    {totalPrizeNFTs} {nftSymbol}{totalPrizeNFTs === 1 ? "" : "s"}
                   </span>
                 )}
               </>

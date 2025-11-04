@@ -194,21 +194,13 @@ export const useSubscribeTokensQuery = (namespace: string) => {
 export const useSubscribeMetricsQuery = (namespace: string) => {
   const query = useMemo(
     () =>
-      new ToriiQueryBuilder()
-        .withClause(
-          KeysClause(
-            [
-              getModelsMapping(namespace).PlatformMetrics,
-              getModelsMapping(namespace).PrizeMetrics,
-            ],
-            [undefined]
-          ).build()
-        )
-        .withEntityModels([
+      KeysClause(
+        [
           getModelsMapping(namespace).PlatformMetrics,
           getModelsMapping(namespace).PrizeMetrics,
-        ])
-        .includeHashedKeys(),
+        ],
+        []
+      ).build(),
     [namespace]
   );
 

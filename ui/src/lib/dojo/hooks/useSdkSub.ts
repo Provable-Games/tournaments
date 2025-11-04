@@ -175,15 +175,10 @@ export const useSdkSubscribeEntities = ({
                 );
               }
 
-              console.log(
-                "useSdkSubscribeEntities() response.data:",
-                response.data
-              );
               console.log("Parsed entity:", parsedEntity);
               state.updateEntity(
                 parsedEntity as Partial<ParsedEntity<SchemaType>>
               );
-              console.log("entities", state.getEntities());
             }
           }
         );

@@ -18,18 +18,15 @@ import TournamentConfirmation from "@/components/dialogs/TournamentConfirmation"
 import { processPrizes, processTournamentData } from "@/lib/utils/formatting";
 import { useAccount } from "@starknet-react/core";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
-import { useSubscribeTournamentsQuery } from "@/dojo/hooks/useSdkQueries";
-import {
-  getModelsMapping,
-  PlatformMetrics,
-  PrizeMetrics,
-  Tournament,
-} from "@/generated/models.gen";
+import { Tournament } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
 import { FormToken } from "@/lib/types";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
-import useModel from "@/dojo/hooks/useModel";
+import {
+  useGetPlatformMetrics,
+  useGetPrizeMetrics,
+} from "@/dojo/hooks/useSqlQueries";
 
 export type TournamentFormData = z.infer<typeof formSchema>;
 
@@ -63,7 +60,9 @@ const formSchema = z.object({
   gatingOptions: z
     .object({
       entry_limit: z.number().min(1).max(100).optional(),
-      type: z.enum(["token", "tournament", "addresses", "extension"]).optional(),
+      type: z
+        .enum(["token", "tournament", "addresses", "extension"])
+        .optional(),
       token: z.custom<FormToken>().optional(),
       tournament: z
         .object({
@@ -125,8 +124,6 @@ const CreateTournament = () => {
   const { namespace } = useDojo();
   const { createTournamentAndApproveAndAddPrizes } = useSystemCalls();
 
-  useSubscribeTournamentsQuery(namespace);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     shouldUnregister: false,
@@ -179,18 +176,19 @@ const CreateTournament = () => {
     []
   );
 
-  const platformMetricsModel = useModel(
-    metricsKeyId,
-    getModelsMapping(namespace).PlatformMetrics
-  ) as unknown as PlatformMetrics;
+  const { data: platformMetricsModel } = useGetPlatformMetrics({
+    namespace,
+    active: true,
+  });
 
-  const prizeMetricsModel = useModel(
-    metricsKeyId,
-    getModelsMapping(namespace).PrizeMetrics
-  ) as unknown as PrizeMetrics;
+  const { data: prizeMetricsModel } = useGetPrizeMetrics({
+    namespace,
+    tournamentId: metricsKeyId,
+    active: true,
+  });
 
-  const tournamentCount = platformMetricsModel?.total_tournaments ?? 0;
-  const prizeCount = prizeMetricsModel?.total_prizes ?? 0;
+  const tournamentCount = Number(platformMetricsModel?.total_tournaments ?? 0);
+  const prizeCount = Number(prizeMetricsModel?.total_prizes ?? 0);
 
   // Add state for current step
   const [currentStep, setCurrentStep] = useState<

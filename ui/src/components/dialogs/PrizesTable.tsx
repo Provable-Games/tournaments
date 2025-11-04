@@ -15,7 +15,7 @@ import {
 import { TokenPrices } from "@/hooks/useEkuboPrices";
 import { PositionPrizes } from "@/lib/types";
 import { Token, Prize } from "@/generated/models.gen";
-import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
+import { formatNumber, getOrdinalSuffix, indexAddress } from "@/lib/utils";
 import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
 import { calculatePrizeValue } from "@/lib/utils/formatting";
@@ -98,23 +98,50 @@ export const PrizesTableDialog = ({
       const tokenType = isErc20 ? "erc20" : isErc721 ? "erc721" : "erc20";
       const tokenKey = `${prize.token_address}_${tokenType}`;
 
-      acc[position][tokenKey] = {
-        type: tokenType as "erc20" | "erc721",
-        payout_position: position,
-        address: prize.token_address,
-        value:
-          tokenType === "erc20"
-            ? BigInt(
-                prize.token_type?.variant?.erc20?.amount ||
-                  prize["token_type.erc20.amount"] ||
-                  0
-              )
-            : BigInt(
-                prize.token_type?.variant?.erc721?.token_id ||
-                  prize["token_type.erc721.id"] ||
-                  0
-              ),
-      };
+      if (tokenType === "erc20") {
+        // For ERC20, sum the amounts
+        const amount = BigInt(
+          prize.token_type?.variant?.erc20?.amount ||
+            prize["token_type.erc20.amount"] ||
+            0
+        );
+
+        if (acc[position][tokenKey]) {
+          acc[position][tokenKey].value = (acc[position][tokenKey].value as bigint) + amount;
+        } else {
+          acc[position][tokenKey] = {
+            type: "erc20",
+            payout_position: position,
+            address: prize.token_address,
+            value: amount,
+          };
+        }
+      } else {
+        // For ERC721, collect token IDs into an array
+        const tokenId = BigInt(
+          prize.token_type?.variant?.erc721?.token_id ||
+            prize["token_type.erc721.id"] ||
+            0
+        );
+
+        if (acc[position][tokenKey]) {
+          // Add to existing array
+          const currentValue = acc[position][tokenKey].value;
+          if (Array.isArray(currentValue)) {
+            acc[position][tokenKey].value = [...currentValue, tokenId];
+          } else {
+            acc[position][tokenKey].value = [currentValue as bigint, tokenId];
+          }
+        } else {
+          // Create new entry with single token ID
+          acc[position][tokenKey] = {
+            type: "erc721",
+            payout_position: position,
+            address: prize.token_address,
+            value: tokenId,
+          };
+        }
+      }
 
       return acc;
     }, {});
@@ -186,9 +213,16 @@ export const PrizesTableDialog = ({
                                       <span className="text-xs text-muted-foreground">{token?.symbol || symbol}</span>
                                     </>
                                   ) : (
-                                    <span>{`${Array.isArray(prize.value) ? prize.value.length : 1} NFT${
-                                      (Array.isArray(prize.value) ? prize.value.length : 1) === 1 ? "" : "s"
-                                    }`}</span>
+                                    <span>
+                                      {(() => {
+                                        const nftToken = tokens.find(
+                                          (t) => indexAddress(t.address) === indexAddress(prize.address)
+                                        );
+                                        const nftSymbol = nftToken?.symbol || "NFT";
+                                        const count = Array.isArray(prize.value) ? prize.value.length : 1;
+                                        return `${count} ${nftSymbol}${count === 1 ? "" : "s"}`;
+                                      })()}
+                                    </span>
                                   )}
                                 </div>
                               );
@@ -279,13 +313,16 @@ export const PrizesTableDialog = ({
                                       )}
                                     </>
                                   ) : (
-                                    <span>{`${
-                                      Array.isArray(prize.value) ? prize.value.length : 1
-                                    } NFT${
-                                      (Array.isArray(prize.value) ? prize.value.length : 1) === 1
-                                        ? ""
-                                        : "s"
-                                    }`}</span>
+                                    <span>
+                                      {(() => {
+                                        const nftToken = tokens.find(
+                                          (t) => indexAddress(t.address) === indexAddress(prize.address)
+                                        );
+                                        const nftSymbol = nftToken?.symbol || "NFT";
+                                        const count = Array.isArray(prize.value) ? prize.value.length : 1;
+                                        return `${count} ${nftSymbol}${count === 1 ? "" : "s"}`;
+                                      })()}
+                                    </span>
                                   )}
                                 </div>
                               );

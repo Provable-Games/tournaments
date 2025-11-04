@@ -1238,3 +1238,47 @@ export const useGetTournamentPrizeClaimsAggregations = ({
 
   return { data: parsedData, loading, error };
 };
+
+export const useGetPrizeMetrics = ({
+  namespace,
+  tournamentId,
+  active = false,
+}: {
+  namespace: string;
+  tournamentId: BigNumberish;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && active
+        ? `
+    SELECT * FROM '${namespace}-PrizeMetrics'
+    WHERE key = "${addAddressPadding(tournamentId)}"
+  `
+        : null,
+    [namespace, tournamentId, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data: data?.[0], loading, error };
+};
+
+export const useGetPlatformMetrics = ({
+  namespace,
+  active = false,
+}: {
+  namespace: string;
+  active?: boolean;
+}) => {
+  const query = useMemo(
+    () =>
+      namespace && active
+        ? `
+    SELECT * FROM '${namespace}-PlatformMetrics'
+    WHERE key = "0x0000000000000000000000000000000000000000000000000000000000000000"
+  `
+        : null,
+    [namespace, active]
+  );
+  const { data, loading, error } = useSqlExecute(query);
+  return { data: data?.[0], loading, error };
+};

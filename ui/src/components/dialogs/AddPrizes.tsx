@@ -19,7 +19,7 @@ import {
   getOrdinalSuffix,
 } from "@/lib/utils";
 import { NewPrize, FormToken } from "@/lib/types";
-import { getModelsMapping, Prize, PrizeMetrics } from "@/generated/models.gen";
+import { Prize } from "@/generated/models.gen";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { addAddressPadding, BigNumberish } from "starknet";
 import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
@@ -36,8 +36,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LoadingSpinner } from "@/components/ui/spinner";
-import useModel from "@/dojo/hooks/useModel";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
+import { useGetPrizeMetrics } from "@/dojo/hooks/useSqlQueries";
 
 export function AddPrizesDialog({
   open,
@@ -85,6 +85,9 @@ export function AddPrizesDialog({
   );
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
+  const [missingTokenIds, setMissingTokenIds] = useState<
+    Array<{ tokenAddress: string; tokenId: number }>
+  >([]);
   const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
     {}
   );
@@ -98,10 +101,11 @@ export function AddPrizesDialog({
     []
   );
 
-  const prizeMetricsModel = useModel(
-    metricsKeyId,
-    getModelsMapping(namespace).PrizeMetrics
-  ) as unknown as PrizeMetrics;
+  const { data: prizeMetricsModel } = useGetPrizeMetrics({
+    namespace,
+    tournamentId: metricsKeyId,
+    active: open,
+  });
 
   const totalDistributionPercentage = useMemo(() => {
     return (
@@ -197,14 +201,24 @@ export function AddPrizesDialog({
         const parsed = JSON.parse(trimmedInput);
 
         if (Array.isArray(parsed) && parsed.length > 0) {
-          if (typeof parsed[0] === "object" && parsed[0].tokenId !== undefined) {
+          if (
+            typeof parsed[0] === "object" &&
+            parsed[0].tokenId !== undefined
+          ) {
             // Array of objects: [{ tokenId: 1, position: 1 }, ...]
             newNFTPrizes = parsed.map((item) => {
-              if (typeof item.tokenId !== "number" || typeof item.position !== "number") {
-                throw new Error("Invalid object format - each object must have tokenId and position as numbers");
+              if (
+                typeof item.tokenId !== "number" ||
+                typeof item.position !== "number"
+              ) {
+                throw new Error(
+                  "Invalid object format - each object must have tokenId and position as numbers"
+                );
               }
               if (item.position < 1 || item.position > leaderboardSize) {
-                throw new Error(`Position ${item.position} is out of range (1-${leaderboardSize})`);
+                throw new Error(
+                  `Position ${item.position} is out of range (1-${leaderboardSize})`
+                );
               }
               return {
                 tokenType: "ERC721" as const,
@@ -214,7 +228,9 @@ export function AddPrizesDialog({
               };
             });
           } else {
-            throw new Error("JSON array must contain objects with tokenId and position fields");
+            throw new Error(
+              "JSON array must contain objects with tokenId and position fields"
+            );
           }
         }
       } else if (trimmedInput.includes(":")) {
@@ -226,7 +242,9 @@ export function AddPrizesDialog({
           .map((line) => line.trim())
           .filter((line) => line.length > 0)
           .map((line) => {
-            const [tokenIdStr, positionStr] = line.split(":").map((s) => s.trim());
+            const [tokenIdStr, positionStr] = line
+              .split(":")
+              .map((s) => s.trim());
             const tokenId = parseInt(tokenIdStr);
             const position = parseInt(positionStr);
 
@@ -235,7 +253,9 @@ export function AddPrizesDialog({
             }
 
             if (position < 1 || position > leaderboardSize) {
-              throw new Error(`Position ${position} is out of range (1-${leaderboardSize})`);
+              throw new Error(
+                `Position ${position} is out of range (1-${leaderboardSize})`
+              );
             }
 
             return {
@@ -246,7 +266,9 @@ export function AddPrizesDialog({
             };
           });
       } else {
-        throw new Error("Position information is required. Please use tokenId:position format or JSON object array format");
+        throw new Error(
+          "Position information is required. Please use tokenId:position format or JSON object array format"
+        );
       }
 
       // Validate we have prizes to add
@@ -263,11 +285,11 @@ export function AddPrizesDialog({
     } catch (error) {
       alert(
         `Invalid format. Supported formats:\n\n` +
-        `1. Token:Position pairs (one per line or comma-separated):\n` +
-        `   1:1, 2:2, 3:3\n\n` +
-        `2. JSON array of objects:\n` +
-        `   [{ "tokenId": 1, "position": 1 }, { "tokenId": 2, "position": 2 }]\n\n` +
-        `Error: ${error instanceof Error ? error.message : String(error)}`
+          `1. Token:Position pairs (one per line or comma-separated):\n` +
+          `   1:1, 2:2, 3:3\n\n` +
+          `2. JSON array of objects:\n` +
+          `   [{ "tokenId": 1, "position": 1 }, { "tokenId": 2, "position": 2 }]\n\n` +
+          `Error: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   };
@@ -305,7 +327,7 @@ export function AddPrizesDialog({
     }
   };
 
-  const prizeCount = prizeMetricsModel?.total_prizes ?? 0;
+  const prizeCount = Number(prizeMetricsModel?.total_prizes ?? 0);
 
   const handleAddPrizes = async () => {
     if (
@@ -554,6 +576,7 @@ export function AddPrizesDialog({
 
       // Check if any token has insufficient balance
       let insufficient = false;
+      const missing: Array<{ tokenAddress: string; tokenId: number }> = [];
 
       // Get decimals for balance checking
       const erc20Addresses = aggregatedPrizesArray
@@ -600,28 +623,45 @@ export function AddPrizesDialog({
               // Compare owner address with user's address
               if (BigInt(owner || "0") !== BigInt(address || "0")) {
                 insufficient = true;
-                console.error(`User does not own token ID ${tokenId} of ${prize.tokenAddress}`);
-                break;
+                missing.push({
+                  tokenAddress: prize.tokenAddress,
+                  tokenId: tokenId,
+                });
+                console.error(
+                  `User does not own token ID ${tokenId} of ${prize.tokenAddress}`
+                );
               }
             } catch (error) {
-              console.error(`Error checking ownership of token ID ${tokenId}:`, error);
+              console.error(
+                `Error checking ownership of token ID ${tokenId}:`,
+                error
+              );
               insufficient = true;
-              break;
+              missing.push({
+                tokenAddress: prize.tokenAddress,
+                tokenId: tokenId,
+              });
             }
           }
-
-          if (insufficient) break;
         }
       }
 
       setHasInsufficientBalance(insufficient);
+      setMissingTokenIds(missing);
     } catch (error) {
       console.error("Error checking balances:", error);
       setHasInsufficientBalance(true);
     } finally {
       setIsLoadingBalances(false);
     }
-  }, [address, account, currentPrizes, aggregatedPrizesArray, tokenDecimals, getTokenDecimals]);
+  }, [
+    address,
+    account,
+    currentPrizes,
+    aggregatedPrizesArray,
+    tokenDecimals,
+    getTokenDecimals,
+  ]);
 
   useEffect(() => {
     if (onConfirmation && address) {
@@ -672,11 +712,31 @@ export function AddPrizesDialog({
               {isLoadingBalances ? (
                 <div className="mt-2 text-sm">Checking balances...</div>
               ) : hasInsufficientBalance ? (
-                <div className="mt-2 font-medium flex flex-row items-center gap-2 text-destructive">
-                  <span className="w-6">
-                    <ALERT />
-                  </span>
-                  <span>Insufficient balance for some tokens</span>
+                <div className="mt-2 flex flex-col gap-2">
+                  <div className="font-medium flex flex-row items-center gap-2 text-destructive">
+                    <span className="w-6">
+                      <ALERT />
+                    </span>
+                    <span>Insufficient balance for some tokens</span>
+                  </div>
+                  {missingTokenIds.length > 0 && (
+                    <div className="ml-8 text-sm space-y-1">
+                      <p className="font-semibold">Missing ERC721 Token IDs:</p>
+                      <div className="max-h-32 overflow-y-auto bg-black/30 p-2 rounded border border-destructive/30">
+                        {missingTokenIds.map(
+                          ({ tokenAddress, tokenId }, idx) => (
+                            <div key={idx} className="font-mono text-xs">
+                              Token #{tokenId}
+                              <span className="text-muted-foreground ml-2">
+                                ({tokenAddress.slice(0, 6)}...
+                                {tokenAddress.slice(-4)})
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-2 font-medium flex flex-row items-center gap-2">
@@ -698,10 +758,15 @@ export function AddPrizesDialog({
                     <span className="font-brand w-10">
                       {`${prize.position}${getOrdinalSuffix(prize.position)}`}
                     </span>
-                    <span className="font-medium">{selectedToken?.symbol}</span>
+                    <span className="font-medium">
+                      {prize.tokenType === "ERC721"
+                        ? selectedToken?.symbol || "NFT"
+                        : selectedToken?.symbol}
+                    </span>
                     {prize.count > 1 && (
                       <span className="text-sm text-muted-foreground">
-                        ({prize.count} prizes)
+                        ({prize.count}{" "}
+                        {prize.tokenType === "ERC721" ? "NFTs" : "prizes"})
                       </span>
                     )}
                   </div>
@@ -735,11 +800,38 @@ export function AddPrizesDialog({
                       </div>
                     ) : (
                       <div className="flex flex-col items-end">
-                        {prize.tokenIds.map((id: number, idx: number) => (
-                          <span key={idx} className="font-semibold">
-                            #{id}
-                          </span>
-                        ))}
+                        {prize.tokenIds.length <= 5 ? (
+                          // Show all token IDs if 5 or fewer
+                          prize.tokenIds.map((id: number, idx: number) => (
+                            <span key={idx} className="font-semibold text-sm">
+                              #{id}
+                            </span>
+                          ))
+                        ) : (
+                          // Show compact summary for more than 5
+                          <Tooltip delayDuration={50}>
+                            <TooltipTrigger asChild>
+                              <div className="text-right cursor-pointer">
+                                <span className="font-semibold text-sm block">
+                                  {prize.tokenIds.length} NFTs
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  #{prize.tokenIds[0]} - #
+                                  {prize.tokenIds[prize.tokenIds.length - 1]}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-black text-brand max-h-64 overflow-y-auto">
+                              <div className="grid grid-cols-5 gap-2 text-xs max-w-md">
+                                {prize.tokenIds.map(
+                                  (id: number, idx: number) => (
+                                    <span key={idx}>#{id}</span>
+                                  )
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     )}
                   </div>
@@ -882,16 +974,16 @@ export function AddPrizesDialog({
               {!isERC20 && (
                 <div className="space-y-2 border border-brand-muted p-4 rounded-lg">
                   <div className="flex flex-col gap-1">
-                    <span className="font-semibold">
-                      Bulk Add NFTs
-                    </span>
+                    <span className="font-semibold">Bulk Add NFTs</span>
                     <span className="text-sm text-neutral">
                       Add multiple token IDs with position mapping
                     </span>
                   </div>
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-sm">Token IDs with Positions</Label>
+                      <Label className="text-sm">
+                        Token IDs with Positions
+                      </Label>
                       <textarea
                         placeholder={`Supported formats:
 

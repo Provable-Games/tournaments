@@ -12,6 +12,7 @@ import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkC
 import { useMiniGames } from "metagame-sdk/sql";
 import {
   useSubscribeTournamentsQuery,
+  useSubscribeMetricsQuery,
 } from "./dojo/hooks/useSdkQueries";
 import { useDojo } from "./context/dojo";
 
@@ -34,8 +35,7 @@ function App() {
 
   useResetDojoOnNetworkChange();
 
-  // useGetTokensQuery(namespace);
-  // useSubscribeMetricsQuery(namespace);
+  useSubscribeMetricsQuery(namespace);
   useSubscribeTournamentsQuery(namespace);
 
   const { minigames, loading: minigamesLoading } = useMiniGames({});
