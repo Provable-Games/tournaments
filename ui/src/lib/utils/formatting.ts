@@ -104,9 +104,12 @@ export const processTournamentData = (
   let entryRequirement;
   if (formData.enableGating && entryRequirementType) {
     entryRequirement = {
-      entry_limit: formData.enableEntryLimit
-        ? formData.gatingOptions?.entry_limit ?? 0
-        : 0,
+      entry_limit:
+        formData.gatingOptions?.type === "extension"
+          ? 0 // Extensions handle their own entry limits
+          : formData.enableEntryLimit
+            ? formData.gatingOptions?.entry_limit ?? 0
+            : 0,
       entry_requirement_type: entryRequirementType,
     };
   }

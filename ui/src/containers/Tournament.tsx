@@ -735,60 +735,10 @@ const Tournament = () => {
             </div>
           </div>
           <div className="flex flex-row items-center justify-between gap-4">
-            <div className="relative overflow-hidden h-6 flex-1 min-w-0">
+            <div className={`relative overflow-hidden flex-1 min-w-0 ${
+              tournamentModel?.metadata?.description?.startsWith("#") ? "" : "h-6"
+            }`}>
               {tournamentModel?.metadata?.description?.startsWith("#") ? (
-                <p className="overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg">
-                  {tournamentModel?.metadata?.description
-                    ?.split("\n")[0]
-                    ?.replace(/^#+ /, "") || ""}
-                </p>
-              ) : (
-                <p
-                  ref={textRef}
-                  className={`${
-                    isExpanded
-                      ? "whitespace-pre-wrap text-xs sm:text-base"
-                      : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
-                  }`}
-                >
-                  {tournamentModel?.metadata?.description &&
-                    tournamentModel?.metadata?.description
-                      ?.replace("Opus.Cash", "https://opus.money")
-                      .split(/(https?:\/\/[^\s]+?)([.,;:!?])?(?=\s|$)/g)
-                      .map((part: string, i: number, arr: string[]) => {
-                        if (part && part.match(/^https?:\/\//)) {
-                          // This is a URL
-                          return (
-                            <a
-                              key={i}
-                              href={part}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-brand-muted hover:underline"
-                            >
-                              {part}
-                            </a>
-                          );
-                        } else if (
-                          i > 0 &&
-                          arr[i - 1] &&
-                          typeof arr[i - 1] === "string" &&
-                          arr[i - 1].match(/^https?:\/\//) &&
-                          part &&
-                          /^[.,;:!?]$/.test(part)
-                        ) {
-                          // This is punctuation that followed a URL
-                          return part;
-                        } else {
-                          // This is regular text
-                          return part;
-                        }
-                      })}
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              {tournamentModel?.metadata?.description?.startsWith("#") && (
                 <Button
                   onClick={() => setIsDescriptionDialogOpen(true)}
                   variant="outline"
@@ -796,16 +746,60 @@ const Tournament = () => {
                 >
                   View Full Description
                 </Button>
-              )}
-              {isOverflowing &&
-                !tournamentModel?.metadata?.description?.startsWith("#") && (
-                  <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-brand hover:text-brand-muted font-bold text-sm sm:text-base"
+              ) : (
+                <div className="flex flex-row items-center gap-4">
+                  <p
+                    ref={textRef}
+                    className={`${
+                      isExpanded
+                        ? "whitespace-pre-wrap text-xs sm:text-base"
+                        : "overflow-hidden text-ellipsis whitespace-nowrap text-xs sm:text-sm xl:text-base 3xl:text-lg"
+                    } flex-1`}
                   >
-                    {isExpanded ? "See Less" : "See More"}
-                  </button>
-                )}
+                    {tournamentModel?.metadata?.description &&
+                      tournamentModel?.metadata?.description
+                        ?.replace("Opus.Cash", "https://opus.money")
+                        .split(/(https?:\/\/[^\s]+?)([.,;:!?])?(?=\s|$)/g)
+                        .map((part: string, i: number, arr: string[]) => {
+                          if (part && part.match(/^https?:\/\//)) {
+                            // This is a URL
+                            return (
+                              <a
+                                key={i}
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-brand-muted hover:underline"
+                              >
+                                {part}
+                              </a>
+                            );
+                          } else if (
+                            i > 0 &&
+                            arr[i - 1] &&
+                            typeof arr[i - 1] === "string" &&
+                            arr[i - 1].match(/^https?:\/\//) &&
+                            part &&
+                            /^[.,;:!?]$/.test(part)
+                          ) {
+                            // This is punctuation that followed a URL
+                            return part;
+                          } else {
+                            // This is regular text
+                            return part;
+                          }
+                        })}
+                  </p>
+                  {isOverflowing && (
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="text-brand hover:text-brand-muted font-bold text-sm sm:text-base flex-shrink-0"
+                    >
+                      {isExpanded ? "See Less" : "See More"}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

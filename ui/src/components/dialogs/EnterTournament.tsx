@@ -1208,19 +1208,19 @@ export function EnterTournamentDialog({
                             <CHECK />
                           </span>
                           <span>
-                            {hasEntryLimit
-                              ? `${
-                                  entriesLeftByTournament.find(
-                                    (entry) => entry.address === address
-                                  )?.entriesLeft
-                                } ${
-                                  entriesLeftByTournament.find(
-                                    (entry) => entry.address === address
-                                  )?.entriesLeft === 1
-                                    ? "entry"
-                                    : "entries"
-                                } left`
-                              : "Can enter"}
+                            {(() => {
+                              const entriesLeft = entriesLeftByTournament.find(
+                                (entry) => entry.address === address
+                              )?.entriesLeft;
+
+                              // Show entries count if there's a limit (not infinite)
+                              if (entriesLeft !== undefined && entriesLeft !== Infinity) {
+                                return `${entriesLeft} ${
+                                  entriesLeft === 1 ? "entry" : "entries"
+                                } left`;
+                              }
+                              return "Can enter";
+                            })()}
                           </span>
                         </div>
                       ) : (

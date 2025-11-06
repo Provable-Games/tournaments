@@ -4,7 +4,6 @@ import { formatTime, roundUSDPrice } from "@/lib/utils";
 
 interface TournamentEntryParams {
   tournamentName: string;
-  tournamentId: string;
   game: string;
   entryFeeUsdCost?: number;
   hasEntryFee: boolean;
@@ -41,7 +40,6 @@ export const useToastMessages = (): ToastMessages => {
 
   const showTournamentEntry: ToastMessages["showTournamentEntry"] = ({
     tournamentName,
-    tournamentId,
     game,
     entryFeeUsdCost,
     hasEntryFee,
@@ -56,16 +54,14 @@ export const useToastMessages = (): ToastMessages => {
           <p>Entered tournament {tournamentName}</p>
           <XShareButton
             text={[
-              `I just entered the "${tournamentName}" tournament on Budokan, the premier onchain gaming arena.`,
+              `I just entered the ${game} "${tournamentName}" tournament on Budokan, the premier onchain gaming arena.`,
               "",
-              `🆔 Tournament ID: ${tournamentId}`,
-              `🎮 ${game}`,
               `🎫 ${
                 hasEntryFee
                   ? `Entry fee: $${roundUSDPrice(entryFeeUsdCost!)}`
-                  : "Free Entry"
+                  : "Free"
               }`,
-              `💰 Prize pool: $${roundUSDPrice(prizeTotalUsd)}`,
+              `💰 Total Prizes: $${roundUSDPrice(prizeTotalUsd)}`,
               `🏁 ${
                 startsIn <= 0 ? "Started" : `Starts in: ${formatTime(startsIn)}`
               }`,

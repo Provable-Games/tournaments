@@ -43,6 +43,7 @@ import { getChecksumAddress, validateChecksumAddress } from "starknet";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { PRESET_EXTENSIONS } from "@/lib/extensionConfig";
 
 const EntryRequirements = ({ form }: StepProps) => {
   const { namespace } = useDojo();
@@ -53,6 +54,8 @@ const EntryRequirements = ({ form }: StepProps) => {
   const { gameData, getGameImage } = useUIStore();
   const [addressError, setAddressError] = useState("");
   const [extensionError, setExtensionError] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [snapshotId, setSnapshotId] = useState("");
 
   const ENTRY_LIMIT_OPTIONS = [
     { value: 1, label: "1" },
@@ -100,6 +103,12 @@ const EntryRequirements = ({ form }: StepProps) => {
     form.setValue("gatingOptions.tournament.tournaments", []);
     form.setValue("gatingOptions.addresses", []);
     form.setValue("gatingOptions.extension", undefined);
+
+    // If extension is selected, disable entry limit and set to 0
+    if (type === "extension") {
+      form.setValue("enableEntryLimit", false);
+      form.setValue("gatingOptions.entry_limit", 0);
+    }
   };
 
   const getTournamentStatus = (isStarted: boolean, isEnded: boolean) => {
@@ -187,11 +196,58 @@ const EntryRequirements = ({ form }: StepProps) => {
                   </div>
                   <div className="hidden sm:block w-0.5 h-full bg-brand/25" />
                   <div className="sm:hidden w-full h-0.5 bg-brand/25" />
-                  <FormField
-                    control={form.control}
-                    name="enableEntryLimit"
-                    render={({ field }) => (
-                      <FormItem className="space-y-0 flex flex-col gap-4 sm:w-1/2">
+
+                  {/* Extension Type Selection - shown when extension is selected */}
+                  {form.watch("gatingOptions.type") === "extension" && (
+                    <div className="flex flex-col gap-4 sm:w-1/2">
+                      <div className="flex flex-row items-center gap-5">
+                        <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                          Extension Type
+                        </FormLabel>
+                        <FormDescription className="hidden sm:block">
+                          Choose a preset extension or use a custom contract
+                        </FormDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={selectedPreset === null ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedPreset(null);
+                            setSnapshotId("");
+                            form.setValue("gatingOptions.extension.address", "");
+                            form.setValue("gatingOptions.extension.config", "");
+                            setExtensionError("");
+                          }}
+                        >
+                          Custom Contract
+                        </Button>
+                        {Object.entries(PRESET_EXTENSIONS).map(([key, config]) => (
+                          <Button
+                            key={key}
+                            type="button"
+                            variant={selectedPreset === key ? "default" : "outline"}
+                            onClick={() => {
+                              setSelectedPreset(key);
+                              setExtensionError("");
+                              form.setValue("gatingOptions.extension.address", "");
+                              form.setValue("gatingOptions.extension.config", "");
+                            }}
+                          >
+                            {config.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Entry Limit - shown when extension is NOT selected */}
+                  {form.watch("gatingOptions.type") !== "extension" && (
+                    <FormField
+                      control={form.control}
+                      name="enableEntryLimit"
+                      render={({ field }) => (
+                        <FormItem className="space-y-0 flex flex-col gap-4 sm:w-1/2">
                         <div className="flex flex-col">
                           <div className="flex flex-row justify-between">
                             <div className="flex flex-row items-center gap-5">
@@ -275,6 +331,7 @@ const EntryRequirements = ({ form }: StepProps) => {
                       </FormItem>
                     )}
                   />
+                  )}
                 </div>
 
                 {form.watch("gatingOptions.type") === "token" && (
@@ -892,103 +949,159 @@ const EntryRequirements = ({ form }: StepProps) => {
                   <>
                     <div className="w-full h-0.5 bg-brand/25" />
                     <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="gatingOptions.extension.address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="flex flex-row items-center justify-between">
-                              <div className="flex flex-row items-center gap-5">
-                                <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                                  Extension Contract
-                                </FormLabel>
-                                <FormDescription className="hidden sm:block">
-                                  Enter the contract address that will validate
-                                  entries
-                                </FormDescription>
-                              </div>
-                              {extensionError && (
-                                <div className="flex flex-row items-center gap-2">
-                                  <span className="text-red-500 text-sm">
-                                    {extensionError}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <FormControl>
-                              <Input
-                                placeholder="0x..."
-                                value={field.value}
-                                onChange={(e) => {
-                                  const rawAddress = e.target.value.trim();
-
-                                  // Clear error when field is empty
-                                  if (!rawAddress) {
-                                    setExtensionError("");
-                                    field.onChange("");
-                                    return;
-                                  }
-
-                                  // Set the raw value immediately for user feedback
-                                  field.onChange(rawAddress);
-                                }}
-                                onBlur={() => {
-                                  const rawAddress = field.value?.trim();
-
-                                  if (!rawAddress) {
-                                    setExtensionError("");
-                                    return;
-                                  }
-
-                                  try {
-                                    // Try to convert to checksum address
-                                    const checksumAddr = getChecksumAddress(rawAddress);
-
-                                    // Validate the checksum address
-                                    if (!validateChecksumAddress(checksumAddr)) {
-                                      setExtensionError("Invalid contract address");
-                                      return;
-                                    }
-
-                                    // Update with checksum address
-                                    field.onChange(checksumAddr);
-                                    setExtensionError("");
-                                  } catch (e) {
-                                    setExtensionError("Invalid contract address format");
-                                  }
-                                }}
-                                className="font-mono"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="gatingOptions.extension.config"
-                        render={({ field }) => (
-                          <FormItem>
+                      {/* Snapshot Preset Configuration */}
+                      {selectedPreset === "snapshot" && (
+                        <FormItem>
+                          <div className="flex flex-row items-center justify-between">
                             <div className="flex flex-row items-center gap-5">
                               <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                                Extension Config
+                                Snapshot ID
                               </FormLabel>
                               <FormDescription className="hidden sm:block">
-                                Optional configuration values (comma-separated felt252 values)
+                                Enter the Snapshot space ID for validation
                               </FormDescription>
                             </div>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Enter configuration values separated by commas (optional)"
-                                value={field.value || ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                className="font-mono h-20"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            {extensionError && (
+                              <div className="flex flex-row items-center gap-2">
+                                <span className="text-red-500 text-sm">
+                                  {extensionError}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., 1"
+                              value={snapshotId}
+                              onChange={(e) => {
+                                const value = e.target.value.trim();
+                                setSnapshotId(value);
+                                // Store snapshot ID in the config field
+                                form.setValue(
+                                  "gatingOptions.extension.config",
+                                  value
+                                );
+                                setExtensionError("");
+                              }}
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+
+                      {/* Custom Contract Configuration */}
+                      {selectedPreset === null && (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="gatingOptions.extension.address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <div className="flex flex-row items-center justify-between">
+                                  <div className="flex flex-row items-center gap-5">
+                                    <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                      Extension Contract
+                                    </FormLabel>
+                                    <FormDescription className="hidden sm:block">
+                                      Enter the contract address that will
+                                      validate entries
+                                    </FormDescription>
+                                  </div>
+                                  {extensionError && (
+                                    <div className="flex flex-row items-center gap-2">
+                                      <span className="text-red-500 text-sm">
+                                        {extensionError}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <FormControl>
+                                  <Input
+                                    placeholder="0x..."
+                                    value={field.value}
+                                    onChange={(e) => {
+                                      const rawAddress = e.target.value.trim();
+
+                                      // Clear error when field is empty
+                                      if (!rawAddress) {
+                                        setExtensionError("");
+                                        field.onChange("");
+                                        return;
+                                      }
+
+                                      // Set the raw value immediately for user feedback
+                                      field.onChange(rawAddress);
+                                    }}
+                                    onBlur={() => {
+                                      const rawAddress = field.value?.trim();
+
+                                      if (!rawAddress) {
+                                        setExtensionError("");
+                                        return;
+                                      }
+
+                                      try {
+                                        // Try to convert to checksum address
+                                        const checksumAddr =
+                                          getChecksumAddress(rawAddress);
+
+                                        // Validate the checksum address
+                                        if (
+                                          !validateChecksumAddress(checksumAddr)
+                                        ) {
+                                          setExtensionError(
+                                            "Invalid contract address"
+                                          );
+                                          return;
+                                        }
+
+                                        // Update with checksum address
+                                        field.onChange(checksumAddr);
+                                        setExtensionError("");
+                                      } catch (e) {
+                                        setExtensionError(
+                                          "Invalid contract address format"
+                                        );
+                                      }
+                                    }}
+                                    className="font-mono"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="gatingOptions.extension.config"
+                            render={({ field }) => (
+                              <FormItem>
+                                <div className="flex flex-row items-center gap-5">
+                                  <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                    Extension Config
+                                  </FormLabel>
+                                  <FormDescription className="hidden sm:block">
+                                    Optional configuration values
+                                    (comma-separated felt252 values)
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Textarea
+                                    placeholder="Enter configuration values separated by commas (optional)"
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
+                                    className="font-mono h-20"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </>
+                      )}
                     </div>
                   </>
                 )}

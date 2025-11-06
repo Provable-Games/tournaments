@@ -212,7 +212,7 @@ const TournamentConfirmation = ({
                     <span className="capitalize">
                       {formData.gatingOptions.type}
                     </span>
-                    {formData.enableEntryLimit && (
+                    {formData.enableEntryLimit && formData.gatingOptions.type !== "extension" && (
                       <>
                         <span className="text-muted-foreground">
                           Entry Limit:
@@ -307,28 +307,41 @@ const TournamentConfirmation = ({
                       </>
                     ) : formData.gatingOptions.type === "extension" ? (
                       <>
-                        <span className="text-muted-foreground">
-                          Extension Contract:
-                        </span>
-                        <div className="flex flex-row items-center gap-2">
-                          <span className="font-mono text-xs">
-                            {displayAddress(
-                              formData.gatingOptions.extension?.address ?? ""
-                            )}
-                          </span>
-                          <a
-                            href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.gatingOptions.extension?.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-6 text-neutral"
-                          >
-                            <EXTERNAL_LINK />
-                          </a>
-                        </div>
+                        {formData.gatingOptions.extension?.address ? (
+                          <>
+                            <span className="text-muted-foreground">
+                              Extension Contract:
+                            </span>
+                            <div className="flex flex-row items-center gap-2">
+                              <span className="font-mono text-xs">
+                                {displayAddress(
+                                  formData.gatingOptions.extension.address
+                                )}
+                              </span>
+                              <a
+                                href={`${selectedChainConfig.blockExplorerUrl}/contract/${formData.gatingOptions.extension.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-6 text-neutral"
+                              >
+                                <EXTERNAL_LINK />
+                              </a>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-muted-foreground">
+                              Extension Type:
+                            </span>
+                            <span>Snapshot Voting</span>
+                          </>
+                        )}
                         {formData.gatingOptions.extension?.config && (
                           <>
                             <span className="text-muted-foreground">
-                              Extension Config:
+                              {formData.gatingOptions.extension?.address
+                                ? "Extension Config:"
+                                : "Snapshot ID:"}
                             </span>
                             <span className="font-mono text-xs break-all">
                               {formData.gatingOptions.extension.config}

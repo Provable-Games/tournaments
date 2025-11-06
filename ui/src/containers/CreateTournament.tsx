@@ -354,7 +354,10 @@ const CreateTournament = () => {
                       getValue("gatingOptions.addresses").length > 0
                     );
                   case "extension":
-                    return !!getValue("gatingOptions.extension.address");
+                    return !!(
+                      getValue("gatingOptions.extension.address") ||
+                      getValue("gatingOptions.extension.config")
+                    );
                   default:
                     return false;
                 }

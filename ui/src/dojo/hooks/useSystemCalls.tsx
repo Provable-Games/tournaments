@@ -116,7 +116,6 @@ export const useSystemCalls = () => {
       if (tx) {
         showTournamentEntry({
           tournamentName,
-          tournamentId: Number(tournamentId).toString(),
           game,
           entryFeeUsdCost,
           hasEntryFee: entryFeeToken.isSome(),

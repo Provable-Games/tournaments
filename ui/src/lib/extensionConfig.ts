@@ -7,7 +7,7 @@ import { indexAddress } from "@/lib/utils";
  * Each extension can specify what data should be passed as qualification proof.
  */
 
-export type ExtensionProofType = "address" | "custom";
+export type ExtensionProofType = "address" | "custom" | "snapshot";
 
 export interface ExtensionConfig {
   name: string;
@@ -15,17 +15,27 @@ export interface ExtensionConfig {
   proofType: ExtensionProofType;
   // Function to extract proof data - receives address and any additional context
   extractProof: (address: string, context?: any) => string[];
+  // For preset extensions, indicates if this is a preset configuration
+  isPreset?: boolean;
+  // For snapshot extensions, indicates if snapshot ID is required in config
+  requiresSnapshotId?: boolean;
 }
+
+// Preset extension configurations
+export const PRESET_EXTENSIONS: Record<string, ExtensionConfig> = {
+  snapshot: {
+    name: "Snapshot Voting",
+    description: "Validates entry based on Snapshot voting participation",
+    proofType: "snapshot",
+    extractProof: () => [], // No proof required for snapshot extension
+    isPreset: true,
+    requiresSnapshotId: true,
+  },
+};
 
 // Extension configurations by contract address
 const extensionConfigs: Record<string, ExtensionConfig> = {
-  // Example: Basic address-only extension
-  // "0x...": {
-  //   name: "Address Validator",
-  //   description: "Validates entry based on address",
-  //   proofType: "address",
-  //   extractProof: (address: string) => [address],
-  // },
+  // Dynamically registered extensions will be stored here
   // Add more extension configs here as needed
   // Each extension address should map to its specific configuration
 };
