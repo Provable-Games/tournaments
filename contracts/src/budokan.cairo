@@ -364,9 +364,12 @@ pub mod Budokan {
                     Option::Some(tournament.schedule.game.end),
                     Option::Some(empty_objective_ids),
                     Option::Some(context),
+                    // TODO: add the specific tournament game url to play the game
+                    // default be the tournament page, but can be game unique
                     Option::None, // client_url
                     Option::None, // renderer_address
                     mint_to_address, // to
+                    // TODO: add optionality to set on the tournament creation level
                     false // soulbound
                 );
 
@@ -948,6 +951,7 @@ pub mod Budokan {
                         "Tournament: Qualification extension address {} doesn't support IEntryValidator interface",
                         display_extension_address,
                     );
+                    // TODO: Check extension supports registration only
                     let entry_validator_dispatcher = IEntryValidatorDispatcher {
                         contract_address: extension_address,
                     };
