@@ -327,27 +327,55 @@ const Tournament = () => {
 
   // Calculate total value in USD using aggregated data
   const totalPrizesValueUSD = useMemo(() => {
-    if (!aggregations?.token_totals || pricesLoading) return 0;
+    if (pricesLoading) return 0;
+
+    let total = 0;
 
     // Calculate USD from aggregated database prizes
-    const dbPrizesUSD = aggregations.token_totals.reduce(
-      (total: number, tokenTotal: any) => {
-        if (tokenTotal.tokenType === "erc20" && tokenTotal.totalAmount) {
-          const decimals = tokenDecimals[tokenTotal.tokenAddress] || 18;
-          const amount = BigInt(tokenTotal.totalAmount);
-          const price = prices[tokenTotal.tokenSymbol || ""] || 0;
+    if (aggregations?.token_totals) {
+      total += aggregations.token_totals.reduce(
+        (sum: number, tokenTotal: any) => {
+          if (tokenTotal.tokenType === "erc20" && tokenTotal.totalAmount) {
+            const decimals = tokenDecimals[tokenTotal.tokenAddress] || 18;
+            const amount = BigInt(tokenTotal.totalAmount);
+            const price = prices[tokenTotal.tokenSymbol || ""] || 0;
 
-          return (
-            total + Number(amount / 10n ** BigInt(decimals)) * Number(price)
-          );
-        }
-        return total;
-      },
-      0
-    );
+            return (
+              sum + Number(amount / 10n ** BigInt(decimals)) * Number(price)
+            );
+          }
+          return sum;
+        },
+        0
+      );
+    }
 
-    return dbPrizesUSD;
-  }, [aggregations?.token_totals, prices, pricesLoading, tokenDecimals]);
+    // Calculate USD from entry fee prizes (ERC20 only)
+    // Only include distributionPrizes - not creator/game shares as those are fees, not prizes
+    distributionPrizes.forEach((prize) => {
+      if (prize.token_type?.variant?.erc20) {
+        const amount = BigInt(prize.token_type.variant.erc20.amount || 0);
+        const decimals = tokenDecimals[prize.token_address] || 18;
+
+        // Find the token to get its symbol
+        const token = tournamentTokens.find(
+          (t) => t.address === prize.token_address
+        );
+        const price = token?.symbol ? prices[token.symbol] || 0 : 0;
+
+        total += Number(amount / 10n ** BigInt(decimals)) * Number(price);
+      }
+    });
+
+    return total;
+  }, [
+    aggregations?.token_totals,
+    prices,
+    pricesLoading,
+    tokenDecimals,
+    distributionPrizes,
+    tournamentTokens,
+  ]);
 
   // Fetch token decimals only for tokens used in this tournament
   useEffect(() => {
@@ -735,9 +763,13 @@ const Tournament = () => {
             </div>
           </div>
           <div className="flex flex-row items-center justify-between gap-4">
-            <div className={`relative overflow-hidden flex-1 min-w-0 ${
-              tournamentModel?.metadata?.description?.startsWith("#") ? "" : "h-6"
-            }`}>
+            <div
+              className={`relative overflow-hidden flex-1 min-w-0 ${
+                tournamentModel?.metadata?.description?.startsWith("#")
+                  ? ""
+                  : "h-6"
+              }`}
+            >
               {tournamentModel?.metadata?.description?.startsWith("#") ? (
                 <Button
                   onClick={() => setIsDescriptionDialogOpen(true)}

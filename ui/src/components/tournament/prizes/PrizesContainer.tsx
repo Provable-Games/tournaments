@@ -203,8 +203,11 @@ const PrizesContainer = ({
                     ${totalPrizesValueUSD.toFixed(2)}
                   </span>
                 )}
+                {totalPrizesValueUSD > 0 && totalPrizeNFTs > 0 && (
+                  <span className="text-brand/25">+</span>
+                )}
                 {totalPrizeNFTs > 0 && (
-                  <span className="font-brand text-xl text-brand-muted">
+                  <span className="font-brand text-md xl:text-lg 2xl:text-xl 3xl:text-2xl text-brand-muted">
                     {totalPrizeNFTs} {nftSymbol}{totalPrizeNFTs === 1 ? "" : "s"}
                   </span>
                 )}

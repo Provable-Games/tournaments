@@ -18,7 +18,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDojo } from "@/context/dojo";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNftTokenUris } from "@/hooks/useNftTokenUris";
+import NftPreview from "@/components/tournament/prizes/NftPreview";
 
 interface PrizeProps {
   position: number;
@@ -40,6 +42,26 @@ const Prize = ({
   const { selectedChainConfig } = useDojo();
   const totalPrizeNFTs = countTotalNFTs(prizes);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
+
+  // Extract NFT info for fetching token URIs
+  const nftPrizes = useMemo(() => {
+    const nfts: { address: string; tokenId: bigint }[] = [];
+    Object.values(prizes).forEach((prize) => {
+      if (prize.type === "erc721") {
+        if (Array.isArray(prize.value)) {
+          prize.value.forEach((tokenId) => {
+            nfts.push({ address: prize.address, tokenId });
+          });
+        } else {
+          nfts.push({ address: prize.address, tokenId: prize.value });
+        }
+      }
+    });
+    return nfts;
+  }, [prizes]);
+
+  // Fetch NFT token URIs
+  const { tokenUris, loading: nftUrisLoading } = useNftTokenUris(nftPrizes);
 
   // Get NFT symbol for the summary display
   const getNftSymbol = () => {
@@ -136,23 +158,55 @@ const Prize = ({
                         if (count > 5) {
                           // Show summary for more than 5 NFTs
                           return (
-                            <span>
-                              {count} {nftSymbol}{count > 1 ? "s" : ""}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex -space-x-2">
+                                {prize.value.slice(0, 3).map((tokenId, idx) => (
+                                  <NftPreview
+                                    key={idx}
+                                    tokenUri={tokenUris[`${prize.address}_${tokenId}`]}
+                                    tokenId={tokenId}
+                                    symbol={nftSymbol}
+                                    size="sm"
+                                    loading={nftUrisLoading}
+                                  />
+                                ))}
+                              </div>
+                              <span>
+                                {count} {nftSymbol}{count > 1 ? "s" : ""}
+                              </span>
+                            </div>
                           );
                         } else {
-                          // Show individual IDs for 5 or fewer
+                          // Show individual NFTs for 5 or fewer
                           return prize.value.map((tokenId, idx) => (
-                            <span key={idx}>
-                              {nftSymbol} #{tokenId.toString()}
-                            </span>
+                            <div key={idx} className="flex items-center gap-2">
+                              <NftPreview
+                                tokenUri={tokenUris[`${prize.address}_${tokenId}`]}
+                                tokenId={tokenId}
+                                symbol={nftSymbol}
+                                size="sm"
+                                loading={nftUrisLoading}
+                              />
+                              <span>
+                                {nftSymbol} #{tokenId.toString()}
+                              </span>
+                            </div>
                           ));
                         }
                       } else {
                         return (
-                          <span>
-                            {nftSymbol} #{prize.value.toString()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <NftPreview
+                              tokenUri={tokenUris[`${prize.address}_${prize.value}`]}
+                              tokenId={prize.value}
+                              symbol={nftSymbol}
+                              size="sm"
+                              loading={nftUrisLoading}
+                            />
+                            <span>
+                              {nftSymbol} #{prize.value.toString()}
+                            </span>
+                          </div>
                         );
                       }
                     })()}
@@ -256,23 +310,48 @@ const Prize = ({
                               </div>
                             </>
                           ) : (
-                            <span className="whitespace-nowrap">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               {(() => {
                                 const nftToken = tokens.find(
                                   (t) => indexAddress(t.address) === indexAddress(prize.address)
                                 );
                                 const nftSymbol = nftToken?.symbol || nftSymbols[prize.address] || "NFT";
-                                return Array.isArray(prize.value) ? (
-                                  <>
-                                    {nftSymbol} #{prize.value[0]?.toString()}
-                                    {prize.value.length > 1 &&
-                                      ` +${prize.value.length - 1}`}
-                                  </>
-                                ) : (
-                                  `${nftSymbol} #${prize.value.toString()}`
-                                );
+                                if (Array.isArray(prize.value)) {
+                                  const firstTokenId = prize.value[0];
+                                  return (
+                                    <>
+                                      <NftPreview
+                                        tokenUri={tokenUris[`${prize.address}_${firstTokenId}`]}
+                                        tokenId={firstTokenId}
+                                        symbol={nftSymbol}
+                                        size="sm"
+                                        loading={nftUrisLoading}
+                                        showTooltip={false}
+                                      />
+                                      <span>
+                                        {nftSymbol} #{firstTokenId?.toString()}
+                                        {prize.value.length > 1 &&
+                                          ` +${prize.value.length - 1}`}
+                                      </span>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <NftPreview
+                                        tokenUri={tokenUris[`${prize.address}_${prize.value}`]}
+                                        tokenId={prize.value}
+                                        symbol={nftSymbol}
+                                        size="sm"
+                                        loading={nftUrisLoading}
+                                        showTooltip={false}
+                                      />
+                                      <span>{nftSymbol} #{prize.value.toString()}</span>
+                                    </>
+                                  );
+                                }
                               })()}
-                            </span>
+                            </div>
                           )}
                         </div>
                       );
@@ -356,23 +435,48 @@ const Prize = ({
                         </div>
                       </>
                     ) : (
-                      <span className="whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         {(() => {
                           const nftToken = tokens.find(
                             (t) => indexAddress(t.address) === indexAddress(prize.address)
                           );
                           const nftSymbol = nftToken?.symbol || nftSymbols[prize.address] || "NFT";
-                          return Array.isArray(prize.value) ? (
-                            <>
-                              {nftSymbol} #{prize.value[0]?.toString()}
-                              {prize.value.length > 1 &&
-                                ` +${prize.value.length - 1}`}
-                            </>
-                          ) : (
-                            `${nftSymbol} #${prize.value.toString()}`
-                          );
+                          if (Array.isArray(prize.value)) {
+                            const firstTokenId = prize.value[0];
+                            return (
+                              <>
+                                <NftPreview
+                                  tokenUri={tokenUris[`${prize.address}_${firstTokenId}`]}
+                                  tokenId={firstTokenId}
+                                  symbol={nftSymbol}
+                                  size="sm"
+                                  loading={nftUrisLoading}
+                                  showTooltip={false}
+                                />
+                                <span>
+                                  {nftSymbol} #{firstTokenId?.toString()}
+                                  {prize.value.length > 1 &&
+                                    ` +${prize.value.length - 1}`}
+                                </span>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <>
+                                <NftPreview
+                                  tokenUri={tokenUris[`${prize.address}_${prize.value}`]}
+                                  tokenId={prize.value}
+                                  symbol={nftSymbol}
+                                  size="sm"
+                                  loading={nftUrisLoading}
+                                  showTooltip={false}
+                                />
+                                <span>{nftSymbol} #{prize.value.toString()}</span>
+                              </>
+                            );
+                          }
                         })()}
-                      </span>
+                      </div>
                     )}
                   </div>
                 );

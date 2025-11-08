@@ -20,11 +20,18 @@ import { getTokenLogoUrl } from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
 import { calculatePrizeValue } from "@/lib/utils/formatting";
 import { useState, useMemo } from "react";
-import { useGetTournamentPrizes, useGetTournamentPrizesAggregations } from "@/dojo/hooks/useSqlQueries";
+import {
+  useGetTournamentPrizes,
+  useGetTournamentPrizesAggregations,
+} from "@/dojo/hooks/useSqlQueries";
 import { BigNumberish } from "starknet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNftTokenUris } from "@/hooks/useNftTokenUris";
+import NftPreview from "@/components/tournament/prizes/NftPreview";
+import { NftDetailsDialog } from "@/components/tournament/prizes/NftDetailsDialog";
+import { TokenUri } from "@/lib/types";
 
 interface PrizesTableDialogProps {
   open: boolean;
@@ -52,6 +59,13 @@ export const PrizesTableDialog = ({
   const [currentPage, setCurrentPage] = useState(0);
   const positionsPerPage = 5;
 
+  // NFT details dialog state
+  const [selectedNft, setSelectedNft] = useState<{
+    tokenUri: TokenUri | null;
+    tokenId: bigint;
+    symbol: string;
+  } | null>(null);
+
   // Fetch aggregations to get total positions
   const { data: aggregations } = useGetTournamentPrizesAggregations({
     namespace,
@@ -59,12 +73,23 @@ export const PrizesTableDialog = ({
     active: !!tournamentId && open,
   });
 
-  const totalPositions = aggregations?.lowest_prize_position || 0;
+  // Calculate total positions including both DB prizes and entry fee prizes
+  const totalPositions = useMemo(() => {
+    const dbLowestPosition = aggregations?.lowest_prize_position || 0;
+    const entryFeeLowestPosition = entryFeePrizes.length > 0
+      ? Math.max(...entryFeePrizes.map(p => Number(p.payout_position)))
+      : 0;
+    return Math.max(dbLowestPosition, entryFeeLowestPosition);
+  }, [aggregations?.lowest_prize_position, entryFeePrizes]);
+
   const totalPages = Math.ceil(totalPositions / positionsPerPage);
 
   // Calculate position range for current page
   const startPosition = currentPage * positionsPerPage + 1;
-  const endPosition = Math.min(startPosition + positionsPerPage - 1, totalPositions);
+  const endPosition = Math.min(
+    startPosition + positionsPerPage - 1,
+    totalPositions
+  );
 
   // Fetch paginated prizes
   const { data: prizesData, loading: prizesLoading } = useGetTournamentPrizes({
@@ -75,26 +100,75 @@ export const PrizesTableDialog = ({
     endPosition,
   });
 
+  // Extract NFT info for fetching token URIs
+  const nftPrizes = useMemo(() => {
+    const prizes = open
+      ? prizesData || []
+      : Object.values(containerGroupedPrizes).flatMap((p) => Object.values(p));
+    const nfts: { address: string; tokenId: bigint }[] = [];
+
+    [...prizes, ...entryFeePrizes].forEach((prize: any) => {
+      const isErc721 =
+        prize.token_type?.variant?.erc721 ||
+        prize.token_type === "erc721" ||
+        prize.type === "erc721";
+      if (isErc721) {
+        const tokenId =
+          prize.token_type?.variant?.erc721?.id ||
+          prize["token_type.erc721.id"] ||
+          prize.value;
+
+        if (tokenId) {
+          if (Array.isArray(tokenId)) {
+            tokenId.forEach((id: bigint) => {
+              nfts.push({
+                address: prize.token_address || prize.address,
+                tokenId: id,
+              });
+            });
+          } else {
+            nfts.push({
+              address: prize.token_address || prize.address,
+              tokenId: BigInt(tokenId),
+            });
+          }
+        }
+      }
+    });
+    return nfts;
+  }, [open, prizesData, containerGroupedPrizes, entryFeePrizes]);
+
+  // Fetch NFT token URIs
+  const { tokenUris, loading: nftUrisLoading } = useNftTokenUris(nftPrizes);
+
   // Process prizes data into grouped format
   const groupedPrizes: PositionPrizes = useMemo(() => {
     if (!open) return containerGroupedPrizes; // Use container data when not fetching
-    if (!prizesData && entryFeePrizes.length === 0) return {};
 
     const currentPagePrizes = prizesData || [];
-    
+
     // Filter entry fee prizes that match current position range
     const relevantEntryFeePrizes = entryFeePrizes.filter(
-      (p) => Number(p.payout_position) >= startPosition && Number(p.payout_position) <= endPosition
+      (p) =>
+        Number(p.payout_position) >= startPosition &&
+        Number(p.payout_position) <= endPosition
     );
-    
+
+    // If we have no prizes at all, return empty
+    if (currentPagePrizes.length === 0 && relevantEntryFeePrizes.length === 0) {
+      return {};
+    }
+
     const combinedPrizes = [...relevantEntryFeePrizes, ...currentPagePrizes];
 
     return combinedPrizes.reduce((acc: PositionPrizes, prize: any) => {
       const position = prize.payout_position;
       if (!acc[position]) acc[position] = {};
 
-      const isErc20 = prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
-      const isErc721 = prize.token_type?.variant?.erc721 || prize.token_type === "erc721";
+      const isErc20 =
+        prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
+      const isErc721 =
+        prize.token_type?.variant?.erc721 || prize.token_type === "erc721";
       const tokenType = isErc20 ? "erc20" : isErc721 ? "erc721" : "erc20";
       const tokenKey = `${prize.token_address}_${tokenType}`;
 
@@ -107,7 +181,8 @@ export const PrizesTableDialog = ({
         );
 
         if (acc[position][tokenKey]) {
-          acc[position][tokenKey].value = (acc[position][tokenKey].value as bigint) + amount;
+          acc[position][tokenKey].value =
+            (acc[position][tokenKey].value as bigint) + amount;
         } else {
           acc[position][tokenKey] = {
             type: "erc20",
@@ -145,11 +220,26 @@ export const PrizesTableDialog = ({
 
       return acc;
     }, {});
-  }, [open, containerGroupedPrizes, prizesData, entryFeePrizes, startPosition, endPosition]);
+  }, [
+    open,
+    containerGroupedPrizes,
+    prizesData,
+    entryFeePrizes,
+    startPosition,
+    endPosition,
+  ]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[600px] flex flex-col p-0 overflow-hidden">
+    <>
+      <NftDetailsDialog
+        open={!!selectedNft}
+        onOpenChange={(open) => !open && setSelectedNft(null)}
+        tokenUri={selectedNft?.tokenUri || null}
+        tokenId={selectedNft?.tokenId || 0n}
+        symbol={selectedNft?.symbol || "NFT"}
+      />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="h-[600px] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="p-4">Prize Distribution</DialogTitle>
         </DialogHeader>
@@ -161,7 +251,10 @@ export const PrizesTableDialog = ({
               {prizesLoading ? (
                 <div className="space-y-3 p-4">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="border border-brand/20 rounded-lg p-3">
+                    <div
+                      key={index}
+                      className="border border-brand/20 rounded-lg p-3"
+                    >
                       <Skeleton className="h-5 w-20 mb-2" />
                       <Skeleton className="h-4 w-32 mb-1" />
                       <Skeleton className="h-4 w-24" />
@@ -175,58 +268,114 @@ export const PrizesTableDialog = ({
                     .map(([position, prizes]) => {
                       // Calculate total value for this position
                       let totalPositionValue = 0;
-                      const prizeDetails = Object.entries(prizes).map(([key, prize]) => {
-                        const token = tokens.find((t) => t.address === prize.address);
+                      const prizeRows: JSX.Element[] = [];
+
+                      Object.entries(prizes).forEach(([key, prize]) => {
+                        const token = tokens.find(
+                          (t) => t.address === prize.address
+                        );
                         const symbol = token?.symbol || key;
-                        const value = calculatePrizeValue(prize, symbol, prices, tokenDecimals);
-                        totalPositionValue += value;
-                        return { key, symbol, prize, value };
+                        const decimals = tokenDecimals[prize.address] || 18;
+
+                        if (prize.type === "erc20") {
+                          const value = calculatePrizeValue(
+                            prize,
+                            symbol,
+                            prices,
+                            tokenDecimals
+                          );
+                          totalPositionValue += value;
+
+                          prizeRows.push(
+                            <div
+                              key={`${position}-${key}`}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <span>
+                                {formatNumber(
+                                  Number(prize.value) / 10 ** decimals
+                                )}
+                              </span>
+                              {getTokenLogoUrl(
+                                chainId,
+                                prize.address
+                              ) ? (
+                                <img
+                                  src={getTokenLogoUrl(
+                                    chainId,
+                                    prize.address
+                                  )}
+                                  className="w-4 h-4 rounded-full"
+                                  alt={symbol}
+                                />
+                              ) : null}
+                              <span className="text-xs text-muted-foreground">
+                                {token?.symbol || symbol}
+                              </span>
+                            </div>
+                          );
+                        } else {
+                          // One row per NFT
+                          const nftToken = tokens.find(
+                            (t) =>
+                              indexAddress(t.address) ===
+                              indexAddress(prize.address)
+                          );
+                          const nftSymbol = nftToken?.symbol || "NFT";
+                          const tokenIds = Array.isArray(prize.value)
+                            ? prize.value
+                            : [prize.value];
+
+                          tokenIds.forEach((tokenId) => {
+                            const nftTokenUri = tokenUris[`${prize.address}_${tokenId}`];
+                            prizeRows.push(
+                              <div
+                                key={`${position}-${key}-${tokenId}`}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <NftPreview
+                                  tokenUri={nftTokenUri}
+                                  tokenId={tokenId}
+                                  symbol={nftSymbol}
+                                  size="sm"
+                                  loading={nftUrisLoading}
+                                  showTooltip={false}
+                                  onClick={() => setSelectedNft({
+                                    tokenUri: nftTokenUri,
+                                    tokenId,
+                                    symbol: nftSymbol,
+                                  })}
+                                />
+                                <span className="text-xs">
+                                  1 {nftSymbol}
+                                </span>
+                              </div>
+                            );
+                          });
+                        }
                       });
 
                       return (
-                        <div key={position} className="border border-brand/20 rounded-lg p-3">
+                        <div
+                          key={position}
+                          className="border border-brand/20 rounded-lg p-3"
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div className="font-bold text-brand">
-                              {position}<sup>{getOrdinalSuffix(Number(position))}</sup> Place
+                              {position}
+                              <sup>
+                                {getOrdinalSuffix(Number(position))}
+                              </sup>{" "}
+                              Place
                             </div>
                             {totalPositionValue > 0 && (
-                              <span className="text-brand-muted">${totalPositionValue.toFixed(2)}</span>
+                              <span className="text-brand-muted">
+                                ${totalPositionValue.toFixed(2)}
+                              </span>
                             )}
                           </div>
-                          <div className="space-y-1">
-                            {prizeDetails.map(({ key, symbol, prize }) => {
-                              const token = tokens.find(t => t.address === prize.address);
-                              const decimals = tokenDecimals[prize.address] || 18;
-                              
-                              return (
-                                <div key={`${position}-${key}`} className="flex items-center gap-2 text-sm">
-                                  {prize.type === "erc20" ? (
-                                    <>
-                                      <span>{formatNumber(Number(prize.value) / 10 ** decimals)}</span>
-                                      {getTokenLogoUrl(chainId, prize.address) ? (
-                                        <img
-                                          src={getTokenLogoUrl(chainId, prize.address)}
-                                          className="w-4 h-4 rounded-full"
-                                          alt={symbol}
-                                        />
-                                      ) : null}
-                                      <span className="text-xs text-muted-foreground">{token?.symbol || symbol}</span>
-                                    </>
-                                  ) : (
-                                    <span>
-                                      {(() => {
-                                        const nftToken = tokens.find(
-                                          (t) => indexAddress(t.address) === indexAddress(prize.address)
-                                        );
-                                        const nftSymbol = nftToken?.symbol || "NFT";
-                                        const count = Array.isArray(prize.value) ? prize.value.length : 1;
-                                        return `${count} ${nftSymbol}${count === 1 ? "" : "s"}`;
-                                      })()}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
+                          <div className="flex flex-col gap-1">
+                            {prizeRows}
                           </div>
                         </div>
                       );
@@ -245,101 +394,130 @@ export const PrizesTableDialog = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {prizesLoading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell><Skeleton className="h-5 w-12" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  Object.entries(groupedPrizes)
-                  .sort(
-                    (a, b) =>
-                      Number(a[1].payout_position) -
-                      Number(b[1].payout_position)
-                  )
-                  .map(([position, prizes]) => {
-                    // Calculate total value for this position
-                    let totalPositionValue = 0;
-                    const prizeDetails = Object.entries(prizes).map(
-                      ([key, prize]) => {
-                        const token = tokens.find((t) => t.address === prize.address);
-                        const symbol = token?.symbol || key;
-                        const value = calculatePrizeValue(prize, symbol, prices, tokenDecimals);
-                        totalPositionValue += value;
-                        return { key, symbol, prize, value };
-                      }
-                    );
-
-                    return (
-                      <TableRow key={position}>
-                        <TableCell className="font-medium">
-                          {position}
-                          <sup>{getOrdinalSuffix(Number(position))}</sup>
+                {prizesLoading
+                  ? Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Skeleton className="h-5 w-12" />
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            {prizeDetails.map(({ key, symbol, prize }) => {
-                              const token = tokens.find(
-                                (token) => token.address === prize.address
-                              );
-                              const decimals = tokenDecimals[prize.address] || 18;
-                              
-                              return (
-                                <div
-                                  key={`${position}-${key}`}
-                                  className="flex items-center gap-2"
-                                >
-                                  {prize.type === "erc20" ? (
-                                    <>
-                                      <span>{`${formatNumber(
-                                        Number(prize.value) / 10 ** decimals
-                                      )}`}</span>
-                                      {getTokenLogoUrl(chainId, prize.address) ? (
-                                        <img
-                                          src={getTokenLogoUrl(
-                                            chainId,
-                                            prize.address
-                                          )}
-                                          className="w-5 h-5 rounded-full"
-                                          alt={symbol}
-                                        />
-                                      ) : (
-                                        <span className="text-sm text-muted-foreground">
-                                          {token?.symbol || symbol}
-                                        </span>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <span>
-                                      {(() => {
-                                        const nftToken = tokens.find(
-                                          (t) => indexAddress(t.address) === indexAddress(prize.address)
-                                        );
-                                        const nftSymbol = nftToken?.symbol || "NFT";
-                                        const count = Array.isArray(prize.value) ? prize.value.length : 1;
-                                        return `${count} ${nftSymbol}${count === 1 ? "" : "s"}`;
-                                      })()}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <Skeleton className="h-5 w-32" />
                         </TableCell>
                         <TableCell className="text-right">
-                          {totalPositionValue > 0 ? (
-                            <span>${totalPositionValue.toFixed(2)}</span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          <Skeleton className="h-5 w-20 ml-auto" />
                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                )}
+                    ))
+                  : Object.entries(groupedPrizes)
+                      .sort(
+                        (a, b) =>
+                          Number(a[0]) - Number(b[0])
+                      )
+                      .map(([position, prizes]) => {
+                        // Calculate total value for this position
+                        let totalPositionValue = 0;
+                        const prizeRows: JSX.Element[] = [];
+
+                        Object.entries(prizes).forEach(([key, prize]) => {
+                          const token = tokens.find(
+                            (t) => t.address === prize.address
+                          );
+                          const symbol = token?.symbol || key;
+                          const decimals = tokenDecimals[prize.address] || 18;
+
+                          if (prize.type === "erc20") {
+                            const value = calculatePrizeValue(
+                              prize,
+                              symbol,
+                              prices,
+                              tokenDecimals
+                            );
+                            totalPositionValue += value;
+
+                            prizeRows.push(
+                              <div
+                                key={`${position}-${key}`}
+                                className="flex items-center gap-2"
+                              >
+                                <span>{`${formatNumber(
+                                  Number(prize.value) / 10 ** decimals
+                                )}`}</span>
+                                {getTokenLogoUrl(
+                                  chainId,
+                                  prize.address
+                                ) ? (
+                                  <img
+                                    src={getTokenLogoUrl(
+                                      chainId,
+                                      prize.address
+                                    )}
+                                    className="w-5 h-5 rounded-full"
+                                    alt={symbol}
+                                  />
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    {token?.symbol || symbol}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          } else {
+                            // One row per NFT
+                            const nftToken = tokens.find(
+                              (t) =>
+                                indexAddress(t.address) ===
+                                indexAddress(prize.address)
+                            );
+                            const nftSymbol = nftToken?.symbol || "NFT";
+                            const tokenIds = Array.isArray(prize.value)
+                              ? prize.value
+                              : [prize.value];
+
+                            tokenIds.forEach((tokenId) => {
+                              prizeRows.push(
+                                <div
+                                  key={`${position}-${key}-${tokenId}`}
+                                  className="flex items-center gap-2"
+                                >
+                                  <NftPreview
+                                    tokenUri={
+                                      tokenUris[
+                                        `${prize.address}_${tokenId}`
+                                      ]
+                                    }
+                                    tokenId={tokenId}
+                                    symbol={nftSymbol}
+                                    size="sm"
+                                    loading={nftUrisLoading}
+                                  />
+                                  <span>1 {nftSymbol}</span>
+                                </div>
+                              );
+                            });
+                          }
+                        });
+
+                        return (
+                          <TableRow key={position}>
+                            <TableCell className="font-medium">
+                              {position}
+                              <sup>{getOrdinalSuffix(Number(position))}</sup>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                {prizeRows}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {totalPositionValue > 0 ? (
+                                <span>${totalPositionValue.toFixed(2)}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
               </TableBody>
             </Table>
           </div>
@@ -373,7 +551,9 @@ export const PrizesTableDialog = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                }
                 disabled={currentPage >= totalPages - 1}
                 className="flex items-center gap-1"
               >
@@ -383,7 +563,8 @@ export const PrizesTableDialog = ({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
