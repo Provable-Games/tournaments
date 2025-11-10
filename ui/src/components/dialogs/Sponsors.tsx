@@ -21,6 +21,8 @@ import { useGetAllTournamentPrizes } from "@/dojo/hooks/useSqlQueries";
 import { BigNumberish } from "starknet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetUsernames } from "@/hooks/useController";
+import { useNftTokenUris } from "@/hooks/useNftTokenUris";
+import NftPreview from "@/components/tournament/prizes/NftPreview";
 
 interface SponsorsDialogProps {
   open: boolean;
@@ -32,15 +34,22 @@ interface SponsorsDialogProps {
 
 interface TokenContribution {
   tokenAddress: string;
-  tokenType: "erc20" | "erc721";
+  tokenType: "erc20";
   totalAmount: bigint;
   count: number;
   usdValue: number;
 }
 
+interface NftCollectionContribution {
+  tokenAddress: string;
+  tokenSymbol: string;
+  nfts: { tokenId: bigint }[];
+}
+
 interface SponsorContribution {
   sponsorAddress: string;
   tokens: Map<string, TokenContribution>;
+  nftCollections: Map<string, NftCollectionContribution>;
   totalUsdValue: number;
   totalPrizes: number;
 }
@@ -79,6 +88,7 @@ export const SponsorsDialog = ({
         sponsorMap.set(sponsorAddress, {
           sponsorAddress,
           tokens: new Map<string, TokenContribution>(),
+          nftCollections: new Map<string, NftCollectionContribution>(),
           totalUsdValue: 0,
           totalPrizes: 0,
         });
@@ -90,24 +100,23 @@ export const SponsorsDialog = ({
       // Determine token type and amount
       const isErc20 =
         prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
-      const tokenType = isErc20 ? "erc20" : "erc721";
       const tokenAddress = prize.token_address;
 
-      // Get or create token entry for this sponsor
-      if (!sponsor.tokens.has(tokenAddress)) {
-        sponsor.tokens.set(tokenAddress, {
-          tokenAddress,
-          tokenType,
-          totalAmount: 0n,
-          count: 0,
-          usdValue: 0,
-        });
-      }
-
-      const tokenContribution = sponsor.tokens.get(tokenAddress)!;
-      tokenContribution.count++;
-
       if (isErc20) {
+        // Aggregate ERC20 tokens by address
+        if (!sponsor.tokens.has(tokenAddress)) {
+          sponsor.tokens.set(tokenAddress, {
+            tokenAddress,
+            tokenType: "erc20",
+            totalAmount: 0n,
+            count: 0,
+            usdValue: 0,
+          });
+        }
+
+        const tokenContribution = sponsor.tokens.get(tokenAddress)!;
+        tokenContribution.count++;
+
         const amount = BigInt(
           prize.token_type?.variant?.erc20?.amount ||
             prize["token_type.erc20.amount"] ||
@@ -124,6 +133,24 @@ export const SponsorsDialog = ({
 
         tokenContribution.usdValue += usdValue;
         sponsor.totalUsdValue += usdValue;
+      } else {
+        // Group NFTs by collection
+        const tokenId = BigInt(
+          prize.token_type?.variant?.erc721?.token_id ||
+            prize["token_type.erc721.id"] ||
+            0
+        );
+        const tokenSymbol = getTokenSymbol(chainId, tokenAddress) || "NFT";
+
+        if (!sponsor.nftCollections.has(tokenAddress)) {
+          sponsor.nftCollections.set(tokenAddress, {
+            tokenAddress,
+            tokenSymbol,
+            nfts: [],
+          });
+        }
+
+        sponsor.nftCollections.get(tokenAddress)!.nfts.push({ tokenId });
       }
     });
 
@@ -147,6 +174,21 @@ export const SponsorsDialog = ({
 
   // Fetch Cartridge usernames for sponsor addresses
   const { usernames } = useGetUsernames(sponsorAddresses);
+
+  // Collect all NFTs for token URI fetching
+  const allNfts = useMemo(() => {
+    const nfts: { address: string; tokenId: bigint }[] = [];
+    sponsorContributions.forEach((sponsor) => {
+      sponsor.nftCollections.forEach((collection) => {
+        collection.nfts.forEach((nft) => {
+          nfts.push({ address: collection.tokenAddress, tokenId: nft.tokenId });
+        });
+      });
+    });
+    return nfts;
+  }, [sponsorContributions]);
+
+  const { tokenUris, loading: nftUrisLoading } = useNftTokenUris(allNfts);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,13 +262,12 @@ export const SponsorsDialog = ({
 
                 {/* Mobile: Card layout */}
                 <div className="sm:hidden space-y-2">
+                  {/* ERC20 Tokens */}
                   {Array.from(sponsor.tokens.values()).map((tokenContrib) => {
                     const decimals =
                       tokenDecimals[tokenContrib.tokenAddress] || 18;
                     const tokenAmount =
-                      tokenContrib.tokenType === "erc20"
-                        ? Number(tokenContrib.totalAmount) / 10 ** decimals
-                        : 0;
+                      Number(tokenContrib.totalAmount) / 10 ** decimals;
 
                     return (
                       <div
@@ -258,27 +299,55 @@ export const SponsorsDialog = ({
                         <div className="flex justify-between text-sm">
                           <span className="text-brand-muted">Amount:</span>
                           <span className="font-medium">
-                            {tokenContrib.tokenType === "erc20" ? (
-                              formatNumber(tokenAmount)
-                            ) : (
-                              <span className="text-brand-muted">
-                                {tokenContrib.count} NFT
-                                {tokenContrib.count !== 1 ? "s" : ""}
-                              </span>
-                            )}
+                            {formatNumber(tokenAmount)}
                           </span>
                         </div>
-                        {tokenContrib.tokenType === "erc20" && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-brand-muted">USD Value:</span>
-                            <span className="font-medium text-brand">
-                              ${tokenContrib.usdValue.toFixed(2)}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-brand-muted">USD Value:</span>
+                          <span className="font-medium text-brand">
+                            ${tokenContrib.usdValue.toFixed(2)}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
+
+                  {/* NFT Collections */}
+                  {Array.from(sponsor.nftCollections.values()).map((collection) => (
+                    <div
+                      key={collection.tokenAddress}
+                      className="bg-brand/5 rounded p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between border-b border-brand/10 pb-2">
+                        <span className="font-medium text-sm">
+                          {collection.tokenSymbol}
+                        </span>
+                        <span className="text-xs text-brand-muted">
+                          {collection.nfts.length} NFT{collection.nfts.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {collection.nfts.map((nft, idx) => (
+                          <div
+                            key={`${collection.tokenAddress}-${nft.tokenId}-${idx}`}
+                            className="flex items-center gap-2"
+                          >
+                            <NftPreview
+                              tokenUri={tokenUris[`${collection.tokenAddress}_${nft.tokenId}`]}
+                              tokenId={nft.tokenId}
+                              symbol={collection.tokenSymbol}
+                              size="sm"
+                              loading={nftUrisLoading}
+                              showTooltip={false}
+                            />
+                            <span className="text-xs text-brand-muted">
+                              #{nft.tokenId.toString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Desktop: Table layout */}
@@ -297,15 +366,13 @@ export const SponsorsDialog = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
+                      {/* ERC20 Tokens */}
                       {Array.from(sponsor.tokens.values()).map(
                         (tokenContrib) => {
                           const decimals =
                             tokenDecimals[tokenContrib.tokenAddress] || 18;
                           const tokenAmount =
-                            tokenContrib.tokenType === "erc20"
-                              ? Number(tokenContrib.totalAmount) /
-                                10 ** decimals
-                              : 0;
+                            Number(tokenContrib.totalAmount) / 10 ** decimals;
 
                           return (
                             <TableRow key={tokenContrib.tokenAddress}>
@@ -328,21 +395,10 @@ export const SponsorsDialog = ({
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                {tokenContrib.tokenType === "erc20" ? (
-                                  formatNumber(tokenAmount)
-                                ) : (
-                                  <span className="text-brand-muted">
-                                    {tokenContrib.count} NFT
-                                    {tokenContrib.count !== 1 ? "s" : ""}
-                                  </span>
-                                )}
+                                {formatNumber(tokenAmount)}
                               </TableCell>
                               <TableCell className="text-right">
-                                {tokenContrib.tokenType === "erc20" ? (
-                                  `$${tokenContrib.usdValue.toFixed(2)}`
-                                ) : (
-                                  <span className="text-brand-muted">-</span>
-                                )}
+                                ${tokenContrib.usdValue.toFixed(2)}
                               </TableCell>
                               <TableCell className="text-right text-brand-muted">
                                 {tokenContrib.count}
@@ -351,6 +407,44 @@ export const SponsorsDialog = ({
                           );
                         }
                       )}
+
+                      {/* NFT Collections */}
+                      {Array.from(sponsor.nftCollections.values()).map((collection) => (
+                        <>
+                          {/* Individual NFT rows */}
+                          {collection.nfts.map((nft, idx) => (
+                            <TableRow
+                              key={`${collection.tokenAddress}-${nft.tokenId}-${idx}`}
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <NftPreview
+                                    tokenUri={tokenUris[`${collection.tokenAddress}_${nft.tokenId}`]}
+                                    tokenId={nft.tokenId}
+                                    symbol={collection.tokenSymbol}
+                                    size="sm"
+                                    loading={nftUrisLoading}
+                                  />
+                                  <span className="text-sm text-brand-muted">
+                                    #{nft.tokenId.toString()}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-brand-muted">
+                                  {collection.tokenSymbol}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-brand-muted">-</span>
+                              </TableCell>
+                              <TableCell className="text-right text-brand-muted">
+                                1
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>

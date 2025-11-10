@@ -9,8 +9,9 @@ import {
   SLIDERS,
 } from "@/components/Icons";
 import { useNavigate, useParams } from "react-router-dom";
+import { useProvider } from "@starknet-react/core";
 import TournamentTimeline from "@/components/TournamentTimeline";
-import { bigintToHex, feltToString, formatTime } from "@/lib/utils";
+import { bigintToHex, feltToString, formatTime, indexAddress } from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
 import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
@@ -53,6 +54,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import useUIStore from "@/hooks/useUIStore";
+import { useGetUsernames } from "@/hooks/useController";
 import { AddPrizesDialog } from "@/components/dialogs/AddPrizes";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadingPage from "@/containers/LoadingPage";
@@ -68,7 +70,7 @@ const Tournament = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const { namespace } = useDojo();
+  const { namespace, selectedChainConfig } = useDojo();
   const { getTokenDecimals } = useSystemCalls();
   const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
@@ -83,6 +85,7 @@ const Tournament = () => {
     {}
   );
   const [tokenDecimalsLoading, setTokenDecimalsLoading] = useState(false);
+  const [creatorAddress, setCreatorAddress] = useState<string | null>(null);
   const { data: tournamentsCount } = useGetTournamentsCount({
     namespace: namespace,
   });
@@ -455,6 +458,43 @@ const Tournament = () => {
     getTokenDecimals,
   ]);
 
+  // Fetch creator address from creator token ID
+  const { provider } = useProvider();
+  useEffect(() => {
+    const fetchCreatorAddress = async () => {
+      if (!tournamentModel?.creator_token_id || !provider || !selectedChainConfig?.denshokanAddress) return;
+
+      try {
+        // Convert token ID to Uint256 format (low, high)
+        const tokenId = BigInt(tournamentModel.creator_token_id);
+        const low = tokenId & ((1n << 128n) - 1n);
+        const high = tokenId >> 128n;
+
+        // Call owner_of on the Denshokan contract
+        const result = await provider.callContract({
+          contractAddress: selectedChainConfig.denshokanAddress,
+          entrypoint: "owner_of",
+          calldata: [low.toString(), high.toString()],
+        });
+
+        if (result && result.length > 0) {
+          setCreatorAddress(addAddressPadding(result[0]));
+        }
+      } catch (error) {
+        console.error("Failed to fetch creator address:", error);
+      }
+    };
+
+    fetchCreatorAddress();
+  }, [tournamentModel?.creator_token_id, provider, selectedChainConfig?.denshokanAddress]);
+
+  // Fetch creator username
+  const creatorAddresses = useMemo(() => {
+    return creatorAddress ? [creatorAddress] : [];
+  }, [creatorAddress]);
+
+  const { usernames: creatorUsernames } = useGetUsernames(creatorAddresses);
+
   const entryFeePrice = prices[entryFeeTokenSymbol ?? ""];
   const entryFeeLoading = isTokenLoading(entryFeeTokenSymbol ?? "");
 
@@ -498,7 +538,7 @@ const Tournament = () => {
 
   const status = useMemo(() => {
     if (isSubmitted) return "finalized";
-    if (isEnded && !isSubmitted) return "in submission";
+    if (isEnded && !isSubmitted) return "submission";
     if (isStarted) return "live";
     return "upcoming";
   }, [isStarted, isEnded, isSubmitted]);
@@ -714,6 +754,18 @@ const Tournament = () => {
                 {feltToString(tournamentModel?.metadata?.name ?? "")}
               </span>
               <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg">
+                {creatorAddress && (
+                  <div className="flex flex-row gap-2">
+                    <span>Creator:</span>
+                    <span className="text-brand">
+                      {creatorUsernames?.get(indexAddress(creatorAddress)) || (
+                        <>
+                          {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}
+                        </>
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-row gap-2 hidden sm:flex">
                   <span>Winners:</span>
                   <span className="text-brand">Top {leaderboardSize}</span>
