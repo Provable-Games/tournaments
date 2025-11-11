@@ -483,14 +483,14 @@ export const calculateDistribution = (
     (d) => (d * availablePercentage) / total
   );
 
-  // Round down to whole numbers
+  // Round down to whole numbers only
   const roundedDistributions = normalizedDistributions.map((d) =>
     Math.floor(d)
   );
 
-  // Calculate the remaining points to distribute (should be less than positions)
-  const remainingPoints =
-    availablePercentage - roundedDistributions.reduce((a, b) => a + b, 0);
+  // Calculate the remaining percentage points to distribute
+  const totalRounded = roundedDistributions.reduce((a, b) => a + b, 0);
+  let remaining = availablePercentage - totalRounded;
 
   // Distribute remaining points based on decimal parts
   const decimalParts = normalizedDistributions.map((d, i) => ({
@@ -502,7 +502,7 @@ export const calculateDistribution = (
   decimalParts.sort((a, b) => b.decimal - a.decimal);
 
   // Add one point to each position with highest decimal until we reach 100%
-  for (let i = 0; i < remainingPoints; i++) {
+  for (let i = 0; i < remaining && i < positions; i++) {
     roundedDistributions[decimalParts[i].index]++;
   }
 

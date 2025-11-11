@@ -10,10 +10,10 @@ interface AmountInputProps {
 
 const AmountInput = ({ value, onChange, label }: AmountInputProps) => {
   const PREDEFINED_AMOUNTS = [
+    { value: 0.25, label: "$0.25" },
+    { value: 0.50, label: "$0.50" },
     { value: 1, label: "$1" },
     { value: 5, label: "$5" },
-    { value: 10, label: "$10" },
-    { value: 50, label: "$50" },
   ];
   return (
     <div className="flex flex-row items-center gap-2">
@@ -35,7 +35,7 @@ const AmountInput = ({ value, onChange, label }: AmountInputProps) => {
         type="number"
         placeholder="0.0"
         min={0}
-        step="1"
+        step="0.01"
         inputMode="decimal"
         className="w-[80px] p-1"
         value={value ?? ""}

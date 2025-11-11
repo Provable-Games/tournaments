@@ -154,14 +154,14 @@ const Schedule = ({ form }: StepProps) => {
       if (durationInSeconds >= 900) {
         form.setValue("duration", durationInSeconds);
 
-        // If submission period is longer than the new duration, adjust it (only if not using custom)
+        // Always enforce minimum 24-hour submission period
         if (!customSubmissionPeriod) {
           const currentSubmissionPeriod = form.watch("submissionPeriod");
-          if (currentSubmissionPeriod > durationInSeconds) {
-            form.setValue(
-              "submissionPeriod",
-              Math.min(durationInSeconds, SECONDS_IN_DAY)
-            );
+          // Ensure submission period is at least 24 hours but not more than duration
+          const minSubmission = Math.min(durationInSeconds, SECONDS_IN_DAY);
+
+          if (currentSubmissionPeriod > durationInSeconds || currentSubmissionPeriod < SECONDS_IN_DAY) {
+            form.setValue("submissionPeriod", minSubmission);
           }
         }
       }

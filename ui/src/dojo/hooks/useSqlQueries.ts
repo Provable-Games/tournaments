@@ -1,12 +1,15 @@
 import { useSqlExecute } from "@/lib/dojo/hooks/useSqlExecute";
 import { useMemo } from "react";
-import { addAddressPadding, BigNumberish } from "starknet";
+import { BigNumberish } from "starknet";
 import { padU64 } from "@/lib/utils";
+import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 
 // Helper function to generate SQL exclusion clause for tournament IDs
 const getExcludedTournamentsClause = (excludedIds: number[]): string => {
   if (!excludedIds || excludedIds.length === 0) return "";
-  return `AND t.id NOT IN (${excludedIds.map((id) => `'${padU64(BigInt(id))}'`).join(",")})`;
+  return `AND t.id NOT IN (${excludedIds
+    .map((id) => `'${padU64(BigInt(id))}'`)
+    .join(",")})`;
 };
 
 export const useGetGameSettingsCount = ({
@@ -1280,11 +1283,9 @@ export const useGetTournamentPrizeClaimsAggregations = ({
 
 export const useGetPrizeMetrics = ({
   namespace,
-  tournamentId,
   active = false,
 }: {
   namespace: string;
-  tournamentId: BigNumberish;
   active?: boolean;
 }) => {
   const query = useMemo(
@@ -1292,10 +1293,10 @@ export const useGetPrizeMetrics = ({
       namespace && active
         ? `
     SELECT * FROM '${namespace}-PrizeMetrics'
-    WHERE key = "${addAddressPadding(tournamentId)}"
+    WHERE key = "${TOURNAMENT_VERSION_KEY}"
   `
         : null,
-    [namespace, tournamentId, active]
+    [namespace, active]
   );
   const { data, loading, error } = useSqlExecute(query);
   return { data: data?.[0], loading, error };
@@ -1313,7 +1314,7 @@ export const useGetPlatformMetrics = ({
       namespace && active
         ? `
     SELECT * FROM '${namespace}-PlatformMetrics'
-    WHERE key = "0x0000000000000000000000000000000000000000000000000000000000000000"
+    WHERE key = "${TOURNAMENT_VERSION_KEY}"
   `
         : null,
     [namespace, active]

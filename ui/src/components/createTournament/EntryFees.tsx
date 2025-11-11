@@ -34,8 +34,8 @@ const EntryFees = ({ form }: StepProps) => {
 
   const PREDEFINED_PERCENTAGES = [
     { value: 1, label: "1%" },
+    { value: 3, label: "3%" },
     { value: 5, label: "5%" },
-    { value: 10, label: "10%" },
   ];
 
   const [distributionWeight, setDistributionWeight] = React.useState(1);
@@ -105,7 +105,7 @@ const EntryFees = ({ form }: StepProps) => {
                     render={({ field: tokenField }) => (
                       <FormItem>
                         <FormControl>
-                          <div className="flex justify-center sm:justify-start pt-4 sm:pt-6">
+                          <div className="flex flex-row items-center justify-center sm:justify-start gap-3 pt-4 sm:pt-6">
                             <TokenDialog
                               selectedToken={form.watch("entryFees.token")}
                               onSelect={async (token) => {
@@ -123,6 +123,21 @@ const EntryFees = ({ form }: StepProps) => {
                               }}
                               type="erc20"
                             />
+                            {form.watch("entryFees.token") && prices?.[form.watch("entryFees.token")?.symbol ?? ""] && (
+                              <div className="flex flex-row items-center gap-1">
+                                <img
+                                  src={getTokenLogoUrl(
+                                    chainId,
+                                    form.watch("entryFees.token")?.address ?? ""
+                                  )}
+                                  className="w-4 h-4"
+                                  alt={form.watch("entryFees.token")?.symbol}
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  1 {form.watch("entryFees.token")?.symbol} ≈ ${(prices[form.watch("entryFees.token")?.symbol ?? ""] ?? 0).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </FormControl>
                       </FormItem>
@@ -140,7 +155,7 @@ const EntryFees = ({ form }: StepProps) => {
                               Amount ($)
                             </FormLabel>
                             <FormDescription className="hidden sm:block sm:text-xs xl:text-sm">
-                              Prize amount in USD
+                              Fee per entry in USD
                             </FormDescription>
                             <TokenValue
                               className="sm:hidden"
@@ -186,7 +201,7 @@ const EntryFees = ({ form }: StepProps) => {
                             Creator Fee (%)
                           </FormLabel>
                           <FormDescription className="hidden sm:block sm:text-xs xl:text-sm">
-                            Fee provided to the tournament creator
+                            Fee provided to you (Tournament Creator)
                           </FormDescription>
                           <TokenValue
                             className="sm:hidden"
@@ -232,11 +247,15 @@ const EntryFees = ({ form }: StepProps) => {
                             <Input
                               type="number"
                               placeholder="0"
+                              min="0"
+                              max="100"
+                              step="1"
                               className="w-[80px] p-1"
                               {...field}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
+                              onChange={(e) => {
+                                const value = Math.floor(Number(e.target.value));
+                                field.onChange(value);
+                              }}
                             />
                             <TokenValue
                               className="hidden sm:flex"
@@ -271,7 +290,7 @@ const EntryFees = ({ form }: StepProps) => {
                             Game Fee (%)
                           </FormLabel>
                           <FormDescription className="hidden sm:block sm:text-xs xl:text-sm">
-                            Fee provided to the game creator
+                            Fee provided to the Game Creator (minimum 1%)
                           </FormDescription>
                           <TokenValue
                             className="sm:hidden"
@@ -315,12 +334,16 @@ const EntryFees = ({ form }: StepProps) => {
                             </div>
                             <Input
                               type="number"
-                              placeholder="0"
+                              placeholder="1"
+                              min="1"
+                              max="100"
+                              step="1"
                               className="w-[80px] p-1"
                               {...field}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
+                              onChange={(e) => {
+                                const value = Math.floor(Number(e.target.value));
+                                field.onChange(value < 1 ? 1 : value);
+                              }}
                             />
                             <TokenValue
                               className="hidden sm:flex"
@@ -434,9 +457,10 @@ const EntryFees = ({ form }: StepProps) => {
                                       {...field}
                                       min="0"
                                       max="100"
+                                      step="1"
                                       className="pr-4 px-1"
                                       onChange={(e) => {
-                                        const value = Number(e.target.value);
+                                        const value = Math.floor(Number(e.target.value));
                                         field.onChange(value);
                                       }}
                                     />

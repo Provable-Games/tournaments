@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ARROW_LEFT } from "@/components/Icons";
@@ -21,8 +21,6 @@ import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { Tournament } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
 import { FormToken } from "@/lib/types";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
-import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 import {
   useGetPlatformMetrics,
   useGetPrizeMetrics,
@@ -43,7 +41,7 @@ const formSchema = z.object({
   endTime: z.date(),
   duration: z.number().min(1).max(7776000), // 90 days
   type: z.enum(["open", "fixed"]),
-  submissionPeriod: z.number().min(1).max(324000), // 90 hours
+  submissionPeriod: z.number().min(86400).max(604800), // 24 hours to 1 week
 
   // Details step
   game: z.string().min(2).max(66),
@@ -144,7 +142,7 @@ const CreateTournament = () => {
       enableEndTime: false,
       duration: 86400,
       type: "open",
-      submissionPeriod: 3600,
+      submissionPeriod: 86400,
 
       // Other steps
       enableGating: false,
@@ -165,16 +163,11 @@ const CreateTournament = () => {
       },
       entryFees: {
         creatorFeePercentage: 0,
-        gameFeePercentage: 0,
+        gameFeePercentage: 1,
       },
       bonusPrizes: [],
     },
   });
-
-  const metricsKeyId = useMemo(
-    () => getEntityIdFromKeys([BigInt(TOURNAMENT_VERSION_KEY)]),
-    []
-  );
 
   const { data: platformMetricsModel } = useGetPlatformMetrics({
     namespace,
@@ -183,7 +176,6 @@ const CreateTournament = () => {
 
   const { data: prizeMetricsModel } = useGetPrizeMetrics({
     namespace,
-    tournamentId: metricsKeyId,
     active: true,
   });
 
