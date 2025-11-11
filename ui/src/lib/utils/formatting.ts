@@ -677,13 +677,15 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
         });
         break;
       case "allowlist":
+        const allowlistData =
+          tournament["entry_requirement.Some.entry_requirement_type.allowlist"];
         entryRequirementType = new CairoCustomEnum({
           token: undefined,
           tournament: undefined,
           allowlist:
-            tournament[
-              "entry_requirement.Some.entry_requirement_type.allowlist"
-            ],
+            typeof allowlistData === "string"
+              ? JSON.parse(allowlistData)
+              : allowlistData,
           extension: undefined,
         });
         break;
