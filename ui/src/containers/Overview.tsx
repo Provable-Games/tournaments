@@ -38,7 +38,7 @@ import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { ParsedEntity } from "@dojoengine/sdk";
 import { SchemaType } from "@/generated/models.gen";
 import useTournamentStore, { TournamentTab } from "@/hooks/tournamentStore";
-import { STARTING_TOURNAMENT_ID } from "@/lib/constants";
+import { STARTING_TOURNAMENT_ID, EXCLUDED_TOURNAMENT_IDS } from "@/lib/constants";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
@@ -143,18 +143,21 @@ const Overview = () => {
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const { data: liveTournamentsCount } = useGetLiveTournamentsCount({
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const { data: endedTournamentsCount } = useGetEndedTournamentsCount({
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const queryAddress = useMemo(() => {
@@ -254,6 +257,7 @@ const Overview = () => {
     status: selectedTab,
     sortBy: currentSortBy,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
     // Only activate the query for the appropriate tabs and when we need to fetch
     active: ["upcoming", "live", "ended"].includes(selectedTab) && shouldFetch,
   });

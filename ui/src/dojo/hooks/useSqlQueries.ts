@@ -3,6 +3,12 @@ import { useMemo } from "react";
 import { addAddressPadding, BigNumberish } from "starknet";
 import { padU64 } from "@/lib/utils";
 
+// Helper function to generate SQL exclusion clause for tournament IDs
+const getExcludedTournamentsClause = (excludedIds: number[]): string => {
+  if (!excludedIds || excludedIds.length === 0) return "";
+  return `AND t.id NOT IN (${excludedIds.map((id) => `'${padU64(BigInt(id))}'`).join(",")})`;
+};
+
 export const useGetGameSettingsCount = ({
   namespace,
   active = false,
@@ -204,19 +210,26 @@ export const useGetUpcomingTournamentsCount = ({
   namespace,
   currentTime,
   fromTournamentId,
+  excludedTournamentIds = [],
 }: {
   namespace: string;
   currentTime: bigint;
   fromTournamentId?: string;
+  excludedTournamentIds?: number[];
 }) => {
+  const excludedIdsKey = useMemo(
+    () => JSON.stringify(excludedTournamentIds),
+    [excludedTournamentIds]
+  );
   const query = useMemo(
     () => `
-    SELECT COUNT(*) as count 
-    FROM '${namespace}-Tournament' m
-    WHERE m.'schedule.game.start' > '${padU64(currentTime)}'
-    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
+    SELECT COUNT(*) as count
+    FROM '${namespace}-Tournament' t
+    WHERE t.'schedule.game.start' > '${padU64(currentTime)}'
+    ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
+    ${getExcludedTournamentsClause(excludedTournamentIds)}
   `,
-    [namespace, currentTime, fromTournamentId]
+    [namespace, currentTime, fromTournamentId, excludedIdsKey]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -226,21 +239,28 @@ export const useGetLiveTournamentsCount = ({
   namespace,
   currentTime,
   fromTournamentId,
+  excludedTournamentIds = [],
 }: {
   namespace: string;
   currentTime: bigint;
   fromTournamentId?: string;
+  excludedTournamentIds?: number[];
 }) => {
+  const excludedIdsKey = useMemo(
+    () => JSON.stringify(excludedTournamentIds),
+    [excludedTournamentIds]
+  );
   const query = useMemo(
     () => `
-    SELECT COUNT(*) as count 
-    FROM '${namespace}-Tournament' m
-    WHERE (m.'schedule.game.start' <= '${padU64(
+    SELECT COUNT(*) as count
+    FROM '${namespace}-Tournament' t
+    WHERE (t.'schedule.game.start' <= '${padU64(
       currentTime
-    )}' AND m.'schedule.game.end' > '${padU64(currentTime)}')
-    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
+    )}' AND t.'schedule.game.end' > '${padU64(currentTime)}')
+    ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
+    ${getExcludedTournamentsClause(excludedTournamentIds)}
   `,
-    [namespace, currentTime, fromTournamentId]
+    [namespace, currentTime, fromTournamentId, excludedIdsKey]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -250,19 +270,26 @@ export const useGetEndedTournamentsCount = ({
   namespace,
   currentTime,
   fromTournamentId,
+  excludedTournamentIds = [],
 }: {
   namespace: string;
   currentTime: bigint;
   fromTournamentId?: string;
+  excludedTournamentIds?: number[];
 }) => {
+  const excludedIdsKey = useMemo(
+    () => JSON.stringify(excludedTournamentIds),
+    [excludedTournamentIds]
+  );
   const query = useMemo(
     () => `
-    SELECT COUNT(*) as count 
-    FROM '${namespace}-Tournament' m
-    WHERE m.'schedule.game.end' <= '${padU64(currentTime)}'
-    ${fromTournamentId ? `AND m.id > '${fromTournamentId}'` : ""}
+    SELECT COUNT(*) as count
+    FROM '${namespace}-Tournament' t
+    WHERE t.'schedule.game.end' <= '${padU64(currentTime)}'
+    ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
+    ${getExcludedTournamentsClause(excludedTournamentIds)}
   `,
-    [namespace, currentTime, fromTournamentId]
+    [namespace, currentTime, fromTournamentId, excludedIdsKey]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
@@ -376,6 +403,7 @@ export const useGetTournaments = ({
   status,
   tournamentIds,
   fromTournamentId,
+  excludedTournamentIds = [],
   sortBy = "start_time",
   offset = 0,
   limit = 5,
@@ -386,6 +414,7 @@ export const useGetTournaments = ({
   status: string;
   tournamentIds?: string[];
   fromTournamentId?: string;
+  excludedTournamentIds?: number[];
   currentTime?: bigint;
   sortBy?: string;
   offset?: number;
@@ -399,6 +428,10 @@ export const useGetTournaments = ({
   const gameFiltersKey = useMemo(
     () => JSON.stringify(gameFilters || []),
     [gameFilters]
+  );
+  const excludedIdsKey = useMemo(
+    () => JSON.stringify(excludedTournamentIds),
+    [excludedTournamentIds]
   );
   const query = useMemo(
     () =>
@@ -446,6 +479,7 @@ export const useGetTournaments = ({
                   .join(",")})`
               : ""
           }
+          ${getExcludedTournamentsClause(excludedTournamentIds)}
       GROUP BY t.id
       ${getSortClause(sortBy)}
       LIMIT ${limit}
@@ -500,6 +534,7 @@ export const useGetTournaments = ({
       active,
       tournamentIdsKey,
       fromTournamentId,
+      excludedIdsKey,
     ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);

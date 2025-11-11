@@ -648,6 +648,7 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
             tournament["entry_requirement.Some.entry_requirement_type.token"],
           tournament: undefined,
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "tournament":
@@ -672,6 +673,7 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
                 : undefined,
           }),
           allowlist: undefined,
+          extension: undefined,
         });
         break;
       case "allowlist":
@@ -682,6 +684,29 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
             tournament[
               "entry_requirement.Some.entry_requirement_type.allowlist"
             ],
+          extension: undefined,
+        });
+        break;
+      case "extension":
+        entryRequirementType = new CairoCustomEnum({
+          token: undefined,
+          tournament: undefined,
+          allowlist: undefined,
+          extension: {
+            address:
+              tournament[
+                "entry_requirement.Some.entry_requirement_type.extension.address"
+              ],
+            config: tournament[
+              "entry_requirement.Some.entry_requirement_type.extension.config"
+            ]
+              ? JSON.parse(
+                  tournament[
+                    "entry_requirement.Some.entry_requirement_type.extension.config"
+                  ]
+                )
+              : [],
+          },
         });
         break;
       default:
@@ -689,6 +714,7 @@ export const processTournamentFromSql = (tournament: any): Tournament => {
           token: undefined,
           tournament: undefined,
           allowlist: [],
+          extension: undefined,
         });
     }
 

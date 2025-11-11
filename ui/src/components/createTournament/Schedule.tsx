@@ -56,8 +56,8 @@ const Schedule = ({ form }: StepProps) => {
   ];
 
   const DURATION_TO_DEFAULT_SUBMISSION = {
-    "1D": 3600, // 1 day -> 1 hour
-    "3D": 21600, // 3 days -> 6 hours
+    "1D": 86400, // 1 day -> 1 day (24 hours)
+    "3D": 86400, // 3 days -> 1 day (24 hours)
     "1W": 86400, // 1 week -> 1 day (24 hours)
     "2W": 172800, // 2 weeks -> 2 days (48 hours)
   } as const;
@@ -160,7 +160,7 @@ const Schedule = ({ form }: StepProps) => {
           if (currentSubmissionPeriod > durationInSeconds) {
             form.setValue(
               "submissionPeriod",
-              Math.min(durationInSeconds, SECONDS_IN_HOUR)
+              Math.min(durationInSeconds, SECONDS_IN_DAY)
             );
           }
         }
@@ -407,7 +407,7 @@ const Schedule = ({ form }: StepProps) => {
                                   );
                                 } else {
                                   // Fallback to a default value if no mapping is found
-                                  form.setValue("submissionPeriod", 3600); // Default to 1 hour
+                                  form.setValue("submissionPeriod", SECONDS_IN_DAY); // Default to 24 hours
                                 }
                               }}
                             >
@@ -479,7 +479,7 @@ const Schedule = ({ form }: StepProps) => {
                                     );
                                   }}
                                   max={field.value}
-                                  min={SECONDS_IN_HOUR}
+                                  min={SECONDS_IN_DAY}
                                   step={SECONDS_IN_HOUR}
                                 />
                                 <Button
@@ -500,14 +500,14 @@ const Schedule = ({ form }: StepProps) => {
                                   value={form.watch("submissionPeriod") || ""}
                                   onChange={(e) => {
                                     const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 900 && value <= 604800) {
+                                    if (!isNaN(value) && value >= 86400 && value <= 604800) {
                                       form.setValue("submissionPeriod", value);
                                     }
                                   }}
                                   className="h-8 text-sm"
                                 />
                                 <span className="text-xs text-muted-foreground">
-                                  Min: 900s (15 min), Max: 604800s (1 week)
+                                  Min: 86400s (24 hours), Max: 604800s (1 week)
                                 </span>
                               </div>
                             )}
