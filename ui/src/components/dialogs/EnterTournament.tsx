@@ -798,7 +798,9 @@ export function EnterTournamentDialog({
       const currentEntryCount = qualificationEntries[0]?.entry_count ?? 0;
 
       // Calculate remaining entries
-      const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
+      const remaining = hasEntryLimit
+        ? Number(entryLimit) - currentEntryCount
+        : Infinity;
 
       // If this address has entries left
       if (remaining > 0) {
@@ -1255,11 +1257,22 @@ export function EnterTournamentDialog({
                         <CHECK />
                       </span>
                       <span>
-                        {`${
-                          entriesLeftByTournament.find(
+                        {(() => {
+                          const entriesLeft = entriesLeftByTournament.find(
                             (entry) => entry.address === address
-                          )?.entriesLeft
-                        } entries left`}
+                          )?.entriesLeft;
+
+                          // Show entries count if there's a limit (not infinite)
+                          if (
+                            entriesLeft !== undefined &&
+                            entriesLeft !== Infinity
+                          ) {
+                            return `${entriesLeft} ${
+                              entriesLeft === 1 ? "entry" : "entries"
+                            } left`;
+                          }
+                          return "Can enter";
+                        })()}
                       </span>
                     </div>
                   ) : (
