@@ -93,8 +93,8 @@ export const getGames = (): Game[] => {
         contract_address:
           "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
         name: "Dope Wars",
-        image: "https://dopewars.gg/favicon.ico",
-        url: "https://dopewars.gg",
+        image: "https://dopewars.game/favicon.ico",
+        url: "https://dopewars.game",
         controllerOnly: true,
       },
       {
