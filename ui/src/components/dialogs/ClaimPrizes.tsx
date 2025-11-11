@@ -9,12 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useAccount } from "@starknet-react/core";
-import {
-  Tournament,
-  PrizeClaim,
-  EntryCount,
-  getModelsMapping,
-} from "@/generated/models.gen";
+import { Tournament, PrizeClaim, EntryCount } from "@/generated/models.gen";
 import { feltToString, formatNumber, getOrdinalSuffix } from "@/lib/utils";
 import {
   extractEntryFeePrizes,
@@ -22,15 +17,17 @@ import {
 } from "@/lib/utils/formatting";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { TokenPrices } from "@/hooks/useEkuboPrices";
-import { getTokenLogoUrl, getTokenSymbol, getTokenDecimals } from "@/lib/tokensMeta";
+import {
+  getTokenLogoUrl,
+  getTokenSymbol,
+  getTokenDecimals,
+} from "@/lib/tokensMeta";
 import { useDojo } from "@/context/dojo";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import {
   useGetTournamentPrizeClaims,
   useGetAllTournamentPrizes,
 } from "@/dojo/hooks/useSqlQueries";
-import useModel from "@/dojo/hooks/useModel";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { Prize } from "@/generated/models.gen";
 
 interface ClaimPrizesDialogProps {
@@ -38,6 +35,7 @@ interface ClaimPrizesDialogProps {
   onOpenChange: (open: boolean) => void;
   tournamentModel: Tournament;
   prices: TokenPrices;
+  entryCountModel?: EntryCount;
 }
 
 export function ClaimPrizesDialog({
@@ -45,6 +43,7 @@ export function ClaimPrizesDialog({
   onOpenChange,
   tournamentModel,
   prices,
+  entryCountModel,
 }: ClaimPrizesDialogProps) {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
@@ -57,17 +56,6 @@ export function ClaimPrizesDialog({
   } | null>(null);
 
   const chainId = selectedChainConfig?.chainId ?? "";
-
-  // Get tournament entity ID
-  const tournamentEntityId = getEntityIdFromKeys([
-    BigInt(tournamentModel?.id ?? 0),
-  ]);
-
-  // Fetch entry count to calculate entry fee prizes
-  const entryCountModel = useModel(
-    tournamentEntityId,
-    getModelsMapping(namespace).EntryCount
-  ) as unknown as EntryCount;
 
   // Fetch ALL sponsored prizes from database
   const { data: sponsoredPrizesData } = useGetAllTournamentPrizes({
@@ -184,7 +172,10 @@ export function ClaimPrizesDialog({
             // Handle both SDK format (variant.erc20) and SQL format (token_type string)
             const isErc20 =
               prize.token_type?.variant?.erc20 || prize.token_type === "erc20";
-            const tokenDecimals = getTokenDecimals(chainId, prize.token_address);
+            const tokenDecimals = getTokenDecimals(
+              chainId,
+              prize.token_address
+            );
             const prizeAmount = isErc20
               ? Number(
                   prize.token_type?.variant?.erc20?.amount ||

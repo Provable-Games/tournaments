@@ -11,25 +11,26 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useProvider } from "@starknet-react/core";
 import TournamentTimeline from "@/components/TournamentTimeline";
-import { bigintToHex, feltToString, formatTime, indexAddress } from "@/lib/utils";
+import {
+  bigintToHex,
+  feltToString,
+  formatTime,
+  indexAddress,
+  padU64,
+} from "@/lib/utils";
 import { addAddressPadding, CairoCustomEnum } from "starknet";
-import { useGetTournamentQuery } from "@/dojo/hooks/useSdkQueries";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import {
   Tournament as TournamentModel,
   Token,
   EntryCount,
-  getModelsMapping,
   Leaderboard,
 } from "@/generated/models.gen";
-import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { useDojo } from "@/context/dojo";
 import {
   extractEntryFeePrizes,
   processTournamentFromSql,
 } from "@/lib/utils/formatting";
-import useModel from "@/dojo/hooks/useModel";
 import { EnterTournamentDialog } from "@/components/dialogs/EnterTournament";
 import ScoreTable from "@/components/tournament/table/ScoreTable";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
@@ -46,6 +47,7 @@ import {
   useGetTournamentsCount,
   useGetTokenByAddress,
   useGetTokens,
+  useGetTournamentLeaderboards,
 } from "@/dojo/hooks/useSqlQueries";
 import NotFound from "@/containers/NotFound";
 import {
@@ -72,7 +74,6 @@ const Tournament = () => {
   const navigate = useNavigate();
   const { namespace, selectedChainConfig } = useDojo();
   const { getTokenDecimals } = useSystemCalls();
-  const state = useDojoStore((state) => state);
   const { gameData, getGameImage } = useUIStore();
   const [enterDialogOpen, setEnterDialogOpen] = useState(false);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
@@ -89,6 +90,49 @@ const Tournament = () => {
   const { data: tournamentsCount } = useGetTournamentsCount({
     namespace: namespace,
   });
+
+  // Fetch tournament data from SQL
+  const { data: tournamentSqlData, loading: tournamentSqlLoading } =
+    useGetTournaments({
+      namespace: namespace,
+      gameFilters: [],
+      status: "tournaments",
+      tournamentIds: id ? [padU64(BigInt(id))] : [],
+      active: !!id,
+      limit: 1,
+    });
+
+  // Process the tournament data from SQL
+  const tournamentModel = useMemo(() => {
+    if (!tournamentSqlData || tournamentSqlData.length === 0) return null;
+    return processTournamentFromSql(tournamentSqlData[0]);
+  }, [tournamentSqlData]) as TournamentModel | null;
+
+  // Get entry count from SQL data
+  const entryCountModel = useMemo(() => {
+    if (!tournamentSqlData || tournamentSqlData.length === 0) return null;
+    return {
+      tournament_id: tournamentSqlData[0].id,
+      count: tournamentSqlData[0].entry_count || 0,
+    };
+  }, [tournamentSqlData]) as EntryCount | null;
+
+  // Fetch leaderboard from SQL
+  const { data: leaderboardData } = useGetTournamentLeaderboards({
+    namespace,
+    tournamentIds: id ? [padU64(BigInt(id))] : [],
+    active: !!id,
+    limit: 1,
+  });
+
+  const leaderboardModel = useMemo(() => {
+    if (!leaderboardData || leaderboardData.length === 0) return null;
+    const lb = leaderboardData[0];
+    return {
+      tournament_id: lb.tournament_id,
+      token_ids: lb.token_ids ? JSON.parse(lb.token_ids) : [],
+    };
+  }, [leaderboardData]) as Leaderboard | null;
 
   useEffect(() => {
     let timeoutId: number;
@@ -117,26 +161,6 @@ const Tournament = () => {
     };
   }, [id, tournamentsCount]);
 
-  useGetTournamentQuery(addAddressPadding(bigintToHex(id!)), namespace);
-
-  const tournamentEntityId = useMemo(
-    () => getEntityIdFromKeys([BigInt(id!)]),
-    [id]
-  );
-
-  const tournamentModel = state.getEntity(addAddressPadding(tournamentEntityId))
-    ?.models[namespace]?.Tournament as TournamentModel;
-
-  const entryCountModel = useModel(
-    tournamentEntityId,
-    getModelsMapping(namespace).EntryCount
-  ) as unknown as EntryCount;
-
-  const leaderboardModel = useModel(
-    tournamentEntityId,
-    getModelsMapping(namespace).Leaderboard
-  ) as unknown as Leaderboard;
-
   const leaderboardSize = Number(tournamentModel?.game_config.prize_spots);
 
   const totalSubmissions = leaderboardModel?.token_ids.length ?? 0;
@@ -148,8 +172,8 @@ const Tournament = () => {
   // Calculate total potential prizes based on entry fees
   const { tournamentCreatorShare, gameCreatorShare, distributionPrizes } =
     extractEntryFeePrizes(
-      tournamentModel?.id,
-      tournamentModel?.entry_fee,
+      tournamentModel?.id ?? 0,
+      tournamentModel?.entry_fee!,
       entryCountModel?.count ?? 0
     );
 
@@ -462,7 +486,12 @@ const Tournament = () => {
   const { provider } = useProvider();
   useEffect(() => {
     const fetchCreatorAddress = async () => {
-      if (!tournamentModel?.creator_token_id || !provider || !selectedChainConfig?.denshokanAddress) return;
+      if (
+        !tournamentModel?.creator_token_id ||
+        !provider ||
+        !selectedChainConfig?.denshokanAddress
+      )
+        return;
 
       try {
         // Convert token ID to Uint256 format (low, high)
@@ -486,7 +515,11 @@ const Tournament = () => {
     };
 
     fetchCreatorAddress();
-  }, [tournamentModel?.creator_token_id, provider, selectedChainConfig?.denshokanAddress]);
+  }, [
+    tournamentModel?.creator_token_id,
+    provider,
+    selectedChainConfig?.denshokanAddress,
+  ]);
 
   // Fetch creator username
   const creatorAddresses = useMemo(() => {
@@ -552,6 +585,7 @@ const Tournament = () => {
   const tournamentVariant = tournament?.activeVariant();
 
   const tournamentIdsQuery = useMemo(() => {
+    if (!tournamentModel) return [];
     if (tournamentVariant === "winners") {
       return tournamentModel.entry_requirement.Some?.entry_requirement_type?.variant?.tournament?.variant?.winners?.map(
         (winner: any) => addAddressPadding(bigintToHex(winner))
@@ -562,7 +596,7 @@ const Tournament = () => {
       );
     }
     return [];
-  }, [tournamentModel]);
+  }, [tournamentModel, tournamentVariant]);
 
   const { data: tournaments } = useGetTournaments({
     namespace: namespace,
@@ -581,15 +615,15 @@ const Tournament = () => {
   });
 
   const { settings } = useSettings({
-    gameAddresses: [gameAddress],
+    gameAddresses: gameAddress ? [gameAddress] : [],
     settingsIds: [Number(tournamentModel?.game_config?.settings_id)],
   });
 
-  if (loading) {
+  if (loading || tournamentSqlLoading) {
     return <LoadingPage message={`Loading tournament...`} />;
   }
 
-  if (!tournamentExists) {
+  if (!tournamentExists || !tournamentModel) {
     return <NotFound message={`Tournament not found: ${id}`} />;
   }
 
@@ -614,7 +648,10 @@ const Tournament = () => {
                 className="flex items-center justify-center cursor-pointer"
                 onClick={() => setSettingsDialogOpen(true)}
               >
-                <TokenGameIcon image={getGameImage(gameAddress)} size={"md"} />
+                <TokenGameIcon
+                  image={getGameImage(gameAddress ?? "")}
+                  size={"md"}
+                />
               </div>
             </TooltipTrigger>
             <TooltipContent
@@ -712,7 +749,7 @@ const Tournament = () => {
             hasEntryFee={hasEntryFee}
             entryFeePrice={entryFeePrice}
             tournamentModel={tournamentModel}
-            entryCountModel={entryCountModel}
+            entryCountModel={entryCountModel!}
             // gameCount={gameCount}
             tokens={tournamentTokens}
             tournamentsData={tournamentsData}
@@ -723,13 +760,14 @@ const Tournament = () => {
             open={submitScoresDialogOpen}
             onOpenChange={setSubmitScoresDialogOpen}
             tournamentModel={tournamentModel}
-            leaderboard={leaderboardModel}
+            leaderboard={leaderboardModel!}
           />
           <ClaimPrizesDialog
             open={claimDialogOpen}
             onOpenChange={setClaimDialogOpen}
             tournamentModel={tournamentModel}
             prices={prices}
+            entryCountModel={entryCountModel!}
           />
           <AddPrizesDialog
             open={addPrizesDialogOpen}
@@ -741,7 +779,7 @@ const Tournament = () => {
           <SettingsDialog
             open={settingsDialogOpen}
             onOpenChange={setSettingsDialogOpen}
-            game={gameAddress}
+            game={gameAddress ?? ""}
             settings={settings[0]}
           />
         </div>
@@ -749,18 +787,19 @@ const Tournament = () => {
       <div className="flex flex-col gap-5 overflow-y-auto pb-5 pr-2 sm:pr-0 sm:pb-0">
         <div className="flex flex-col gap-1 sm:gap-2">
           <div className="flex flex-row items-center h-8 sm:h-12 justify-between">
-            <div className="flex flex-row gap-5">
-              <span className="font-brand text-xl xl:text-2xl 2xl:text-4xl 3xl:text-5xl">
+            <div className="flex flex-row gap-5 min-w-0 flex-1">
+              <span className="font-brand text-xl xl:text-2xl 2xl:text-4xl 3xl:text-5xl truncate">
                 {feltToString(tournamentModel?.metadata?.name ?? "")}
               </span>
-              <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg">
+              <div className="flex flex-row items-center gap-4 text-brand-muted 3xl:text-lg flex-shrink-0">
                 {creatorAddress && (
-                  <div className="flex flex-row gap-2">
+                  <div className="hidden sm:flex flex-row gap-2">
                     <span>Creator:</span>
                     <span className="text-brand">
                       {creatorUsernames?.get(indexAddress(creatorAddress)) || (
                         <>
-                          {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}
+                          {creatorAddress.slice(0, 6)}...
+                          {creatorAddress.slice(-4)}
                         </>
                       )}
                     </span>

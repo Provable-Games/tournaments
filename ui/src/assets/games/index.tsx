@@ -4,8 +4,8 @@ import { useDojo } from "@/context/dojo";
 export interface Game {
   contract_address: string;
   name: string;
-  image: string;
-  url: string;
+  image?: string;
+  url?: string;
   controllerOnly?: boolean;
   playUrl?: string;
 }
@@ -74,7 +74,7 @@ export const getGames = (): Game[] => {
     return [
       {
         contract_address:
-          "0x01e1c477f2ef896fd638b50caa31e3aa8f504d5c6cb3c09c99cd0b72523f07f7",
+          "0x03451230bc1bbec7bb1f337f22c9f6699d238429638ac357dba53af193674c70",
         name: "Dark Shuffle",
         image: "https://darkshuffle.io/favicon.svg",
         url: "https://darkshuffle.io",
@@ -92,9 +92,9 @@ export const getGames = (): Game[] => {
       {
         contract_address:
           "0x075bd3616302ebec162c920492e4d042155fd0d199f1ed44edcb2eec120feb3d",
-        name: "Jokers Of Neon",
-        image: "https://jokersofneon.com/icon.png",
-        url: "https://jokersofneon.com",
+        name: "Dope Wars",
+        image: "https://dopewars.gg/favicon.ico",
+        url: "https://dopewars.gg",
         controllerOnly: true,
       },
       {
@@ -103,6 +103,12 @@ export const getGames = (): Game[] => {
         name: "zKube",
         image: "https://app.zkube.xyz/assets/pwa-512x512.png",
         url: "https://app.zkube.xyz/",
+        controllerOnly: true,
+      },
+      {
+        contract_address:
+          "0x04d8ec93cc62296ecbd490406b034ada13bc4db5552f30d17f6e01270db7d62a",
+        name: "Nums",
         controllerOnly: true,
       },
     ];

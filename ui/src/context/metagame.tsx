@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useMemo } from "react";
 import { useNetwork } from "@starknet-react/core";
 import {
   initMetagame,
@@ -12,8 +12,9 @@ export const MetagameProvider = ({ children }: { children: ReactNode }) => {
   const [metagameClient, setMetagameClient] = useState<any>(undefined);
   const { chain } = useNetwork();
 
+  const chainId = useMemo(() => feltToString(chain.id), [chain.id]);
+
   useEffect(() => {
-    const chainId = feltToString(chain.id);
     const selectedChainConfig = CHAINS[chainId as ChainId];
     const manifest = manifests[chainId as ChainId];
 

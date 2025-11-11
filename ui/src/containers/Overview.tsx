@@ -121,9 +121,10 @@ const Overview = () => {
   const [prevSubscribedTournaments, setPrevSubscribedTournaments] = useState<
     ParsedEntity<SchemaType>[] | null
   >(null);
-  
-  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
-  const [decimalsLoading, setDecimalsLoading] = useState(false);
+
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
+    {}
+  );
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -207,8 +208,11 @@ const Overview = () => {
 
   // Update sortBy in the store when tab changes
   useEffect(() => {
-    setSortBy(selectedTab as TournamentTab, SORT_OPTIONS[selectedTab][0].value);
-  }, [selectedTab, setSortBy]);
+    const defaultSort = SORT_OPTIONS[selectedTab][0].value;
+    if (currentSortBy !== defaultSort) {
+      setSortBy(selectedTab as TournamentTab, defaultSort);
+    }
+  }, [selectedTab, currentSortBy, setSortBy]);
 
   // Reset data when filters change
   useEffect(() => {
@@ -254,8 +258,6 @@ const Overview = () => {
     active: ["upcoming", "live", "ended"].includes(selectedTab) && shouldFetch,
   });
 
-  // useSubscribeTournamentsQuery(namespace);
-
   useEffect(() => {
     if (
       prevSubscribedTournaments !== null &&
@@ -271,19 +273,22 @@ const Overview = () => {
     setPrevSubscribedTournaments(subscribedTournaments);
   }, [subscribedTournamentsKey, prevSubscribedTournaments]);
 
-  const { data: myTournaments, loading: myTournamentsLoading, uniqueTokens: myTournamentTokens } =
-    useGetMyTournaments({
-      namespace: namespace,
-      address: queryAddress,
-      gameAddresses: gameAddresses,
-      tokenIds: gameTokenIds,
-      gameFilters: gameFilters,
-      limit: 12,
-      offset: currentPage * 12,
-      active: selectedTab === "my",
-      sortBy: currentSortBy,
-      fromTournamentId: fromTournamentId,
-    });
+  const {
+    data: myTournaments,
+    loading: myTournamentsLoading,
+    uniqueTokens: myTournamentTokens,
+  } = useGetMyTournaments({
+    namespace: namespace,
+    address: queryAddress,
+    gameAddresses: gameAddresses,
+    tokenIds: gameTokenIds,
+    gameFilters: gameFilters,
+    limit: 12,
+    offset: currentPage * 12,
+    active: selectedTab === "my",
+    sortBy: currentSortBy,
+    fromTournamentId: fromTournamentId,
+  });
 
   // Combine unique tokens from both regular and "my" tournaments
   const allUniqueTokens = useMemo(() => {
@@ -304,7 +309,7 @@ const Overview = () => {
   const tokensArray = useMemo(() => {
     const tokens = selectedTab === "my" ? myTournamentTokens : tournamentTokens;
     if (!tokens || !Array.isArray(tokens)) return [];
-    
+
     return tokens.map((token: any) => ({
       address: token.address,
       name: token.name,
@@ -336,23 +341,10 @@ const Overview = () => {
   // Fetch decimals for all unique tokens
   useEffect(() => {
     const fetchDecimals = async () => {
-      if (allUniqueTokenAddresses.length === 0) {
-        setDecimalsLoading(false);
-        return;
-      }
-
       // Filter to only fetch decimals we don't have yet
       const missingAddresses = allUniqueTokenAddresses.filter(
-        addr => !(addr in tokenDecimals)
+        (addr) => !(addr in tokenDecimals)
       );
-
-      if (missingAddresses.length === 0) {
-        setDecimalsLoading(false);
-        return;
-      }
-
-      setDecimalsLoading(true);
-      const newDecimals: Record<string, number> = { ...tokenDecimals };
 
       try {
         // Fetch decimals in parallel
@@ -361,28 +353,32 @@ const Overview = () => {
             const decimals = await getTokenDecimals(address);
             return { address, decimals };
           } catch (error) {
-            console.error(`Failed to fetch decimals for token ${address}:`, error);
+            console.error(
+              `Failed to fetch decimals for token ${address}:`,
+              error
+            );
             return { address, decimals: 18 }; // Default to 18
           }
         });
 
         const results = await Promise.all(decimalsPromises);
-        results.forEach(({ address, decimals }) => {
-          newDecimals[address] = decimals;
-        });
 
-        setTokenDecimals(newDecimals);
+        // Use functional update to avoid depending on tokenDecimals
+        setTokenDecimals((prev) => {
+          const newDecimals = { ...prev };
+          results.forEach(({ address, decimals }) => {
+            newDecimals[address] = decimals;
+          });
+          return newDecimals;
+        });
       } catch (error) {
         console.error("Error fetching token decimals:", error);
-      } finally {
-        setDecimalsLoading(false);
       }
     };
 
-    if (!decimalsLoading) {
-      fetchDecimals();
-    }
-  }, [allUniqueTokenAddresses, tokenDecimals, getTokenDecimals, decimalsLoading]);
+    fetchDecimals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allUniqueTokenAddresses.join(",")]); // Use join to create stable dependency
 
   // Process and store tournaments when data is loaded
   useEffect(() => {
@@ -539,13 +535,19 @@ const Overview = () => {
     if (liveTournamentsCount !== undefined && liveTournamentsCount > 0) {
       setSelectedTab("live");
       isFirstRender.current = false;
-    } else if (upcomingTournamentsCount !== undefined && upcomingTournamentsCount > 0) {
+    } else if (
+      upcomingTournamentsCount !== undefined &&
+      upcomingTournamentsCount > 0
+    ) {
       setSelectedTab("upcoming");
       isFirstRender.current = false;
     } else if (myTournamentsCount !== undefined && myTournamentsCount > 0) {
       setSelectedTab("my");
       isFirstRender.current = false;
-    } else if (endedTournamentsCount !== undefined && endedTournamentsCount > 0) {
+    } else if (
+      endedTournamentsCount !== undefined &&
+      endedTournamentsCount > 0
+    ) {
       setSelectedTab("ended");
       isFirstRender.current = false;
     } else if (

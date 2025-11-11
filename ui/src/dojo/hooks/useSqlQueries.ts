@@ -731,7 +731,7 @@ export const useGetTournamentLeaderboards = ({
         ? `
     SELECT * FROM '${namespace}-Leaderboard'
     WHERE tournament_id IN (${tournamentIds
-      .map((id) => `"${addAddressPadding(id)}"`)
+      .map((id) => `"${padU64(BigInt(id))}"`)
       .join(",")})
     ORDER BY tournament_id ASC
     LIMIT ${limit}
@@ -1148,12 +1148,16 @@ export const useGetTournamentPrizeClaimsAggregations = ({
     WITH prize_counts AS (
       SELECT
         -- Count sponsored prizes
-        (SELECT COUNT(*) FROM '${namespace}-Prize' WHERE tournament_id = '${padU64(BigInt(tournamentId))}') as sponsored_count,
+        (SELECT COUNT(*) FROM '${namespace}-Prize' WHERE tournament_id = '${padU64(
+            BigInt(tournamentId)
+          )}') as sponsored_count,
 
         -- Count entry fee prizes
         (SELECT
           CASE
-            WHEN '${namespace}-Tournament'.id = '${padU64(BigInt(tournamentId))}'
+            WHEN '${namespace}-Tournament'.id = '${padU64(
+            BigInt(tournamentId)
+          )}'
               AND '${namespace}-Tournament'.'entry_fee.Some.amount' IS NOT NULL
               AND '${namespace}-Tournament'.'entry_fee.Some.amount' != '0'
             THEN
