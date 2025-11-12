@@ -25,6 +25,7 @@ import {
   Token,
   EntryCount,
   Leaderboard,
+  getModelsMapping,
 } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
 import {
@@ -66,6 +67,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSettings } from "metagame-sdk/sql";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
+import useModel from "@/dojo/hooks/useModel";
 
 const Tournament = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,6 +119,23 @@ const Tournament = () => {
       count: tournamentSqlData[0].entry_count || 0,
     };
   }, [tournamentSqlData]) as EntryCount | null;
+
+  const tournamentEntityId = useMemo(
+    () => getEntityIdFromKeys([BigInt(id!)]),
+    [id]
+  );
+
+  const subscribedEntryCountModel = useModel(
+    tournamentEntityId,
+    getModelsMapping(namespace).EntryCount
+  ) as unknown as EntryCount;
+
+  const subscribedEntryCount = Number(subscribedEntryCountModel?.count) ?? 0;
+
+  const entryCount =
+    subscribedEntryCount > 0
+      ? subscribedEntryCount
+      : Number(entryCountModel?.count) ?? 0;
 
   // Fetch leaderboard from SQL
   const { data: leaderboardData } = useGetTournamentLeaderboards({
@@ -174,7 +194,7 @@ const Tournament = () => {
     extractEntryFeePrizes(
       tournamentModel?.id ?? 0,
       tournamentModel?.entry_fee!,
-      entryCountModel?.count ?? 0
+      entryCount
     );
 
   const entryFeePrizesCount =
@@ -749,7 +769,7 @@ const Tournament = () => {
             hasEntryFee={hasEntryFee}
             entryFeePrice={entryFeePrice}
             tournamentModel={tournamentModel}
-            entryCountModel={entryCountModel!}
+            entryCount={entryCount}
             // gameCount={gameCount}
             tokens={tournamentTokens}
             tournamentsData={tournamentsData}
@@ -767,7 +787,7 @@ const Tournament = () => {
             onOpenChange={setClaimDialogOpen}
             tournamentModel={tournamentModel}
             prices={prices}
-            entryCountModel={entryCountModel!}
+            entryCount={entryCount}
           />
           <AddPrizesDialog
             open={addPrizesDialogOpen}
@@ -959,7 +979,7 @@ const Tournament = () => {
           <div className="flex flex-col sm:flex-row gap-5">
             <ScoreTable
               tournamentId={tournamentModel?.id}
-              entryCount={entryCountModel ? Number(entryCountModel.count) : 0}
+              entryCount={entryCount}
               isStarted={isStarted}
               isEnded={isEnded}
             />
@@ -967,9 +987,7 @@ const Tournament = () => {
               tournamentId={tournamentModel?.id}
               gameAddress={tournamentModel?.game_config?.address}
               tournamentModel={tournamentModel}
-              totalEntryCount={
-                entryCountModel ? Number(entryCountModel.count) : 0
-              }
+              totalEntryCount={entryCount}
             />
           </div>
         </div>

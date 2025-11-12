@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useAccount, useConnect } from "@starknet-react/core";
-import { Tournament, Token, EntryCount } from "@/generated/models.gen";
+import { Tournament, Token } from "@/generated/models.gen";
 import {
   feltToString,
   indexAddress,
@@ -45,7 +45,7 @@ interface EnterTournamentDialogProps {
   hasEntryFee?: boolean;
   entryFeePrice?: number;
   tournamentModel: Tournament;
-  entryCountModel: EntryCount;
+  entryCount: number;
   // gameCount: BigNumberish;
   tokens: Token[];
   tournamentsData: Tournament[];
@@ -74,7 +74,7 @@ export function EnterTournamentDialog({
   hasEntryFee,
   entryFeePrice,
   tournamentModel,
-  entryCountModel,
+  entryCount,
   // gameCount,
   tokens,
   tournamentsData,
@@ -142,14 +142,13 @@ export function EnterTournamentDialog({
         tournamentModel?.id,
         feltToString(tournamentModel?.metadata.name),
         tournamentModel,
-        // (Number(entryCountModel?.count) ?? 0) + 1,
         stringToFelt(finalPlayerName),
         addAddressPadding(targetAddress),
         qualificationProof,
         // gameCount
         duration,
         entryFeeUsdCost,
-        Number(entryCountModel?.count ?? 0),
+        entryCount,
         totalPrizesValueUSD
       );
 
@@ -549,7 +548,7 @@ export function EnterTournamentDialog({
     hasParticipatedInTournamentMap,
     ownedTokenIds,
     tournamentsData,
-    entryCountModel?.count,
+    entryCount,
   ]);
 
   const { data: qualificationEntries } = useGetTournamentQualificationEntries({
@@ -870,7 +869,7 @@ export function EnterTournamentDialog({
     requirementVariant,
     address,
     allowlistAddresses,
-    entryCountModel?.count,
+    entryCount,
     extensionValidEntry,
     extensionEntriesLeft,
   ]);

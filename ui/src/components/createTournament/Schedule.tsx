@@ -157,11 +157,9 @@ const Schedule = ({ form }: StepProps) => {
         // Always enforce minimum 24-hour submission period
         if (!customSubmissionPeriod) {
           const currentSubmissionPeriod = form.watch("submissionPeriod");
-          // Ensure submission period is at least 24 hours but not more than duration
-          const minSubmission = Math.min(durationInSeconds, SECONDS_IN_DAY);
-
-          if (currentSubmissionPeriod > durationInSeconds || currentSubmissionPeriod < SECONDS_IN_DAY) {
-            form.setValue("submissionPeriod", minSubmission);
+          // Ensure submission period is at least 24 hours
+          if (currentSubmissionPeriod < SECONDS_IN_DAY) {
+            form.setValue("submissionPeriod", SECONDS_IN_DAY);
           }
         }
       }
@@ -478,7 +476,7 @@ const Schedule = ({ form }: StepProps) => {
                                       submissionHours
                                     );
                                   }}
-                                  max={field.value}
+                                  max={604800}
                                   min={SECONDS_IN_DAY}
                                   step={SECONDS_IN_HOUR}
                                 />
@@ -500,14 +498,14 @@ const Schedule = ({ form }: StepProps) => {
                                   value={form.watch("submissionPeriod") || ""}
                                   onChange={(e) => {
                                     const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 86400 && value <= 604800) {
+                                    if (!isNaN(value) && value >= 86400) {
                                       form.setValue("submissionPeriod", value);
                                     }
                                   }}
                                   className="h-8 text-sm"
                                 />
                                 <span className="text-xs text-muted-foreground">
-                                  Min: 86400s (24 hours), Max: 604800s (1 week)
+                                  Min: 86400s (24 hours)
                                 </span>
                               </div>
                             )}

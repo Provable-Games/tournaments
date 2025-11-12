@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useAccount } from "@starknet-react/core";
-import { Tournament, PrizeClaim, EntryCount } from "@/generated/models.gen";
+import { Tournament, PrizeClaim } from "@/generated/models.gen";
 import { feltToString, formatNumber, getOrdinalSuffix } from "@/lib/utils";
 import {
   extractEntryFeePrizes,
@@ -35,7 +35,7 @@ interface ClaimPrizesDialogProps {
   onOpenChange: (open: boolean) => void;
   tournamentModel: Tournament;
   prices: TokenPrices;
-  entryCountModel?: EntryCount;
+  entryCount?: number;
 }
 
 export function ClaimPrizesDialog({
@@ -43,7 +43,7 @@ export function ClaimPrizesDialog({
   onOpenChange,
   tournamentModel,
   prices,
-  entryCountModel,
+  entryCount,
 }: ClaimPrizesDialogProps) {
   const { address } = useAccount();
   const { connect } = useConnectToSelectedChain();
@@ -82,9 +82,9 @@ export function ClaimPrizesDialog({
         extractEntryFeePrizes(
           tournamentModel?.id,
           tournamentModel?.entry_fee,
-          entryCountModel?.count ?? 0
+          BigInt(entryCount || 0)
         ),
-      [tournamentModel?.id, tournamentModel?.entry_fee, entryCountModel?.count]
+      [tournamentModel?.id, tournamentModel?.entry_fee, entryCount]
     );
 
   // Combine all prizes: entry fee prizes + sponsored prizes from database
