@@ -86,6 +86,7 @@ export const getGames = (): Game[] => {
         name: "Dark Shuffle",
         image: "https://darkshuffle.io/favicon.svg",
         url: "https://darkshuffle.io",
+        playUrl: "https://darkshuffle.io/play/",
         controllerOnly: true,
       },
       {
