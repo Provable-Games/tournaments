@@ -69,6 +69,13 @@ export const getGames = (): Game[] => {
         playUrl: "https://lootsurvivor.io/survivor/play?id=",
         controllerOnly: true,
       },
+      {
+        contract_address:
+          "0x012ccc9a2d76c836d088203f6e9d62e22d1a9f7479d1aea8b503a1036c0f4487",
+        name: "Nums",
+        url: "https://nums-blond.vercel.app/",
+        controllerOnly: true,
+      },
     ];
   } else if (isMainnet) {
     return [
@@ -109,6 +116,7 @@ export const getGames = (): Game[] => {
         contract_address:
           "0x04d8ec93cc62296ecbd490406b034ada13bc4db5552f30d17f6e01270db7d62a",
         name: "Nums",
+        url: "https://nums-blond.vercel.app/",
         controllerOnly: true,
       },
     ];

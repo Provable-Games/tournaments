@@ -40,7 +40,7 @@ function App() {
 
   const { minigames, loading: minigamesLoading } = useMiniGames({});
 
-  const whitelistedGames = useMemo(() => getGames(), []);
+  const whitelistedGames = getGames();
 
   // Create a unified array of all games with flags
   const allGames = useMemo(() => {
