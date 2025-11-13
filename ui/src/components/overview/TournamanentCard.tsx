@@ -351,6 +351,21 @@ export const TournamentCard = ({
               <span className="text-brand-muted">Ends In:</span>
               <span className={renderTimeClass(endsInSeconds)}>{endsIn}</span>
             </div>
+          ) : status === "ended" ? (
+            <div className="flex flex-row items-center gap-2">
+              <span className="text-brand-muted">Started:</span>
+              <span className="text-xs">
+                {startDate.toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}{" "}
+                {startDate.toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
           ) : (
             <></>
           )}
