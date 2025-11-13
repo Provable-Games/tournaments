@@ -9,6 +9,8 @@ import { getGames } from "./assets/games";
 import Header from "@/components/Header";
 import LoadingPage from "@/containers/LoadingPage";
 import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkChange";
+import { useSyncNetworkUrl } from "@/dojo/hooks/useSyncNetworkUrl";
+import { useSwitchToUrlNetwork } from "@/dojo/hooks/useSwitchToUrlNetwork";
 import { useMiniGames } from "metagame-sdk/sql";
 import {
   useSubscribeTournamentsQuery,
@@ -33,6 +35,9 @@ function App() {
   const { namespace } = useDojo();
   const { setGameData, setGameDataLoading } = useUIStore();
 
+  // Network management hooks
+  useSwitchToUrlNetwork(); // Switch to network from URL on initial load
+  useSyncNetworkUrl(); // Keep URL in sync when network changes
   useResetDojoOnNetworkChange();
 
   useSubscribeMetricsQuery(namespace);

@@ -16,12 +16,8 @@ import {
 import { initializeController } from "@/dojo/setup/controllerSetup";
 import { manifests } from "@/dojo/setup/config";
 
-// Initialize controller outside component
+// Initialize controller outside component - always mainnet
 const initController = () => {
-  if (getDefaultChainId() === ChainId.KATANA_LOCAL) {
-    return undefined;
-  }
-
   try {
     const chainRpcUrls: { rpcUrl: string }[] = Object.values(CHAINS)
       .filter((chain) => chain.chainId !== ChainId.KATANA_LOCAL)
@@ -31,12 +27,12 @@ const initController = () => {
 
     return initializeController(
       chainRpcUrls,
-      getDefaultChainId(),
-      manifests[getDefaultChainId()]
+      ChainId.SN_MAIN,
+      manifests[ChainId.SN_MAIN]
     );
   } catch (error) {
     console.error(
-      `Failed to initialize controller for chain ${getDefaultChainId()}:`,
+      "Failed to initialize controller:",
       error
     );
     return undefined;
@@ -100,9 +96,15 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       return [CHAINS[ChainId.KATANA_LOCAL].chain!];
     }
 
-    return Object.values(CHAINS)
-      .map((chain) => chain.chain!)
-      .filter(Boolean); // Filter out any undefined chains
+    // Put the default chain first in the array
+    // This ensures useNetwork() returns the correct chain when no wallet is connected
+    const defaultChain = CHAINS[defaultChainId]?.chain;
+    const otherChains = Object.values(CHAINS)
+      .filter((config) => config.chainId !== defaultChainId && config.chainId !== ChainId.KATANA_LOCAL)
+      .map((config) => config.chain!)
+      .filter(Boolean);
+
+    return [defaultChain!, ...otherChains];
   }, [defaultChainId]);
 
   // Combine all available connectors
@@ -125,6 +127,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
     console.error(`No chain configuration found for ${defaultChainId}`);
     return null;
   }
+
 
   return (
     <StarknetConfig

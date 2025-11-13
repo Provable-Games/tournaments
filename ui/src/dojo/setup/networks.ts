@@ -207,6 +207,17 @@ export const CHAINS: Record<ChainId, DojoChainConfig> = {
 };
 
 export const getDefaultChainId = (): ChainId => {
+  // Check URL parameter first (for sepolia support)
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const networkParam = params.get("network");
+
+    if (networkParam === "sepolia") {
+      return ChainId.SN_SEPOLIA;
+    }
+  }
+
+  // Fall back to environment variable
   const envChainId = import.meta.env.VITE_CHAIN_ID as ChainId;
 
   if (envChainId && !isChainIdSupported(envChainId)) {

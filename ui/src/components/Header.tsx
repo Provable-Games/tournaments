@@ -7,7 +7,6 @@ import {
   SPACE_INVADER_SOLID,
   TROPHY_LINE,
   COIN,
-  SLOT,
   STARKNET,
   DISCORD,
 } from "@/components/Icons";
@@ -49,7 +48,7 @@ const Header = () => {
   const { disconnect } = useDisconnect();
   const { openProfile } = useControllerProfile();
   const { username } = useControllerUsername();
-  const { switchToMainnet, switchToSepolia, switchToSlot } = useSwitchNetwork();
+  const { switchToMainnet, switchToSepolia } = useSwitchNetwork();
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedChainConfig } = useDojo();
@@ -58,7 +57,8 @@ const Header = () => {
   const isHomeScreen = location.pathname === "/";
   const isLocal = selectedChainConfig.chainId === ChainId.KATANA_LOCAL;
   const isController = connector ? isControllerAccount(connector) : false;
-  const walletIcon = connector && !isController ? getConnectorIcon(connector) : null;
+  const walletIcon =
+    connector && !isController ? getConnectorIcon(connector) : null;
 
   // State to control the visibility of the warning banner
   const [showWarning, setShowWarning] = useState(true);
@@ -193,12 +193,7 @@ const Header = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Button variant="outline">
-                    {selectedChainConfig.chainId === ChainId.SN_MAIN ||
-                    selectedChainConfig.chainId === ChainId.SN_SEPOLIA ? (
-                      <STARKNET />
-                    ) : (
-                      <SLOT />
-                    )}
+                    <STARKNET />
                     {NetworkId[selectedChainConfig.chainId as ChainId]}
                   </Button>
                 </DropdownMenuTrigger>
@@ -222,18 +217,6 @@ const Header = () => {
                       <STARKNET />
                     </span>
                     {NetworkId[ChainId.SN_SEPOLIA]}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    key="slot"
-                    active={
-                      selectedChainConfig.chainId === ChainId.WP_PG_SLOT_2
-                    }
-                    onClick={() => switchToSlot()}
-                  >
-                    <span className="[&_svg]:w-8 [&_svg]:h-8">
-                      <SLOT />
-                    </span>
-                    {NetworkId[ChainId.WP_PG_SLOT_2]}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -297,17 +280,12 @@ const Header = () => {
                   }
                 }}
               >
-                {account && (
-                  walletIcon ? (
-                    <img
-                      src={walletIcon}
-                      alt="wallet"
-                      className="w-4 h-4"
-                    />
+                {account &&
+                  (walletIcon ? (
+                    <img src={walletIcon} alt="wallet" className="w-4 h-4" />
                   ) : (
                     <CONTROLLER />
-                  )
-                )}
+                  ))}
                 <span>
                   {account ? (
                     username ? (
