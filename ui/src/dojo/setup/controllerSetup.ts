@@ -38,6 +38,7 @@ export const initializeController = (
   manifest: DojoManifest
 ): Connector => {
   const policies = _makeControllerPolicies(manifest);
+
   return new ControllerConnector({
     chains: chainRpcUrls,
     defaultChainId: stringToFelt(defaultChainId).toString(),
