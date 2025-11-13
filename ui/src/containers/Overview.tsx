@@ -209,13 +209,14 @@ const Overview = () => {
   const currentSortBy = sortByTab[selectedTab as TournamentTab];
   const isCurrentTabLoading = isLoadingByTab[selectedTab as TournamentTab];
 
-  // Update sortBy in the store when tab changes
+  // Set default sort when tab changes
   useEffect(() => {
     const defaultSort = SORT_OPTIONS[selectedTab][0].value;
-    if (currentSortBy !== defaultSort) {
+    // Only set if there's no sort value for this tab yet
+    if (!currentSortBy) {
       setSortBy(selectedTab as TournamentTab, defaultSort);
     }
-  }, [selectedTab, currentSortBy, setSortBy]);
+  }, [selectedTab, setSortBy]);
 
   // Reset data when filters change
   useEffect(() => {
