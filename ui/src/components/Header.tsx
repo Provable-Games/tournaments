@@ -181,7 +181,7 @@ const Header = () => {
             <Button
               variant="outline"
               onClick={() => {
-                window.open("https://discord.gg/wVXCrzMk", "_blank");
+                window.open("https://discord.gg/lootsurvivor", "_blank");
               }}
             >
               <span className="flex flex-row items-center gap-2">
