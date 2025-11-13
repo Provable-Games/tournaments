@@ -11,7 +11,7 @@ import { setupWorld } from "@/generated/contracts.gen";
 import { SDK, init } from "@dojoengine/sdk";
 import { SchemaType } from "@/generated/models.gen";
 import { DojoManifest } from "@/dojo/hooks/useDojoSystem";
-import { DojoChainConfig, ChainId } from "@/dojo/setup/networks";
+import { DojoChainConfig, ChainId, getDefaultChainId } from "@/dojo/setup/networks";
 import { StarknetDomain } from "starknet";
 import { useNetwork } from "@starknet-react/core";
 import { CHAINS } from "@/dojo/setup/networks";
@@ -45,7 +45,12 @@ export const DojoContextProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const chainId = useMemo(() => {
-    return feltToString(chain?.id);
+    // If wallet is connected, use wallet's chain
+    if (chain?.id) {
+      return feltToString(chain.id);
+    }
+    // Otherwise, use URL parameter or environment default
+    return getDefaultChainId();
   }, [chain]);
 
   // Get the chain config for the current chain
