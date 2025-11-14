@@ -82,6 +82,11 @@ pub impl ScheduleImpl of ScheduleTrait {
         self.end < tournament_end
     }
 
+    /// @notice Checks if registration ends before the game period starts
+    fn is_registration_ends_before_game_starts(self: Period, game_start: u64) -> bool {
+        self.end <= game_start
+    }
+
     /// @notice Checks if the tournament meets minimum duration
     fn is_min_duration(self: Period) -> bool {
         self.end - self.start >= MIN_TOURNAMENT_LENGTH.into()
@@ -192,6 +197,15 @@ pub impl ScheduleAssertionsImpl of ScheduleAssertionsTrait {
             "Schedule: Registration end time {} is after tournament end time {}",
             self.end,
             tournament_end,
+        );
+    }
+
+    fn assert_registration_ends_before_game_starts(self: Period, game_start: u64) {
+        assert!(
+            self.is_registration_ends_before_game_starts(game_start),
+            "Schedule: Registration end time {} is after game start time {}",
+            self.end,
+            game_start,
         );
     }
 

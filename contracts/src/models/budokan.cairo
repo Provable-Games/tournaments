@@ -114,6 +114,7 @@ pub struct Registration {
     pub tournament_id: u64,
     pub entry_number: u32,
     pub has_submitted: bool,
+    pub is_banned: bool,
 }
 
 #[dojo::model]
