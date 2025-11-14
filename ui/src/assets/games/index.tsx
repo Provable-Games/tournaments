@@ -79,7 +79,7 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x036e699035812d13d3b7d6780a4cd91d1d7ba85aa19c9fb1ebf00488f6fb1640",
+          "0x06d09ee095fd3fab025ded7802d0f8180a37ee5d7da827e3c642d1ede779abba",
         name: "zKube",
         url: "https://localhost:5173/",
         playUrl: "https://localhost:5173/play/",
