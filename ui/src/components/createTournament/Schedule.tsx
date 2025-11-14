@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Slider } from "@/components/ui/slider";
 import {
   FormControl,
   FormField,
@@ -10,33 +8,20 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
 import { StepProps } from "@/containers/CreateTournament";
-import TournamentTimeline from "@/components/TournamentTimeline";
+import ScheduleSlider from "@/components/createTournament/ScheduleSlider";
 import {
   HoverCard,
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
 import { INFO } from "@/components/Icons";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CALENDAR } from "@/components/Icons";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { SECONDS_IN_DAY, SECONDS_IN_HOUR } from "@/lib/constants";
-import { useDojo } from "@/context/dojo";
-import { ChainId } from "@/dojo/setup/networks";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { SECONDS_IN_DAY } from "@/lib/constants";
 
 const Schedule = ({ form }: StepProps) => {
-  const { selectedChainConfig } = useDojo();
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
-  const [customSubmissionPeriod, setCustomSubmissionPeriod] = useState(false);
+  const [enableRegistration, setEnableRegistration] = useState(false);
   const [minStartTime, setMinStartTime] = useState<Date>(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
@@ -75,11 +60,12 @@ const Schedule = ({ form }: StepProps) => {
     return date < minDate;
   };
 
-  const submissionHours = form.watch("submissionPeriod") / (60 * 60);
-  const durationDays = form.watch("duration") / (24 * 60 * 60);
   const registrationType = form.watch("type");
 
-  const isMainnet = selectedChainConfig.chainId === ChainId.SN_MAIN;
+  // Sync enableRegistration state with form's registration type
+  useEffect(() => {
+    setEnableRegistration(registrationType === "fixed");
+  }, [registrationType]);
 
   // Effect to update start time when registration type changes to "fixed"
   useEffect(() => {
@@ -126,7 +112,6 @@ const Schedule = ({ form }: StepProps) => {
       // Set default end time to EXACTLY 1 day ahead
       const oneDayFromStartTime = new Date(startTime);
 
-      // Instead of using setDate which might add extra time, use exact time calculation
       // Set to exactly 24 hours (1 day) later
       oneDayFromStartTime.setTime(startTime.getTime() + 24 * 60 * 60 * 1000);
 
@@ -137,9 +122,9 @@ const Schedule = ({ form }: StepProps) => {
       // Update the form's end time
       form.setValue("endTime", oneDayFromStartTime);
     }
-  }, [startTime]);
+  }, [startTime, form]);
 
-  // New useEffect to update duration based on start and end times
+  // Update duration based on start and end times
   useEffect(() => {
     const startTime = form.watch("startTime");
     const endTime = form.watch("endTime");
@@ -155,16 +140,13 @@ const Schedule = ({ form }: StepProps) => {
         form.setValue("duration", durationInSeconds);
 
         // Always enforce minimum 24-hour submission period
-        if (!customSubmissionPeriod) {
-          const currentSubmissionPeriod = form.watch("submissionPeriod");
-          // Ensure submission period is at least 24 hours
-          if (currentSubmissionPeriod < SECONDS_IN_DAY) {
-            form.setValue("submissionPeriod", SECONDS_IN_DAY);
-          }
+        const currentSubmissionPeriod = form.watch("submissionPeriod");
+        if (currentSubmissionPeriod < SECONDS_IN_DAY) {
+          form.setValue("submissionPeriod", SECONDS_IN_DAY);
         }
       }
     }
-  }, [form.watch("endTime")]);
+  }, [form.watch("endTime"), form]);
 
   useEffect(() => {
     const startTime = form.watch("startTime");
@@ -177,7 +159,7 @@ const Schedule = ({ form }: StepProps) => {
       // Update the form's end time
       form.setValue("endTime", newEndTime);
     }
-  }, [form.watch("duration")]);
+  }, [form.watch("duration"), form]);
 
   return (
     <>
@@ -188,429 +170,181 @@ const Schedule = ({ form }: StepProps) => {
           </span>
           <div className="w-full h-0.5 bg-brand/25" />
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-5 gap-4 sm:gap-0 sm:px-4">
-          <div className="w-full sm:w-2/5 flex flex-col gap-4">
-            <FormField
-              control={form.control}
-              name="startTime"
-              render={({ field }) => (
-                <FormItem className="flex flex-col gap-2 sm:gap-4 space-y-0">
+
+        {/* Registration Type Selector */}
+        <div className="flex flex-col gap-4 px-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex flex-col gap-4">
                   <div className="flex flex-row items-center gap-4">
                     <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                      Start Time
+                      Registration Type
                     </FormLabel>
-
-                    <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base">
-                      Select a start time
-                    </FormDescription>
-                  </div>
-
-                  <div className="flex flex-row justify-center">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="justify-start text-left font-normal"
-                        >
-                          <CALENDAR />
-                          {field.value ? (
-                            format(field.value, "PPP HH:mm")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if (date) {
-                              const newDate = new Date(date);
-                              const currentValue = field.value;
-                              newDate.setHours(currentValue.getHours());
-                              newDate.setMinutes(currentValue.getMinutes());
-                              field.onChange(newDate);
-                            }
-                          }}
-                          selectedTime={field.value}
-                          onTimeChange={(hour, minute) => {
-                            const newDate = new Date(field.value);
-                            newDate.setHours(hour);
-                            newDate.setMinutes(minute);
-                            field.onChange(newDate);
-                          }}
-                          disabled={disablePastStartDates}
-                          minTime={minStartTime}
-                          initialFocus
-                          className="rounded-md border-4 border-brand-muted w-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="w-full h-0.5 bg-brand/25" />
-            <FormField
-              control={form.control}
-              name="enableEndTime"
-              render={({ field }) => (
-                <>
-                  <FormItem className="space-y-0 flex flex-col gap-4">
-                    <div className="flex flex-col w-full">
-                      <div className="flex flex-row w-full justify-between">
-                        <div className="flex flex-row items-center gap-4">
-                          <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                            End Time
-                          </FormLabel>
-
-                          <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base hidden sm:block">
-                            Custom end time
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <div className="flex flex-row items-center gap-2">
-                            <span className="uppercase text-neutral text-xs font-bold">
-                              Optional
-                            </span>
-                            <Switch
-                              size="sm"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </div>
-                        </FormControl>
-                      </div>
-                    </div>
-                  </FormItem>
-                  {field.value && (
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col gap-2 sm:gap-4 space-y-0">
-                          <div className="flex flex-row justify-center">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="justify-start text-left font-normal"
-                                >
-                                  <CALENDAR />
-                                  {field.value ? (
-                                    format(field.value, "PPP HH:mm")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-auto p-0"
-                                align="start"
-                              >
-                                <Calendar
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      const newDate = new Date(date);
-                                      const currentValue = field.value;
-                                      newDate.setHours(currentValue.getHours());
-                                      newDate.setMinutes(
-                                        currentValue.getMinutes()
-                                      );
-                                      field.onChange(newDate);
-                                    }
-                                  }}
-                                  selectedTime={field.value}
-                                  onTimeChange={(hour, minute) => {
-                                    const newDate = new Date(field.value);
-                                    newDate.setHours(hour);
-                                    newDate.setMinutes(minute);
-                                    field.onChange(newDate);
-                                  }}
-                                  disabled={disablePastEndDates}
-                                  minTime={minEndTime}
-                                  initialFocus
-                                  className="rounded-md border-4 border-brand-muted w-auto"
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </>
-              )}
-            />
-            <div className="w-full h-0.5 bg-brand/25" />
-          </div>
-          <div className="flex flex-col gap-4 w-full sm:w-3/5">
-            <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-row items-center gap-4">
-                      <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                        Duration
-                      </FormLabel>
-                      <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base hidden sm:block">
-                        Select the tournament duration and submission period
+                    <div className="flex flex-row gap-2 relative">
+                      <FormDescription className="hidden sm:block text-wrap sm:text-xs xl:text-sm 3xl:text-base">
+                        Select the registration type for the tournament
                       </FormDescription>
-                    </div>
-                    <FormControl>
-                      {/* Duration Section */}
-                      <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-8 xl:gap-0">
-                        <div
-                          className={`flex flex-row items-center justify-center sm:justify-start gap-2 w-full ${
-                            isMainnet ? "sm:w-2/3" : "sm:w-3/5"
-                          }`}
-                        >
-                          {PREDEFINED_DURATIONS.map(({ value, label }) => (
-                            <Button
-                              key={value}
-                              type="button"
-                              variant={
-                                field.value === value ? "default" : "outline"
-                              }
-                              className="px-2"
-                              onClick={() => {
-                                field.onChange(value);
-
-                                // Find the duration object with the matching value
-                                const selectedDuration =
-                                  PREDEFINED_DURATIONS.find(
-                                    (duration) => duration.value === value
-                                  );
-
-                                // Get the label from the found duration object
-                                const durationLabel = selectedDuration?.label;
-
-                                // Use the label to get the default submission period
-                                if (
-                                  durationLabel &&
-                                  DURATION_TO_DEFAULT_SUBMISSION[
-                                    durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
-                                  ]
-                                ) {
-                                  form.setValue(
-                                    "submissionPeriod",
-                                    DURATION_TO_DEFAULT_SUBMISSION[
-                                      durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
-                                    ]
-                                  );
-                                } else {
-                                  // Fallback to a default value if no mapping is found
-                                  form.setValue("submissionPeriod", SECONDS_IN_DAY); // Default to 24 hours
-                                }
-                              }}
-                            >
-                              {label}
-                            </Button>
-                          ))}
-                        </div>
-                        <div
-                          className={`flex flex-row gap-2 w-full ${
-                            isMainnet ? "sm:w-2/3" : "sm:w-2/5"
-                          }`}
-                        >
-                          <div className="flex flex-col gap-2 w-1/2">
-                            <div className="flex justify-between items-center">
-                              <Label className="xl:text-xs 2xl:text-sm font-medium">
-                                Duration
-                              </Label>
-                              <span className="text-sm text-muted-foreground xl:text-xs 2xl:text-sm">
-                                {Number.isInteger(durationDays)
-                                  ? durationDays
-                                  : durationDays.toFixed(2)}{" "}
-                                {durationDays === 1 ? "day" : "days"}
-                              </span>
+                      <div className="hidden sm:block">
+                        <HoverCard openDelay={50} closeDelay={0}>
+                          <HoverCardTrigger asChild>
+                            <span className="absolute -top-4 -right-8 w-6 h-6 cursor-pointer">
+                              <INFO />
+                            </span>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-64 xl:w-80 p-4 text-sm z-50">
+                            <div className="flex flex-col gap-2">
+                              <h4 className="text-lg">Registration Types</h4>
+                              <ul className="list-disc pl-4 space-y-2">
+                                <li className="text-muted-foreground text-wrap">
+                                  <span className="font-medium text-brand">
+                                    Open:
+                                  </span>{" "}
+                                  <span className="text-neutral">
+                                    An event where entries can be made
+                                    throughout the tournament period.
+                                  </span>
+                                </li>
+                                <li className="text-muted-foreground text-wrap">
+                                  <span className="font-medium text-brand">
+                                    Fixed:
+                                  </span>{" "}
+                                  <span className="text-neutral">
+                                    An event with a registration period for
+                                    capped number of entries.
+                                  </span>
+                                </li>
+                              </ul>
                             </div>
-                            <Slider
-                              value={[field.value]}
-                              onValueChange={([duration]) => {
-                                field.onChange(duration);
-                              }}
-                              max={7776000}
-                              min={SECONDS_IN_DAY}
-                              step={SECONDS_IN_DAY}
-                            />
-                          </div>
-
-                          {/* Submission Period Section */}
-                          <div className="flex flex-col gap-2 w-1/2">
-                            <div className="flex justify-between items-center">
-                              <Label className="xl:text-xs 2xl:text-sm font-medium">
-                                Submission{" "}
-                              </Label>
-                              {!customSubmissionPeriod ? (
-                                <span className="text-sm text-muted-foreground xl:text-xs 2xl:text-sm">
-                                  {Number.isInteger(submissionHours)
-                                    ? submissionHours
-                                    : submissionHours.toFixed(2)}{" "}
-                                  {submissionHours === 1 ? "hour" : "hours"}
-                                </span>
-                              ) : (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-5 px-2 text-xs"
-                                  onClick={() => setCustomSubmissionPeriod(false)}
-                                >
-                                  Use Slider
-                                </Button>
-                              )}
-                            </div>
-                            {!customSubmissionPeriod ? (
-                              <>
-                                <Slider
-                                  value={[form.watch("submissionPeriod") || 1]}
-                                  onValueChange={([submissionHours]) => {
-                                    form.setValue(
-                                      "submissionPeriod",
-                                      submissionHours
-                                    );
-                                  }}
-                                  max={604800}
-                                  min={SECONDS_IN_DAY}
-                                  step={SECONDS_IN_HOUR}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-1 h-6 text-xs"
-                                  onClick={() => setCustomSubmissionPeriod(true)}
-                                >
-                                  Custom
-                                </Button>
-                              </>
-                            ) : (
-                              <div className="flex flex-col gap-2">
-                                <Input
-                                  type="number"
-                                  placeholder="Seconds"
-                                  value={form.watch("submissionPeriod") || ""}
-                                  onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 86400) {
-                                      form.setValue("submissionPeriod", value);
-                                    }
-                                  }}
-                                  className="h-8 text-sm"
-                                />
-                                <span className="text-xs text-muted-foreground">
-                                  Min: 86400s (24 hours)
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                          </HoverCardContent>
+                        </HoverCard>
                       </div>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="w-full h-0.5 bg-brand/25" />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-row items-center gap-4">
-                      <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                        Registration Type
-                      </FormLabel>
-                      <div className="flex flex-row gap-2 relative">
-                        <FormDescription className="hidden sm:block text-wrap sm:text-xs xl:text-sm 3xl:text-base">
-                          Select the registration type for the tournament
-                        </FormDescription>
-                        <div className="hidden sm:block">
-                          <HoverCard openDelay={50} closeDelay={0}>
-                            <HoverCardTrigger asChild>
-                              <span className="absolute -top-4 -right-8 w-6 h-6 cursor-pointer">
-                                <INFO />
-                              </span>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-64 xl:w-80 p-4 text-sm z-50">
-                              <div className="flex flex-col gap-2">
-                                <h4 className="text-lg">Registration Types</h4>
-                                <ul className="list-disc pl-4 space-y-2">
-                                  <li className="text-muted-foreground text-wrap">
-                                    <span className="font-medium text-brand">
-                                      Open:
-                                    </span>{" "}
-                                    <span className="text-neutral">
-                                      An event where entries can be made
-                                      throughout the tournament period.
-                                    </span>
-                                  </li>
-                                  <li className="text-muted-foreground text-wrap">
-                                    <span className="font-medium text-brand">
-                                      Fixed:
-                                    </span>{" "}
-                                    <span className="text-neutral">
-                                      An event with a registration period for
-                                      capped number of entries.
-                                    </span>
-                                  </li>
-                                </ul>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        </div>
-                        <div
-                          className="sm:hidden absolute -top-4 -right-8 w-6 h-6 cursor-pointer"
-                          onClick={() => setIsMobileDialogOpen(true)}
-                        >
-                          <INFO />
-                        </div>
+                      <div
+                        className="sm:hidden absolute -top-4 -right-8 w-6 h-6 cursor-pointer"
+                        onClick={() => setIsMobileDialogOpen(true)}
+                      >
+                        <INFO />
                       </div>
                     </div>
-                    <FormControl>
-                      <div className="flex justify-center sm:justify-start gap-2">
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "open" ? "default" : "outline"
-                          }
-                          onClick={() => field.onChange("open")}
-                        >
-                          Open
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            field.value === "fixed" ? "default" : "outline"
-                          }
-                          onClick={() => field.onChange("fixed")}
-                        >
-                          Fixed
-                        </Button>
-                      </div>
-                    </FormControl>
                   </div>
-                </FormItem>
-              )}
-            />
-            <div className="w-full h-0.5 bg-brand/25 mb-4 sm:mb-0" />
-          </div>
+                  <FormControl>
+                    <div className="flex justify-center sm:justify-start gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          field.value === "open" ? "default" : "outline"
+                        }
+                        onClick={() => field.onChange("open")}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          field.value === "fixed" ? "default" : "outline"
+                        }
+                        onClick={() => field.onChange("fixed")}
+                      >
+                        Fixed
+                      </Button>
+                    </div>
+                  </FormControl>
+                </div>
+              </FormItem>
+            )}
+          />
+          <div className="w-full h-0.5 bg-brand/25" />
         </div>
-        <TournamentTimeline
-          type={form.watch("type")}
-          createdTime={Math.floor(new Date().getTime() / 1000)} // Convert to Unix timestamp
-          startTime={Math.floor(form.watch("startTime").getTime() / 1000)} // Convert to Unix timestamp
-          duration={form.watch("duration")}
-          submissionPeriod={form.watch("submissionPeriod")}
-        />
+
+        {/* Interactive Schedule Slider */}
+        <div className="px-4">
+          <div className="flex flex-row items-center gap-4 mb-6">
+            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+              Timeline
+            </FormLabel>
+            <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base">
+              Drag the timeline points or click icons to adjust dates
+            </FormDescription>
+          </div>
+          <ScheduleSlider
+            startTime={form.watch("startTime")}
+            endTime={form.watch("endTime")}
+            submissionPeriod={form.watch("submissionPeriod")}
+            enableRegistration={enableRegistration}
+            registrationType={form.watch("type")}
+            onStartTimeChange={(date) => form.setValue("startTime", date)}
+            onEndTimeChange={(date) => form.setValue("endTime", date)}
+            onSubmissionPeriodChange={(seconds) =>
+              form.setValue("submissionPeriod", seconds)
+            }
+            minStartTime={minStartTime}
+            minEndTime={minEndTime}
+            disablePastStartDates={disablePastStartDates}
+            disablePastEndDates={disablePastEndDates}
+          />
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex flex-col gap-4 px-4">
+          <div className="flex flex-row items-center gap-4">
+            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+              Quick Presets
+            </FormLabel>
+            <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base">
+              Select a preset duration
+            </FormDescription>
+          </div>
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="flex flex-row items-center justify-center sm:justify-start gap-2">
+                    {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={field.value === value ? "default" : "outline"}
+                        className="px-4"
+                        onClick={() => {
+                          field.onChange(value);
+
+                          const selectedDuration = PREDEFINED_DURATIONS.find(
+                            (duration) => duration.value === value
+                          );
+                          const durationLabel = selectedDuration?.label;
+
+                          if (
+                            durationLabel &&
+                            DURATION_TO_DEFAULT_SUBMISSION[
+                              durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                            ]
+                          ) {
+                            form.setValue(
+                              "submissionPeriod",
+                              DURATION_TO_DEFAULT_SUBMISSION[
+                                durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                              ]
+                            );
+                          } else {
+                            form.setValue("submissionPeriod", SECONDS_IN_DAY);
+                          }
+                        }}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="w-full h-0.5 bg-brand/25" />
+        </div>
       </div>
       <Dialog open={isMobileDialogOpen} onOpenChange={setIsMobileDialogOpen}>
         <DialogContent className="sm:hidden bg-black border border-brand p-4 rounded-lg max-w-[90vw] mx-auto">
