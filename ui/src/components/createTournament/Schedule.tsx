@@ -1,27 +1,19 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormDescription,
-  FormMessage,
-} from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FormLabel, FormDescription } from "@/components/ui/form";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { INFO } from "@/components/Icons";
 import { StepProps } from "@/containers/CreateTournament";
 import ScheduleSlider from "@/components/createTournament/ScheduleSlider";
-import {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-} from "@/components/ui/hover-card";
-import { INFO } from "@/components/Icons";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import TournamentTimeline from "@/components/TournamentTimeline";
 import { SECONDS_IN_DAY } from "@/lib/constants";
 
 const Schedule = ({ form }: StepProps) => {
-  const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
   const [enableRegistration, setEnableRegistration] = useState(false);
+  const [registrationStartTime, setRegistrationStartTime] = useState<Date | undefined>(undefined);
+  const [registrationEndTime, setRegistrationEndTime] = useState<Date | undefined>(undefined);
+  const [hasInitializedFixedMode, setHasInitializedFixedMode] = useState(false);
   const [minStartTime, setMinStartTime] = useState<Date>(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
@@ -64,12 +56,18 @@ const Schedule = ({ form }: StepProps) => {
 
   // Sync enableRegistration state with form's registration type
   useEffect(() => {
-    setEnableRegistration(registrationType === "fixed");
+    const isFixed = registrationType === "fixed";
+    setEnableRegistration(isFixed);
+
+    // Reset initialization flag when switching away from fixed
+    if (!isFixed) {
+      setHasInitializedFixedMode(false);
+    }
   }, [registrationType]);
 
-  // Effect to update start time when registration type changes to "fixed"
+  // Effect to update start time when registration type changes to "fixed" (only once)
   useEffect(() => {
-    if (registrationType === "fixed") {
+    if (registrationType === "fixed" && !hasInitializedFixedMode) {
       // Get current time
       const now = new Date();
 
@@ -84,13 +82,30 @@ const Schedule = ({ form }: StepProps) => {
       roundedFifteenMinutesFromNow.setSeconds(0);
       roundedFifteenMinutesFromNow.setMilliseconds(0);
 
-      // Update the form's start time
-      form.setValue("startTime", roundedFifteenMinutesFromNow);
+      // Set tournament start to 1 day from now (matching registration end default)
+      const oneDayFromNow = new Date(now);
+      oneDayFromNow.setTime(now.getTime() + 24 * 60 * 60 * 1000);
+      oneDayFromNow.setSeconds(0);
+      oneDayFromNow.setMilliseconds(0);
+
+      // Update the form's start time to 1 day from now
+      form.setValue("startTime", oneDayFromNow);
 
       // Update the minimum start time
       setMinStartTime(roundedFifteenMinutesFromNow);
+
+      // Initialize registration times if not already set
+      if (!registrationStartTime) {
+        setRegistrationStartTime(now);
+      }
+      if (!registrationEndTime) {
+        setRegistrationEndTime(oneDayFromNow);
+      }
+
+      // Mark as initialized
+      setHasInitializedFixedMode(true);
     }
-  }, [registrationType, form]);
+  }, [registrationType, hasInitializedFixedMode, form, registrationStartTime, registrationEndTime]);
 
   const startTime = form.watch("startTime");
 
@@ -163,7 +178,7 @@ const Schedule = ({ form }: StepProps) => {
 
   return (
     <>
-      <div className="flex flex-col gap-5 lg:p-2 2xl:p-4">
+      <div className="flex flex-col gap-5 lg:p-2 2xl:p-4 overflow-visible">
         <div className="flex flex-col">
           <span className="font-brand text-lg sm:text-xl lg:text-2xl 2xl:text-3xl 3xl:text-4xl font-bold">
             Schedule
@@ -171,206 +186,336 @@ const Schedule = ({ form }: StepProps) => {
           <div className="w-full h-0.5 bg-brand/25" />
         </div>
 
-        {/* Registration Type Selector */}
-        <div className="flex flex-col gap-4 px-4">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-row items-center gap-4">
-                    <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                      Registration Type
-                    </FormLabel>
-                    <div className="flex flex-row gap-2 relative">
-                      <FormDescription className="hidden sm:block text-wrap sm:text-xs xl:text-sm 3xl:text-base">
-                        Select the registration type for the tournament
-                      </FormDescription>
-                      <div className="hidden sm:block">
-                        <HoverCard openDelay={50} closeDelay={0}>
-                          <HoverCardTrigger asChild>
-                            <span className="absolute -top-4 -right-8 w-6 h-6 cursor-pointer">
-                              <INFO />
-                            </span>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-64 xl:w-80 p-4 text-sm z-50">
-                            <div className="flex flex-col gap-2">
-                              <h4 className="text-lg">Registration Types</h4>
-                              <ul className="list-disc pl-4 space-y-2">
-                                <li className="text-muted-foreground text-wrap">
-                                  <span className="font-medium text-brand">
-                                    Open:
-                                  </span>{" "}
-                                  <span className="text-neutral">
-                                    An event where entries can be made
-                                    throughout the tournament period.
-                                  </span>
-                                </li>
-                                <li className="text-muted-foreground text-wrap">
-                                  <span className="font-medium text-brand">
-                                    Fixed:
-                                  </span>{" "}
-                                  <span className="text-neutral">
-                                    An event with a registration period for
-                                    capped number of entries.
-                                  </span>
-                                </li>
-                              </ul>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      </div>
-                      <div
-                        className="sm:hidden absolute -top-4 -right-8 w-6 h-6 cursor-pointer"
-                        onClick={() => setIsMobileDialogOpen(true)}
-                      >
-                        <INFO />
-                      </div>
-                    </div>
-                  </div>
-                  <FormControl>
-                    <div className="flex justify-center sm:justify-start gap-2">
-                      <Button
-                        type="button"
-                        variant={
-                          field.value === "open" ? "default" : "outline"
-                        }
-                        onClick={() => field.onChange("open")}
-                      >
-                        Open
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={
-                          field.value === "fixed" ? "default" : "outline"
-                        }
-                        onClick={() => field.onChange("fixed")}
-                      >
-                        Fixed
-                      </Button>
-                    </div>
-                  </FormControl>
-                </div>
-              </FormItem>
-            )}
-          />
-          <div className="w-full h-0.5 bg-brand/25" />
-        </div>
-
         {/* Interactive Schedule Slider */}
-        <div className="px-4">
-          <div className="flex flex-row items-center gap-4 mb-6">
-            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-              Timeline
-            </FormLabel>
-            <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base">
-              Drag the timeline points or click icons to adjust dates
-            </FormDescription>
+        <div className="px-4 overflow-visible">
+          {/* Header Row */}
+          <div className="flex flex-row items-center justify-between gap-4 mb-4 overflow-visible">
+            <div className="flex flex-row items-center gap-4">
+              <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                Timeline
+              </FormLabel>
+              <FormDescription className="hidden lg:block sm:text-xs xl:text-sm 3xl:text-base">
+                Drag the timeline points or click icons to adjust dates
+              </FormDescription>
+            </div>
+
+            {/* Reset Button */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const now = new Date();
+                const currentMinutes = now.getMinutes();
+                const remainder = currentMinutes % 5;
+                const minutesToAdd = remainder === 0 ? 15 : 5 - remainder + 15;
+
+                const roundedFifteenMinutesFromNow = new Date(now);
+                roundedFifteenMinutesFromNow.setMinutes(now.getMinutes() + minutesToAdd);
+                roundedFifteenMinutesFromNow.setSeconds(0);
+                roundedFifteenMinutesFromNow.setMilliseconds(0);
+
+                let tournamentStartTime;
+                let tournamentEndTime;
+
+                if (registrationType === "fixed") {
+                  // For fixed registration, tournament starts 1 day from now
+                  const oneDayFromNow = new Date(now);
+                  oneDayFromNow.setTime(now.getTime() + 24 * 60 * 60 * 1000);
+                  oneDayFromNow.setSeconds(0);
+                  oneDayFromNow.setMilliseconds(0);
+
+                  tournamentStartTime = oneDayFromNow;
+                  tournamentEndTime = new Date(oneDayFromNow.getTime() + 24 * 60 * 60 * 1000);
+
+                  // Reset registration times
+                  setRegistrationStartTime(now);
+                  setRegistrationEndTime(oneDayFromNow);
+                } else {
+                  // For open tournaments, start 15 minutes from now
+                  tournamentStartTime = roundedFifteenMinutesFromNow;
+                  tournamentEndTime = new Date(roundedFifteenMinutesFromNow.getTime() + 24 * 60 * 60 * 1000);
+                }
+
+                // Reset all times to defaults
+                form.setValue("startTime", tournamentStartTime);
+                form.setValue("endTime", tournamentEndTime);
+                form.setValue("duration", SECONDS_IN_DAY);
+                form.setValue("submissionPeriod", SECONDS_IN_DAY);
+
+                setMinStartTime(roundedFifteenMinutesFromNow);
+                setMinEndTime(tournamentEndTime);
+
+                // Reset the initialization flag so fixed mode can re-initialize if needed
+                setHasInitializedFixedMode(false);
+              }}
+            >
+              Reset
+            </Button>
           </div>
-          <ScheduleSlider
-            startTime={form.watch("startTime")}
-            endTime={form.watch("endTime")}
-            submissionPeriod={form.watch("submissionPeriod")}
-            enableRegistration={enableRegistration}
-            registrationType={form.watch("type")}
-            onStartTimeChange={(date) => form.setValue("startTime", date)}
-            onEndTimeChange={(date) => form.setValue("endTime", date)}
-            onSubmissionPeriodChange={(seconds) =>
-              form.setValue("submissionPeriod", seconds)
-            }
-            minStartTime={minStartTime}
-            minEndTime={minEndTime}
-            disablePastStartDates={disablePastStartDates}
-            disablePastEndDates={disablePastEndDates}
-          />
-        </div>
 
-        {/* Quick Presets */}
-        <div className="flex flex-col gap-4 px-4">
-          <div className="flex flex-row items-center gap-4">
-            <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-              Quick Presets
-            </FormLabel>
-            <FormDescription className="sm:text-xs xl:text-sm 3xl:text-base">
-              Select a preset duration
-            </FormDescription>
-          </div>
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="flex flex-row items-center justify-center sm:justify-start gap-2">
-                    {PREDEFINED_DURATIONS.map(({ value, label }) => (
-                      <Button
-                        key={value}
-                        type="button"
-                        variant={field.value === value ? "default" : "outline"}
-                        className="px-4"
-                        onClick={() => {
-                          field.onChange(value);
+          {/* Controls Row - Desktop (hidden on mobile) */}
+          <div className="hidden lg:flex flex-row items-center justify-between gap-6 mb-6 overflow-visible">
+            {/* Duration Presets - Left */}
+            <div className="flex flex-row items-center gap-3">
+              <span className="text-sm font-medium text-neutral">Duration:</span>
+              <div className="flex flex-row items-center gap-2">
+                {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={form.watch("duration") === value ? "default" : "outline"}
+                    className="px-3"
+                    onClick={() => {
+                      form.setValue("duration", value);
 
-                          const selectedDuration = PREDEFINED_DURATIONS.find(
-                            (duration) => duration.value === value
-                          );
-                          const durationLabel = selectedDuration?.label;
+                      const selectedDuration = PREDEFINED_DURATIONS.find(
+                        (d) => d.value === value
+                      );
+                      const durationLabel = selectedDuration?.label;
 
-                          if (
-                            durationLabel &&
-                            DURATION_TO_DEFAULT_SUBMISSION[
-                              durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
-                            ]
-                          ) {
-                            form.setValue(
-                              "submissionPeriod",
-                              DURATION_TO_DEFAULT_SUBMISSION[
-                                durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
-                              ]
-                            );
-                          } else {
-                            form.setValue("submissionPeriod", SECONDS_IN_DAY);
-                          }
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    ))}
+                      if (
+                        durationLabel &&
+                        DURATION_TO_DEFAULT_SUBMISSION[
+                          durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                        ]
+                      ) {
+                        form.setValue(
+                          "submissionPeriod",
+                          DURATION_TO_DEFAULT_SUBMISSION[
+                            durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                          ]
+                        );
+                      } else {
+                        form.setValue("submissionPeriod", SECONDS_IN_DAY);
+                      }
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pre-register Checkbox - Middle */}
+            <div className="flex flex-row items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="fixed-registration"
+                  checked={registrationType === "fixed"}
+                  onCheckedChange={(checked: boolean) => form.setValue("type", checked ? "fixed" : "open")}
+                />
+                <label
+                  htmlFor="fixed-registration"
+                  className="text-sm font-medium text-neutral cursor-pointer select-none"
+                >
+                  Pre-register
+                </label>
+              </div>
+              <HoverCard openDelay={50} closeDelay={0}>
+                <HoverCardTrigger asChild>
+                  <button type="button" className="w-5 h-5 text-neutral hover:text-brand transition-colors cursor-pointer">
+                    <INFO />
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent side="bottom" align="end" className="w-80 xl:w-96 p-4 text-sm z-[9999] whitespace-normal">
+                  <div className="flex flex-col gap-3">
+                    <h4 className="text-base font-semibold whitespace-normal break-words">Pre-registration</h4>
+                    <p className="text-sm text-neutral leading-relaxed whitespace-normal break-words">
+                      <span className="font-medium text-brand">Unchecked (Open):</span> Users can register anytime during the tournament
+                    </p>
+                    <p className="text-sm text-neutral leading-relaxed whitespace-normal break-words">
+                      <span className="font-medium text-brand">Checked (Pre-register):</span> Set a specific registration period before the tournament with capped entries
+                    </p>
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+
+            {/* Registration Period Presets - Right (only for fixed registration) */}
+            {registrationType === "fixed" && enableRegistration ? (
+              <div className="flex flex-row items-center gap-3">
+                <span className="text-sm font-medium text-neutral">Reg Period:</span>
+                <div className="flex flex-row items-center gap-2">
+                  {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={
+                        registrationStartTime &&
+                        registrationEndTime &&
+                        Math.floor((registrationEndTime.getTime() - registrationStartTime.getTime()) / 1000) === value
+                          ? "default"
+                          : "outline"
+                      }
+                      className="px-3"
+                      onClick={() => {
+                        if (registrationStartTime) {
+                          const newRegEndTime = new Date(registrationStartTime.getTime() + value * 1000);
+                          setRegistrationEndTime(newRegEndTime);
+
+                          // Also update tournament start to match new registration end
+                          form.setValue("startTime", newRegEndTime);
+
+                          // Update tournament end to maintain current duration
+                          const currentDuration = form.watch("duration");
+                          const newTournamentEndTime = new Date(newRegEndTime.getTime() + currentDuration * 1000);
+                          form.setValue("endTime", newTournamentEndTime);
+                        }
+                      }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Spacer to maintain layout when registration period is hidden
+              <div className="flex flex-row items-center gap-3 invisible">
+                <span className="text-sm font-medium text-neutral">Reg Period:</span>
+                <div className="flex flex-row items-center gap-2">
+                  {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                    <Button key={value} size="sm" variant="outline" className="px-3">
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             )}
-          />
-          <div className="w-full h-0.5 bg-brand/25" />
-        </div>
-      </div>
-      <Dialog open={isMobileDialogOpen} onOpenChange={setIsMobileDialogOpen}>
-        <DialogContent className="sm:hidden bg-black border border-brand p-4 rounded-lg max-w-[90vw] mx-auto">
-          <div className="flex flex-col gap-4 justify-between items-center mb-4">
-            <h3 className="font-brand text-lg text-brand">
-              Registration Types
-            </h3>
-            <ul className="list-disc pl-4 space-y-2">
-              <li className="text-muted-foreground text-wrap">
-                <span className="font-medium text-brand">Fixed:</span>{" "}
-                <span className="text-neutral">
-                  An event with a registration period for capped number of
-                  entries.
-                </span>
-              </li>
-              <li className="text-muted-foreground text-wrap">
-                <span className="font-medium text-brand">Open:</span>{" "}
-                <span className="text-neutral">
-                  An event where entries can be made throughout the tournament
-                  period.
-                </span>
-              </li>
-            </ul>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Controls - Mobile (visible on mobile only) */}
+          <div className="lg:hidden flex flex-col gap-4 mb-6">
+            {/* Pre-register Checkbox */}
+            <div className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="fixed-registration-mobile"
+                  checked={registrationType === "fixed"}
+                  onCheckedChange={(checked: boolean) => form.setValue("type", checked ? "fixed" : "open")}
+                />
+                <label
+                  htmlFor="fixed-registration-mobile"
+                  className="text-sm font-medium text-neutral cursor-pointer select-none"
+                >
+                  Pre-register
+                </label>
+              </div>
+            </div>
+
+            {/* Registration Period Presets (if pre-register is checked) */}
+            {registrationType === "fixed" && enableRegistration && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-neutral">Reg Period:</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={
+                        registrationStartTime &&
+                        registrationEndTime &&
+                        Math.floor((registrationEndTime.getTime() - registrationStartTime.getTime()) / 1000) === value
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() => {
+                        if (registrationStartTime) {
+                          const newRegEndTime = new Date(registrationStartTime.getTime() + value * 1000);
+                          setRegistrationEndTime(newRegEndTime);
+                          form.setValue("startTime", newRegEndTime);
+                          const currentDuration = form.watch("duration");
+                          const newTournamentEndTime = new Date(newRegEndTime.getTime() + currentDuration * 1000);
+                          form.setValue("endTime", newTournamentEndTime);
+                        }
+                      }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Duration Presets */}
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-neutral">Duration:</span>
+              <div className="grid grid-cols-4 gap-2">
+                {PREDEFINED_DURATIONS.map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={form.watch("duration") === value ? "default" : "outline"}
+                    onClick={() => {
+                      form.setValue("duration", value);
+                      const selectedDuration = PREDEFINED_DURATIONS.find((d) => d.value === value);
+                      const durationLabel = selectedDuration?.label;
+                      if (
+                        durationLabel &&
+                        DURATION_TO_DEFAULT_SUBMISSION[
+                          durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                        ]
+                      ) {
+                        form.setValue(
+                          "submissionPeriod",
+                          DURATION_TO_DEFAULT_SUBMISSION[
+                            durationLabel as keyof typeof DURATION_TO_DEFAULT_SUBMISSION
+                          ]
+                        );
+                      } else {
+                        form.setValue("submissionPeriod", SECONDS_IN_DAY);
+                      }
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Slider - Desktop only (hidden on mobile) */}
+          <div className="hidden lg:block">
+            <ScheduleSlider
+              startTime={form.watch("startTime")}
+              endTime={form.watch("endTime")}
+              submissionPeriod={form.watch("submissionPeriod")}
+              enableRegistration={enableRegistration}
+              registrationType={form.watch("type")}
+              registrationStartTime={registrationStartTime}
+              registrationEndTime={registrationEndTime}
+              onStartTimeChange={(date) => form.setValue("startTime", date)}
+              onEndTimeChange={(date) => form.setValue("endTime", date)}
+              onSubmissionPeriodChange={(seconds) =>
+                form.setValue("submissionPeriod", seconds)
+              }
+              onRegistrationStartTimeChange={setRegistrationStartTime}
+              onRegistrationEndTimeChange={setRegistrationEndTime}
+              minStartTime={minStartTime}
+              minEndTime={minEndTime}
+              disablePastStartDates={disablePastStartDates}
+              disablePastEndDates={disablePastEndDates}
+            />
+          </div>
+
+          {/* Timeline - Mobile only (visible on mobile) */}
+          <div className="lg:hidden flex justify-center py-4">
+            <TournamentTimeline
+              type={form.watch("type")}
+              createdTime={registrationStartTime ? Math.floor(registrationStartTime.getTime() / 1000) : Math.floor(Date.now() / 1000)}
+              startTime={Math.floor(form.watch("startTime").getTime() / 1000)}
+              duration={Math.floor((form.watch("endTime").getTime() - form.watch("startTime").getTime()) / 1000)}
+              submissionPeriod={form.watch("submissionPeriod")}
+              pulse={false}
+            />
+          </div>
+        </div>
+
+      </div>
     </>
   );
 };

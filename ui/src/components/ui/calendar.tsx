@@ -129,17 +129,21 @@ function Calendar({
           };
 
           return (
-            <div className="flex flex-row items-center">
+            <div className="flex flex-col items-start gap-2 w-full">
+              <span className="text-base font-semibold">{format(displayMonth, "MMMM yyyy")}</span>
               {onTimeChange && (
-                <div className="flex items-center gap-1 pr-2">
+                <div className="flex items-center gap-2 w-full">
+                  <label className="text-xs text-neutral font-medium">Time:</label>
                   <Select
                     value={format(selectedTime, "HH")}
                     onValueChange={(hour) => {
                       onTimeChange(parseInt(hour), selectedTime.getMinutes());
                     }}
                   >
-                    <SelectTrigger className="w-auto [&>svg]:hidden w-[40px] px-2">
-                      <SelectValue placeholder="Hour" />
+                    <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
+                      <SelectValue>
+                        {format(selectedTime, "HH")}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {Array.from({ length: 24 }, (_, i) => (
@@ -156,15 +160,17 @@ function Calendar({
                       ))}
                     </SelectContent>
                   </Select>
-                  <span>:</span>
+                  <span className="text-neutral font-bold">:</span>
                   <Select
                     value={format(selectedTime, "mm")}
                     onValueChange={(minute) => {
                       onTimeChange(selectedTime.getHours(), parseInt(minute));
                     }}
                   >
-                    <SelectTrigger className="w-auto [&>svg]:hidden w-[40px] px-2">
-                      <SelectValue placeholder="Min" />
+                    <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
+                      <SelectValue>
+                        {format(selectedTime, "mm")}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {Array.from({ length: 12 }, (_, i) => i * 5).map(
@@ -185,7 +191,6 @@ function Calendar({
                   </Select>
                 </div>
               )}
-              <span>{format(displayMonth, "MMMM yyyy")}</span>
             </div>
           );
         },
