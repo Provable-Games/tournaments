@@ -504,14 +504,16 @@ const Schedule = ({ form }: StepProps) => {
 
           {/* Timeline - Mobile only (visible on mobile) */}
           <div className="lg:hidden flex justify-center py-4">
-            <TournamentTimeline
-              type={form.watch("type")}
-              createdTime={registrationStartTime ? Math.floor(registrationStartTime.getTime() / 1000) : Math.floor(Date.now() / 1000)}
-              startTime={Math.floor(form.watch("startTime").getTime() / 1000)}
-              duration={Math.floor((form.watch("endTime").getTime() - form.watch("startTime").getTime()) / 1000)}
-              submissionPeriod={form.watch("submissionPeriod")}
-              pulse={false}
-            />
+            {form.watch("startTime") && form.watch("endTime") && (
+              <TournamentTimeline
+                type={form.watch("type")}
+                createdTime={registrationStartTime ? Math.floor(registrationStartTime.getTime() / 1000) : Math.floor(Date.now() / 1000)}
+                startTime={Math.floor(form.watch("startTime").getTime() / 1000)}
+                duration={Math.floor((form.watch("endTime").getTime() - form.watch("startTime").getTime()) / 1000)}
+                submissionPeriod={form.watch("submissionPeriod")}
+                pulse={false}
+              />
+            )}
           </div>
         </div>
 
