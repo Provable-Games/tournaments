@@ -116,10 +116,11 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x04fd5df500e6c6615e4423258639f189455672bc841ba58f1c781ac7c5ff4bd8",
+          "0x079c30d00719faea99297075e22fd84260f39960e14239f2018ba5d1dc1ab907",
         name: "zKube",
         image: "https://app.zkube.xyz/assets/pwa-512x512.png",
-        url: "https://app.zkube.xyz/",
+        url: "https://app.zkube.xyz",
+        playUrl: "https://app.zkube.xyz/play/",
         controllerOnly: true,
       },
       {
