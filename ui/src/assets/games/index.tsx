@@ -125,7 +125,7 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x04d8ec93cc62296ecbd490406b034ada13bc4db5552f30d17f6e01270db7d62a",
+          "0x0473a834b65e8129652dec5788c5d9427fe1ea7e2e79fbe0493e38df816259d9",
         name: "Nums",
         url: "https://nums-blond.vercel.app/",
         playUrl: "https://nums-blond.vercel.app/",
