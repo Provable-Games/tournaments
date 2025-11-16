@@ -3,6 +3,7 @@ import { DayPicker, DayPickerSingleProps } from "react-day-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,18 @@ function Calendar({
   minTime,
   ...props
 }: CalendarProps) {
+  const [currentHour, setCurrentHour] = useState(format(selectedTime, "HH"));
+  const [currentMinute, setCurrentMinute] = useState(format(selectedTime, "mm"));
+
+  // Sync internal state with prop changes
+  useEffect(() => {
+    const newHour = format(selectedTime, "HH");
+    const newMinute = format(selectedTime, "mm");
+    console.log('[Calendar] selectedTime changed:', selectedTime, 'hour:', newHour, 'minute:', newMinute);
+    setCurrentHour(newHour);
+    setCurrentMinute(newMinute);
+  }, [selectedTime]);
+
   const today = new Date();
   const fromMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   return (
@@ -68,8 +81,6 @@ function Calendar({
           }
 
           props.onSelect(date, selectedDay, activeModifiers, e);
-
-          console.log("Selected day with adjusted time:", adjustedTime);
         }
       }}
       classNames={{
@@ -135,14 +146,16 @@ function Calendar({
                 <div className="flex items-center gap-2 w-full">
                   <label className="text-xs text-neutral font-medium">Time:</label>
                   <Select
-                    value={format(selectedTime, "HH")}
+                    value={currentHour}
                     onValueChange={(hour) => {
-                      onTimeChange(parseInt(hour), selectedTime.getMinutes());
+                      console.log('[Calendar] Hour changed from', currentHour, 'to', hour);
+                      setCurrentHour(hour);
+                      onTimeChange(parseInt(hour), parseInt(currentMinute));
                     }}
                   >
                     <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
                       <SelectValue>
-                        {format(selectedTime, "HH")}
+                        {currentHour}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -152,7 +165,7 @@ function Calendar({
                           value={i.toString().padStart(2, "0")}
                           disabled={isTimeDisabled(
                             i,
-                            selectedTime.getMinutes()
+                            parseInt(currentMinute)
                           )}
                         >
                           {i.toString().padStart(2, "0")}
@@ -162,14 +175,16 @@ function Calendar({
                   </Select>
                   <span className="text-neutral font-bold">:</span>
                   <Select
-                    value={format(selectedTime, "mm")}
+                    value={currentMinute}
                     onValueChange={(minute) => {
-                      onTimeChange(selectedTime.getHours(), parseInt(minute));
+                      console.log('[Calendar] Minute changed from', currentMinute, 'to', minute);
+                      setCurrentMinute(minute);
+                      onTimeChange(parseInt(currentHour), parseInt(minute));
                     }}
                   >
                     <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
                       <SelectValue>
-                        {format(selectedTime, "mm")}
+                        {currentMinute}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -179,7 +194,7 @@ function Calendar({
                             key={minute}
                             value={minute.toString().padStart(2, "0")}
                             disabled={isTimeDisabled(
-                              selectedTime.getHours(),
+                              parseInt(currentHour),
                               minute
                             )}
                           >

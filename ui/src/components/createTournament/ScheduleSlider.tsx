@@ -66,8 +66,6 @@ const ScheduleSlider = ({
     ? Math.max(0, Math.floor((startTime.getTime() - effectiveRegEndTime.getTime()) / 1000))
     : 0;
 
-  console.log('[ScheduleSlider] gapDuration:', gapDuration, 'seconds');
-
   const tournamentDuration = startTime && endTime
     ? Math.max(SECONDS_IN_15_MINUTES, Math.floor((endTime.getTime() - startTime.getTime()) / 1000))
     : SECONDS_IN_DAY;
@@ -284,24 +282,35 @@ const ScheduleSlider = ({
     const oldRegStartTime = registrationStartTime;
     const timeDelta = newRegStartTime.getTime() - oldRegStartTime.getTime();
 
-    onRegistrationStartTimeChange(newRegStartTime);
+    // Ensure proper date format
+    const formattedDate = new Date(newRegStartTime);
+    formattedDate.setSeconds(0);
+    formattedDate.setMilliseconds(0);
+
+    onRegistrationStartTimeChange(formattedDate);
 
     // Cascade forward: shift all subsequent times by the same delta
     if (cascade && timeDelta !== 0) {
       // Update registration end
       if (onRegistrationEndTimeChange && registrationEndTime) {
         const newRegEndTime = new Date(registrationEndTime.getTime() + timeDelta);
+        newRegEndTime.setSeconds(0);
+        newRegEndTime.setMilliseconds(0);
         onRegistrationEndTimeChange(newRegEndTime);
       }
 
       // Update tournament start and end
       if (startTime) {
         const newTournamentStartTime = new Date(startTime.getTime() + timeDelta);
+        newTournamentStartTime.setSeconds(0);
+        newTournamentStartTime.setMilliseconds(0);
         onStartTimeChange(newTournamentStartTime);
 
         // Update tournament end
         if (endTime) {
           const newEndTime = new Date(endTime.getTime() + timeDelta);
+          newEndTime.setSeconds(0);
+          newEndTime.setMilliseconds(0);
           onEndTimeChange(newEndTime);
         }
       }
@@ -315,17 +324,26 @@ const ScheduleSlider = ({
     const oldRegEndTime = registrationEndTime;
     const timeDelta = newRegEndTime.getTime() - oldRegEndTime.getTime();
 
-    onRegistrationEndTimeChange(newRegEndTime);
+    // Ensure proper date format
+    const formattedDate = new Date(newRegEndTime);
+    formattedDate.setSeconds(0);
+    formattedDate.setMilliseconds(0);
+
+    onRegistrationEndTimeChange(formattedDate);
 
     // Cascade forward: shift tournament start and end by the same delta
     if (cascade && timeDelta !== 0) {
       if (startTime) {
         const newTournamentStartTime = new Date(startTime.getTime() + timeDelta);
+        newTournamentStartTime.setSeconds(0);
+        newTournamentStartTime.setMilliseconds(0);
         onStartTimeChange(newTournamentStartTime);
 
         // Update tournament end
         if (endTime) {
           const newEndTime = new Date(endTime.getTime() + timeDelta);
+          newEndTime.setSeconds(0);
+          newEndTime.setMilliseconds(0);
           onEndTimeChange(newEndTime);
         }
       }
@@ -337,11 +355,18 @@ const ScheduleSlider = ({
     const oldStartTime = startTime;
     const timeDelta = newStartTime.getTime() - oldStartTime.getTime();
 
-    onStartTimeChange(newStartTime);
+    // Ensure proper date format
+    const formattedDate = new Date(newStartTime);
+    formattedDate.setSeconds(0);
+    formattedDate.setMilliseconds(0);
+
+    onStartTimeChange(formattedDate);
 
     // Cascade forward: shift tournament end by the same delta (maintains duration)
     if (cascade && endTime && timeDelta !== 0) {
       const newEndTime = new Date(endTime.getTime() + timeDelta);
+      newEndTime.setSeconds(0);
+      newEndTime.setMilliseconds(0);
       onEndTimeChange(newEndTime);
     }
   };
@@ -437,7 +462,9 @@ const ScheduleSlider = ({
                       const newDate = new Date(effectiveRegStartTime);
                       newDate.setHours(hour);
                       newDate.setMinutes(minute);
-                      handleRegistrationStartTimeChange(newDate);
+                      newDate.setSeconds(0);
+                      newDate.setMilliseconds(0);
+                      onRegistrationStartTimeChange(newDate);
                     }
                   }}
                   disabled={disablePastStartDates}
@@ -483,7 +510,9 @@ const ScheduleSlider = ({
                       const newDate = new Date(effectiveRegEndTime);
                       newDate.setHours(hour);
                       newDate.setMinutes(minute);
-                      handleRegistrationEndTimeChange(newDate);
+                      newDate.setSeconds(0);
+                      newDate.setMilliseconds(0);
+                      onRegistrationEndTimeChange(newDate);
                     }
                   }}
                   disabled={disablePastStartDates}
@@ -524,11 +553,15 @@ const ScheduleSlider = ({
                 }}
                 selectedTime={startTime}
                 onTimeChange={(hour, minute) => {
+                  console.log('[ScheduleSlider] onTimeChange called - tournament start - hour:', hour, 'minute:', minute);
                   if (startTime) {
                     const newDate = new Date(startTime);
                     newDate.setHours(hour);
                     newDate.setMinutes(minute);
-                    handleStartTimeChange(newDate);
+                    newDate.setSeconds(0);
+                    newDate.setMilliseconds(0);
+                    console.log('[ScheduleSlider] Calling onStartTimeChange with:', newDate);
+                    onStartTimeChange(newDate);
                   }
                 }}
                 disabled={disablePastStartDates}
@@ -570,6 +603,8 @@ const ScheduleSlider = ({
                     const newDate = new Date(endTime);
                     newDate.setHours(hour);
                     newDate.setMinutes(minute);
+                    newDate.setSeconds(0);
+                    newDate.setMilliseconds(0);
                     onEndTimeChange(newDate);
                   }
                 }}
