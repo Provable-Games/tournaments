@@ -127,8 +127,8 @@ export const getGames = (): Game[] => {
         contract_address:
           "0x0473a834b65e8129652dec5788c5d9427fe1ea7e2e79fbe0493e38df816259d9",
         name: "Nums",
-        url: "https://nums-blond.vercel.app/",
-        playUrl: "https://nums-blond.vercel.app/",
+        url: "https://nums.gg/",
+        playUrl: "https://nums.gg/",
         controllerOnly: true,
       },
     ];
