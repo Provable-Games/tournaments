@@ -108,7 +108,7 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x051c6d53ba1b565285e703c4e1aedb27d8814dc3f4aa4d13446066dbc8711c87",
+          "0x012bf5118f03d2bbb8a2a31c72e0020ab85af172dd965ccd55c3132066ad8554",
         name: "DopeWars",
         url: "https://dw.budokan.gg",
         playUrl: "https://dw.budokan.gg/play/",
