@@ -110,8 +110,8 @@ export const getGames = (): Game[] => {
         contract_address:
           "0x012bf5118f03d2bbb8a2a31c72e0020ab85af172dd965ccd55c3132066ad8554",
         name: "DopeWars",
-        url: "https://50a920bf326f.ngrok.app/",
-        playUrl: "https://50a920bf326f.ngrok.app/",
+        url: "https://dopewars-kappa.vercel.app/",
+        playUrl: "https://dopewars-kappa.vercel.app/",
         controllerOnly: true,
       },
       {
