@@ -39,16 +39,17 @@ const TimelineMarker = ({
 }: TimelineMarkerProps) => {
   return (
     <div
-      className={`absolute -top-16 flex flex-col items-center gap-2 ${zIndex} cursor-grab active:cursor-grabbing hover:scale-110 ${isDragging ? '' : 'transition-all'} ${transform}`}
+      className={`absolute -top-16 flex flex-col items-center gap-2 ${zIndex} ${isDragging ? '' : 'transition-all'} ${transform}`}
       style={{
         left: `calc(${position}% + ${offsetPixels}px)`,
       }}
-      onMouseDown={onMouseDown}
     >
       {calendarContent ? (
         <Popover>
           <PopoverTrigger asChild>
-            <button className={`w-12 h-12 rounded-full ${iconBgColor} border-2 ${iconBorderColor} flex items-center justify-center shadow-lg`}>
+            <button
+              className={`w-12 h-12 rounded-full ${iconBgColor} border-2 ${iconBorderColor} flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-all`}
+            >
               <span className={`${iconSize} ${iconTextColor}`}>
                 {icon}
               </span>
@@ -59,7 +60,10 @@ const TimelineMarker = ({
           </PopoverContent>
         </Popover>
       ) : (
-        <button className={`w-12 h-12 rounded-full ${iconBgColor} border-2 ${iconBorderColor} flex items-center justify-center shadow-lg`}>
+        <button
+          className={`w-12 h-12 rounded-full ${iconBgColor} border-2 ${iconBorderColor} flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing hover:scale-110 transition-all`}
+          onMouseDown={onMouseDown}
+        >
           <span className={`${iconSize} ${iconTextColor}`}>
             {icon}
           </span>
@@ -69,6 +73,7 @@ const TimelineMarker = ({
         date={date}
         label={label}
         borderColor={borderColor}
+        onMouseDown={onMouseDown}
       />
     </div>
   );

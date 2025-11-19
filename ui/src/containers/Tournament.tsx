@@ -957,6 +957,12 @@ const Tournament = () => {
                 submissionPeriod={Number(
                   tournamentModel?.schedule.submission_duration ?? 0
                 )}
+                registrationStartTime={Number(
+                  tournamentModel?.schedule.registration.Some?.start ?? 0
+                )}
+                registrationEndTime={Number(
+                  tournamentModel?.schedule.registration.Some?.end ?? 0
+                )}
                 pulse={true}
               />
             </div>

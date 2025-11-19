@@ -48,10 +48,15 @@ const ScheduleSlider = ({
   const [dragStartX, setDragStartX] = useState(0);
 
   // Calculate total timeline duration in seconds (with safety checks)
-  const now = new Date();
+  // Use useRef to maintain a stable "now" reference across re-renders
+  const nowRef = useRef(new Date());
+  const now = nowRef.current;
 
-  // Use registrationStartTime if provided, otherwise default to now
-  const effectiveRegStartTime = registrationStartTime || now;
+  // Use registrationStartTime if provided, otherwise default to now for fixed tournaments
+  // For open tournaments, use tournament start time as the timeline anchor
+  const effectiveRegStartTime = registrationType === "fixed" && enableRegistration
+    ? (registrationStartTime || now)
+    : startTime;
 
   // Use registrationEndTime if provided, otherwise default to startTime (no gap)
   const effectiveRegEndTime = registrationEndTime || startTime;
@@ -91,7 +96,8 @@ const ScheduleSlider = ({
   const handleMouseDown = (point: string, e: React.MouseEvent) => {
     if (!sliderRef.current) return;
     const rect = sliderRef.current.getBoundingClientRect();
-    setDragStartX(e.clientX - rect.left);
+    const clickX = e.clientX - rect.left;
+    setDragStartX(clickX);
     setIsDragging(point);
   };
 
@@ -248,6 +254,7 @@ const ScheduleSlider = ({
 
   const handleMouseUp = () => {
     setIsDragging(null);
+    setDragStartX(0);
   };
 
   useEffect(() => {
@@ -260,6 +267,14 @@ const ScheduleSlider = ({
       };
     }
   }, [isDragging, totalDuration, registrationDuration, tournamentDuration]);
+
+  // Reset drag state when times change externally (via calendar)
+  useEffect(() => {
+    // If we're not actively dragging, reset dragStartX when times change
+    if (!isDragging) {
+      setDragStartX(0);
+    }
+  }, [startTime, endTime, registrationStartTime, registrationEndTime, submissionPeriod]);
 
   const formatDuration = (seconds: number) => {
     const days = Math.floor(seconds / SECONDS_IN_DAY);
@@ -464,7 +479,7 @@ const ScheduleSlider = ({
                       newDate.setMinutes(minute);
                       newDate.setSeconds(0);
                       newDate.setMilliseconds(0);
-                      onRegistrationStartTimeChange(newDate);
+                      handleRegistrationStartTimeChange(newDate);
                     }
                   }}
                   disabled={disablePastStartDates}
@@ -512,7 +527,7 @@ const ScheduleSlider = ({
                       newDate.setMinutes(minute);
                       newDate.setSeconds(0);
                       newDate.setMilliseconds(0);
-                      onRegistrationEndTimeChange(newDate);
+                      handleRegistrationEndTimeChange(newDate);
                     }
                   }}
                   disabled={disablePastStartDates}
@@ -553,15 +568,13 @@ const ScheduleSlider = ({
                 }}
                 selectedTime={startTime}
                 onTimeChange={(hour, minute) => {
-                  console.log('[ScheduleSlider] onTimeChange called - tournament start - hour:', hour, 'minute:', minute);
                   if (startTime) {
                     const newDate = new Date(startTime);
                     newDate.setHours(hour);
                     newDate.setMinutes(minute);
                     newDate.setSeconds(0);
                     newDate.setMilliseconds(0);
-                    console.log('[ScheduleSlider] Calling onStartTimeChange with:', newDate);
-                    onStartTimeChange(newDate);
+                    handleStartTimeChange(newDate);
                   }
                 }}
                 disabled={disablePastStartDates}

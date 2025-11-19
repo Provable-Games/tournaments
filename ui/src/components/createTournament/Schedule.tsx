@@ -493,8 +493,14 @@ const Schedule = ({ form }: StepProps) => {
               onSubmissionPeriodChange={(seconds) =>
                 form.setValue("submissionPeriod", seconds)
               }
-              onRegistrationStartTimeChange={setRegistrationStartTime}
-              onRegistrationEndTimeChange={setRegistrationEndTime}
+              onRegistrationStartTimeChange={(date) => {
+                setRegistrationStartTime(date);
+                form.setValue("registrationStartTime", date);
+              }}
+              onRegistrationEndTimeChange={(date) => {
+                setRegistrationEndTime(date);
+                form.setValue("registrationEndTime", date);
+              }}
               minStartTime={minStartTime}
               minEndTime={minEndTime}
               disablePastStartDates={disablePastStartDates}
@@ -511,6 +517,7 @@ const Schedule = ({ form }: StepProps) => {
                 startTime={Math.floor(form.watch("startTime").getTime() / 1000)}
                 duration={Math.floor((form.watch("endTime").getTime() - form.watch("startTime").getTime()) / 1000)}
                 submissionPeriod={form.watch("submissionPeriod")}
+                registrationEndTime={registrationEndTime ? Math.floor(registrationEndTime.getTime() / 1000) : undefined}
                 pulse={false}
               />
             )}

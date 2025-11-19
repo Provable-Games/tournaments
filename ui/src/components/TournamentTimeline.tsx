@@ -12,6 +12,8 @@ interface TournamentTimelineProps {
   startTime: number;
   duration: number;
   submissionPeriod: number;
+  registrationStartTime?: number;
+  registrationEndTime?: number;
   pulse?: boolean;
 }
 
@@ -21,23 +23,34 @@ const TournamentTimeline = ({
   startTime,
   duration,
   submissionPeriod,
+  registrationStartTime,
+  registrationEndTime,
   pulse = false,
 }: TournamentTimelineProps) => {
-  const createdDate = new Date(createdTime * 1000);
+  const effectiveRegistrationStartTime = registrationStartTime ?? createdTime;
+  const registrationStartDate = new Date(effectiveRegistrationStartTime * 1000);
   const startDate = new Date(startTime * 1000);
   const endDate = new Date((startTime + duration) * 1000);
   const submissionEndDate = new Date(
     (startTime + duration + submissionPeriod) * 1000
   );
-  const registrationPeriod = startTime - createdTime;
 
-  const isStarted =
-    startTime < Number(BigInt(new Date().getTime()) / BigInt(1000));
-  const isEnded =
-    startTime + duration < Number(BigInt(new Date().getTime()) / BigInt(1000));
-  const isSubmissionEnded =
-    startTime + duration + submissionPeriod <
-    Number(BigInt(new Date().getTime()) / BigInt(1000));
+  // Use registrationEndTime if provided, otherwise default to startTime (no gap)
+  const effectiveRegistrationEndTime = registrationEndTime ?? startTime;
+  const registrationEndDate = new Date(effectiveRegistrationEndTime * 1000);
+  const registrationPeriod = effectiveRegistrationEndTime - createdTime;
+
+  // Gap between registration end and tournament start
+  const hasGap = registrationEndTime && registrationEndTime < startTime;
+  const gapDuration = hasGap ? startTime - registrationEndTime : 0;
+
+  const now = Number(BigInt(new Date().getTime()) / BigInt(1000));
+  const isRegistrationEnded = effectiveRegistrationEndTime < now;
+  const isStarted = startTime < now;
+  const isEnded = startTime + duration < now;
+  const isSubmissionEnded = startTime + duration + submissionPeriod < now;
+
+  console.log(registrationEndTime);
 
   return (
     <div className="flex flex-row items-center justify-center gap-10 sm:gap-20 3xl:gap-[100px] mt-4">
@@ -48,12 +61,27 @@ const TournamentTimeline = ({
               <REGISTER />
             </span>
           }
-          date={createdDate}
+          date={registrationStartDate}
           duraton={registrationPeriod}
           label="Registration"
           showConnector
-          active={pulse ? !isStarted : false}
-          completed={true}
+          active={pulse ? !isRegistrationEnded : false}
+          completed={isRegistrationEnded}
+        />
+      )}
+      {type === "fixed" && hasGap && (
+        <TimelineCard
+          icon={
+            <span className="w-4 sm:w-6 3xl:w-8">
+              <REGISTER />
+            </span>
+          }
+          date={registrationEndDate}
+          duraton={gapDuration}
+          label="Waiting"
+          showConnector
+          active={pulse ? isRegistrationEnded && !isStarted : false}
+          completed={isStarted}
         />
       )}
       <TimelineCard
@@ -64,7 +92,7 @@ const TournamentTimeline = ({
         }
         date={startDate}
         duraton={duration}
-        label="Duration"
+        label="Tournament"
         showConnector
         active={pulse ? isStarted && !isEnded : false}
         completed={isStarted}

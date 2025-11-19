@@ -42,6 +42,8 @@ const formSchema = z.object({
   duration: z.number().min(1).max(7776000), // 90 days
   type: z.enum(["open", "fixed"]),
   submissionPeriod: z.number().min(86400).max(604800), // 24 hours to 1 week
+  registrationStartTime: z.date().optional(),
+  registrationEndTime: z.date().optional(),
 
   // Details step
   game: z.string().min(2).max(66),

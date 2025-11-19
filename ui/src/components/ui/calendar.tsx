@@ -34,10 +34,13 @@ function Calendar({
   useEffect(() => {
     const newHour = format(selectedTime, "HH");
     const newMinute = format(selectedTime, "mm");
-    console.log('[Calendar] selectedTime changed:', selectedTime, 'hour:', newHour, 'minute:', newMinute);
-    setCurrentHour(newHour);
-    setCurrentMinute(newMinute);
-  }, [selectedTime]);
+
+    // Only update if the values actually changed to avoid fighting with user input
+    if (newHour !== currentHour || newMinute !== currentMinute) {
+      setCurrentHour(newHour);
+      setCurrentMinute(newMinute);
+    }
+  }, [selectedTime, currentHour, currentMinute]);
 
   const today = new Date();
   const fromMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -148,7 +151,6 @@ function Calendar({
                   <Select
                     value={currentHour}
                     onValueChange={(hour) => {
-                      console.log('[Calendar] Hour changed from', currentHour, 'to', hour);
                       setCurrentHour(hour);
                       onTimeChange(parseInt(hour), parseInt(currentMinute));
                     }}
@@ -158,7 +160,7 @@ function Calendar({
                         {currentHour}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {Array.from({ length: 24 }, (_, i) => (
                         <SelectItem
                           key={i}
@@ -177,7 +179,6 @@ function Calendar({
                   <Select
                     value={currentMinute}
                     onValueChange={(minute) => {
-                      console.log('[Calendar] Minute changed from', currentMinute, 'to', minute);
                       setCurrentMinute(minute);
                       onTimeChange(parseInt(currentHour), parseInt(minute));
                     }}
@@ -187,7 +188,7 @@ function Calendar({
                         {currentMinute}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {Array.from({ length: 12 }, (_, i) => i * 5).map(
                         (minute) => (
                           <SelectItem
