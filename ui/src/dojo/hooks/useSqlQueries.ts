@@ -328,7 +328,7 @@ export const useGetMyTournamentsCount = ({
     filtered_tournaments AS (
       SELECT rt.tournament_id
       FROM registered_tournaments rt
-      JOIN '${namespace}-Tournament' t 
+      JOIN '${namespace}-Tournament' t
         ON rt.tournament_id = t.id
           ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
     )
@@ -337,6 +337,62 @@ export const useGetMyTournamentsCount = ({
   `
         : null,
     [namespace, address, gameAddresses, tokenIdsKey, fromTournamentId]
+  );
+  const { data, loading, error, refetch } = useSqlExecute(query);
+  return { data: data?.[0]?.count, loading, error, refetch };
+};
+
+export const useGetMyLiveTournamentsCount = ({
+  namespace,
+  address,
+  gameAddresses,
+  tokenIds,
+  fromTournamentId,
+  currentTime,
+}: {
+  namespace: string;
+  address: string | null;
+  gameAddresses: string[];
+  tokenIds: string[];
+  fromTournamentId?: string;
+  currentTime: bigint;
+}) => {
+  const tokenIdsKey = useMemo(() => JSON.stringify(tokenIds), [tokenIds]);
+  const query = useMemo(
+    () =>
+      address
+        ? `
+    WITH registered_tournaments AS (
+      SELECT DISTINCT r.tournament_id
+      FROM '${namespace}-Registration' r
+      WHERE r.game_address IN (${gameAddresses
+        .map((addr) => `"${addr}"`)
+        .join(",")}) AND r.game_token_id IN (${tokenIds
+            ?.map((id) => `"${id}"`)
+            .join(",")})
+    ),
+    filtered_tournaments AS (
+      SELECT rt.tournament_id
+      FROM registered_tournaments rt
+      JOIN '${namespace}-Tournament' t
+        ON rt.tournament_id = t.id
+          ${fromTournamentId ? `AND t.id > '${fromTournamentId}'` : ""}
+          AND (t.'schedule.game.start' <= '${padU64(
+            currentTime
+          )}' AND t.'schedule.game.end' > '${padU64(currentTime)}')
+    )
+    SELECT COUNT(DISTINCT tournament_id) as count
+    FROM filtered_tournaments
+  `
+        : null,
+    [
+      namespace,
+      address,
+      gameAddresses,
+      tokenIdsKey,
+      fromTournamentId,
+      currentTime,
+    ]
   );
   const { data, loading, error, refetch } = useSqlExecute(query);
   return { data: data?.[0]?.count, loading, error, refetch };
