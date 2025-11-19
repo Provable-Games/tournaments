@@ -47,7 +47,7 @@ const TimelineCard = ({
             <span className="text-brand-muted">
               {label === "Registration"
                 ? "Registration Opened: "
-                : label === "Duration"
+                : label === "Tournament" || label === "Duration"
                 ? completed
                   ? "Tournament Started: "
                   : "Tournament Starts: "
@@ -55,9 +55,15 @@ const TimelineCard = ({
                 ? completed
                   ? "Tournament Ended: "
                   : "Tournament Ends: "
-                : completed
-                ? "Submission Ended: "
-                : "Submission Ends: "}
+                : label === "Final"
+                ? completed
+                  ? "Submission Ended: "
+                  : "Submission Ends: "
+                : !label
+                ? completed
+                  ? "Registration Ended: "
+                  : "Registration Ends: "
+                : ""}
             </span>
             {format(date, "dd/MM")} - {format(date, "HH:mm")}
           </TooltipContent>

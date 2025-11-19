@@ -42,15 +42,12 @@ const TournamentTimeline = ({
 
   // Gap between registration end and tournament start
   const hasGap = registrationEndTime && registrationEndTime < startTime;
-  const gapDuration = hasGap ? startTime - registrationEndTime : 0;
 
   const now = Number(BigInt(new Date().getTime()) / BigInt(1000));
   const isRegistrationEnded = effectiveRegistrationEndTime < now;
   const isStarted = startTime < now;
   const isEnded = startTime + duration < now;
   const isSubmissionEnded = startTime + duration + submissionPeriod < now;
-
-  console.log(registrationEndTime);
 
   return (
     <div className="flex flex-row items-center justify-center gap-10 sm:gap-20 3xl:gap-[100px] mt-4">
@@ -70,19 +67,19 @@ const TournamentTimeline = ({
         />
       )}
       {type === "fixed" && hasGap && (
-        <TimelineCard
-          icon={
-            <span className="w-4 sm:w-6 3xl:w-8">
-              <REGISTER />
-            </span>
-          }
-          date={registrationEndDate}
-          duraton={gapDuration}
-          label="Waiting"
-          showConnector
-          active={pulse ? isRegistrationEnded && !isStarted : false}
-          completed={isStarted}
-        />
+        <>
+          <TimelineCard
+            icon={
+              <span className="w-4 sm:w-6 3xl:w-8">
+                <REGISTER />
+              </span>
+            }
+            date={registrationEndDate}
+            active={pulse ? isRegistrationEnded && !isStarted : false}
+            completed={isStarted}
+          />
+          <div className="-mx-8 sm:-mx-16 3xl:-mx-20" />
+        </>
       )}
       <TimelineCard
         icon={
@@ -117,6 +114,7 @@ const TournamentTimeline = ({
           </span>
         }
         date={submissionEndDate}
+        label="Final"
         completed={isSubmissionEnded}
       />
     </div>

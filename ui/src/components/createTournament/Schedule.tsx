@@ -97,9 +97,11 @@ const Schedule = ({ form }: StepProps) => {
       // Initialize registration times if not already set
       if (!registrationStartTime) {
         setRegistrationStartTime(now);
+        form.setValue("registrationStartTime", now);
       }
       if (!registrationEndTime) {
         setRegistrationEndTime(oneDayFromNow);
+        form.setValue("registrationEndTime", oneDayFromNow);
       }
 
       // Mark as initialized
