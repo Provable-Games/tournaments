@@ -108,10 +108,10 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x051c6d53ba1b565285e703c4e1aedb27d8814dc3f4aa4d13446066dbc8711c87",
+          "0x012bf5118f03d2bbb8a2a31c72e0020ab85af172dd965ccd55c3132066ad8554",
         name: "DopeWars",
-        url: "https://dw.budokan.gg",
-        playUrl: "https://dw.budokan.gg/play/",
+        url: "https://50a920bf326f.ngrok.app/",
+        playUrl: "https://50a920bf326f.ngrok.app/",
         controllerOnly: true,
       },
       {
@@ -125,10 +125,10 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x04d8ec93cc62296ecbd490406b034ada13bc4db5552f30d17f6e01270db7d62a",
+          "0x0473a834b65e8129652dec5788c5d9427fe1ea7e2e79fbe0493e38df816259d9",
         name: "Nums",
-        url: "https://nums-blond.vercel.app/",
-        playUrl: "https://nums-blond.vercel.app/",
+        url: "https://nums.gg/",
+        playUrl: "https://nums.gg/",
         controllerOnly: true,
       },
     ];
