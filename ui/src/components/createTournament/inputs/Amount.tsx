@@ -6,9 +6,10 @@ interface AmountInputProps {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   label?: string;
+  disabled?: boolean;
 }
 
-const AmountInput = ({ value, onChange, label }: AmountInputProps) => {
+const AmountInput = ({ value, onChange, label, disabled = false }: AmountInputProps) => {
   const PREDEFINED_AMOUNTS = [
     { value: 0.25, label: "$0.25" },
     { value: 0.50, label: "$0.50" },
@@ -25,6 +26,7 @@ const AmountInput = ({ value, onChange, label }: AmountInputProps) => {
             type="button"
             variant={value === presetValue ? "default" : "outline"}
             className="px-2"
+            disabled={disabled}
             onClick={() => onChange(presetValue)}
           >
             {label}
@@ -38,6 +40,7 @@ const AmountInput = ({ value, onChange, label }: AmountInputProps) => {
         step="0.01"
         inputMode="decimal"
         className="w-[80px] p-1"
+        disabled={disabled}
         value={value ?? ""}
         onChange={(e) => {
           const inputValue = e.target.value;

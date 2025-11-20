@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StepProps } from "@/containers/CreateTournament";
-import { TROPHY, USER, X } from "@/components/Icons";
+import { TROPHY, USER, X, INFO } from "@/components/Icons";
 import { displayAddress, feltToString } from "@/lib/utils";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
 import { Search } from "lucide-react";
@@ -37,6 +37,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import useUIStore from "@/hooks/useUIStore";
 import { OptionalSection } from "@/components/createTournament/containers/OptionalSection";
 import { getChecksumAddress, validateChecksumAddress } from "starknet";
@@ -251,9 +256,26 @@ const EntryRequirements = ({ form }: StepProps) => {
                         <div className="flex flex-col">
                           <div className="flex flex-row justify-between">
                             <div className="flex flex-row items-center gap-5">
-                              <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
-                                Entry Limit
-                              </FormLabel>
+                              <div className="flex flex-row items-center gap-2">
+                                <FormLabel className="font-brand text-lg xl:text-xl 2xl:text-2xl 3xl:text-3xl">
+                                  Entry Limit
+                                </FormLabel>
+                                <HoverCard openDelay={50} closeDelay={0}>
+                                  <HoverCardTrigger asChild>
+                                    <span className="w-4 h-4 text-brand-muted hover:text-brand cursor-help">
+                                      <INFO />
+                                    </span>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="w-72 p-4 text-sm break-words" align="start" side="top">
+                                    <p className="text-muted-foreground whitespace-normal">
+                                      Limits how many times each eligible address can enter.
+                                      <br />
+                                      <br />
+                                      If disabled, participants have unlimited entries per requirement.
+                                    </p>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              </div>
                               <FormDescription className="hidden sm:block">
                                 Set an entry limit for the tournament
                               </FormDescription>

@@ -39,10 +39,38 @@ export const processTournamentData = (
     ) / 1000
   );
 
-  const currentTime = Math.floor(Date.now() / 1000) + 60;
-
   // End time is start time + duration in seconds
   const endTimestamp = startTimestamp + formData.duration;
+
+  // Calculate registration times for fixed tournaments
+  let registrationStartTimestamp = Math.floor(Date.now() / 1000) + 60;
+  let registrationEndTimestamp = startTimestamp;
+
+  if (formData.type === "fixed" && formData.registrationStartTime) {
+    registrationStartTimestamp = Math.floor(
+      Date.UTC(
+        formData.registrationStartTime.getUTCFullYear(),
+        formData.registrationStartTime.getUTCMonth(),
+        formData.registrationStartTime.getUTCDate(),
+        formData.registrationStartTime.getUTCHours(),
+        formData.registrationStartTime.getUTCMinutes(),
+        formData.registrationStartTime.getUTCSeconds()
+      ) / 1000
+    );
+  }
+
+  if (formData.type === "fixed" && formData.registrationEndTime) {
+    registrationEndTimestamp = Math.floor(
+      Date.UTC(
+        formData.registrationEndTime.getUTCFullYear(),
+        formData.registrationEndTime.getUTCMonth(),
+        formData.registrationEndTime.getUTCDate(),
+        formData.registrationEndTime.getUTCHours(),
+        formData.registrationEndTime.getUTCMinutes(),
+        formData.registrationEndTime.getUTCSeconds()
+      ) / 1000
+    );
+  }
 
   // Process entry requirement based on type and requirement
   let entryRequirementType;
@@ -127,8 +155,8 @@ export const processTournamentData = (
       registration:
         formData.type === "fixed"
           ? new CairoOption(CairoOptionVariant.Some, {
-              start: currentTime,
-              end: startTimestamp,
+              start: registrationStartTimestamp,
+              end: registrationEndTimestamp,
             })
           : new CairoOption(CairoOptionVariant.None),
       game: {

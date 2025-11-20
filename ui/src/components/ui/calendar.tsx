@@ -3,6 +3,7 @@ import { DayPicker, DayPickerSingleProps } from "react-day-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,21 @@ function Calendar({
   minTime,
   ...props
 }: CalendarProps) {
+  const [currentHour, setCurrentHour] = useState(format(selectedTime, "HH"));
+  const [currentMinute, setCurrentMinute] = useState(format(selectedTime, "mm"));
+
+  // Sync internal state with prop changes
+  useEffect(() => {
+    const newHour = format(selectedTime, "HH");
+    const newMinute = format(selectedTime, "mm");
+
+    // Only update if the values actually changed to avoid fighting with user input
+    if (newHour !== currentHour || newMinute !== currentMinute) {
+      setCurrentHour(newHour);
+      setCurrentMinute(newMinute);
+    }
+  }, [selectedTime, currentHour, currentMinute]);
+
   const today = new Date();
   const fromMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   return (
@@ -68,8 +84,6 @@ function Calendar({
           }
 
           props.onSelect(date, selectedDay, activeModifiers, e);
-
-          console.log("Selected day with adjusted time:", adjustedTime);
         }
       }}
       classNames={{
@@ -129,26 +143,31 @@ function Calendar({
           };
 
           return (
-            <div className="flex flex-row items-center">
+            <div className="flex flex-col items-start gap-2 w-full">
+              <span className="text-base font-semibold">{format(displayMonth, "MMMM yyyy")}</span>
               {onTimeChange && (
-                <div className="flex items-center gap-1 pr-2">
+                <div className="flex items-center gap-2 w-full">
+                  <label className="text-xs text-neutral font-medium">Time:</label>
                   <Select
-                    value={format(selectedTime, "HH")}
+                    value={currentHour}
                     onValueChange={(hour) => {
-                      onTimeChange(parseInt(hour), selectedTime.getMinutes());
+                      setCurrentHour(hour);
+                      onTimeChange(parseInt(hour), parseInt(currentMinute));
                     }}
                   >
-                    <SelectTrigger className="w-auto [&>svg]:hidden w-[40px] px-2">
-                      <SelectValue placeholder="Hour" />
+                    <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
+                      <SelectValue>
+                        {currentHour}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {Array.from({ length: 24 }, (_, i) => (
                         <SelectItem
                           key={i}
                           value={i.toString().padStart(2, "0")}
                           disabled={isTimeDisabled(
                             i,
-                            selectedTime.getMinutes()
+                            parseInt(currentMinute)
                           )}
                         >
                           {i.toString().padStart(2, "0")}
@@ -156,24 +175,27 @@ function Calendar({
                       ))}
                     </SelectContent>
                   </Select>
-                  <span>:</span>
+                  <span className="text-neutral font-bold">:</span>
                   <Select
-                    value={format(selectedTime, "mm")}
+                    value={currentMinute}
                     onValueChange={(minute) => {
-                      onTimeChange(selectedTime.getHours(), parseInt(minute));
+                      setCurrentMinute(minute);
+                      onTimeChange(parseInt(currentHour), parseInt(minute));
                     }}
                   >
-                    <SelectTrigger className="w-auto [&>svg]:hidden w-[40px] px-2">
-                      <SelectValue placeholder="Min" />
+                    <SelectTrigger className="w-auto [&>svg]:hidden w-[50px] px-2 h-8">
+                      <SelectValue>
+                        {currentMinute}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {Array.from({ length: 12 }, (_, i) => i * 5).map(
                         (minute) => (
                           <SelectItem
                             key={minute}
                             value={minute.toString().padStart(2, "0")}
                             disabled={isTimeDisabled(
-                              selectedTime.getHours(),
+                              parseInt(currentHour),
                               minute
                             )}
                           >
@@ -185,7 +207,6 @@ function Calendar({
                   </Select>
                 </div>
               )}
-              <span>{format(displayMonth, "MMMM yyyy")}</span>
             </div>
           );
         },

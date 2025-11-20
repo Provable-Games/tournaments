@@ -185,12 +185,55 @@ const TournamentConfirmation = ({
                   Registration Type:
                 </span>
                 <span className="capitalize">{formData.type}</span>
-                <span className="text-muted-foreground">Start Time:</span>
+                {formData.type === "fixed" && formData.registrationStartTime && (
+                  <>
+                    <span className="text-muted-foreground">Registration Start:</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {format(formData.registrationStartTime, "PPP")}
+                      </span>
+                      <span>{format(formData.registrationStartTime, "p")}</span>
+                    </div>
+                  </>
+                )}
+                {formData.type === "fixed" && formData.registrationEndTime && (
+                  <>
+                    <span className="text-muted-foreground">Registration End:</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {format(formData.registrationEndTime, "PPP")}
+                      </span>
+                      <span>{format(formData.registrationEndTime, "p")}</span>
+                    </div>
+                  </>
+                )}
+                <span className="text-muted-foreground">Tournament Start:</span>
                 <div className="flex flex-col">
                   <span className="font-semibold">
                     {format(formData.startTime, "PPP")}
                   </span>
                   <span>{format(formData.startTime, "p")}</span>
+                </div>
+                <span className="text-muted-foreground">Tournament End:</span>
+                <div className="flex flex-col">
+                  <span className="font-semibold">
+                    {format(
+                      new Date(
+                        formData.startTime.getTime() +
+                          Number(formData.duration) * 1000
+                      ),
+                      "PPP"
+                    )}
+                  </span>
+                  <span>
+                    {format(
+                      new Date(
+                        formData.startTime.getTime() +
+                          Number(formData.duration) * 1000
+                      ),
+                      "p"
+                    )}
+                  </span>
                 </div>
                 <span className="text-muted-foreground">Duration:</span>
                 <span>{formatTime(formData.duration)}</span>

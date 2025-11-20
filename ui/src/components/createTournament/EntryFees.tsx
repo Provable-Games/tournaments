@@ -80,6 +80,7 @@ const EntryFees = ({ form }: StepProps) => {
   }, [form.watch("entryFees.value"), prices]);
 
   const entryFeeAmountExists = (form.watch("entryFees.amount") ?? 0) > 0;
+  const hasTokenSelected = !!form.watch("entryFees.token");
 
   return (
     <FormField
@@ -173,6 +174,7 @@ const EntryFees = ({ form }: StepProps) => {
                             <AmountInput
                               value={field.value || 0}
                               onChange={field.onChange}
+                              disabled={!hasTokenSelected}
                             />
                             <TokenValue
                               className="hidden sm:flex"
@@ -235,6 +237,7 @@ const EntryFees = ({ form }: StepProps) => {
                                         : "outline"
                                     }
                                     className="px-2"
+                                    disabled={!hasTokenSelected}
                                     onClick={() => {
                                       field.onChange(value);
                                     }}
@@ -251,6 +254,7 @@ const EntryFees = ({ form }: StepProps) => {
                               max="100"
                               step="1"
                               className="w-[80px] p-1"
+                              disabled={!hasTokenSelected}
                               {...field}
                               onChange={(e) => {
                                 const value = Math.floor(Number(e.target.value));
@@ -316,6 +320,7 @@ const EntryFees = ({ form }: StepProps) => {
                               {PREDEFINED_PERCENTAGES.map(
                                 ({ value, label }) => (
                                   <Button
+                                    key={value}
                                     type="button"
                                     variant={
                                       field.value === value
@@ -323,6 +328,7 @@ const EntryFees = ({ form }: StepProps) => {
                                         : "outline"
                                     }
                                     className="px-2"
+                                    disabled={!hasTokenSelected}
                                     onClick={() => {
                                       field.onChange(value);
                                     }}
@@ -339,6 +345,7 @@ const EntryFees = ({ form }: StepProps) => {
                               max="100"
                               step="1"
                               className="w-[80px] p-1"
+                              disabled={!hasTokenSelected}
                               {...field}
                               onChange={(e) => {
                                 const value = Math.floor(Number(e.target.value));
@@ -400,6 +407,7 @@ const EntryFees = ({ form }: StepProps) => {
                           max={5}
                           step={0.1}
                           value={[distributionWeight]}
+                          disabled={!hasTokenSelected}
                           onValueChange={([value]) => {
                             setDistributionWeight(value);
                             const creatorFee =
@@ -459,6 +467,7 @@ const EntryFees = ({ form }: StepProps) => {
                                       max="100"
                                       step="1"
                                       className="pr-4 px-1"
+                                      disabled={!hasTokenSelected}
                                       onChange={(e) => {
                                         const value = Math.floor(Number(e.target.value));
                                         field.onChange(value);
