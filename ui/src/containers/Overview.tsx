@@ -19,6 +19,7 @@ import {
   useGetTournaments,
   useGetMyTournaments,
   useGetMyTournamentsCount,
+  useGetMyLiveTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
 import { useGameTokens } from "metagame-sdk";
 import {
@@ -38,7 +39,10 @@ import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { ParsedEntity } from "@dojoengine/sdk";
 import { SchemaType } from "@/generated/models.gen";
 import useTournamentStore, { TournamentTab } from "@/hooks/tournamentStore";
-import { STARTING_TOURNAMENT_ID, EXCLUDED_TOURNAMENT_IDS } from "@/lib/constants";
+import {
+  STARTING_TOURNAMENT_ID,
+  EXCLUDED_TOURNAMENT_IDS,
+} from "@/lib/constants";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
@@ -97,9 +101,12 @@ const Overview = () => {
 
   const { tournamentAddress } = useTournamentContracts();
 
+  const [hasSelectedInitialTab, setHasSelectedInitialTab] = useState(false);
+
   useEffect(() => {
     if (chain) {
       clearAllTournaments();
+      setHasSelectedInitialTab(false); // Reset to allow tab reselection on chain change
     }
   }, [chain]);
 
@@ -185,6 +192,15 @@ const Overview = () => {
     gameAddresses: gameAddresses ?? [],
     tokenIds: gameTokenIds,
     fromTournamentId: fromTournamentId,
+  });
+
+  const { data: myLiveTournamentsCount } = useGetMyLiveTournamentsCount({
+    namespace: namespace,
+    address: queryAddress,
+    gameAddresses: gameAddresses ?? [],
+    tokenIds: gameTokenIds,
+    fromTournamentId: fromTournamentId,
+    currentTime: currentTime,
   });
 
   const tournamentCounts = useMemo(() => {
@@ -528,51 +544,62 @@ const Overview = () => {
     incrementPage,
   ]);
 
-  // Add this near your other state declarations
-  const isFirstRender = useRef(true);
-
-  // Update the effect to only run on first render
+  // Auto-select tab based on tournament availability
+  // Priority: my (if connected & has live tournaments) > live > upcoming > ended
   useEffect(() => {
-    // Set the default tab as soon as we find one with tournaments
-    if (!isFirstRender.current) return;
+    // Determine best tab based on available data
+    let bestTab: TournamentTab | null = null;
 
-    // Priority order: live > upcoming > my > ended
-    if (liveTournamentsCount !== undefined && liveTournamentsCount > 0) {
-      setSelectedTab("live");
-      isFirstRender.current = false;
-    } else if (
+    // If user is connected and has live tournaments they're registered for
+    if (
+      address &&
+      myLiveTournamentsCount !== undefined &&
+      myLiveTournamentsCount > 0
+    ) {
+      bestTab = "my";
+    }
+    // Otherwise check live tournaments
+    else if (liveTournamentsCount !== undefined && liveTournamentsCount > 0) {
+      bestTab = "live";
+    }
+    // Then upcoming
+    else if (
       upcomingTournamentsCount !== undefined &&
       upcomingTournamentsCount > 0
     ) {
-      setSelectedTab("upcoming");
-      isFirstRender.current = false;
-    } else if (myTournamentsCount !== undefined && myTournamentsCount > 0) {
-      setSelectedTab("my");
-      isFirstRender.current = false;
-    } else if (
-      endedTournamentsCount !== undefined &&
-      endedTournamentsCount > 0
-    ) {
-      setSelectedTab("ended");
-      isFirstRender.current = false;
-    } else if (
-      // All counts are loaded but no tournaments exist
-      liveTournamentsCount !== undefined &&
-      upcomingTournamentsCount !== undefined &&
-      endedTournamentsCount !== undefined &&
-      myTournamentsCount !== undefined
-    ) {
-      // Default to upcoming if no tournaments anywhere
-      setSelectedTab("upcoming");
-      isFirstRender.current = false;
+      bestTab = "upcoming";
     }
-    // Otherwise, wait for more data to load
+    // Then ended
+    else if (endedTournamentsCount !== undefined && endedTournamentsCount > 0) {
+      bestTab = "ended";
+    }
+    // Default to upcoming if we have data but no tournaments
+    else if (
+      liveTournamentsCount !== undefined ||
+      upcomingTournamentsCount !== undefined ||
+      endedTournamentsCount !== undefined
+    ) {
+      bestTab = "upcoming";
+    }
+
+    // Only set tab if:
+    // 1. We haven't selected yet, OR
+    // 2. We have a better tab than current (e.g., "my" is better than "live")
+    const shouldUpdateTab =
+      !hasSelectedInitialTab ||
+      (bestTab && bestTab === "my" && selectedTab !== "my");
+
+    if (bestTab && shouldUpdateTab) {
+      setSelectedTab(bestTab);
+      setHasSelectedInitialTab(true);
+    }
   }, [
-    upcomingTournamentsCount,
+    address,
+    myLiveTournamentsCount,
     liveTournamentsCount,
+    upcomingTournamentsCount,
     endedTournamentsCount,
-    myTournamentsCount,
-    setSelectedTab,
+    hasSelectedInitialTab,
   ]);
 
   return (
@@ -588,7 +615,7 @@ const Overview = () => {
               upcomingTournamentsCount={upcomingTournamentsCount}
               liveTournamentsCount={liveTournamentsCount}
               endedTournamentsCount={endedTournamentsCount}
-              myTournamentsCount={myTournamentsCount}
+              myTournamentsCount={myLiveTournamentsCount}
             />
           </div>
 

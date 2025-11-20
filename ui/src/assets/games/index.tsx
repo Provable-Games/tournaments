@@ -77,6 +77,14 @@ export const getGames = (): Game[] => {
         playUrl: "https://nums-blond.vercel.app/",
         controllerOnly: true,
       },
+      {
+        contract_address:
+          "0x063410083d205c7e66cd2cdcd59614a233b682b9394f46d44e838d3a32048a7a",
+        name: "zKube",
+        url: "https://localhost:5173/",
+        playUrl: "https://localhost:5173/play/",
+        controllerOnly: true,
+      },
     ];
   } else if (isMainnet) {
     return [
@@ -100,26 +108,27 @@ export const getGames = (): Game[] => {
       },
       {
         contract_address:
-          "0x051c6d53ba1b565285e703c4e1aedb27d8814dc3f4aa4d13446066dbc8711c87",
+          "0x012bf5118f03d2bbb8a2a31c72e0020ab85af172dd965ccd55c3132066ad8554",
         name: "DopeWars",
-        url: "https://dw.budokan.gg",
-        playUrl: "https://dw.budokan.gg/play/",
+        url: "https://dopewars-kappa.vercel.app/",
+        playUrl: "https://dopewars-kappa.vercel.app/",
         controllerOnly: true,
       },
       {
         contract_address:
-          "0x04fd5df500e6c6615e4423258639f189455672bc841ba58f1c781ac7c5ff4bd8",
+          "0x079c30d00719faea99297075e22fd84260f39960e14239f2018ba5d1dc1ab907",
         name: "zKube",
         image: "https://app.zkube.xyz/assets/pwa-512x512.png",
-        url: "https://app.zkube.xyz/",
+        url: "https://app.zkube.xyz",
+        playUrl: "https://app.zkube.xyz/play/",
         controllerOnly: true,
       },
       {
         contract_address:
-          "0x04d8ec93cc62296ecbd490406b034ada13bc4db5552f30d17f6e01270db7d62a",
+          "0x0473a834b65e8129652dec5788c5d9427fe1ea7e2e79fbe0493e38df816259d9",
         name: "Nums",
-        url: "https://nums-blond.vercel.app/",
-        playUrl: "https://nums-blond.vercel.app/",
+        url: "https://nums.gg/",
+        playUrl: "https://nums.gg/",
         controllerOnly: true,
       },
     ];

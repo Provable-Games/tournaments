@@ -107,16 +107,57 @@ export const TournamentCard = ({
     Number(tournament.schedule.game.end) -
     Number(tournament.schedule.game.start);
   const currentDate = new Date();
+  const currentTimestamp = Math.floor(currentDate.getTime() / 1000);
   const startsInSeconds = (startDate.getTime() - currentDate.getTime()) / 1000;
   const startsIn = formatTime(startsInSeconds);
   const endsInSeconds = (endDate.getTime() - currentDate.getTime()) / 1000;
   const endsIn = formatTime(endsInSeconds);
-  const registrationType =
-    tournament?.schedule.registration.isSome() && Number(startsInSeconds) <= 0
-      ? "Closed"
-      : Number(endsInSeconds) <= 0
-      ? "Closed"
-      : "Open";
+
+  // Determine tournament status based on schedule
+  const registrationStart = tournament?.schedule?.registration?.isSome()
+    ? Number(tournament.schedule.registration.Some?.start)
+    : null;
+  const registrationEnd = tournament?.schedule?.registration?.isSome()
+    ? Number(tournament.schedule.registration.Some?.end)
+    : null;
+  const gameStart = Number(tournament?.schedule?.game?.start ?? 0);
+  const gameEnd = Number(tournament?.schedule?.game?.end ?? 0);
+  const submissionDuration = tournament?.schedule?.submission_duration
+    ? Number(tournament.schedule.submission_duration)
+    : null;
+  const submissionEnd = submissionDuration ? gameEnd + submissionDuration : null;
+
+  const getTournamentStatus = () => {
+    // Registration phase
+    if (registrationStart && registrationEnd) {
+      if (currentTimestamp < registrationStart) {
+        return { text: "Upcoming", variant: "outline" as const };
+      }
+      if (currentTimestamp >= registrationStart && currentTimestamp < registrationEnd) {
+        return { text: "Registration", variant: "success" as const };
+      }
+    }
+
+    // Game hasn't started yet
+    if (currentTimestamp < gameStart) {
+      return { text: "Upcoming", variant: "outline" as const };
+    }
+
+    // Game is live
+    if (currentTimestamp >= gameStart && currentTimestamp < gameEnd) {
+      return { text: "Live", variant: "success" as const };
+    }
+
+    // Submission phase
+    if (submissionEnd && currentTimestamp >= gameEnd && currentTimestamp < submissionEnd) {
+      return { text: "Submission", variant: "warning" as const };
+    }
+
+    // Tournament ended
+    return { text: "Ended", variant: "destructive" as const };
+  };
+
+  const tournamentStatus = getTournamentStatus();
 
   const gameAddress = tournament.game_config.address;
   const gameName = gameData.find(
@@ -241,17 +282,17 @@ export const TournamentCard = ({
         </div>
         <div className="flex flex-row items-center">
           <div className="flex flex-row sm:flex-wrap items-center gap-2 w-3/4">
-            {/* Registration Type */}
+            {/* Tournament Status */}
             <Tooltip delayDuration={50}>
               <TooltipTrigger asChild>
                 <div>
-                  <Badge variant="outline" className="text-xs p-1 rounded-md">
-                    {registrationType}
+                  <Badge variant={tournamentStatus.variant} className="text-xs p-1 rounded-md">
+                    {tournamentStatus.text}
                   </Badge>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" align="center">
-                <p>{registrationType} For Registration</p>
+                <p>Tournament Status: {tournamentStatus.text}</p>
               </TooltipContent>
             </Tooltip>
 
