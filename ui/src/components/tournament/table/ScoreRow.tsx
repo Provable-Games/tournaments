@@ -5,6 +5,7 @@ import { HoverCardTrigger } from "@/components/ui/hover-card";
 import { PlayerDetails } from "@/components/tournament/table/PlayerCard";
 import { GameTokenData } from "metagame-sdk";
 import { displayAddress } from "@/lib/utils";
+import { indexAddress } from "@/lib/utils";
 
 interface ScoreRowProps {
   index: number;
@@ -35,8 +36,9 @@ const ScoreRow = ({
 
   const hasSubmitted = registration?.has_submitted === 1 ? true : false;
 
+  //TODO: revert after devconnect
   const username =
-    usernames?.get(ownerAddress ?? "0x0") ||
+    usernames?.get(indexAddress(ownerAddress ?? "0x0") ?? "0x0") ||
     displayAddress(ownerAddress ?? "0x0");
 
   return (
@@ -57,7 +59,7 @@ const ScoreRow = ({
                 <USER />
               </span>
               <span className="flex-none lg:max-w-20 xl:max-w-24 2xl:max-w-28 3xl:max-w-44 group-hover:text-brand transition-colors duration-200 text-ellipsis overflow-hidden whitespace-nowrap">
-                {playerName}
+                {username}
               </span>
               <p
                 className="flex-1 h-[2px] bg-repeat-x"
