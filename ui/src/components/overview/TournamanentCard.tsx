@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { feltToString, formatTime } from "@/lib/utils";
 import TokenGameIcon from "@/components/icons/TokenGameIcon";
-import { SOLID_CLOCK, USER } from "@/components/Icons";
+import { SOLID_CLOCK, USER, CALENDAR } from "@/components/Icons";
 import { useNavigate } from "react-router-dom";
 import { Tournament, Token, Prize } from "@/generated/models.gen";
 import { useDojo } from "@/context/dojo";
@@ -281,11 +281,12 @@ export const TournamentCard = ({
           <div className="hidden sm:block w-full h-0.5 bg-brand/25" />
         </div>
         <div className="flex flex-row items-center">
-          <div className="flex flex-row sm:flex-wrap items-center gap-2 w-3/4">
-            {/* Tournament Status */}
-            <Tooltip delayDuration={50}>
+          <div className="relative w-3/4">
+            <div className="flex flex-row sm:flex-wrap items-center gap-2 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {/* Tournament Status */}
+              <Tooltip delayDuration={50}>
               <TooltipTrigger asChild>
-                <div>
+                <div className="flex-shrink-0">
                   <Badge variant={tournamentStatus.variant} className="text-xs p-1 rounded-md">
                     {tournamentStatus.text}
                   </Badge>
@@ -299,7 +300,7 @@ export const TournamentCard = ({
             {/* Prize Spots */}
             <Tooltip delayDuration={50}>
               <TooltipTrigger asChild>
-                <div>
+                <div className="flex-shrink-0">
                   <Badge variant="outline" className="text-xs p-1 rounded-md">
                     {Number(tournament.game_config.prize_spots)} Winners
                   </Badge>
@@ -314,7 +315,7 @@ export const TournamentCard = ({
             {isRestricted && (
               <Tooltip delayDuration={50}>
                 <TooltipTrigger asChild>
-                  <div>
+                  <div className="flex-shrink-0">
                     <Badge variant="outline" className="text-xs p-1 rounded-md">
                       Restricted
                     </Badge>
@@ -345,7 +346,7 @@ export const TournamentCard = ({
             {hasEntryLimit && (
               <Tooltip delayDuration={50}>
                 <TooltipTrigger asChild>
-                  <div>
+                  <div className="flex-shrink-0">
                     <Badge variant="outline" className="text-xs p-1 rounded-md">
                       {Number(entryLimit) === 1
                         ? `${Number(entryLimit)} entry`
@@ -363,6 +364,39 @@ export const TournamentCard = ({
                 </TooltipContent>
               </Tooltip>
             )}
+
+            {/* Start Date - for ended tournaments */}
+            {status === "ended" && (
+              <Tooltip delayDuration={50}>
+                <TooltipTrigger asChild>
+                  <div className="flex-shrink-0">
+                    <Badge variant="outline" className="text-xs p-1 rounded-md flex items-center gap-1">
+                      <span className="w-4 h-4">
+                        <CALENDAR />
+                      </span>
+                      {startDate.toLocaleDateString(undefined, {
+                        month: "numeric",
+                        day: "numeric",
+                      })}/{startDate.getFullYear().toString().slice(-2)}
+                    </Badge>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  <p>
+                    Started: {startDate.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}{" "}
+                    {startDate.toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            </div>
           </div>
 
           <div className="flex flex-row w-1/4 justify-end sm:px-2">
@@ -391,21 +425,6 @@ export const TournamentCard = ({
             <div className="flex flex-row items-center gap-2">
               <span className="text-brand-muted">Ends In:</span>
               <span className={renderTimeClass(endsInSeconds)}>{endsIn}</span>
-            </div>
-          ) : status === "ended" ? (
-            <div className="flex flex-row items-center gap-2">
-              <span className="text-brand-muted">Started:</span>
-              <span className="text-xs">
-                {startDate.toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}{" "}
-                {startDate.toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
             </div>
           ) : (
             <></>
