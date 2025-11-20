@@ -642,6 +642,47 @@ const ScheduleSlider = ({
               e.preventDefault();
               handleMouseDown("submissionEnd", e);
             }}
+            calendarContent={
+              <Calendar
+                selected={submissionEndDate}
+                onSelect={(date) => {
+                  if (date && submissionEndDate && endTime) {
+                    const newDate = new Date(date);
+                    newDate.setHours(submissionEndDate.getHours());
+                    newDate.setMinutes(submissionEndDate.getMinutes());
+                    const newSubmissionPeriod = Math.max(
+                      SECONDS_IN_DAY,
+                      Math.floor((newDate.getTime() - endTime.getTime()) / 1000)
+                    );
+                    onSubmissionPeriodChange(newSubmissionPeriod);
+                  }
+                }}
+                selectedTime={submissionEndDate}
+                onTimeChange={(hour, minute) => {
+                  if (submissionEndDate && endTime) {
+                    const newDate = new Date(submissionEndDate);
+                    newDate.setHours(hour);
+                    newDate.setMinutes(minute);
+                    newDate.setSeconds(0);
+                    newDate.setMilliseconds(0);
+                    const newSubmissionPeriod = Math.max(
+                      SECONDS_IN_DAY,
+                      Math.floor((newDate.getTime() - endTime.getTime()) / 1000)
+                    );
+                    onSubmissionPeriodChange(newSubmissionPeriod);
+                  }
+                }}
+                disabled={(date) => {
+                  // Disable dates before tournament end date
+                  const tournamentEndDate = new Date(endTime);
+                  tournamentEndDate.setHours(0, 0, 0, 0);
+                  return date < tournamentEndDate;
+                }}
+                minTime={endTime}
+                initialFocus
+                className="rounded-md border-4 border-brand-muted w-auto"
+              />
+            }
           />
         </div>
 
