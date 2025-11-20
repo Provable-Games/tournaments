@@ -25,3 +25,10 @@ export const ADMIN_ADDRESS =
   "0x077b8ed8356a7c1f0903fc4ba6e15f9b09cf437ce04f21b2cbf32dc2790183d0";
 
 export const STARTING_TOURNAMENT_ID = 13;
+
+// Tournament IDs to exclude from display
+export const EXCLUDED_TOURNAMENT_IDS: number[] = [
+  // Add tournament IDs here that you want to hide
+  // Example: 1, 2, 3
+  24, 25, 26,
+];

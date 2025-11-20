@@ -9,6 +9,8 @@ import { getGames } from "./assets/games";
 import Header from "@/components/Header";
 import LoadingPage from "@/containers/LoadingPage";
 import { useResetDojoOnNetworkChange } from "@/dojo/hooks/useResetDojoOnNetworkChange";
+import { useSyncNetworkUrl } from "@/dojo/hooks/useSyncNetworkUrl";
+import { useSwitchToUrlNetwork } from "@/dojo/hooks/useSwitchToUrlNetwork";
 import { useMiniGames } from "metagame-sdk/sql";
 import {
   useSubscribeTournamentsQuery,
@@ -33,6 +35,9 @@ function App() {
   const { namespace } = useDojo();
   const { setGameData, setGameDataLoading } = useUIStore();
 
+  // Network management hooks
+  useSwitchToUrlNetwork(); // Switch to network from URL on initial load
+  useSyncNetworkUrl(); // Keep URL in sync when network changes
   useResetDojoOnNetworkChange();
 
   useSubscribeMetricsQuery(namespace);
@@ -69,15 +74,35 @@ function App() {
       whitelistedMap.set(game.contract_address, game);
     });
 
-    // Collect all unique contract addresses
+    // Get whitelisted game names for filtering duplicates
+    const whitelistedGameNames = new Set(
+      whitelistedGames.map((game) => game.name.toLowerCase())
+    );
+
+    // Filter metadata to exclude games with the same name as whitelisted games
+    // (unless they're the exact same contract address)
+    const uniqueMetadataMap = new Map();
+    metadataMap.forEach((game, address) => {
+      const isWhitelisted = whitelistedMap.has(address);
+      const hasSameNameAsWhitelisted = whitelistedGameNames.has(
+        game.name?.toLowerCase()
+      );
+
+      // Only include if it's whitelisted OR it doesn't share a name with a whitelisted game
+      if (isWhitelisted || !hasSameNameAsWhitelisted) {
+        uniqueMetadataMap.set(address, game);
+      }
+    });
+
+    // Collect all unique contract addresses (prioritizing whitelisted)
     const allAddresses = new Set([
-      ...metadataMap.keys(),
       ...whitelistedMap.keys(),
+      ...uniqueMetadataMap.keys(),
     ]);
 
     // Create the unified array
-    return Array.from(allAddresses).map((address) => {
-      const metadata = metadataMap.get(address);
+    const games = Array.from(allAddresses).map((address) => {
+      const metadata = uniqueMetadataMap.get(address);
       const whitelisted = whitelistedMap.get(address);
 
       return {
@@ -94,6 +119,13 @@ function App() {
         isWhitelisted: !!whitelisted,
         existsInMetadata: !!metadata,
       };
+    });
+
+    // Sort: games with metadata first, then whitelisted-only games
+    return games.sort((a, b) => {
+      if (a.existsInMetadata && !b.existsInMetadata) return -1;
+      if (!a.existsInMetadata && b.existsInMetadata) return 1;
+      return 0;
     });
   }, [minigames, whitelistedGames]);
 

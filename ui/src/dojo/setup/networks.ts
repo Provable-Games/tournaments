@@ -147,8 +147,8 @@ const snMainnetConfig: DojoChainConfig = {
   chainId: ChainId.SN_MAIN,
   name: "Mainnet",
   rpcUrl: "https://api.cartridge.gg/x/starknet/mainnet",
-  toriiUrl: "https://api.cartridge.gg/x/pg-mainnet-9/torii",
-  toriiTokensUrl: "https://api.cartridge.gg/x/pg-mainnet-9/torii",
+  toriiUrl: "https://api.cartridge.gg/x/pg-mainnet-10/torii",
+  toriiTokensUrl: "https://api.cartridge.gg/x/pg-mainnet-10/torii",
   relayUrl: undefined,
   blastRpc:
     "https://starknet-mainnet.blastapi.io/5ef61753-e7c1-4593-bc62-97fdf96f8de5",
@@ -207,6 +207,17 @@ export const CHAINS: Record<ChainId, DojoChainConfig> = {
 };
 
 export const getDefaultChainId = (): ChainId => {
+  // Check URL parameter first (for sepolia support)
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const networkParam = params.get("network");
+
+    if (networkParam === "sepolia") {
+      return ChainId.SN_SEPOLIA;
+    }
+  }
+
+  // Fall back to environment variable
   const envChainId = import.meta.env.VITE_CHAIN_ID as ChainId;
 
   if (envChainId && !isChainIdSupported(envChainId)) {

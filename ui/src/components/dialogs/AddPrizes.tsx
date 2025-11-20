@@ -22,7 +22,6 @@ import { NewPrize, FormToken } from "@/lib/types";
 import { Prize } from "@/generated/models.gen";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { addAddressPadding, BigNumberish } from "starknet";
-import { TOURNAMENT_VERSION_KEY } from "@/lib/constants";
 import { CairoCustomEnum } from "starknet";
 import { getTokenLogoUrl, getTokenSymbol } from "@/lib/tokensMeta";
 import { ALERT, CHECK, QUESTION, X } from "@/components/Icons";
@@ -36,7 +35,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LoadingSpinner } from "@/components/ui/spinner";
-import { getEntityIdFromKeys } from "@dojoengine/utils";
 import { useGetPrizeMetrics } from "@/dojo/hooks/useSqlQueries";
 
 export function AddPrizesDialog({
@@ -96,14 +94,8 @@ export function AddPrizesDialog({
 
   const chainId = selectedChainConfig?.chainId ?? "";
 
-  const metricsKeyId = useMemo(
-    () => getEntityIdFromKeys([BigInt(TOURNAMENT_VERSION_KEY)]),
-    []
-  );
-
   const { data: prizeMetricsModel } = useGetPrizeMetrics({
     namespace,
-    tournamentId: metricsKeyId,
     active: open,
   });
 

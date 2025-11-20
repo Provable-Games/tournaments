@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSystemCalls } from "@/dojo/hooks/useSystemCalls";
 import { useAccount, useConnect } from "@starknet-react/core";
-import { Tournament, Token, EntryCount } from "@/generated/models.gen";
+import { Tournament, Token } from "@/generated/models.gen";
 import {
   feltToString,
   indexAddress,
@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { useConnectToSelectedChain } from "@/dojo/hooks/useChain";
 import { useGetUsernames, isControllerAccount } from "@/hooks/useController";
 import { lookupUsernames } from "@cartridge/controller";
-import { CHECK, X, COIN, USER } from "@/components/Icons";
+import { CHECK, X, COIN, USER, FAT_ARROW_RIGHT } from "@/components/Icons";
 import {
   useGetAccountTokenIds,
   useGetTournamentRegistrants,
@@ -45,7 +45,7 @@ interface EnterTournamentDialogProps {
   hasEntryFee?: boolean;
   entryFeePrice?: number;
   tournamentModel: Tournament;
-  entryCountModel: EntryCount;
+  entryCount: number;
   // gameCount: BigNumberish;
   tokens: Token[];
   tournamentsData: Tournament[];
@@ -74,7 +74,7 @@ export function EnterTournamentDialog({
   hasEntryFee,
   entryFeePrice,
   tournamentModel,
-  entryCountModel,
+  entryCount,
   // gameCount,
   tokens,
   tournamentsData,
@@ -142,14 +142,13 @@ export function EnterTournamentDialog({
         tournamentModel?.id,
         feltToString(tournamentModel?.metadata.name),
         tournamentModel,
-        // (Number(entryCountModel?.count) ?? 0) + 1,
         stringToFelt(finalPlayerName),
         addAddressPadding(targetAddress),
         qualificationProof,
         // gameCount
         duration,
         entryFeeUsdCost,
-        Number(entryCountModel?.count ?? 0),
+        entryCount,
         totalPrizesValueUSD
       );
 
@@ -549,7 +548,7 @@ export function EnterTournamentDialog({
     hasParticipatedInTournamentMap,
     ownedTokenIds,
     tournamentsData,
-    entryCountModel?.count,
+    entryCount,
   ]);
 
   const { data: qualificationEntries } = useGetTournamentQualificationEntries({
@@ -798,7 +797,9 @@ export function EnterTournamentDialog({
       const currentEntryCount = qualificationEntries[0]?.entry_count ?? 0;
 
       // Calculate remaining entries
-      const remaining = (Number(entryLimit) ?? 0) - currentEntryCount;
+      const remaining = hasEntryLimit
+        ? Number(entryLimit) - currentEntryCount
+        : Infinity;
 
       // If this address has entries left
       if (remaining > 0) {
@@ -868,34 +869,34 @@ export function EnterTournamentDialog({
     requirementVariant,
     address,
     allowlistAddresses,
-    entryCountModel?.count,
+    entryCount,
     extensionValidEntry,
     extensionEntriesLeft,
   ]);
 
   // display the entry fee distribution
 
-  // const creatorShare = Number(
-  //   tournamentModel?.entry_fee.Some?.tournament_creator_share.Some ?? 0n
-  // );
-  // const gameShare = Number(
-  //   tournamentModel?.entry_fee.Some?.game_creator_share.Some ?? 0n
-  // );
-  // const prizePoolShare = 100 - creatorShare - gameShare;
-  // const creatorAmount =
-  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-  //     (creatorShare / 100)) /
-  //   10 ** 18;
+  const creatorShare = Number(
+    tournamentModel?.entry_fee.Some?.tournament_creator_share.Some ?? 0n
+  );
+  const gameShare = Number(
+    tournamentModel?.entry_fee.Some?.game_creator_share.Some ?? 0n
+  );
+  const prizePoolShare = 100 - creatorShare - gameShare;
+  const creatorAmount =
+    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+      (creatorShare / 100)) /
+    10 ** 18;
 
-  // const gameAmount =
-  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-  //     (gameShare / 100)) /
-  //   10 ** 18;
+  const gameAmount =
+    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+      (gameShare / 100)) /
+    10 ** 18;
 
-  // const prizePoolAmount =
-  //   (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
-  //     (prizePoolShare / 100)) /
-  //   10 ** 18;
+  const prizePoolAmount =
+    (Number(BigInt(tournamentModel?.entry_fee.Some?.amount ?? 0)) *
+      (prizePoolShare / 100)) /
+    10 ** 18;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -951,7 +952,7 @@ export function EnterTournamentDialog({
                       </div>
                     ))}
                 </div>
-                {/* <span className="w-10 rotate-90">
+                <span className="w-10 rotate-90">
                   <FAT_ARROW_RIGHT />
                 </span>
                 <div className="flex flex-row items-center gap-2 w-full">
@@ -1022,7 +1023,7 @@ export function EnterTournamentDialog({
                       </span>
                     </div>
                   </div>
-                </div> */}
+                </div>
               </div>
             </div>
           )}
@@ -1214,7 +1215,10 @@ export function EnterTournamentDialog({
                               )?.entriesLeft;
 
                               // Show entries count if there's a limit (not infinite)
-                              if (entriesLeft !== undefined && entriesLeft !== Infinity) {
+                              if (
+                                entriesLeft !== undefined &&
+                                entriesLeft !== Infinity
+                              ) {
                                 return `${entriesLeft} ${
                                   entriesLeft === 1 ? "entry" : "entries"
                                 } left`;
@@ -1252,11 +1256,22 @@ export function EnterTournamentDialog({
                         <CHECK />
                       </span>
                       <span>
-                        {`${
-                          entriesLeftByTournament.find(
+                        {(() => {
+                          const entriesLeft = entriesLeftByTournament.find(
                             (entry) => entry.address === address
-                          )?.entriesLeft
-                        } entries left`}
+                          )?.entriesLeft;
+
+                          // Show entries count if there's a limit (not infinite)
+                          if (
+                            entriesLeft !== undefined &&
+                            entriesLeft !== Infinity
+                          ) {
+                            return `${entriesLeft} ${
+                              entriesLeft === 1 ? "entry" : "entries"
+                            } left`;
+                          }
+                          return "Can enter";
+                        })()}
                       </span>
                     </div>
                   ) : (

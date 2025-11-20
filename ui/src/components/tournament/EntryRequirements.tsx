@@ -11,12 +11,19 @@ import {
   COUNTER,
   USER,
   EXTERNAL_LINK,
+  INFO,
 } from "@/components/Icons";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Tournament as TournamentModel } from "@/generated/models.gen";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +40,29 @@ import {
 } from "@/components/ui/dialog";
 import { useGetTokenByAddress } from "@/dojo/hooks/useSqlQueries";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Helper component for Entry Limit display with info tooltip
+const EntryLimitInfo = ({ limit }: { limit: number }) => (
+  <div className="flex flex-row items-center gap-2">
+    <span>Entry Limit:</span>
+    <span>{limit}</span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="w-4 h-4 text-brand-muted hover:text-brand cursor-help">
+            <INFO />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <p>
+            Maximum number of times each eligible address can register for this tournament.
+            Set to limit multiple entries per participant.
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
+);
 
 const EntryRequirements = ({
   tournamentModel,
@@ -180,12 +210,7 @@ const EntryRequirements = ({
               </>
             )}
           </div>
-          {!!hasEntryLimit && (
-            <div className="flex flex-row items-center gap-2">
-              <span>Entry Limit:</span>
-              <span>{Number(entryLimit)}</span>
-            </div>
-          )}
+          {!!hasEntryLimit && <EntryLimitInfo limit={Number(entryLimit)} />}
         </>
       );
     } else if (activeVariant === "tournament") {
@@ -224,12 +249,7 @@ const EntryRequirements = ({
               );
             })}
           </div>
-          {!!hasEntryLimit && (
-            <div className="flex flex-row items-center gap-2">
-              <span>Entry Limit:</span>
-              <span>{Number(entryLimit)}</span>
-            </div>
-          )}
+          {!!hasEntryLimit && <EntryLimitInfo limit={Number(entryLimit)} />}
         </>
       );
     } else if (activeVariant === "extension") {
@@ -264,12 +284,7 @@ const EntryRequirements = ({
               </span>
             </div>
           )}
-          {!!hasEntryLimit && (
-            <div className="flex flex-row items-center gap-2">
-              <span>Entry Limit:</span>
-              <span>{Number(entryLimit)}</span>
-            </div>
-          )}
+          {!!hasEntryLimit && <EntryLimitInfo limit={Number(entryLimit)} />}
         </>
       );
     } else {
@@ -287,12 +302,7 @@ const EntryRequirements = ({
           >
             <span>See Allowlist</span>
           </Button>
-          {!!hasEntryLimit && (
-            <div className="flex flex-row items-center gap-2">
-              <span>Entry Limit:</span>
-              <span>{Number(entryLimit)}</span>
-            </div>
-          )}
+          {!!hasEntryLimit && <EntryLimitInfo limit={Number(entryLimit)} />}
         </>
       );
     }

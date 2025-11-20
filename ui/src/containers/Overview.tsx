@@ -19,6 +19,7 @@ import {
   useGetTournaments,
   useGetMyTournaments,
   useGetMyTournamentsCount,
+  useGetMyLiveTournamentsCount,
 } from "@/dojo/hooks/useSqlQueries";
 import { useGameTokens } from "metagame-sdk";
 import {
@@ -38,7 +39,10 @@ import { useDojoStore } from "@/dojo/hooks/useDojoStore";
 import { ParsedEntity } from "@dojoengine/sdk";
 import { SchemaType } from "@/generated/models.gen";
 import useTournamentStore, { TournamentTab } from "@/hooks/tournamentStore";
-import { STARTING_TOURNAMENT_ID } from "@/lib/constants";
+import {
+  STARTING_TOURNAMENT_ID,
+  EXCLUDED_TOURNAMENT_IDS,
+} from "@/lib/constants";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { useTournamentContracts } from "@/dojo/hooks/useTournamentContracts";
 import { useEkuboPrices } from "@/hooks/useEkuboPrices";
@@ -97,9 +101,12 @@ const Overview = () => {
 
   const { tournamentAddress } = useTournamentContracts();
 
+  const [hasSelectedInitialTab, setHasSelectedInitialTab] = useState(false);
+
   useEffect(() => {
     if (chain) {
       clearAllTournaments();
+      setHasSelectedInitialTab(false); // Reset to allow tab reselection on chain change
     }
   }, [chain]);
 
@@ -121,9 +128,10 @@ const Overview = () => {
   const [prevSubscribedTournaments, setPrevSubscribedTournaments] = useState<
     ParsedEntity<SchemaType>[] | null
   >(null);
-  
-  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>({});
-  const [decimalsLoading, setDecimalsLoading] = useState(false);
+
+  const [tokenDecimals, setTokenDecimals] = useState<Record<string, number>>(
+    {}
+  );
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -142,18 +150,21 @@ const Overview = () => {
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const { data: liveTournamentsCount } = useGetLiveTournamentsCount({
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const { data: endedTournamentsCount } = useGetEndedTournamentsCount({
     namespace: namespace,
     currentTime: currentTime,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
   });
 
   const queryAddress = useMemo(() => {
@@ -183,6 +194,15 @@ const Overview = () => {
     fromTournamentId: fromTournamentId,
   });
 
+  const { data: myLiveTournamentsCount } = useGetMyLiveTournamentsCount({
+    namespace: namespace,
+    address: queryAddress,
+    gameAddresses: gameAddresses ?? [],
+    tokenIds: gameTokenIds,
+    fromTournamentId: fromTournamentId,
+    currentTime: currentTime,
+  });
+
   const tournamentCounts = useMemo(() => {
     return {
       upcoming: upcomingTournamentsCount,
@@ -205,9 +225,13 @@ const Overview = () => {
   const currentSortBy = sortByTab[selectedTab as TournamentTab];
   const isCurrentTabLoading = isLoadingByTab[selectedTab as TournamentTab];
 
-  // Update sortBy in the store when tab changes
+  // Set default sort when tab changes
   useEffect(() => {
-    setSortBy(selectedTab as TournamentTab, SORT_OPTIONS[selectedTab][0].value);
+    const defaultSort = SORT_OPTIONS[selectedTab][0].value;
+    // Only set if there's no sort value for this tab yet
+    if (!currentSortBy) {
+      setSortBy(selectedTab as TournamentTab, defaultSort);
+    }
   }, [selectedTab, setSortBy]);
 
   // Reset data when filters change
@@ -250,11 +274,10 @@ const Overview = () => {
     status: selectedTab,
     sortBy: currentSortBy,
     fromTournamentId: fromTournamentId,
+    excludedTournamentIds: EXCLUDED_TOURNAMENT_IDS,
     // Only activate the query for the appropriate tabs and when we need to fetch
     active: ["upcoming", "live", "ended"].includes(selectedTab) && shouldFetch,
   });
-
-  // useSubscribeTournamentsQuery(namespace);
 
   useEffect(() => {
     if (
@@ -271,19 +294,22 @@ const Overview = () => {
     setPrevSubscribedTournaments(subscribedTournaments);
   }, [subscribedTournamentsKey, prevSubscribedTournaments]);
 
-  const { data: myTournaments, loading: myTournamentsLoading, uniqueTokens: myTournamentTokens } =
-    useGetMyTournaments({
-      namespace: namespace,
-      address: queryAddress,
-      gameAddresses: gameAddresses,
-      tokenIds: gameTokenIds,
-      gameFilters: gameFilters,
-      limit: 12,
-      offset: currentPage * 12,
-      active: selectedTab === "my",
-      sortBy: currentSortBy,
-      fromTournamentId: fromTournamentId,
-    });
+  const {
+    data: myTournaments,
+    loading: myTournamentsLoading,
+    uniqueTokens: myTournamentTokens,
+  } = useGetMyTournaments({
+    namespace: namespace,
+    address: queryAddress,
+    gameAddresses: gameAddresses,
+    tokenIds: gameTokenIds,
+    gameFilters: gameFilters,
+    limit: 12,
+    offset: currentPage * 12,
+    active: selectedTab === "my",
+    sortBy: currentSortBy,
+    fromTournamentId: fromTournamentId,
+  });
 
   // Combine unique tokens from both regular and "my" tournaments
   const allUniqueTokens = useMemo(() => {
@@ -304,7 +330,7 @@ const Overview = () => {
   const tokensArray = useMemo(() => {
     const tokens = selectedTab === "my" ? myTournamentTokens : tournamentTokens;
     if (!tokens || !Array.isArray(tokens)) return [];
-    
+
     return tokens.map((token: any) => ({
       address: token.address,
       name: token.name,
@@ -336,23 +362,10 @@ const Overview = () => {
   // Fetch decimals for all unique tokens
   useEffect(() => {
     const fetchDecimals = async () => {
-      if (allUniqueTokenAddresses.length === 0) {
-        setDecimalsLoading(false);
-        return;
-      }
-
       // Filter to only fetch decimals we don't have yet
       const missingAddresses = allUniqueTokenAddresses.filter(
-        addr => !(addr in tokenDecimals)
+        (addr) => !(addr in tokenDecimals)
       );
-
-      if (missingAddresses.length === 0) {
-        setDecimalsLoading(false);
-        return;
-      }
-
-      setDecimalsLoading(true);
-      const newDecimals: Record<string, number> = { ...tokenDecimals };
 
       try {
         // Fetch decimals in parallel
@@ -361,28 +374,32 @@ const Overview = () => {
             const decimals = await getTokenDecimals(address);
             return { address, decimals };
           } catch (error) {
-            console.error(`Failed to fetch decimals for token ${address}:`, error);
+            console.error(
+              `Failed to fetch decimals for token ${address}:`,
+              error
+            );
             return { address, decimals: 18 }; // Default to 18
           }
         });
 
         const results = await Promise.all(decimalsPromises);
-        results.forEach(({ address, decimals }) => {
-          newDecimals[address] = decimals;
-        });
 
-        setTokenDecimals(newDecimals);
+        // Use functional update to avoid depending on tokenDecimals
+        setTokenDecimals((prev) => {
+          const newDecimals = { ...prev };
+          results.forEach(({ address, decimals }) => {
+            newDecimals[address] = decimals;
+          });
+          return newDecimals;
+        });
       } catch (error) {
         console.error("Error fetching token decimals:", error);
-      } finally {
-        setDecimalsLoading(false);
       }
     };
 
-    if (!decimalsLoading) {
-      fetchDecimals();
-    }
-  }, [allUniqueTokenAddresses, tokenDecimals, getTokenDecimals, decimalsLoading]);
+    fetchDecimals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allUniqueTokenAddresses.join(",")]); // Use join to create stable dependency
 
   // Process and store tournaments when data is loaded
   useEffect(() => {
@@ -527,45 +544,62 @@ const Overview = () => {
     incrementPage,
   ]);
 
-  // Add this near your other state declarations
-  const isFirstRender = useRef(true);
-
-  // Update the effect to only run on first render
+  // Auto-select tab based on tournament availability
+  // Priority: my (if connected & has live tournaments) > live > upcoming > ended
   useEffect(() => {
-    // Set the default tab as soon as we find one with tournaments
-    if (!isFirstRender.current) return;
+    // Determine best tab based on available data
+    let bestTab: TournamentTab | null = null;
 
-    // Priority order: live > upcoming > my > ended
-    if (liveTournamentsCount !== undefined && liveTournamentsCount > 0) {
-      setSelectedTab("live");
-      isFirstRender.current = false;
-    } else if (upcomingTournamentsCount !== undefined && upcomingTournamentsCount > 0) {
-      setSelectedTab("upcoming");
-      isFirstRender.current = false;
-    } else if (myTournamentsCount !== undefined && myTournamentsCount > 0) {
-      setSelectedTab("my");
-      isFirstRender.current = false;
-    } else if (endedTournamentsCount !== undefined && endedTournamentsCount > 0) {
-      setSelectedTab("ended");
-      isFirstRender.current = false;
-    } else if (
-      // All counts are loaded but no tournaments exist
-      liveTournamentsCount !== undefined &&
-      upcomingTournamentsCount !== undefined &&
-      endedTournamentsCount !== undefined &&
-      myTournamentsCount !== undefined
+    // If user is connected and has live tournaments they're registered for
+    if (
+      address &&
+      myLiveTournamentsCount !== undefined &&
+      myLiveTournamentsCount > 0
     ) {
-      // Default to upcoming if no tournaments anywhere
-      setSelectedTab("upcoming");
-      isFirstRender.current = false;
+      bestTab = "my";
     }
-    // Otherwise, wait for more data to load
+    // Otherwise check live tournaments
+    else if (liveTournamentsCount !== undefined && liveTournamentsCount > 0) {
+      bestTab = "live";
+    }
+    // Then upcoming
+    else if (
+      upcomingTournamentsCount !== undefined &&
+      upcomingTournamentsCount > 0
+    ) {
+      bestTab = "upcoming";
+    }
+    // Then ended
+    else if (endedTournamentsCount !== undefined && endedTournamentsCount > 0) {
+      bestTab = "ended";
+    }
+    // Default to upcoming if we have data but no tournaments
+    else if (
+      liveTournamentsCount !== undefined ||
+      upcomingTournamentsCount !== undefined ||
+      endedTournamentsCount !== undefined
+    ) {
+      bestTab = "upcoming";
+    }
+
+    // Only set tab if:
+    // 1. We haven't selected yet, OR
+    // 2. We have a better tab than current (e.g., "my" is better than "live")
+    const shouldUpdateTab =
+      !hasSelectedInitialTab ||
+      (bestTab && bestTab === "my" && selectedTab !== "my");
+
+    if (bestTab && shouldUpdateTab) {
+      setSelectedTab(bestTab);
+      setHasSelectedInitialTab(true);
+    }
   }, [
-    upcomingTournamentsCount,
+    address,
+    myLiveTournamentsCount,
     liveTournamentsCount,
+    upcomingTournamentsCount,
     endedTournamentsCount,
-    myTournamentsCount,
-    setSelectedTab,
+    hasSelectedInitialTab,
   ]);
 
   return (
@@ -581,7 +615,7 @@ const Overview = () => {
               upcomingTournamentsCount={upcomingTournamentsCount}
               liveTournamentsCount={liveTournamentsCount}
               endedTournamentsCount={endedTournamentsCount}
-              myTournamentsCount={myTournamentsCount}
+              myTournamentsCount={myLiveTournamentsCount}
             />
           </div>
 
