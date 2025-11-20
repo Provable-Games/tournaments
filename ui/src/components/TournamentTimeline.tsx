@@ -38,7 +38,7 @@ const TournamentTimeline = ({
   // Use registrationEndTime if provided, otherwise default to startTime (no gap)
   const effectiveRegistrationEndTime = registrationEndTime ?? startTime;
   const registrationEndDate = new Date(effectiveRegistrationEndTime * 1000);
-  const registrationPeriod = effectiveRegistrationEndTime - createdTime;
+  const registrationPeriod = effectiveRegistrationEndTime - effectiveRegistrationStartTime;
 
   // Gap between registration end and tournament start
   const hasGap = registrationEndTime && registrationEndTime < startTime;
