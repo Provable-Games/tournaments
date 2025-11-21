@@ -209,6 +209,23 @@ pub impl ScheduleAssertionsImpl of ScheduleAssertionsTrait {
         );
     }
 
+    /// @notice Asserts that a registration period exists and ends before game starts
+    /// @dev This is used when a registration_only extension requires a gap between registration and
+    /// game
+    fn assert_has_registration_period_before_game_start(self: Schedule) {
+        assert!(
+            self.registration.is_some(),
+            "Schedule: Extension requires a registration period but none was provided",
+        );
+        let registration = self.registration.unwrap();
+        assert!(
+            registration.end < self.game.start,
+            "Schedule: Extension requires registration to end before game starts. Registration ends at {}, game starts at {}",
+            registration.end,
+            self.game.start,
+        );
+    }
+
     fn assert_min_duration(self: Period) {
         assert!(
             self.is_min_duration(),

@@ -30,6 +30,8 @@ pub trait IBudokan<TState> {
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
+        soulbound: bool,
+        play_url: ByteArray,
     ) -> TournamentModel;
     fn enter_tournament(
         ref self: TState,

@@ -16,6 +16,8 @@ pub struct Tournament {
     pub game_config: GameConfig,
     pub entry_fee: Option<EntryFee>,
     pub entry_requirement: Option<EntryRequirement>,
+    pub soulbound: bool,
+    pub play_url: ByteArray,
 }
 
 #[derive(Drop, Serde, Introspect)]
