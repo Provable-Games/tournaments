@@ -339,6 +339,9 @@ fn create_tournament() {
     );
     assert(tournament.game_config.settings_id == 1, 'Invalid settings id');
     assert(contracts.budokan.total_tournaments() == 1, 'Invalid tournaments count');
+    assert!(tournament.soulbound == false, "Tournament should not be soulbound");
+    assert!(tournament.play_url == "", "Tournament play_url should be empty");
+    assert!(tournament.play_url.len() == 0, "Tournament play_url should be empty");
 }
 
 #[test]
