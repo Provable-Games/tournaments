@@ -3,9 +3,9 @@ use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 
 use budokan::models::budokan::{
-    Tournament, TournamentTokenData, EntryCount, Prize, Leaderboard, Token, Registration,
-    TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata,
-    GameConfig, EntryFee, EntryRequirement,
+    Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentTokenMetrics,
+    PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata, GameConfig, EntryFee,
+    EntryRequirement,
 };
 use budokan::models::schedule::Schedule;
 
@@ -46,11 +46,6 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline(always)]
     fn get_tournament(self: Store, tournament_id: u64) -> Tournament {
-        (self.world.read_model(tournament_id))
-    }
-
-    #[inline(always)]
-    fn get_tournament_token_data(self: Store, tournament_id: u64) -> TournamentTokenData {
         (self.world.read_model(tournament_id))
     }
 
@@ -101,7 +96,7 @@ pub impl StoreImpl of StoreTrait {
         entry_requirement: Option<EntryRequirement>,
         soulbound: bool,
         play_url: ByteArray,
-    ) -> (Tournament, TournamentTokenData) {
+    ) -> Tournament {
         let id = self.increment_and_get_tournament_count();
         let created_by = starknet::get_caller_address();
         let created_at = starknet::get_block_timestamp();
@@ -115,20 +110,15 @@ pub impl StoreImpl of StoreTrait {
             game_config,
             entry_fee,
             entry_requirement,
+            soulbound,
+            play_url,
         };
         self.world.write_model(@tournament);
-        let tournament_token_data = TournamentTokenData { id, soulbound, play_url };
-        self.world.write_model(@tournament_token_data);
-        (tournament, tournament_token_data)
+        tournament
     }
 
     #[inline(always)]
     fn set_tournament(ref self: Store, model: @Tournament) {
-        self.world.write_model(model);
-    }
-
-    #[inline(always)]
-    fn set_tournament_token_data(ref self: Store, model: @TournamentTokenData) {
         self.world.write_model(model);
     }
 
