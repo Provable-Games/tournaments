@@ -16,6 +16,8 @@ pub struct Tournament {
     pub game_config: GameConfig,
     pub entry_fee: Option<EntryFee>,
     pub entry_requirement: Option<EntryRequirement>,
+    pub soulbound: bool,
+    pub play_url: ByteArray,
 }
 
 #[derive(Drop, Serde, Introspect)]
@@ -114,6 +116,7 @@ pub struct Registration {
     pub tournament_id: u64,
     pub entry_number: u32,
     pub has_submitted: bool,
+    pub is_banned: bool,
 }
 
 #[dojo::model]

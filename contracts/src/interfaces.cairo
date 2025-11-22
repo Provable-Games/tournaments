@@ -30,6 +30,8 @@ pub trait IBudokan<TState> {
         game_config: GameConfig,
         entry_fee: Option<EntryFee>,
         entry_requirement: Option<EntryRequirement>,
+        soulbound: bool,
+        play_url: ByteArray,
     ) -> TournamentModel;
     fn enter_tournament(
         ref self: TState,
@@ -38,6 +40,7 @@ pub trait IBudokan<TState> {
         player_address: ContractAddress,
         qualification: Option<QualificationProof>,
     ) -> (u64, u32);
+    fn validate_entries(ref self: TState, tournament_id: u64, game_token_ids: Span<u64>);
     fn submit_score(ref self: TState, tournament_id: u64, token_id: u64, position: u8);
     fn claim_prize(ref self: TState, tournament_id: u64, prize_type: PrizeType);
     fn add_prize(
