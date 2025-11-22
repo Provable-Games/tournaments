@@ -5,10 +5,10 @@ pub mod Budokan {
 
     use budokan::constants::{TWO_POW_128, DEFAULT_NS, SEPOLIA_CHAIN_ID, GAME_CREATOR_TOKEN_ID};
     use budokan::models::budokan::{
-        Tournament as TournamentModel, Registration, Leaderboard, Prize, Token, TokenType,
-        TokenTypeData, TournamentType, PrizeType, Role, PrizeClaim, Metadata, GameConfig, EntryFee,
-        EntryRequirement, QualificationProof, TournamentQualification, EntryRequirementType,
-        TokenData,
+        Tournament as TournamentModel, TournamentTokenData, Registration, RegistrationBanned,
+        Leaderboard, Prize, Token, TokenType, TokenTypeData, TournamentType, PrizeType, Role,
+        PrizeClaim, Metadata, GameConfig, EntryFee, EntryRequirement, QualificationProof,
+        TournamentQualification, EntryRequirementType, TokenData,
     };
     use budokan::models::schedule::{Schedule, Phase};
     use budokan::interfaces::{IBudokan};
@@ -181,6 +181,13 @@ pub mod Budokan {
             let store: Store = StoreTrait::new(world);
             store.get_registration(game_address, token_id)
         }
+        fn get_registration_banned(
+            self: @ContractState, game_address: ContractAddress, token_id: u64,
+        ) -> RegistrationBanned {
+            let mut world = self.world(@DEFAULT_NS());
+            let store: Store = StoreTrait::new(world);
+            store.get_registration_banned(game_address, token_id)
+        }
         fn tournament_entries(self: @ContractState, tournament_id: u64) -> u32 {
             let mut world = self.world(@DEFAULT_NS());
             let store: Store = StoreTrait::new(world);
@@ -267,7 +274,7 @@ pub mod Budokan {
             entry_requirement: Option<EntryRequirement>,
             soulbound: bool,
             play_url: ByteArray,
-        ) -> TournamentModel {
+        ) -> (TournamentModel, TournamentTokenData) {
             let mut world = self.world(@DEFAULT_NS());
             let mut store: Store = StoreTrait::new(world);
 
@@ -334,6 +341,7 @@ pub mod Budokan {
             let mut store: Store = StoreTrait::new(world);
 
             let tournament = store.get_tournament(tournament_id);
+            let tournament_token_data = store.get_tournament_token_data(tournament_id);
 
             self._assert_tournament_exists(store, tournament_id);
 
@@ -364,11 +372,11 @@ pub mod Budokan {
             let empty_objective_ids: Span<u32> = array![].span();
             let context = self._create_context(tournament_id);
 
-            let client_url = if tournament.play_url.len() == 0 {
+            let client_url = if tournament_token_data.play_url.len() == 0 {
                 let _tournament_id = format!("{}", tournament.id);
                 Option::Some("https://budokan.gg/tournament/" + _tournament_id)
             } else {
-                Option::Some(tournament.play_url)
+                Option::Some(tournament_token_data.play_url)
             };
 
             // mint game to the determined recipient
@@ -384,7 +392,7 @@ pub mod Budokan {
                     client_url,
                     Option::None, // renderer_address
                     mint_to_address, // to
-                    tournament.soulbound // soulbound
+                    tournament_token_data.soulbound // soulbound
                 );
 
             let entry_number = store.increment_and_get_tournament_entry_count(tournament_id);
@@ -398,7 +406,6 @@ pub mod Budokan {
                         tournament_id,
                         entry_number,
                         has_submitted: false,
-                        is_banned: false,
                     },
                 );
 
@@ -464,7 +471,9 @@ pub mod Budokan {
                     break;
                 }
                 let game_token_id = *game_token_ids.at(i);
-                let mut registration = store.get_registration(game_address, game_token_id);
+                let registration = store.get_registration(game_address, game_token_id);
+                let mut registration_banned = store
+                    .get_registration_banned(game_address, game_token_id);
 
                 // Verify this registration belongs to this tournament
                 assert!(
@@ -473,7 +482,7 @@ pub mod Budokan {
                 );
 
                 // Assert game ID is not already banned
-                assert!(!registration.is_banned, "Tournament: Game ID is already banned");
+                assert!(!registration_banned.is_banned, "Tournament: Game ID is already banned");
 
                 // Get the owner of this game token
                 let token_owner = game_dispatcher.owner_of(game_token_id.into());
@@ -484,8 +493,8 @@ pub mod Budokan {
 
                 // Ban if not valid
                 if !is_valid {
-                    registration.is_banned = true;
-                    store.set_registration(@registration);
+                    registration_banned.is_banned = true;
+                    store.set_registration_banned(@registration_banned);
                 }
 
                 i += 1;
@@ -517,6 +526,10 @@ pub mod Budokan {
             // get registration details for provided game token
             let registration = store.get_registration(tournament.game_config.address, token_id);
 
+            // get registration banned details for provided game token
+            let registration_banned = store
+                .get_registration_banned(tournament.game_config.address, token_id);
+
             // get current leaderboard
             let mut leaderboard = store.get_leaderboard(tournament_id);
 
@@ -529,6 +542,7 @@ pub mod Budokan {
                 ._validate_score_submission(
                     @tournament,
                     @registration,
+                    @registration_banned,
                     leaderboard.span(),
                     submitted_score,
                     position,
@@ -1442,6 +1456,7 @@ pub mod Budokan {
             self: @ContractState,
             tournament: @TournamentModel,
             registration: @Registration,
+            registration_banned: @RegistrationBanned,
             current_leaderboard: Span<u64>,
             submitted_score: u32,
             submitted_position: u8,
@@ -1470,7 +1485,7 @@ pub mod Budokan {
             assert!(!*registration.has_submitted, "Tournament: Score already submitted");
 
             // Banned game IDs cannot submit scores
-            assert!(!*registration.is_banned, "Tournament: Game ID is banned");
+            assert!(!*registration_banned.is_banned, "Tournament: Game ID is banned");
 
             // Prevent gaps in leaderboard
             let position_index: u32 = submitted_position.into() - 1;

@@ -11,7 +11,7 @@ use budokan::tests::{
 };
 use budokan::interfaces::{IBudokanDispatcher, IBudokanDispatcherTrait};
 
-use budokan::models::budokan::{Tournament, Metadata, GameConfig};
+use budokan::models::budokan::{Tournament, TournamentTokenData, Metadata, GameConfig};
 
 use budokan::models::schedule::{Schedule, Period};
 
@@ -99,7 +99,9 @@ pub fn registration_open_beyond_tournament_end() -> Schedule {
     )
 }
 
-pub fn create_basic_tournament(budokan: IBudokanDispatcher, game: ContractAddress) -> Tournament {
+pub fn create_basic_tournament(
+    budokan: IBudokanDispatcher, game: ContractAddress,
+) -> (Tournament, TournamentTokenData) {
     budokan
         .create_tournament(
             OWNER(),

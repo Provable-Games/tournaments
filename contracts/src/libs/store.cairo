@@ -2,9 +2,10 @@ use starknet::ContractAddress;
 use dojo::world::{WorldStorage};
 use dojo::model::{ModelStorage};
 use budokan::models::budokan::{
-    Tournament, EntryCount, Prize, Leaderboard, Token, Registration, TournamentTokenMetrics,
-    PlatformMetrics, PrizeMetrics, PrizeClaim, PrizeType, Metadata, GameConfig, EntryFee,
-    EntryRequirement, QualificationEntries, QualificationProof,
+    Tournament, TournamentTokenData, EntryCount, Prize, Leaderboard, Token, Registration,
+    RegistrationBanned, TournamentTokenMetrics, PlatformMetrics, PrizeMetrics, PrizeClaim,
+    PrizeType, Metadata, GameConfig, EntryFee, EntryRequirement, QualificationEntries,
+    QualificationProof,
 };
 use budokan::models::schedule::Schedule;
 use budokan::constants::{VERSION};
@@ -55,12 +56,24 @@ pub impl StoreImpl of StoreTrait {
     }
 
     #[inline(always)]
+    fn get_tournament_token_data(self: Store, tournament_id: u64) -> TournamentTokenData {
+        (self.world.read_model(tournament_id))
+    }
+
+    #[inline(always)]
     fn get_tournament_entry_count(self: Store, tournament_id: u64) -> EntryCount {
         (self.world.read_model(tournament_id))
     }
 
     #[inline(always)]
     fn get_registration(self: Store, game_address: ContractAddress, token_id: u64) -> Registration {
+        (self.world.read_model((game_address, token_id)))
+    }
+
+    #[inline(always)]
+    fn get_registration_banned(
+        self: Store, game_address: ContractAddress, token_id: u64,
+    ) -> RegistrationBanned {
         (self.world.read_model((game_address, token_id)))
     }
 
@@ -109,9 +122,10 @@ pub impl StoreImpl of StoreTrait {
         entry_requirement: Option<EntryRequirement>,
         soulbound: bool,
         play_url: ByteArray,
-    ) -> Tournament {
+    ) -> (Tournament, TournamentTokenData) {
+        let id = self.increment_and_get_tournament_count();
         let tournament = Tournament {
-            id: self.increment_and_get_tournament_count(),
+            id,
             created_at: starknet::get_block_timestamp(),
             created_by: starknet::get_caller_address(),
             creator_token_id,
@@ -120,17 +134,23 @@ pub impl StoreImpl of StoreTrait {
             game_config,
             entry_fee,
             entry_requirement,
-            soulbound,
-            play_url,
         };
         self.world.write_model(@tournament);
-        tournament
+        let tournament_token_data = TournamentTokenData { id, soulbound, play_url };
+        self.world.write_model(@tournament_token_data);
+        (tournament, tournament_token_data)
     }
 
     #[inline(always)]
     fn set_tournament(ref self: Store, model: @Tournament) {
         self.world.write_model(model);
     }
+
+    #[inline(always)]
+    fn set_tournament_token_data(ref self: Store, model: @TournamentTokenData) {
+        self.world.write_model(model);
+    }
+
 
     #[inline(always)]
     fn set_tournament_entry_count(ref self: Store, model: @EntryCount) {
@@ -149,6 +169,12 @@ pub impl StoreImpl of StoreTrait {
     fn set_registration(ref self: Store, model: @Registration) {
         self.world.write_model(model);
     }
+
+    #[inline(always)]
+    fn set_registration_banned(ref self: Store, model: @RegistrationBanned) {
+        self.world.write_model(model);
+    }
+
 
     #[inline(always)]
     fn set_leaderboard(ref self: Store, model: @Leaderboard) {

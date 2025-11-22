@@ -16,6 +16,14 @@ pub struct Tournament {
     pub game_config: GameConfig,
     pub entry_fee: Option<EntryFee>,
     pub entry_requirement: Option<EntryRequirement>,
+}
+
+// TODO: include token data into tournament storage (for V2)
+#[dojo::model]
+#[derive(Drop, Serde)]
+pub struct TournamentTokenData {
+    #[key]
+    pub id: u64,
     pub soulbound: bool,
     pub play_url: ByteArray,
 }
@@ -106,6 +114,7 @@ pub enum TokenTypeData {
     erc721: ERC721Data,
 }
 
+// TODO: include banned into packed storage (for V2)
 #[dojo::model]
 #[derive(Copy, Drop, Serde, IntrospectPacked)]
 pub struct Registration {
@@ -116,6 +125,16 @@ pub struct Registration {
     pub tournament_id: u64,
     pub entry_number: u32,
     pub has_submitted: bool,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct RegistrationBanned {
+    #[key]
+    pub game_address: ContractAddress,
+    #[key]
+    pub game_token_id: u64,
+    pub tournament_id: u64,
     pub is_banned: bool,
 }
 
